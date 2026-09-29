@@ -1,47 +1,56 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Camera, Cpu, ShieldCheck, ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { motion } from "motion/react";
+import {
+  Camera,
+  Cpu,
+  ShieldCheck,
+  ArrowRight,
+  Sparkles,
+  CheckCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface HowItWorksProps {
-  onReportClick: () => void;
+  onBrowseLost: () => void;
 }
 
-export const HowItWorks: React.FC<HowItWorksProps> = ({ onReportClick }) => {
+export const HowItWorks: React.FC<HowItWorksProps> = ({ onBrowseLost }) => {
   const steps = [
     {
-      step: '01',
-      title: 'Snap & Report in 60s',
+      step: "01",
+      title: "Snap & Report in 60s",
       description:
-        'Upload a quick photo or describe key features like color, brand, or unique markings. Our smart form takes less than a minute.',
+        "Upload a quick photo or describe key features like color, brand, or unique markings. Our smart form takes less than a minute.",
       icon: Camera,
-      tag: 'Quick Submission',
-      color: 'bg-red-50 text-[#E5192D] border-red-200/60',
+      tag: "Quick Submission",
+      color: "bg-red-50 text-[#E5192D] border-red-200/60",
     },
     {
-      step: '02',
-      title: 'Smart Match & Instant Ping',
+      step: "02",
+      title: "Smart Match & Instant Ping",
       description:
-        'Our matching engine instantly cross-references lost and found logs in your area. Both parties get notified immediately upon a match.',
+        "Our matching engine instantly cross-references lost and found logs in your area. Both parties get notified immediately upon a match.",
       icon: Cpu,
-      tag: 'AI Assisted',
-      color: 'bg-blue-50 text-blue-600 border-blue-200/60',
+      tag: "AI Assisted",
+      color: "bg-blue-50 text-blue-600 border-blue-200/60",
     },
     {
-      step: '03',
-      title: 'Safe Reunion & Handover',
+      step: "03",
+      title: "Safe Reunion & Handover",
       description:
-        'Verify ownership through custom security questions or serial numbers. Meet safely at campus security desks or verified drop zones.',
+        "Verify ownership through custom security questions or serial numbers. Meet safely at campus security desks or verified drop zones.",
       icon: ShieldCheck,
-      tag: '100% Protected',
-      color: 'bg-emerald-50 text-emerald-600 border-emerald-200/60',
+      tag: "100% Protected",
+      color: "bg-emerald-50 text-emerald-600 border-emerald-200/60",
     },
   ];
 
   return (
-    <section id="how-it-works" className="py-24 bg-neutral-50/70 border-t border-neutral-100 relative overflow-hidden">
+    <section
+      id="how-it-works"
+      className="py-24 bg-neutral-50/70 border-t border-neutral-100 relative overflow-hidden"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
         {/* Section title */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100/60 text-[#E5192D] text-xs font-bold uppercase tracking-wider mb-3">
@@ -52,7 +61,8 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onReportClick }) => {
             How FindIt Works
           </h2>
           <p className="text-neutral-500 text-base mt-3">
-            We’ve eliminated the chaos of lost item bulletin boards. Here is how we make reunions happen faster.
+            We’ve eliminated the chaos of lost item bulletin boards. Here is how
+            we make reunions happen faster.
           </p>
         </div>
 
@@ -71,7 +81,9 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onReportClick }) => {
               >
                 {/* Step number badge */}
                 <div className="flex items-center justify-between mb-6">
-                  <div className={`w-14 h-14 rounded-2xl ${item.color} border flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform`}>
+                  <div
+                    className={`w-14 h-14 rounded-2xl ${item.color} border flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform`}
+                  >
                     <Icon className="w-7 h-7 stroke-[2.2]" />
                   </div>
                   <span className="text-3xl font-black text-neutral-200 group-hover:text-neutral-400 transition-colors">
@@ -100,25 +112,25 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onReportClick }) => {
           })}
         </div>
 
-        {/* Banner CTA inside How It Works */}
+        {/* Report CTA */}
         <div className="mt-14 p-8 bg-neutral-900 rounded-3xl text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl shadow-neutral-950/10">
           <div>
             <h3 className="text-xl sm:text-2xl font-bold">
               Looking for something right now?
             </h3>
             <p className="text-neutral-400 text-sm mt-1">
-              File a report in under a minute and let our community start looking.
+              File a report in under a minute and let our community start
+              looking.
             </p>
           </div>
           <Button
-            onClick={onReportClick}
+            onClick={onBrowseLost}
             className="rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white px-7 py-3 font-semibold text-sm shrink-0 cursor-pointer shadow-md"
           >
             File a Report Now
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
-
       </div>
     </section>
   );

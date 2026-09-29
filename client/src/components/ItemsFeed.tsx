@@ -1,49 +1,41 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Search, 
-  MapPin, 
-  Clock, 
-  PlusCircle, 
-  ArrowUpRight,
-  Award
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { Item } from '@/data/mockItems';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Search, MapPin, Clock, Award } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { Item } from "@/data/mockItems";
 
 interface ItemsFeedProps {
   items: Item[];
-  onSelectItem: (item: Item) => void;
-  onOpenReport: (type?: 'lost' | 'found') => void;
-  feedType: 'all' | 'lost' | 'found';
-  setFeedType: (type: 'all' | 'lost' | 'found') => void;
+  onBrowseItems: (type: "lost" | "found") => void;
+  feedType: "all" | "lost" | "found";
+  setFeedType: (type: "all" | "lost" | "found") => void;
 }
 
 export const ItemsFeed: React.FC<ItemsFeedProps> = ({
   items,
-  onSelectItem,
-  onOpenReport,
+  onBrowseItems,
   feedType,
   setFeedType,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const categories = [
-    { id: 'all', label: 'All Items' },
-    { id: 'bags', label: '🎒 Bags' },
-    { id: 'electronics', label: '📱 Electronics' },
-    { id: 'keys', label: '🔑 Keys' },
-    { id: 'wallets', label: '👛 Wallets' },
-    { id: 'accessories', label: '👓 Accessories' },
+    { id: "all", label: "All Items" },
+    { id: "bags", label: "🎒 Bags" },
+    { id: "electronics", label: "📱 Electronics" },
+    { id: "keys", label: "🔑 Keys" },
+    { id: "wallets", label: "👛 Wallets" },
+    { id: "accessories", label: "👓 Accessories" },
   ];
 
   // Filtering
   const filteredItems = items.filter((item) => {
-    const matchesType = feedType === 'all' ? true : item.type === feedType;
-    const matchesCategory = selectedCategory === 'all' ? true : item.category === selectedCategory;
+    const matchesType = feedType === "all" ? true : item.type === feedType;
+    const matchesCategory =
+      selectedCategory === "all" ? true : item.category === selectedCategory;
     const query = searchQuery.toLowerCase().trim();
-    const matchesQuery = 
+    const matchesQuery =
       item.title.toLowerCase().includes(query) ||
       item.location.toLowerCase().includes(query) ||
       item.description.toLowerCase().includes(query);
@@ -54,7 +46,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
   return (
     <section id="items" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
@@ -68,21 +59,21 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
               Recent Lost & Found
             </h2>
             <p className="text-neutral-500 text-sm sm:text-base mt-2 max-w-xl">
-              Browse through recently reported belongings in your area. Found something or missing an item? Report it instantly.
+              Browse recently reported belongings in your area and filter by
+              type, category, or location.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => onOpenReport('lost')}
+              onClick={() => onBrowseItems("lost")}
               className="rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold text-sm px-5 py-2.5 shadow-sm"
             >
-              <PlusCircle className="w-4 h-4 mr-1.5" />
               I Lost Something
             </Button>
             <Button
               variant="outline"
-              onClick={() => onOpenReport('found')}
+              onClick={() => onBrowseItems("found")}
               className="rounded-full border-neutral-300 font-semibold text-sm px-5 py-2.5 hover:bg-neutral-50"
             >
               I Found Something
@@ -92,41 +83,44 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
 
         {/* Filter Controls: Tabs & Search Bar */}
         <div className="space-y-4 mb-8">
-          
           {/* Main Type Tabs & Search */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-2 bg-neutral-50 rounded-2xl border border-neutral-200/70">
             {/* Type toggle buttons */}
             <div className="flex items-center p-1 bg-white rounded-xl shadow-xs border border-neutral-200/60">
               <button
-                onClick={() => setFeedType('all')}
+                onClick={() => setFeedType("all")}
                 className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
-                  feedType === 'all'
-                    ? 'bg-neutral-900 text-white shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-900'
+                  feedType === "all"
+                    ? "bg-neutral-900 text-white shadow-xs"
+                    : "text-neutral-600 hover:text-neutral-900"
                 }`}
               >
                 All Items
               </button>
               <button
-                onClick={() => setFeedType('lost')}
+                onClick={() => setFeedType("lost")}
                 className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
-                  feedType === 'lost'
-                    ? 'bg-[#E5192D] text-white shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-900'
+                  feedType === "lost"
+                    ? "bg-[#E5192D] text-white shadow-xs"
+                    : "text-neutral-600 hover:text-neutral-900"
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${feedType === 'lost' ? 'bg-white' : 'bg-[#E5192D]'}`} />
+                <span
+                  className={`w-2 h-2 rounded-full ${feedType === "lost" ? "bg-white" : "bg-[#E5192D]"}`}
+                />
                 Lost Items
               </button>
               <button
-                onClick={() => setFeedType('found')}
+                onClick={() => setFeedType("found")}
                 className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
-                  feedType === 'found'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-900'
+                  feedType === "found"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-neutral-600 hover:text-neutral-900"
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${feedType === 'found' ? 'bg-white' : 'bg-emerald-600'}`} />
+                <span
+                  className={`w-2 h-2 rounded-full ${feedType === "found" ? "bg-white" : "bg-emerald-600"}`}
+                />
                 Found Items
               </button>
             </div>
@@ -143,7 +137,7 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => setSearchQuery("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 hover:text-neutral-600 font-medium"
                 >
                   Clear
@@ -160,19 +154,18 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                   selectedCategory === cat.id
-                    ? 'bg-neutral-900 text-white border-neutral-900'
-                    : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                    ? "bg-neutral-900 text-white border-neutral-900"
+                    : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50"
                 }`}
               >
                 {cat.label}
               </button>
             ))}
           </div>
-
         </div>
 
         {/* Item Cards Grid */}
-        <motion.div 
+        <motion.div
           layout
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
@@ -185,8 +178,7 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3 }}
-                className="group bg-white rounded-2xl border border-neutral-200/80 hover:border-neutral-300 overflow-hidden shadow-xs hover:shadow-xl hover:shadow-neutral-200/50 transition-all duration-300 flex flex-col cursor-pointer"
-                onClick={() => onSelectItem(item)}
+                className="group bg-white rounded-2xl border border-neutral-200/80 hover:border-neutral-300 overflow-hidden shadow-xs hover:shadow-xl hover:shadow-neutral-200/50 transition-all duration-300 flex flex-col"
               >
                 {/* Image container */}
                 <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden">
@@ -199,7 +191,7 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
 
                   {/* Badge: LOST or FOUND */}
                   <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                    {item.type === 'lost' ? (
+                    {item.type === "lost" ? (
                       <span className="bg-[#E5192D] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                         LOST
@@ -242,10 +234,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
                       <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                       <span className="truncate">{item.location}</span>
                     </div>
-
-                    <div className="w-7 h-7 rounded-full bg-neutral-50 group-hover:bg-[#E5192D] group-hover:text-white text-neutral-400 flex items-center justify-center transition-colors">
-                      <ArrowUpRight className="w-4 h-4" />
-                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -259,13 +247,16 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
             <div className="w-14 h-14 bg-red-100/60 rounded-full flex items-center justify-center mx-auto mb-4 text-[#E5192D]">
               <Search className="w-7 h-7" />
             </div>
-            <h3 className="text-lg font-bold text-neutral-800">No matching items found</h3>
+            <h3 className="text-lg font-bold text-neutral-800">
+              No matching items found
+            </h3>
             <p className="text-sm text-neutral-500 mt-1 max-w-md mx-auto">
-              We couldn't find any items matching &ldquo;{searchQuery}&rdquo;. You can report it as lost or check back soon.
+              We couldn't find any items matching &ldquo;{searchQuery}&rdquo;.
+              Try a different search or check back soon.
             </p>
             <div className="mt-6 flex justify-center gap-3">
               <Button
-                onClick={() => onOpenReport('lost')}
+                onClick={() => onBrowseItems("lost")}
                 className="rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold text-xs px-5"
               >
                 Report Missing Item
@@ -273,9 +264,9 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
               <Button
                 variant="outline"
                 onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('all');
-                  setFeedType('all');
+                  setSearchQuery("");
+                  setSelectedCategory("all");
+                  setFeedType("all");
                 }}
                 className="rounded-full text-xs"
               >
@@ -284,7 +275,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
             </div>
           </div>
         )}
-
       </div>
     </section>
   );
