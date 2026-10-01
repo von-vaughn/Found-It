@@ -1,33 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/Navbar";
-import { HeroSection } from "@/components/HeroSection";
-import { FoundItMarquee } from "@/components/FoundItMarquee";
-import { ItemsFeed } from "@/components/ItemsFeed";
-import { HowItWorks } from "@/components/HowItWorks";
-import { CommunityReunions } from "@/components/CommunityReunions";
 import { Footer } from "@/components/Footer";
-import { initialItems } from "@/data/mockItems";
+import { HomePage } from "@/pages/HomePage";
+import { LostItemsPage } from "@/pages/LostItemsPage";
+import { FoundItemsPage } from "@/pages/FoundItemsPage";
+import { initialItems, type Item } from "@/data/mockItems";
+
+// Scroll to top automatically when navigating to a new route
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, [pathname]);
+  return null;
+}
 
 export function App() {
-  const items = initialItems;
-  const [navActiveTab, setNavActiveTab] = useState("home");
-  const [feedType, setFeedType] = useState<"all" | "lost" | "found">("all");
+  const [items, setItems] = useState<Item[]>(initialItems);
+  const navigate = useNavigate();
 
-  const handleBrowseItems = (type: "lost" | "found") => {
-    setFeedType(type);
-    setNavActiveTab(type);
-    const itemsElem = document.getElementById("items");
-    if (itemsElem) {
-      itemsElem.scrollIntoView({ behavior: "smooth" });
-    }
+  const handleAddItem = (newItem: Item) => {
+    setItems((prev) => [newItem, ...prev]);
   };
 
-  const handleBrowseFound = () => handleBrowseItems("found");
-  const handleBrowseLost = () => handleBrowseItems("lost");
+  const handleBrowseLost = () => {
+    navigate("/lost-items");
+  };
+
+  const handleBrowseFound = () => {
+    navigate("/found-items");
+  };
 
   return (
-    <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white flex flex-col justify-between">
+      <ScrollToTop />
+
       {/* Toast notifications */}
       <Toaster
         position="top-right"
@@ -44,43 +59,44 @@ export function App() {
 
       {/* Navigation */}
       <Navbar
-        onBrowseItems={handleBrowseItems}
-        activeTab={navActiveTab}
-        setActiveTab={(tab) => {
-          setNavActiveTab(tab);
-          if (tab === "lost") setFeedType("lost");
-          if (tab === "found") setFeedType("found");
-          if (tab === "home") setFeedType("all");
+        onReportClick={(type) => {
+          navigate(type === "lost" ? "/lost-items" : "/found-items");
         }}
       />
 
-      {/* Hero Section */}
-      <main>
-        <HeroSection
-          onBrowseLost={handleBrowseLost}
-          onBrowseFound={handleBrowseFound}
-        />
+      {/* Page Routing */}
+      <div className="flex-1">
+        <Routes>
+          {/* Landing Page without Items Feed */}
+          <Route
+            path="/"
+            element={
+              <HomePage
+                onBrowseLost={handleBrowseLost}
+                onBrowseFound={handleBrowseFound}
+              />
+            }
+          />
 
-        {/* Infinite Moving 'found it' Marquee */}
-        <FoundItMarquee />
+          {/* Dedicated Lost Items Page (Shows only lost items) */}
+          <Route
+            path="/lost-items"
+            element={<LostItemsPage items={items} onAddItem={handleAddItem} />}
+          />
 
-        {/* Interactive Items Feed */}
-        <ItemsFeed
-          items={items}
-          onBrowseItems={handleBrowseItems}
-          feedType={feedType}
-          setFeedType={setFeedType}
-        />
+          {/* Dedicated Found Items Page (Shows only found items) */}
+          <Route
+            path="/found-items"
+            element={<FoundItemsPage items={items} onAddItem={handleAddItem} />}
+          />
 
-        {/* How It Works */}
-        <HowItWorks onBrowseLost={handleBrowseLost} />
-      </main>
+          {/* Catch-all redirect to Home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
 
       {/* Footer */}
       <Footer />
-
-      {/* Big Display LOST AND FOUND Section */}
-      <CommunityReunions />
     </div>
   );
 }
