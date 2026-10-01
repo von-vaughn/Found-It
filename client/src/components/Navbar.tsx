@@ -99,7 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-neutral-100 transition-all shadow-xs">
       <div
-        className={`${isScrolled ? "w-[calc(100%-15rem)]" : "w-full"} mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between transition-[width] duration-300 ease-out`}
+        className={`${isScrolled ? "md:w-[calc(100%-15rem)]" : ""} w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between transition-[width] duration-300 ease-out`}
       >
         {/* Brand Logo */}
         <button
@@ -184,7 +184,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
             onClick={() => handleReportAction("lost")}
             className="h-9 px-3.5 rounded-full bg-[#E5192D] text-white text-xs font-semibold cursor-pointer"
           >
-            Report Item
+            Sign in
           </Button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -226,21 +226,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
                   </button>
                 );
               })}
-              <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2">
-                <Button
-                  onClick={() => handleReportAction("lost")}
-                  className="w-full rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold py-2.5 cursor-pointer"
-                >
-                  Report a Lost Item
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleReportAction("found")}
-                  className="w-full rounded-full border-neutral-300 font-semibold py-2.5 cursor-pointer"
-                >
-                  Report a Found Item
-                </Button>
-              </div>
             </div>
           </motion.div>
         )}
