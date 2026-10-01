@@ -107,13 +107,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
           }}
           className="flex items-center gap-2.5 group cursor-pointer text-left"
         >
-          <div className="relative w-9 h-9 rounded-full overflow-hidden shadow-sm ring-1 ring-neutral-200/60 group-hover:scale-105 transition-transform duration-300">
-            <img
-              src="/logo.jpeg"
-              alt="FoundIt logo"
-              className="w-full h-full object-cover"
-            />
-          </div>
+          <img
+            src="/logo.jpeg"
+            alt="FoundIt logo"
+            className="w-9 h-9 object-cover rounded-none shadow-none ring-0 group-hover:scale-105 transition-transform duration-300"
+          />
           <span className="text-2xl font-extrabold tracking-tight text-neutral-900">
             Found<span className="text-[#E5192D]">It</span>
           </span>

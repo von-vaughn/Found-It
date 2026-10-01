@@ -7,6 +7,11 @@ import {
   Award,
   PlusCircle,
   ArrowLeft,
+  BriefcaseBusiness,
+  Smartphone,
+  KeyRound,
+  WalletCards,
+  Glasses,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useSearchParams } from "react-router-dom";
@@ -40,11 +45,11 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
 
   const categories = [
     { id: "all", label: "All Items" },
-    { id: "bags", label: "🎒 Bags" },
-    { id: "electronics", label: "📱 Electronics" },
-    { id: "keys", label: "🔑 Keys" },
-    { id: "wallets", label: "👛 Wallets" },
-    { id: "accessories", label: "👓 Accessories" },
+    { id: "bags", label: "Bags", icon: BriefcaseBusiness },
+    { id: "electronics", label: "Electronics", icon: Smartphone },
+    { id: "keys", label: "Keys", icon: KeyRound },
+    { id: "wallets", label: "Wallets", icon: WalletCards },
+    { id: "accessories", label: "Accessories", icon: Glasses },
   ];
 
   const filteredItems = lostItems.filter((item) => {
@@ -134,19 +139,23 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
-                  selectedCategory === cat.id
-                    ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
-                    : "bg-white text-neutral-600 border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-2 ${
+                    selectedCategory === cat.id
+                      ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
+                      : "bg-white text-neutral-600 border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

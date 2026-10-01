@@ -157,12 +157,12 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                   }
                   className="w-full h-11 px-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] transition-all"
                 >
-                  <option value="electronics">📱 Electronics</option>
-                  <option value="bags">🎒 Bags & Backpacks</option>
-                  <option value="keys">🔑 Keys & Fobs</option>
-                  <option value="wallets">👛 Wallets & IDs</option>
-                  <option value="accessories">👓 Accessories</option>
-                  <option value="other">📦 Other</option>
+                  <option value="electronics">Electronics</option>
+                  <option value="bags">Bags & Backpacks</option>
+                  <option value="keys">Keys & Fobs</option>
+                  <option value="wallets">Wallets & IDs</option>
+                  <option value="accessories">Accessories</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
 

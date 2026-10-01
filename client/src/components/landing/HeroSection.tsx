@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
-import { Search, ArrowRight, PlusCircle, X } from "lucide-react";
+import {
+  Search,
+  ArrowRight,
+  PlusCircle,
+  X,
+  Backpack,
+  Smartphone,
+  KeyRound,
+  Wallet,
+  Headphones,
+  Glasses,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -78,12 +89,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   };
 
   const popularTags = [
-    { label: "Backpack", icon: "🎒" },
-    { label: "iPhone", icon: "📱" },
-    { label: "Keys", icon: "🔑" },
-    { label: "Wallet", icon: "👛" },
-    { label: "AirPods", icon: "🎧" },
-    { label: "Glasses", icon: "👓" },
+    { label: "Backpack", icon: Backpack },
+    { label: "iPhone", icon: Smartphone },
+    { label: "Keys", icon: KeyRound },
+    { label: "Wallet", icon: Wallet },
+    { label: "AirPods", icon: Headphones },
+    { label: "Glasses", icon: Glasses },
   ];
 
   return (
@@ -181,7 +192,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${searchType === "lost" ? "lost" : "found"} items (AirPods, keys, backpack)...`}
+                placeholder={`Search ${searchType === "lost" ? "lost" : "found"} items`}
                 className="w-full h-12 text-base sm:text-lg bg-transparent text-white placeholder-neutral-500 focus:outline-none"
               />
               {searchQuery && (
@@ -209,18 +220,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </form>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-neutral-400">
-            <span className="font-semibold text-neutral-400">Popular:</span>
-            {popularTags.map((tag) => (
-              <button
-                key={tag.label}
-                type="button"
-                onClick={() => handleQuickTagClick(tag.label)}
-                className="px-3.5 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700/60 transition-all cursor-pointer flex items-center gap-1.5 font-medium hover:scale-105 hover:border-red-500/40"
-              >
-                <span>{tag.icon}</span>
-                <span>{tag.label}</span>
-              </button>
-            ))}
+            {popularTags.map((tag) => {
+              const Icon = tag.icon;
+              return (
+                <button
+                  key={tag.label}
+                  type="button"
+                  onClick={() => handleQuickTagClick(tag.label)}
+                  className="px-3.5 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700/60 transition-all cursor-pointer flex items-center gap-1.5 font-medium hover:scale-105 hover:border-red-500/40"
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tag.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
