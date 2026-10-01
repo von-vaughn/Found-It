@@ -58,7 +58,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onBrowseLost }) => {
             Simple 3-Step Process
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tracking-tight">
-            How FindIt Works
+            How FoundIt Works
           </h2>
           <p className="text-neutral-500 text-base mt-3">
             We’ve eliminated the chaos of lost item bulletin boards. Here is how

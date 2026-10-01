@@ -148,7 +148,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           ref={subtitleRef}
           className="text-base sm:text-lg md:text-xl text-neutral-300 max-w-3xl mx-auto leading-relaxed font-normal mb-6"
         >
-          FindIt connects people across campus and the community to report,
+          FoundIt connects people across campus and the community to report,
           discover, and safely return lost belongings — quickly and easily.
         </p>
 
@@ -192,7 +192,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${searchType === "lost" ? "lost" : "found"} items (e.g. AirPods, keys, backpack)...`}
+                placeholder={`Search ${searchType === "lost" ? "lost" : "found"} items (AirPods, keys, backpack)...`}
                 className="w-full h-12 text-base sm:text-lg bg-transparent text-white placeholder-neutral-500 focus:outline-none"
               />
               {searchQuery && (
@@ -255,9 +255,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <Button
             variant="outline"
             onClick={onBrowseFound}
-            className="w-full sm:w-auto h-12 sm:h-13 px-7 rounded-full border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-white text-sm sm:text-base font-bold shadow-lg hover:border-neutral-500 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer group"
+            className="w-full sm:w-auto h-12 sm:h-13 px-7 rounded-full border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-white hover:text-white text-sm sm:text-base font-bold shadow-lg hover:border-neutral-500 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer group"
           >
-            Browse Found Directory
+            Browse Found Item
             <ArrowRight className="w-5 h-5 text-neutral-400 group-hover:translate-x-1 group-hover:text-white transition-all" />
           </Button>
         </div>

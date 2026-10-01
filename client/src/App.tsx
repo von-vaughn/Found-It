@@ -9,9 +9,9 @@ import {
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { HomePage } from "@/pages/HomePage";
-import { LostItemsPage } from "@/pages/LostItemsPage";
-import { FoundItemsPage } from "@/pages/FoundItemsPage";
+import { HomePage } from "@/pages/landing/HomePage";
+import { LostItemsPage } from "@/pages/landing/LostItemsPage";
+import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
 import { initialItems, type Item } from "@/data/mockItems";
 
 // Scroll to top automatically when navigating to a new route

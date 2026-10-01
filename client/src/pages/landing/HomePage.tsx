@@ -1,8 +1,8 @@
 import React from "react";
-import { HeroSection } from "@/components/HeroSection";
-import { FoundItMarquee } from "@/components/FoundItMarquee";
-import { HowItWorks } from "@/components/HowItWorks";
-import { CommunityReunions } from "@/components/CommunityReunions";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { FoundItMarquee } from "@/components/landing/FoundItMarquee";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { CommunityReunions } from "@/components/landing/CommunityReunions";
 
 interface HomePageProps {
   onBrowseLost: () => void;

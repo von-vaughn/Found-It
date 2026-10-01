@@ -112,12 +112,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
           <div className="relative w-9 h-9 rounded-full overflow-hidden shadow-sm ring-1 ring-neutral-200/60 group-hover:scale-105 transition-transform duration-300">
             <img
               src="/logo.jpeg"
-              alt="FindIt Logo"
+              alt="FoundIt logo"
               className="w-full h-full object-cover"
             />
           </div>
           <span className="text-2xl font-extrabold tracking-tight text-neutral-900">
-            Find<span className="text-[#E5192D]">It</span>
+            Found<span className="text-[#E5192D]">It</span>
           </span>
         </button>
 
