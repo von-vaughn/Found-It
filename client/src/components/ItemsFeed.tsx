@@ -29,7 +29,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
     { id: "accessories", label: "👓 Accessories" },
   ];
 
-  // Filtering
   const filteredItems = items.filter((item) => {
     const matchesType = feedType === "all" ? true : item.type === feedType;
     const matchesCategory =
@@ -46,7 +45,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
   return (
     <section id="items" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -81,11 +79,8 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
           </div>
         </div>
 
-        {/* Filter Controls: Tabs & Search Bar */}
         <div className="space-y-4 mb-8">
-          {/* Main Type Tabs & Search */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-2 bg-neutral-50 rounded-2xl border border-neutral-200/70">
-            {/* Type toggle buttons */}
             <div className="flex items-center p-1 bg-white rounded-xl shadow-xs border border-neutral-200/60">
               <button
                 onClick={() => setFeedType("all")}
@@ -125,7 +120,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
               </button>
             </div>
 
-            {/* Search Input */}
             <div className="relative flex-1 max-w-md">
               <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
@@ -146,7 +140,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
             </div>
           </div>
 
-          {/* Category Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             {categories.map((cat) => (
               <button
@@ -164,7 +157,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
           </div>
         </div>
 
-        {/* Item Cards Grid */}
         <motion.div
           layout
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
@@ -180,7 +172,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
                 transition={{ duration: 0.3 }}
                 className="group bg-white rounded-2xl border border-neutral-200/80 hover:border-neutral-300 overflow-hidden shadow-xs hover:shadow-xl hover:shadow-neutral-200/50 transition-all duration-300 flex flex-col"
               >
-                {/* Image container */}
                 <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden">
                   <img
                     src={item.image}
@@ -189,7 +180,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
-                  {/* Badge: LOST or FOUND */}
                   <div className="absolute top-3 left-3 flex items-center gap-1.5">
                     {item.type === "lost" ? (
                       <span className="bg-[#E5192D] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
@@ -211,14 +201,12 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
                     )}
                   </div>
 
-                  {/* Date badge */}
                   <div className="absolute bottom-3 left-3 text-white text-xs font-medium flex items-center gap-1 drop-shadow-md">
                     <Clock className="w-3.5 h-3.5 text-white/90" />
                     <span>{item.timeAgo}</span>
                   </div>
                 </div>
 
-                {/* Content */}
                 <div className="p-4 flex-1 flex flex-col justify-between">
                   <div>
                     <h3 className="text-base font-bold text-neutral-900 group-hover:text-[#E5192D] transition-colors line-clamp-1">
@@ -241,7 +229,6 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
           </AnimatePresence>
         </motion.div>
 
-        {/* Empty state */}
         {filteredItems.length === 0 && (
           <div className="text-center py-16 px-4 bg-neutral-50 rounded-3xl border border-dashed border-neutral-200 mt-6">
             <div className="w-14 h-14 bg-red-100/60 rounded-full flex items-center justify-center mx-auto mb-4 text-[#E5192D]">

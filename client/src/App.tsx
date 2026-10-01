@@ -14,7 +14,6 @@ import { LostItemsPage } from "@/pages/landing/LostItemsPage";
 import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
 import { initialItems, type Item } from "@/data/mockItems";
 
-// Scroll to top automatically when navigating to a new route
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -43,7 +42,6 @@ export function App() {
     <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white flex flex-col justify-between">
       <ScrollToTop />
 
-      {/* Toast notifications */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -57,17 +55,14 @@ export function App() {
         }}
       />
 
-      {/* Navigation */}
       <Navbar
         onReportClick={(type) => {
           navigate(type === "lost" ? "/lost-items" : "/found-items");
         }}
       />
 
-      {/* Page Routing */}
       <div className="flex-1">
         <Routes>
-          {/* Landing Page without Items Feed */}
           <Route
             path="/"
             element={
@@ -78,24 +73,20 @@ export function App() {
             }
           />
 
-          {/* Dedicated Lost Items Page (Shows only lost items) */}
           <Route
             path="/lost-items"
             element={<LostItemsPage items={items} onAddItem={handleAddItem} />}
           />
 
-          {/* Dedicated Found Items Page (Shows only found items) */}
           <Route
             path="/found-items"
             element={<FoundItemsPage items={items} onAddItem={handleAddItem} />}
           />
 
-          {/* Catch-all redirect to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

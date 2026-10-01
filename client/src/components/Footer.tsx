@@ -32,7 +32,6 @@ export const Footer: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-neutral-900">
-          {/* Brand info */}
           <div className="lg:col-span-2 space-y-4">
             <Link
               to="/"
@@ -63,7 +62,6 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-200">
               Explore
@@ -113,7 +111,6 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Categories */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-200">
               Categories
@@ -167,7 +164,6 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Community & Contact */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-200">
               Student Affairs
@@ -185,7 +181,6 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-4">
           <p>
             © {new Date().getFullYear()} FoundIt. Built for campus communities.

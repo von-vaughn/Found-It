@@ -23,7 +23,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
 
-  // GSAP entrance animation
   useEffect(() => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
@@ -93,7 +92,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       ref={heroRef}
       className="relative py-8 md:py-10 overflow-hidden flex items-center justify-center min-h-[calc(100svh-12rem)] bg-neutral-950 text-white select-none"
     >
-      {/* Campus background image with deep dark overlay */}
       <div className="absolute inset-0 z-0">
         <img
           src="/images/campus.jpg"
@@ -103,14 +101,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <div className="absolute inset-0 bg-neutral-95/85 backdrop-blur-[3px]" />
       </div>
 
-      {/* Decorative ambient glowing orbs */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-red-600/15 rounded-full blur-[140px] pointer-events-none z-10" />
       <div className="absolute top-12 left-10 w-80 h-80 bg-[#E5192D]/10 rounded-full blur-3xl pointer-events-none z-10" />
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl pointer-events-none z-10" />
 
-      {/* Centered Main Hero Content */}
       <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-        {/* Tag / Category line */}
         <div className="hero-tag inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/10 border border-white/15 shadow-sm backdrop-blur-md mb-5">
           <span className="w-2.5 h-2.5 rounded-full bg-[#E5192D] animate-pulse" />
           <span className="text-xs sm:text-sm md:text-base font-bold tracking-[0.18em] text-neutral-200 uppercase">
@@ -118,7 +113,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </span>
         </div>
 
-        {/* Giant Centered Headline */}
         <h1
           ref={titleRef}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.04] mb-5 md:mb-6"
@@ -143,7 +137,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </span>
         </h1>
 
-        {/* Subtext */}
         <p
           ref={subtitleRef}
           className="text-base sm:text-lg md:text-xl text-neutral-300 max-w-3xl mx-auto leading-relaxed font-normal mb-6"
@@ -152,14 +145,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           discover, and safely return lost belongings — quickly and easily.
         </p>
 
-        {/* Hero Search Bar Container */}
         <div ref={searchContainerRef} className="w-full max-w-3xl mx-auto mb-6">
-          {/* Main Search Box */}
           <form
             onSubmit={handleSearchSubmit}
             className="p-2 sm:p-2.5 bg-neutral-900/90 rounded-3xl shadow-2xl shadow-black/80 border border-white/15 backdrop-blur-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 transition-all focus-within:border-red-500/80 focus-within:ring-2 focus-within:ring-red-500/20"
           >
-            {/* Type selector toggle (Lost vs Found) */}
             <div className="flex items-center p-1 bg-neutral-800/90 rounded-2xl shrink-0 self-center sm:self-auto border border-neutral-700/50">
               <button
                 type="button"
@@ -185,7 +175,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </button>
             </div>
 
-            {/* Input field */}
             <div className="relative flex-1 flex items-center min-w-0 px-2">
               <Search className="w-5 h-5 text-neutral-400 shrink-0 mr-3" />
               <input
@@ -206,7 +195,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               )}
             </div>
 
-            {/* Submit Button */}
             <Button
               type="submit"
               className={`h-12 sm:h-13 px-7 rounded-2xl font-bold text-sm sm:text-base shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 ${
@@ -220,7 +208,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </Button>
           </form>
 
-          {/* Quick Trending Tags */}
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-neutral-400">
             <span className="font-semibold text-neutral-400">Popular:</span>
             {popularTags.map((tag) => (
@@ -237,12 +224,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons Row */}
         <div
           ref={ctaRef}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1"
         >
-          {/* Primary button */}
           <Button
             onClick={onBrowseLost}
             className="w-full sm:w-auto h-12 sm:h-13 px-7 rounded-full bg-[#E5192D] hover:bg-[#c91424] text-white text-sm sm:text-base font-bold shadow-xl shadow-red-600/30 hover:shadow-red-600/50 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2.5"
@@ -251,7 +236,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             Report a Lost Item
           </Button>
 
-          {/* Secondary button */}
           <Button
             variant="outline"
             onClick={onBrowseFound}

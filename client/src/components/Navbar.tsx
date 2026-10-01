@@ -52,7 +52,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
     { name: "How It Works", path: "/#how-it-works", key: "how-it-works" },
   ];
 
-  // Determine current active item
   const getIsActive = (link: (typeof navLinks)[0]) => {
     if (link.key === "lost") return location.pathname === "/lost-items";
     if (link.key === "found") return location.pathname === "/found-items";
@@ -101,7 +100,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
       <div
         className={`${isScrolled ? "md:w-[calc(100%-15rem)]" : ""} w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between transition-[width] duration-300 ease-out`}
       >
-        {/* Brand Logo */}
         <button
           onClick={() => {
             navigate("/");
@@ -121,7 +119,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
           </span>
         </button>
 
-        {/* Desktop Navigation */}
         <nav
           ref={navRef}
           className="relative hidden md:flex items-center gap-8"
@@ -153,7 +150,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
           />
         </nav>
 
-        {/* Right Actions */}
         <div className="hidden md:flex items-center gap-4">
           <button
             type="button"
@@ -177,7 +173,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
           </Button>
         </div>
 
-        {/* Mobile menu button */}
         <div className="flex md:hidden items-center gap-2">
           <Button
             size="sm"
@@ -200,7 +195,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div

@@ -6,11 +6,9 @@ export const FoundItMarquee: React.FC = () => {
 
   return (
     <section className="relative w-full overflow-hidden py-5 sm:py-7 bg-neutral-50/70 border-y border-neutral-100/90 select-none">
-      {/* Edge gradient masks for seamless fade */}
       <div className="absolute left-0 top-0 bottom-0 w-24 sm:w-40 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-24 sm:w-40 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none" />
 
-      {/* Single Horizontal Infinite Marquee */}
       <div className="flex w-fit overflow-hidden">
         <motion.div
           animate={{ x: ["0%", "-50%"] }}

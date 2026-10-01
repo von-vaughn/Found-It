@@ -51,7 +51,6 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onBrowseLost }) => {
       className="py-24 bg-neutral-50/70 border-t border-neutral-100 relative overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Section title */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100/60 text-[#E5192D] text-xs font-bold uppercase tracking-wider mb-3">
             <Sparkles className="w-3.5 h-3.5" />
@@ -66,7 +65,6 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onBrowseLost }) => {
           </p>
         </div>
 
-        {/* 3 Steps Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           {steps.map((item, idx) => {
             const Icon = item.icon;
@@ -79,7 +77,6 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onBrowseLost }) => {
                 transition={{ duration: 0.5, delay: idx * 0.15 }}
                 className="bg-white rounded-3xl p-8 border border-neutral-200/80 shadow-xs hover:shadow-xl hover:shadow-neutral-200/40 transition-all duration-300 flex flex-col justify-between relative group"
               >
-                {/* Step number badge */}
                 <div className="flex items-center justify-between mb-6">
                   <div
                     className={`w-14 h-14 rounded-2xl ${item.color} border flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform`}
@@ -112,7 +109,6 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onBrowseLost }) => {
           })}
         </div>
 
-        {/* Report CTA */}
         <div className="mt-14 p-8 bg-neutral-900 rounded-3xl text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl shadow-neutral-950/10">
           <div>
             <h3 className="text-xl sm:text-2xl font-bold">

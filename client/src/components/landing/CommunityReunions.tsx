@@ -10,14 +10,11 @@ export const CommunityReunions: React.FC = () => {
 
   return (
     <section className="relative w-full bg-neutral-950 text-white overflow-hidden py-24 sm:py-32 lg:py-40 flex flex-col justify-center items-center select-none">
-      {/* Background ambient glowing orbs */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-red-600/15 rounded-full blur-[120px] pointer-events-none -z-0" />
       <div className="absolute -top-10 left-10 w-72 h-72 bg-[#E5192D]/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-10 right-10 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* THE BIG TEXT: "LOST AND FOUND" Covering the whole div */}
       <div className="relative z-10 w-full px-2 sm:px-6 flex flex-col items-center justify-center text-center">
-        {/* Main Giant Headline spanning across full width */}
         <motion.h2
           initial={{ opacity: 0, scale: 0.92, y: 30 }}
           whileInView={{ opacity: 1, scale: 1, y: 0 }}
@@ -36,7 +33,6 @@ export const CommunityReunions: React.FC = () => {
           </span>
         </motion.h2>
 
-        {/* Interactive CTA buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

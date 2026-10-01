@@ -55,14 +55,17 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       image: defaultImages[category] || "/images/backpack.jpg",
       description: description.trim() || "No additional details provided.",
       status: "active",
-      reward: type === "lost" && reward.trim() ? `$${reward.replace(/[^0-9]/g, "")} Reward` : undefined,
+      reward:
+        type === "lost" && reward.trim()
+          ? `$${reward.replace(/[^0-9]/g, "")} Reward`
+          : undefined,
       contactName: contactName.trim(),
     };
 
     onAddItem(newItem);
     toast.success(
       `Successfully published ${type === "lost" ? "lost" : "found"} item report!`,
-      { duration: 4000 }
+      { duration: 4000 },
     );
     onClose();
   };
@@ -84,7 +87,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden z-10 border border-neutral-100 my-8 p-6 sm:p-8"
         >
-          {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
             <div>
               <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#E5192D] mb-1">
@@ -104,7 +106,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           </div>
 
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-            {/* Type selector */}
             <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-100 rounded-xl">
               <button
                 type="button"
@@ -130,7 +131,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               </button>
             </div>
 
-            {/* Title */}
             <div>
               <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
                 Item Name / Title *
@@ -145,7 +145,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               />
             </div>
 
-            {/* Category & Location */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
@@ -153,7 +152,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                 </label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as Item["category"])}
+                  onChange={(e) =>
+                    setCategory(e.target.value as Item["category"])
+                  }
                   className="w-full h-11 px-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] transition-all"
                 >
                   <option value="electronics">📱 Electronics</option>
@@ -180,7 +181,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               </div>
             </div>
 
-            {/* Reporter / Contact name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
@@ -212,7 +212,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               )}
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
                 Description & Distinguishing Features
