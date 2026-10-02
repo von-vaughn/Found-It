@@ -28,10 +28,10 @@ export const Footer: React.FC = () => {
   return (
     <footer
       id="about"
-      className="bg-neutral-950 text-neutral-300 pt-16 pb-12 border-t border-neutral-900"
+      className="bg-white text-neutral-700 pt-16 pb-12 border-t border-neutral-200"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-neutral-900">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-neutral-200">
           <div className="lg:col-span-2 space-y-4">
             <Link
               to="/"
@@ -43,33 +43,33 @@ export const Footer: React.FC = () => {
                 alt="FoundIt logo"
                 className="w-9 h-9 object-cover rounded-none shadow-none ring-0 group-hover:scale-105 transition-transform"
               />
-              <span className="text-2xl font-extrabold tracking-tight text-white">
+              <span className="text-2xl font-extrabold tracking-tight text-neutral-900">
                 Found<span className="text-[#E5192D]">It</span>
               </span>
             </Link>
 
-            <p className="text-sm text-neutral-400 max-w-sm leading-relaxed">
+            <p className="text-sm text-neutral-600 max-w-sm leading-relaxed">
               FoundIt is the modern lost and found network connecting campus
               communities and neighborhoods to reunite people with their
               cherished belongings.
             </p>
 
-            <div className="flex items-center gap-2 text-xs text-neutral-500 pt-2">
-              <Shield className="w-4 h-4 text-emerald-500" />
+            <div className="flex items-center gap-2 text-xs text-neutral-600 pt-2">
+              <Shield className="w-4 h-4 text-[#E5192D]" />
               <span>Safe Meetup &amp; Verified Ownership Protocol</span>
             </div>
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-200">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
               Explore
             </h4>
-            <ul className="space-y-2 text-sm text-neutral-400">
+            <ul className="space-y-2 text-sm text-neutral-600">
               <li>
                 <Link
                   to="/"
                   onClick={scrollToTop}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-neutral-900 transition-colors"
                 >
                   Home
                 </Link>
@@ -87,7 +87,7 @@ export const Footer: React.FC = () => {
                 <Link
                   to="/found-items"
                   onClick={scrollToTop}
-                  className="hover:text-emerald-400 transition-colors"
+                  className="hover:text-[#E5192D] transition-colors"
                 >
                   Found Items Directory
                 </Link>
@@ -96,13 +96,16 @@ export const Footer: React.FC = () => {
                 <a
                   href="#how-it-works"
                   onClick={handleHowItWorks}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-neutral-900 transition-colors"
                 >
                   How It Works
                 </a>
               </li>
               <li>
-                <a href="#about" className="hover:text-white transition-colors">
+                <a
+                  href="#about"
+                  className="hover:text-neutral-900 transition-colors"
+                >
                   About &amp; Safety
                 </a>
               </li>
@@ -110,15 +113,15 @@ export const Footer: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-200">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
               Categories
             </h4>
-            <ul className="space-y-2 text-sm text-neutral-400">
+            <ul className="space-y-2 text-sm text-neutral-600">
               <li>
                 <Link
                   to="/lost-items"
                   onClick={scrollToTop}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-neutral-900 transition-colors"
                 >
                   Backpacks &amp; Bags
                 </Link>
@@ -127,7 +130,7 @@ export const Footer: React.FC = () => {
                 <Link
                   to="/lost-items"
                   onClick={scrollToTop}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-neutral-900 transition-colors"
                 >
                   Phones &amp; Laptops
                 </Link>
@@ -136,7 +139,7 @@ export const Footer: React.FC = () => {
                 <Link
                   to="/lost-items"
                   onClick={scrollToTop}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-neutral-900 transition-colors"
                 >
                   Keys &amp; Fobs
                 </Link>
@@ -145,7 +148,7 @@ export const Footer: React.FC = () => {
                 <Link
                   to="/lost-items"
                   onClick={scrollToTop}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-neutral-900 transition-colors"
                 >
                   Wallets &amp; Cards
                 </Link>
@@ -154,7 +157,7 @@ export const Footer: React.FC = () => {
                 <Link
                   to="/lost-items"
                   onClick={scrollToTop}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-neutral-900 transition-colors"
                 >
                   Eyewear &amp; Watches
                 </Link>
@@ -163,15 +166,15 @@ export const Footer: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-200">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
               Student Affairs
             </h4>
-            <p className="text-xs text-neutral-400 leading-relaxed">
+            <p className="text-xs text-neutral-600 leading-relaxed">
               Office of Student Affairs Lost &amp; Found Central Hub. Open
               Monday &ndash; Friday, 8:00 AM &ndash; 5:00 PM.
             </p>
-            <div className="pt-2 text-xs text-neutral-400">
-              <span className="font-semibold text-neutral-300">
+            <div className="pt-2 text-xs text-neutral-600">
+              <span className="font-semibold text-neutral-700">
                 Desk Support:
               </span>{" "}
               Room 102, Student Union Bldg.
@@ -185,7 +188,7 @@ export const Footer: React.FC = () => {
           </p>
           <button
             onClick={scrollToTop}
-            className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
           >
             Back to top <ArrowUp className="w-3.5 h-3.5" />
           </button>

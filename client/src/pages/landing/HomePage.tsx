@@ -2,7 +2,6 @@ import React from "react";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { FoundItMarquee } from "@/components/landing/FoundItMarquee";
 import { HowItWorks } from "@/components/landing/HowItWorks";
-import { CommunityReunions } from "@/components/landing/CommunityReunions";
 
 interface HomePageProps {
   onBrowseLost: () => void;
@@ -25,8 +24,6 @@ export const HomePage: React.FC<HomePageProps> = ({
 
         <HowItWorks onBrowseLost={onBrowseLost} />
       </main>
-
-      <CommunityReunions />
     </div>
   );
 };

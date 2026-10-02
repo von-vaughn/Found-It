@@ -9,6 +9,7 @@ import {
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { HomePage } from "@/pages/landing/HomePage";
 import { LostItemsPage } from "@/pages/landing/LostItemsPage";
 import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
@@ -28,6 +29,7 @@ function ScrollToTop() {
 export function App() {
   const [items, setItems] = useState<Item[]>(initialItems);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleAddItem = (newItem: Item) => {
     setItems((prev) => [newItem, ...prev]);
@@ -79,33 +81,28 @@ export function App() {
 
             <Route
               path="/lost-items"
-              element={<LostItemsPage items={items} onAddItem={handleAddItem} />}
+              element={
+                <LostItemsPage items={items} onAddItem={handleAddItem} />
+              }
             />
 
             <Route
               path="/found-items"
-              element={<FoundItemsPage items={items} onAddItem={handleAddItem} />}
+              element={
+                <FoundItemsPage items={items} onAddItem={handleAddItem} />
+              }
             />
 
-            <Route
-              path="/login"
-              element={<LoginPage defaultMode="signin" />}
-            />
+            <Route path="/login" element={<LoginPage defaultMode="signin" />} />
 
-            <Route
-              path="/signin"
-              element={<Navigate to="/login" replace />}
-            />
+            <Route path="/signin" element={<Navigate to="/login" replace />} />
 
             <Route
               path="/signup"
               element={<LoginPage defaultMode="signup" />}
             />
 
-            <Route
-              path="/verify-otp"
-              element={<VerificationPage />}
-            />
+            <Route path="/verify-otp" element={<VerificationPage />} />
 
             <Route
               path="/verify"
@@ -116,7 +113,10 @@ export function App() {
           </Routes>
         </div>
 
-        <Footer />
+        {location.pathname !== "/login" && location.pathname !== "/signup" && (
+          <Footer />
+        )}
+        {location.pathname === "/" && <CommunityReunions />}
       </div>
     </AuthProvider>
   );

@@ -10,7 +10,6 @@ import {
   EyeOff,
   ShieldCheck,
   Sparkles,
-  ArrowLeft,
   GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
   // GSAP animation refs
   const pageRef = useRef<HTMLDivElement>(null);
-  const tagRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -65,15 +63,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
       tl.fromTo(
-        tagRef.current,
-        { opacity: 0, y: -15 },
-        { opacity: 1, y: 0, duration: 0.6, delay: 0.1 },
-      )
-        .fromTo(
           titleRef.current,
           { opacity: 0, y: 30 },
           { opacity: 1, y: 0, duration: 0.8 },
-          "-=0.3",
         )
         .fromTo(
           subtitleRef.current,
@@ -139,55 +131,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   return (
     <div
       ref={pageRef}
-      className="relative min-h-[calc(100svh-5rem)] py-12 md:py-16 overflow-hidden flex items-center justify-center bg-neutral-950 text-white select-none"
+      className="relative min-h-[calc(100svh-5rem)] py-12 md:py-16 overflow-hidden flex items-center justify-center bg-white text-neutral-900 select-none"
     >
       {/* Background Campus Image Layer */}
       <div className="absolute inset-0 z-0">
         <img
           src="/images/campus.jpg"
           alt="Campus backdrop"
-          className="w-full h-full object-cover object-center opacity-25 filter brightness-50"
+          className="w-full h-full object-cover object-center opacity-10 filter brightness-75"
         />
-        <div className="absolute inset-0 bg-neutral-950/85 backdrop-blur-[3px]" />
+        <div className="absolute inset-0 bg-white/90 backdrop-blur-[3px]" />
       </div>
 
-      {/* Atmospheric Glow Blurs matching HeroSection */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-red-600/15 rounded-full blur-[140px] pointer-events-none z-10" />
+      {/* Atmospheric Glow Blurs */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-red-400/20 rounded-full blur-[140px] pointer-events-none z-10" />
       <div className="absolute top-12 left-10 w-80 h-80 bg-[#E5192D]/10 rounded-full blur-3xl pointer-events-none z-10" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl pointer-events-none z-10" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-400/10 rounded-full blur-3xl pointer-events-none z-10" />
 
       {/* Foreground Content */}
       <div className="relative z-20 w-full max-w-xl mx-auto px-4 sm:px-6 flex flex-col items-center">
-        {/* Navigation Breadcrumb / Back Link */}
-        <div className="w-full flex items-center justify-between mb-6 text-xs text-neutral-400">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Return to Home</span>
-          </Link>
-          <span className="flex items-center gap-1 text-neutral-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            256-Bit Encrypted Portal
-          </span>
-        </div>
 
-        {/* Hero Tag */}
-        <div
-          ref={tagRef}
-          className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/10 border border-white/15 shadow-sm backdrop-blur-md mb-5"
-        >
-          <span className="w-2.5 h-2.5 rounded-full bg-[#E5192D] animate-pulse" />
-          <span className="text-xs sm:text-sm font-bold tracking-[0.18em] text-neutral-200 uppercase">
-            Office of Student Affairs &bull; Secure Auth
-          </span>
-        </div>
+
+
 
         {/* Hero Headline */}
         <h1
           ref={titleRef}
-          className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white text-center leading-[1.1] mb-3"
+          className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-neutral-900 text-center leading-[1.1] mb-3"
         >
           {mode === "signin" ? "Sign in to " : "Create your "}
           <span className="text-[#E5192D] relative inline-block drop-shadow-[0_0_35px_rgba(229,25,45,0.45)]">
@@ -210,27 +180,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
         <p
           ref={subtitleRef}
-          className="text-sm sm:text-base text-neutral-300 max-w-md mx-auto text-center leading-relaxed font-normal mb-8"
+          className="text-sm sm:text-base text-neutral-500 max-w-md mx-auto text-center leading-relaxed font-normal mb-8"
         >
           {mode === "signin"
             ? "Access your campus account to manage reports, claim items, and verify identity."
             : "Join the community network to help reunite students and campus members with lost belongings."}
         </p>
 
-        {/* Glassmorphism Card */}
+        {/* Card */}
         <div
           ref={cardRef}
-          className="w-full bg-neutral-900/90 rounded-3xl shadow-2xl shadow-black/80 border border-white/15 backdrop-blur-xl p-6 sm:p-8"
+          className="w-full bg-white rounded-3xl shadow-2xl shadow-red-100/80 border border-neutral-200 backdrop-blur-xl p-6 sm:p-8"
         >
           {/* Hero Pill Tab Switcher */}
-          <div className="p-1 bg-neutral-800/90 rounded-2xl border border-neutral-700/50 flex mb-6">
+          <div className="p-1 bg-neutral-100 rounded-2xl border border-neutral-200 flex mb-6">
             <button
               type="button"
               onClick={() => setMode("signin")}
               className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer text-center ${
                 mode === "signin"
                   ? "bg-[#E5192D] text-white shadow-md shadow-red-500/30"
-                  : "text-neutral-400 hover:text-white"
+                  : "text-neutral-400 hover:text-neutral-700"
               }`}
             >
               Sign In
@@ -241,7 +211,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer text-center ${
                 mode === "signup"
                   ? "bg-[#E5192D] text-white shadow-md shadow-red-500/30"
-                  : "text-neutral-400 hover:text-white"
+                  : "text-neutral-400 hover:text-neutral-700"
               }`}
             >
               Create Account
@@ -252,7 +222,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             {mode === "signup" && (
               <>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
                     Full Name <span className="text-[#E5192D]">*</span>
                   </label>
                   <div className="relative">
@@ -263,15 +233,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Alex Rivera"
-                      className="w-full h-12 pl-11 pr-4 bg-neutral-800/90 rounded-xl border border-neutral-700/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-white placeholder-neutral-500 text-sm transition-all focus:outline-none"
+                      className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
                     Student / Faculty ID{" "}
-                    <span className="text-neutral-500 text-[10px] normal-case">
+                    <span className="text-neutral-400 text-[10px] normal-case">
                       (Optional)
                     </span>
                   </label>
@@ -282,7 +252,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       value={studentId}
                       onChange={(e) => setStudentId(e.target.value)}
                       placeholder="e.g. STU-2026-9041"
-                      className="w-full h-12 pl-11 pr-4 bg-neutral-800/90 rounded-xl border border-neutral-700/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-white placeholder-neutral-500 text-sm transition-all focus:outline-none"
+                      className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
                     />
                   </div>
                 </div>
@@ -291,7 +261,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400">
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500">
                   Campus Email <span className="text-[#E5192D]">*</span>
                 </label>
                 {mode === "signin" && (
@@ -313,14 +283,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="student@campus.edu"
-                  className="w-full h-12 pl-11 pr-4 bg-neutral-800/90 rounded-xl border border-neutral-700/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-white placeholder-neutral-500 text-sm transition-all focus:outline-none"
+                  className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400">
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500">
                   Password <span className="text-[#E5192D]">*</span>
                 </label>
                 {mode === "signin" && (
@@ -331,7 +301,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                         icon: "🔑",
                       })
                     }
-                    className="text-[11px] text-neutral-400 hover:text-neutral-200 transition-colors"
+                    className="text-[11px] text-neutral-400 hover:text-neutral-600 transition-colors"
                   >
                     Forgot password?
                   </button>
@@ -345,7 +315,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full h-12 pl-11 pr-11 bg-neutral-800/90 rounded-xl border border-neutral-700/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-white placeholder-neutral-500 text-sm transition-all focus:outline-none"
+                  className="w-full h-12 pl-11 pr-11 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
                 />
                 <button
                   type="button"
@@ -362,12 +332,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </div>
 
             {mode === "signup" && (
-              <label className="flex items-start gap-2.5 pt-1 text-xs text-neutral-400 cursor-pointer">
+              <label className="flex items-start gap-2.5 pt-1 text-xs text-neutral-500 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={agreeTerms}
                   onChange={(e) => setAgreeTerms(e.target.checked)}
-                  className="mt-0.5 rounded border-neutral-700 bg-neutral-800 text-[#E5192D] focus:ring-red-500/30"
+                  className="mt-0.5 rounded border-neutral-300 bg-white text-[#E5192D] focus:ring-red-200"
                 />
                 <span>
                   I agree to the FoundIt Campus Honor Code and community
@@ -402,9 +372,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </form>
 
           {/* Quick Info Box */}
-          <div className="mt-6 pt-5 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
+          <div className="mt-6 pt-5 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
               2-Step OTP Authentication
             </span>
             <Link
