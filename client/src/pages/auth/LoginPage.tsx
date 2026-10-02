@@ -1,0 +1,423 @@
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import gsap from "gsap";
+import {
+  Mail,
+  Lock,
+  User as UserIcon,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Sparkles,
+  ArrowLeft,
+  GraduationCap,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/useAuth";
+import toast from "react-hot-toast";
+
+interface LoginPageProps {
+  defaultMode?: "signin" | "signup";
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({
+  defaultMode = "signin",
+}) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const qMode = searchParams.get("mode");
+  const mode: "signin" | "signup" =
+    qMode === "signup" || qMode === "signin" ? qMode : defaultMode;
+
+  const setMode = (newMode: "signin" | "signup") => {
+    setSearchParams({ mode: newMode });
+  };
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Form states
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(true);
+
+  const { login, signup, isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+
+  // GSAP animation refs
+  const pageRef = useRef<HTMLDivElement>(null);
+  const tagRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      toast(`You are currently signed in as ${user.name}`, { icon: "ℹ️" });
+      navigate("/");
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      tl.fromTo(
+        tagRef.current,
+        { opacity: 0, y: -15 },
+        { opacity: 1, y: 0, duration: 0.6, delay: 0.1 },
+      )
+        .fromTo(
+          titleRef.current,
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.8 },
+          "-=0.3",
+        )
+        .fromTo(
+          subtitleRef.current,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.7 },
+          "-=0.5",
+        )
+        .fromTo(
+          cardRef.current,
+          { opacity: 0, y: 25, scale: 0.97 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "back.out(1.1)" },
+          "-=0.4",
+        );
+    }, pageRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  const handleFillDemo = () => {
+    setEmail("student@campus.edu");
+    setPassword("campus2026!");
+    toast.success("Loaded demo credentials", { duration: 2500 });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email.trim()) {
+      toast.error("Please enter your campus email address.");
+      return;
+    }
+
+    if (mode === "signup" && !name.trim()) {
+      toast.error("Please enter your full name.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      if (mode === "signin") {
+        await login(email, password);
+      } else {
+        await signup({
+          name: name.trim(),
+          email: email.trim(),
+          studentId: studentId.trim(),
+          password,
+        });
+      }
+
+      // Smooth simulated network transit to 6-digit OTP verification
+      setTimeout(() => {
+        setIsLoading(false);
+        navigate(`/verify-otp?email=${encodeURIComponent(email.trim())}`);
+      }, 500);
+    } catch {
+      setIsLoading(false);
+      toast.error("An error occurred during submission. Please try again.");
+    }
+  };
+
+  return (
+    <div
+      ref={pageRef}
+      className="relative min-h-[calc(100svh-5rem)] py-12 md:py-16 overflow-hidden flex items-center justify-center bg-neutral-950 text-white select-none"
+    >
+      {/* Background Campus Image Layer */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/images/campus.jpg"
+          alt="Campus backdrop"
+          className="w-full h-full object-cover object-center opacity-25 filter brightness-50"
+        />
+        <div className="absolute inset-0 bg-neutral-950/85 backdrop-blur-[3px]" />
+      </div>
+
+      {/* Atmospheric Glow Blurs matching HeroSection */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-red-600/15 rounded-full blur-[140px] pointer-events-none z-10" />
+      <div className="absolute top-12 left-10 w-80 h-80 bg-[#E5192D]/10 rounded-full blur-3xl pointer-events-none z-10" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl pointer-events-none z-10" />
+
+      {/* Foreground Content */}
+      <div className="relative z-20 w-full max-w-xl mx-auto px-4 sm:px-6 flex flex-col items-center">
+        {/* Navigation Breadcrumb / Back Link */}
+        <div className="w-full flex items-center justify-between mb-6 text-xs text-neutral-400">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Home</span>
+          </Link>
+          <span className="flex items-center gap-1 text-neutral-400">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            256-Bit Encrypted Portal
+          </span>
+        </div>
+
+        {/* Hero Tag */}
+        <div
+          ref={tagRef}
+          className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/10 border border-white/15 shadow-sm backdrop-blur-md mb-5"
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-[#E5192D] animate-pulse" />
+          <span className="text-xs sm:text-sm font-bold tracking-[0.18em] text-neutral-200 uppercase">
+            Office of Student Affairs &bull; Secure Auth
+          </span>
+        </div>
+
+        {/* Hero Headline */}
+        <h1
+          ref={titleRef}
+          className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white text-center leading-[1.1] mb-3"
+        >
+          {mode === "signin" ? "Sign in to " : "Create your "}
+          <span className="text-[#E5192D] relative inline-block drop-shadow-[0_0_35px_rgba(229,25,45,0.45)]">
+            FoundIt.
+            <svg
+              className="absolute -bottom-2 left-0 w-full h-3.5 text-[#E5192D]/50"
+              viewBox="0 0 200 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 9C50 3 150 3 197 9"
+                stroke="currentColor"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </span>
+        </h1>
+
+        <p
+          ref={subtitleRef}
+          className="text-sm sm:text-base text-neutral-300 max-w-md mx-auto text-center leading-relaxed font-normal mb-8"
+        >
+          {mode === "signin"
+            ? "Access your campus account to manage reports, claim items, and verify identity."
+            : "Join the community network to help reunite students and campus members with lost belongings."}
+        </p>
+
+        {/* Glassmorphism Card */}
+        <div
+          ref={cardRef}
+          className="w-full bg-neutral-900/90 rounded-3xl shadow-2xl shadow-black/80 border border-white/15 backdrop-blur-xl p-6 sm:p-8"
+        >
+          {/* Hero Pill Tab Switcher */}
+          <div className="p-1 bg-neutral-800/90 rounded-2xl border border-neutral-700/50 flex mb-6">
+            <button
+              type="button"
+              onClick={() => setMode("signin")}
+              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer text-center ${
+                mode === "signin"
+                  ? "bg-[#E5192D] text-white shadow-md shadow-red-500/30"
+                  : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("signup")}
+              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer text-center ${
+                mode === "signup"
+                  ? "bg-[#E5192D] text-white shadow-md shadow-red-500/30"
+                  : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              Create Account
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "signup" && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Full Name <span className="text-[#E5192D]">*</span>
+                  </label>
+                  <div className="relative">
+                    <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Alex Rivera"
+                      className="w-full h-12 pl-11 pr-4 bg-neutral-800/90 rounded-xl border border-neutral-700/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-white placeholder-neutral-500 text-sm transition-all focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Student / Faculty ID{" "}
+                    <span className="text-neutral-500 text-[10px] normal-case">
+                      (Optional)
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <GraduationCap className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={studentId}
+                      onChange={(e) => setStudentId(e.target.value)}
+                      placeholder="e.g. STU-2026-9041"
+                      className="w-full h-12 pl-11 pr-4 bg-neutral-800/90 rounded-xl border border-neutral-700/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-white placeholder-neutral-500 text-sm transition-all focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  Campus Email <span className="text-[#E5192D]">*</span>
+                </label>
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    onClick={handleFillDemo}
+                    className="text-[11px] text-[#E5192D] hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Fill Demo User
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <Mail className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="student@campus.edu"
+                  className="w-full h-12 pl-11 pr-4 bg-neutral-800/90 rounded-xl border border-neutral-700/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-white placeholder-neutral-500 text-sm transition-all focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  Password <span className="text-[#E5192D]">*</span>
+                </label>
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toast("Enter your email and click Continue to verify via 6-digit OTP", {
+                        icon: "🔑",
+                      })
+                    }
+                    className="text-[11px] text-neutral-400 hover:text-neutral-200 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <Lock className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full h-12 pl-11 pr-11 bg-neutral-800/90 rounded-xl border border-neutral-700/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-white placeholder-neutral-500 text-sm transition-all focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {mode === "signup" && (
+              <label className="flex items-start gap-2.5 pt-1 text-xs text-neutral-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  className="mt-0.5 rounded border-neutral-700 bg-neutral-800 text-[#E5192D] focus:ring-red-500/30"
+                />
+                <span>
+                  I agree to the FoundIt Campus Honor Code and community
+                  verification guidelines.
+                </span>
+              </label>
+            )}
+
+            <div className="pt-2">
+              <Button
+                type="submit"
+                disabled={isLoading || (mode === "signup" && !agreeTerms)}
+                className="w-full h-12 sm:h-13 rounded-2xl bg-[#E5192D] hover:bg-[#c91424] text-white font-bold text-sm sm:text-base shadow-xl shadow-red-600/30 hover:shadow-red-600/50 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Sending 6-Digit Code...
+                  </span>
+                ) : (
+                  <>
+                    <span>
+                      {mode === "signin"
+                        ? "Continue to 6-Digit Auth"
+                        : "Register & Get 6-Digit Code"}
+                    </span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+
+          {/* Quick Info Box */}
+          <div className="mt-6 pt-5 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              2-Step OTP Authentication
+            </span>
+            <Link
+              to="/verify-otp"
+              className="text-[#E5192D] hover:underline font-semibold"
+            >
+              Have a code already? &rarr;
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;
