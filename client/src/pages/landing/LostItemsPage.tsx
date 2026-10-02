@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
   MapPin,
@@ -159,29 +158,20 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
           </div>
         </div>
 
-        <motion.div
-          layout
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-        >
-          <AnimatePresence>
-            {filteredItems.map((item) => (
-              <motion.div
-                layout
-                key={item.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.25 }}
-                onClick={() => setSelectedItem(item)}
-                className="group bg-white rounded-2xl border border-neutral-200/80 hover:border-red-300/80 overflow-hidden shadow-xs hover:shadow-xl hover:shadow-red-500/5 transition-all duration-300 flex flex-col cursor-pointer"
-              >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredItems.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => setSelectedItem(item)}
+              className="group bg-white rounded-2xl border border-neutral-200/80 overflow-hidden shadow-xs flex flex-col cursor-pointer"
+            >
                 <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden">
                   <img
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
                   <div className="absolute top-3 left-3 flex items-center gap-1.5">
                     <span className="bg-[#E5192D] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5">
@@ -205,7 +195,7 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
 
                 <div className="p-4 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-neutral-900 group-hover:text-[#E5192D] transition-colors line-clamp-1">
+                    <h3 className="text-base font-bold text-neutral-900 line-clamp-1">
                       {item.title}
                     </h3>
                     <p className="text-xs text-neutral-500 mt-1.5 line-clamp-2 leading-relaxed">
@@ -219,15 +209,14 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
                       <span className="truncate">{item.location}</span>
                     </div>
 
-                    <span className="text-xs font-semibold text-[#E5192D] group-hover:underline">
+                    <span className="text-xs font-semibold text-[#E5192D]">
                       I Found This &rarr;
                     </span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
-        </motion.div>
+        </div>
 
         {filteredItems.length === 0 && (
           <div className="text-center py-16 px-4 bg-white rounded-3xl border border-dashed border-neutral-200 mt-6 shadow-xs">

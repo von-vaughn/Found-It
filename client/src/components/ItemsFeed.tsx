@@ -157,19 +157,19 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
           </div>
         </div>
 
-        <motion.div
-          layout
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-        >
-          <AnimatePresence>
-            {filteredItems.map((item) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <AnimatePresence initial={false}>
+            {filteredItems.map((item, index) => (
               <motion.div
-                layout
                 key={item.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  duration: 0.18,
+                  ease: "easeOut",
+                  delay: index * 0.015,
+                }}
                 className="group bg-white rounded-2xl border border-neutral-200/80 hover:border-neutral-300 overflow-hidden shadow-xs hover:shadow-xl hover:shadow-neutral-200/50 transition-all duration-300 flex flex-col"
               >
                 <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden">
@@ -227,7 +227,7 @@ export const ItemsFeed: React.FC<ItemsFeedProps> = ({
               </motion.div>
             ))}
           </AnimatePresence>
-        </motion.div>
+        </div>
 
         {filteredItems.length === 0 && (
           <div className="text-center py-16 px-4 bg-neutral-50 rounded-3xl border border-dashed border-neutral-200 mt-6">

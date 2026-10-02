@@ -1,7 +1,6 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowUpRight, Search } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 export const CommunityReunions: React.FC = () => {
   const scrollToTop = () => {
@@ -38,16 +37,8 @@ export const CommunityReunions: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.35 }}
-          className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-4 px-4"
+          className="mt-8 sm:mt-10 flex items-center justify-center px-4"
         >
-          <Link
-            to="/recent-items"
-            className="h-12 px-8 rounded-full bg-[#E5192D] hover:bg-[#c91424] text-white font-semibold text-sm shadow-lg shadow-red-600/30 hover:shadow-xl hover:shadow-red-600/40 transition-all duration-300 flex items-center gap-2 cursor-pointer transform hover:-translate-y-0.5"
-          >
-            <Search className="w-4 h-4" />
-            Search All Items
-          </Link>
-
           <button
             type="button"
             onClick={scrollToTop}

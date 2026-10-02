@@ -68,20 +68,20 @@ export const FoundItemsPage: React.FC<FoundItemsPageProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => setSelectedItem(item)}
-                className="group text-left bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-xs hover:shadow-lg transition-shadow cursor-pointer"
+                className="group text-left bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-xs cursor-pointer"
               >
                 <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden">
                   <img
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover"
                   />
                   <span className="absolute top-3 left-3 bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">
                     FOUND
                   </span>
                 </div>
                 <div className="p-4">
-                  <h2 className="font-bold text-neutral-900 group-hover:text-emerald-700">
+                  <h2 className="font-bold text-neutral-900">
                     {item.title}
                   </h2>
                   <p className="text-sm text-neutral-500 mt-1 line-clamp-2">
