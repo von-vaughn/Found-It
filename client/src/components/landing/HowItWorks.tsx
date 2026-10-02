@@ -101,11 +101,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-[13fr_11fr] xl:grid-cols-[8fr_5fr] gap-8 items-start">
           {/* ================= LEFT COLUMN: Visual Showcase & 4 Thumbnail Cards ================= */}
           <div className="relative">
-            <div className="bg-[#26090D] rounded-[2rem] p-3 sm:p-4 border border-white/10 shadow-sm relative overflow-hidden">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-red-600/15 rounded-full blur-[120px] pointer-events-none z-0" />
-              <div className="absolute -top-10 left-10 w-72 h-72 bg-[#E5192D]/10 rounded-full blur-3xl pointer-events-none z-0" />
-              <div className="absolute -bottom-10 right-10 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none z-0" />
-
+            <div className="bg-[#7F1D1D] rounded-[2rem] p-3 sm:p-4 border border-white/10 shadow-sm relative overflow-hidden">
               <div className="relative z-10 grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-3.5 lg:h-[720px]">
                 {/* Large Featured Card (Spans 8 cols on sm+) */}
                 <motion.div
@@ -124,9 +120,6 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
                       className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
                     />
                   </AnimatePresence>
-
-                  {/* Gradient overlays for readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/50 pointer-events-none" />
 
                   {/* Top Header Badge: [Search Icon] LOST & FOUND | 01 */}
                   <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between">
@@ -210,8 +203,6 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
                           alt={item.title}
                           className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent group-hover:from-black/85 transition-colors" />
-
                         {/* Pill badge at bottom-left */}
                         <div className="absolute bottom-2 left-2 z-10">
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15 shadow-sm group-hover:bg-[#E5192D] group-hover:border-transparent transition-colors">
