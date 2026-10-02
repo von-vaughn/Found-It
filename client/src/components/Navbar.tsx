@@ -1,20 +1,22 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/useAuth";
 
 interface NavbarProps {
   onReportClick?: (type: "lost" | "found") => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
+export const Navbar: React.FC<NavbarProps> = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const moveIndicator = (linkElement: HTMLButtonElement) => {
     const indicator = indicatorRef.current;
@@ -37,7 +39,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
       const activeLink = navRef.current?.querySelector<HTMLButtonElement>(
         "[data-active='true']",
       );
-      if (activeLink) moveIndicator(activeLink);
+      if (activeLink) {
+        moveIndicator(activeLink);
+      } else {
+        const indicator = indicatorRef.current;
+        if (indicator) indicator.style.width = "0px";
+      }
     };
 
     updateIndicatorPosition();
@@ -83,15 +90,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
           if (elem) elem.scrollIntoView({ behavior: "smooth" });
         }, 100);
       }
-    }
-  };
-
-  const handleReportAction = (type: "lost" | "found") => {
-    setMobileMenuOpen(false);
-    if (onReportClick) {
-      onReportClick(type);
-    } else {
-      navigate(type === "lost" ? "/lost-items" : "/found-items");
     }
   };
 
@@ -149,36 +147,71 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() =>
-              handleNavClick({
-                name: "Lost Items",
-                path: "/lost-items",
-                key: "lost",
-              })
-            }
-            className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 px-3 py-2 transition-colors cursor-pointer"
-          >
-            Sign up
-          </button>
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 border border-neutral-200/80">
+                <span className="w-7 h-7 rounded-full bg-[#E5192D] text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+                  {user.name.charAt(0)}
+                </span>
+                <span className="text-xs font-bold text-neutral-800 max-w-[120px] truncate">
+                  {user.name}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={logout}
+                className="h-10 px-4 rounded-full border-neutral-200 text-neutral-700 hover:text-[#E5192D] hover:border-red-200 hover:bg-red-50 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign out
+              </Button>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  navigate("/signup");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 px-3 py-2 transition-colors cursor-pointer"
+              >
+                Sign up
+              </button>
 
-          <Button
-            onClick={() => handleReportAction("lost")}
-            className="h-11 px-6 rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-          >
-            Sign in
-          </Button>
+              <Button
+                onClick={() => {
+                  navigate("/login");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="h-11 px-6 rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+              >
+                Sign in
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="flex md:hidden items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => handleReportAction("lost")}
-            className="h-9 px-3.5 rounded-full bg-[#E5192D] text-white text-xs font-semibold cursor-pointer"
-          >
-            Sign in
-          </Button>
+          {isAuthenticated ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={logout}
+              className="h-9 px-3 rounded-full text-xs font-semibold cursor-pointer"
+            >
+              Sign out
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => navigate("/login")}
+              className="h-9 px-3.5 rounded-full bg-[#E5192D] text-white text-xs font-semibold cursor-pointer"
+            >
+              Sign in
+            </Button>
+          )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
@@ -218,6 +251,46 @@ export const Navbar: React.FC<NavbarProps> = ({ onReportClick }) => {
                   </button>
                 );
               })}
+
+              <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2">
+                {isAuthenticated && user ? (
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm font-bold text-neutral-800">
+                      {user.name}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        logout();
+                      }}
+                      className="text-xs text-red-600 font-bold"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate("/signup");
+                      }}
+                      className="text-left py-2 text-sm font-semibold text-neutral-700 hover:text-neutral-900"
+                    >
+                      Create an account (Sign up)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate("/login");
+                      }}
+                      className="text-left py-2 text-sm font-semibold text-[#E5192D]"
+                    >
+                      Sign in with 6-digit code
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
