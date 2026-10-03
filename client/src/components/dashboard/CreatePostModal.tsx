@@ -83,7 +83,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/50 backdrop-blur-xs">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden z-10 border border-neutral-100 my-8 p-6">
+      <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden z-10 border border-neutral-100 my-8 p-6">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
           <div>
@@ -103,103 +103,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          {/* Post Type Selector */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-100 rounded-xl">
-            <button
-              type="button"
-              onClick={() => setType("lost")}
-              className={`py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                type === "lost"
-                  ? "bg-[#E5192D] text-white shadow-xs"
-                  : "text-neutral-600 hover:text-neutral-900"
-              }`}
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              I Lost An Item
-            </button>
-            <button
-              type="button"
-              onClick={() => setType("found")}
-              className={`py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                type === "found"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-neutral-600 hover:text-neutral-900"
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              I Found An Item
-            </button>
-          </div>
-
-          {/* Title */}
-          <div>
-            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
-              Item Title *
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Black Backpack, iPhone 13, Hydro Flask"
-              className="w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D]"
-            />
-          </div>
-
-          {/* Location & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
-                Location *
-              </label>
-              <input
-                type="text"
-                required
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. WMSU Campus, Library"
-                className="w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
-                Category
-              </label>
-              <select
-                value={category}
-                onChange={(e) =>
-                  setCategory(e.target.value as Item["category"])
-                }
-                className="w-full h-11 px-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D]"
-              >
-                <option value="bags">Bags & Backpacks</option>
-                <option value="electronics">Electronics</option>
-                <option value="keys">Keys & Fobs</option>
-                <option value="wallets">Wallets & IDs</option>
-                <option value="accessories">Accessories</option>
-                <option value="other">Other Items</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
-              Description & Details
-            </label>
-            <textarea
-              rows={2}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe distinctive features, marks, or where it was last seen..."
-              className="w-full p-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] resize-none"
-            />
-          </div>
-
+        <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Image Attachment Options */}
-          <div>
+          <div className="md:row-start-1">
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
                 Photo Attachment
@@ -226,7 +132,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                     </option>
                   ))}
                 </select>
-                <div className="w-full h-24 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
+                <div className="w-full h-64 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
                   <img
                     src={selectedImage}
                     alt="Preview"
@@ -235,14 +141,110 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="p-3 bg-neutral-50 border border-dashed border-neutral-200 rounded-xl text-center text-xs text-neutral-400">
+              <div className="h-[19rem] p-3 bg-neutral-50 border border-dashed border-neutral-200 rounded-xl flex items-center justify-center text-center text-xs text-neutral-400">
                 Item will be posted without an image attached.
               </div>
             )}
           </div>
 
+          <div className="space-y-4 md:col-start-2 md:row-start-1">
+            {/* Post Type Selector */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setType("lost")}
+                className={`py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                  type === "lost"
+                    ? "bg-[#E5192D] text-white shadow-xs"
+                    : "text-neutral-600 hover:text-neutral-900"
+                }`}
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                I Lost An Item
+              </button>
+              <button
+                type="button"
+                onClick={() => setType("found")}
+                className={`py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                  type === "found"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-neutral-600 hover:text-neutral-900"
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                I Found An Item
+              </button>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
+                Item Title *
+              </label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Black Backpack, iPhone 13, Hydro Flask"
+                className="w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D]"
+              />
+            </div>
+
+            {/* Location & Category */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g. WMSU Campus, Library"
+                  className="w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
+                  Category
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) =>
+                    setCategory(e.target.value as Item["category"])
+                  }
+                  className="w-full h-11 px-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D]"
+                >
+                  <option value="bags">Bags & Backpacks</option>
+                  <option value="electronics">Electronics</option>
+                  <option value="keys">Keys & Fobs</option>
+                  <option value="wallets">Wallets & IDs</option>
+                  <option value="accessories">Accessories</option>
+                  <option value="other">Other Items</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
+                Description & Details
+              </label>
+              <textarea
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe distinctive features, marks, or where it was last seen..."
+                className="w-full p-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] resize-none"
+              />
+            </div>
+          </div>
+
           {/* Submit */}
-          <div className="pt-2 flex items-center gap-3">
+          <div className="pt-2 flex items-center gap-3 md:col-span-2">
             <button
               type="submit"
               className="flex-1 h-11 rounded-xl bg-[#E5192D] hover:bg-[#c91424] text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
