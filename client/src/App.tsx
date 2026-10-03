@@ -13,7 +13,7 @@ import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { HomePage } from "@/pages/landing/HomePage";
 import { LostItemsPage } from "@/pages/landing/LostItemsPage";
 import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
-import { DashboardPage } from "@/pages/dashboard/DashboardPage";
+import { DashboardPage } from "@/pages/school_user/DashboardPage";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { VerificationPage } from "@/pages/auth/VerificationPage";
 import { AuthProvider } from "@/context/AuthContext";
