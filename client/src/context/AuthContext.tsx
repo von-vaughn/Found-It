@@ -93,10 +93,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return code;
   };
 
-  const login = async (email: string): Promise<boolean> => {
+  const login = async (email: string, _password?: string): Promise<boolean> => {
     const trimmedEmail = email.trim().toLowerCase();
-    setPendingEmailState(trimmedEmail);
-    sendOtp(trimmedEmail);
+    const allowedDomains = ["@wmsu.edu.ph", "@campus.edu"];
+    const isKnownUser =
+      trimmedEmail in registeredUsers ||
+      allowedDomains.some((domain) => trimmedEmail.endsWith(domain));
+
+    if (!isKnownUser) {
+      toast.error(
+        "Account not found. Please sign up or use a valid school email.",
+      );
+      return false;
+    }
+
+    const profile = registeredUsers[trimmedEmail] || {
+      name: trimmedEmail.split("@")[0].replace(/[._-]/g, " "),
+      studentId: "",
+    };
+
+    const newUser: User = {
+      id: `usr_${Date.now()}`,
+      name: profile.name,
+      email: trimmedEmail,
+      studentId: profile.studentId,
+      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+        profile.name,
+      )}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    setUser(newUser);
+    setPendingEmailState(null);
+    toast.success(`Welcome back, ${newUser.name}!`, {
+      icon: "🎉",
+    });
     return true;
   };
 
@@ -156,7 +187,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return {
       success: false,
-      message: "Invalid 6-digit verification code. Please try again or use 123456.",
+      message:
+        "Invalid 6-digit verification code. Please try again or use 123456.",
     };
   };
 
@@ -187,4 +219,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     </AuthContext.Provider>
   );
 };
-

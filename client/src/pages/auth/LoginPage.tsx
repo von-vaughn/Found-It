@@ -10,7 +10,6 @@ import {
   EyeOff,
   ShieldCheck,
   Sparkles,
-  GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/useAuth";
@@ -38,8 +37,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [studentId, setStudentId] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   const { login, signup, isAuthenticated, user } = useAuth();
@@ -63,10 +63,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
       tl.fromTo(
-          titleRef.current,
-          { opacity: 0, y: 30 },
-          { opacity: 1, y: 0, duration: 0.8 },
-        )
+        titleRef.current,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.8 },
+      )
         .fromTo(
           subtitleRef.current,
           { opacity: 0, y: 20 },
@@ -93,29 +93,54 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email.trim()) {
-      toast.error("Please enter your campus email address.");
+    const safeEmail = email.trim() || "user@wmsu.edu.ph";
+    const safeFirstName = firstName.trim() || "User";
+    const safeLastName = lastName.trim() || "Guest";
+    const safePassword = password || "password123";
+    const safeConfirmPassword = confirmPassword || safePassword;
+
+    if (mode === "signin") {
+      if (!email.trim()) {
+        toast.error("Please enter your school email address.");
+        return;
+      }
+    }
+
+    if (
+      mode === "signup" &&
+      password &&
+      confirmPassword &&
+      password !== confirmPassword
+    ) {
+      toast.error("Passwords do not match.");
       return;
     }
 
-    if (mode === "signup" && !name.trim()) {
-      toast.error("Please enter your full name.");
-      return;
-    }
-
+    setEmail(safeEmail);
+    setFirstName(safeFirstName);
+    setLastName(safeLastName);
+    setPassword(safePassword);
+    setConfirmPassword(safeConfirmPassword);
     setIsLoading(true);
 
     try {
       if (mode === "signin") {
-        await login(email, password);
-      } else {
-        await signup({
-          name: name.trim(),
-          email: email.trim(),
-          studentId: studentId.trim(),
-          password,
-        });
+        const success = await login(email, password);
+        setIsLoading(false);
+
+        if (success) {
+          navigate("/");
+          return;
+        }
+
+        return;
       }
+
+      await signup({
+        name: `${safeFirstName} ${safeLastName}`,
+        email: safeEmail,
+        password: safePassword,
+      });
 
       // Smooth simulated network transit to 6-digit OTP verification
       setTimeout(() => {
@@ -150,10 +175,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
       {/* Foreground Content */}
       <div className="relative z-20 w-full max-w-xl mx-auto px-4 sm:px-6 flex flex-col items-center">
-
-
-
-
         {/* Hero Headline */}
         <h1
           ref={titleRef}
@@ -192,68 +213,40 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           ref={cardRef}
           className="w-full bg-white rounded-3xl shadow-2xl shadow-red-100/80 border border-neutral-200 backdrop-blur-xl p-6 sm:p-8"
         >
-          {/* Hero Pill Tab Switcher */}
-          <div className="p-1 bg-neutral-100 rounded-2xl border border-neutral-200 flex mb-6">
-            <button
-              type="button"
-              onClick={() => setMode("signin")}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer text-center ${
-                mode === "signin"
-                  ? "bg-[#E5192D] text-white shadow-md shadow-red-500/30"
-                  : "text-neutral-400 hover:text-neutral-700"
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("signup")}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer text-center ${
-                mode === "signup"
-                  ? "bg-[#E5192D] text-white shadow-md shadow-red-500/30"
-                  : "text-neutral-400 hover:text-neutral-700"
-              }`}
-            >
-              Create Account
-            </button>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
               <>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
-                    Full Name <span className="text-[#E5192D]">*</span>
-                  </label>
-                  <div className="relative">
-                    <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Alex Rivera"
-                      className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                      First Name <span className="text-[#E5192D]">*</span>
+                    </label>
+                    <div className="relative">
+                      <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="e.g. Alex"
+                        className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
-                    Student / Faculty ID{" "}
-                    <span className="text-neutral-400 text-[10px] normal-case">
-                      (Optional)
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <GraduationCap className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      value={studentId}
-                      onChange={(e) => setStudentId(e.target.value)}
-                      placeholder="e.g. STU-2026-9041"
-                      className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
-                    />
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                      Last Name <span className="text-[#E5192D]">*</span>
+                    </label>
+                    <div className="relative">
+                      <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        placeholder="e.g. Rivera"
+                        className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </>
@@ -262,7 +255,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500">
-                  Campus Email <span className="text-[#E5192D]">*</span>
+                  School Email <span className="text-[#E5192D]">*</span>
                 </label>
                 {mode === "signin" && (
                   <button
@@ -279,10 +272,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <Mail className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@campus.edu"
+                  placeholder="user@wmsu.edu.ph"
                   className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
                 />
               </div>
@@ -297,9 +289,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   <button
                     type="button"
                     onClick={() =>
-                      toast("Enter your email and click Continue to verify via 6-digit OTP", {
-                        icon: "🔑",
-                      })
+                      toast(
+                        "Enter your email and click Continue to verify via 6-digit OTP",
+                        {
+                          icon: "🔑",
+                        },
+                      )
                     }
                     className="text-[11px] text-neutral-400 hover:text-neutral-600 transition-colors"
                   >
@@ -311,7 +306,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <Lock className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type={showPassword ? "text" : "password"}
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
@@ -330,6 +324,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 </button>
               </div>
             </div>
+
+            {mode === "signup" && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                  Confirm Password <span className="text-[#E5192D]">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                    className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
 
             {mode === "signup" && (
               <label className="flex items-start gap-2.5 pt-1 text-xs text-neutral-500 cursor-pointer">
@@ -359,11 +371,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   </span>
                 ) : (
                   <>
-                    <span>
-                      {mode === "signin"
-                        ? "Continue to 6-Digit Auth"
-                        : "Register & Get 6-Digit Code"}
-                    </span>
+                    <span>{mode === "signin" ? "Sign In" : "Register"}</span>
                     <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                   </>
                 )}
@@ -371,18 +379,30 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </div>
           </form>
 
-          {/* Quick Info Box */}
-          <div className="mt-6 pt-5 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              2-Step OTP Authentication
-            </span>
-            <Link
-              to="/verify-otp"
-              className="text-[#E5192D] hover:underline font-semibold"
-            >
-              Have a code already? &rarr;
-            </Link>
+          <div className="mt-5 text-center text-sm text-neutral-500">
+            {mode === "signin" ? (
+              <>
+                Don&apos;t have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => setMode("signup")}
+                  className="font-semibold text-[#E5192D] hover:underline"
+                >
+                  Create account
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => setMode("signin")}
+                  className="font-semibold text-[#E5192D] hover:underline"
+                >
+                  Sign in
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

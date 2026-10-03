@@ -2,13 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import gsap from "gsap";
 import {
-  ShieldCheck,
   ArrowRight,
   ArrowLeft,
   RotateCcw,
   Sparkles,
   KeyRound,
-  CheckCircle2,
   Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,15 +16,11 @@ import toast from "react-hot-toast";
 export const VerificationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const {
-    pendingEmail,
-    currentOtp,
-    verifyOtp,
-    sendOtp,
-    isAuthenticated,
-  } = useAuth();
+  const { pendingEmail, currentOtp, verifyOtp, sendOtp, isAuthenticated } =
+    useAuth();
 
-  const email = searchParams.get("email") || pendingEmail || "student@campus.edu";
+  const email =
+    searchParams.get("email") || pendingEmail || "student@campus.edu";
 
   const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [activeSlot, setActiveSlot] = useState<number>(0);
@@ -258,55 +252,40 @@ export const VerificationPage: React.FC = () => {
   return (
     <div
       ref={pageRef}
-      className="relative min-h-[calc(100svh-5rem)] py-12 md:py-16 overflow-hidden flex items-center justify-center bg-neutral-950 text-white select-none"
+      className="relative min-h-[calc(100svh-5rem)] py-12 md:py-16 overflow-hidden flex items-center justify-center bg-white text-neutral-900 select-none"
     >
-      {/* Background Campus Image Layer matching HeroSection */}
+      {/* Background Campus Image Layer matching auth pages */}
       <div className="absolute inset-0 z-0">
         <img
           src="/images/campus.jpg"
           alt="Campus backdrop"
-          className="w-full h-full object-cover object-center opacity-25 filter brightness-50"
+          className="w-full h-full object-cover object-center opacity-10 filter brightness-75"
         />
-        <div className="absolute inset-0 bg-neutral-950/85 backdrop-blur-[3px]" />
+        <div className="absolute inset-0 bg-white/90 backdrop-blur-[3px]" />
       </div>
 
       {/* Atmospheric Glow Blurs */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-red-600/15 rounded-full blur-[140px] pointer-events-none z-10" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-red-400/20 rounded-full blur-[140px] pointer-events-none z-10" />
       <div className="absolute top-12 left-10 w-80 h-80 bg-[#E5192D]/10 rounded-full blur-3xl pointer-events-none z-10" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl pointer-events-none z-10" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-400/10 rounded-full blur-3xl pointer-events-none z-10" />
 
       {/* Foreground Container */}
       <div className="relative z-20 w-full max-w-xl mx-auto px-4 sm:px-6 flex flex-col items-center">
         {/* Navigation Breadcrumb */}
-        <div className="w-full flex items-center justify-between mb-6 text-xs text-neutral-400">
+        <div className="w-full flex items-center justify-between mb-6 text-xs text-neutral-500">
           <Link
             to="/login"
-            className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 hover:text-neutral-900 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Change Email / Back</span>
           </Link>
-          <span className="flex items-center gap-1 text-neutral-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            2FA Verification
-          </span>
-        </div>
-
-        {/* Hero Tag */}
-        <div
-          ref={tagRef}
-          className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/10 border border-white/15 shadow-sm backdrop-blur-md mb-5"
-        >
-          <span className="w-2.5 h-2.5 rounded-full bg-[#E5192D] animate-pulse" />
-          <span className="text-xs sm:text-sm font-bold tracking-[0.18em] text-neutral-200 uppercase">
-            Two-Step Authentication &bull; 6 Digits
-          </span>
         </div>
 
         {/* Hero Headline */}
         <h1
           ref={titleRef}
-          className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white text-center leading-[1.1] mb-3"
+          className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-neutral-900 text-center leading-[1.1] mb-3"
         >
           Verify Your{" "}
           <span className="text-[#E5192D] relative inline-block drop-shadow-[0_0_35px_rgba(229,25,45,0.45)]">
@@ -329,23 +308,23 @@ export const VerificationPage: React.FC = () => {
 
         <p
           ref={subtitleRef}
-          className="text-sm sm:text-base text-neutral-300 max-w-md mx-auto text-center leading-relaxed font-normal mb-8"
+          className="text-sm sm:text-base text-neutral-500 max-w-md mx-auto text-center leading-relaxed font-normal mb-8"
         >
           We sent a 6-digit confirmation code to{" "}
-          <span className="text-white font-semibold underline underline-offset-4 decoration-[#E5192D]">
+          <span className="text-neutral-900 font-semibold underline underline-offset-4 decoration-[#E5192D]">
             {email}
           </span>
           . Enter the code below to complete authentication.
         </p>
 
-        {/* Glassmorphism Card */}
+        {/* Auth Card */}
         <div
           ref={cardRef}
-          className="w-full bg-neutral-900/90 rounded-3xl shadow-2xl shadow-black/80 border border-white/15 backdrop-blur-xl p-6 sm:p-8 flex flex-col items-center"
+          className="w-full bg-white rounded-3xl shadow-2xl shadow-red-100/80 border border-neutral-200 backdrop-blur-xl p-6 sm:p-8 flex flex-col items-center"
         >
           {/* Email Badge with quick change link */}
-          <div className="w-full flex items-center justify-between p-3 bg-neutral-800/80 rounded-2xl border border-neutral-700/60 mb-6 text-xs">
-            <div className="flex items-center gap-2 truncate text-neutral-300">
+          <div className="w-full flex items-center justify-between p-3 bg-neutral-50 rounded-2xl border border-neutral-200 mb-6 text-xs">
+            <div className="flex items-center gap-2 truncate text-neutral-600">
               <Mail className="w-4 h-4 text-[#E5192D] shrink-0" />
               <span className="truncate">{email}</span>
             </div>
@@ -383,12 +362,12 @@ export const VerificationPage: React.FC = () => {
                   onChange={(e) => handleDigitChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
-                  className={`w-11 h-14 sm:w-14 sm:h-16 text-center text-2xl sm:text-3xl font-black rounded-2xl bg-neutral-800/90 border transition-all duration-200 focus:outline-none ${
+                  className={`w-11 h-14 sm:w-14 sm:h-16 text-center text-2xl sm:text-3xl font-black rounded-2xl bg-neutral-50 border transition-all duration-200 focus:outline-none ${
                     isActive
-                      ? "border-[#E5192D] ring-4 ring-red-500/25 bg-neutral-800 text-white scale-105"
+                      ? "border-[#E5192D] ring-4 ring-red-500/25 bg-white text-neutral-900 scale-105"
                       : isFilled
-                        ? "border-neutral-500 text-white bg-neutral-800/90"
-                        : "border-neutral-700/80 text-neutral-400 hover:border-neutral-600"
+                        ? "border-neutral-300 text-neutral-900 bg-white"
+                        : "border-neutral-200 text-neutral-400 hover:border-neutral-300"
                   }`}
                 />
               );
@@ -396,11 +375,11 @@ export const VerificationPage: React.FC = () => {
           </div>
 
           {/* Demo Helper Pill */}
-          <div className="mb-6 flex items-center justify-between w-full p-2.5 bg-neutral-800/50 rounded-xl border border-dashed border-neutral-700/60 text-xs">
-            <span className="text-neutral-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <div className="mb-6 flex items-center justify-between w-full p-2.5 bg-neutral-50 rounded-xl border border-dashed border-neutral-200 text-xs">
+            <span className="text-neutral-500 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               Demo Code:{" "}
-              <strong className="text-white font-mono tracking-wider">
+              <strong className="text-neutral-900 font-mono tracking-wider">
                 {currentOtp || "123456"}
               </strong>
             </span>
@@ -434,7 +413,7 @@ export const VerificationPage: React.FC = () => {
           </Button>
 
           {/* Resend Code Section */}
-          <div className="w-full flex items-center justify-between text-xs text-neutral-400 pt-3 border-t border-neutral-800">
+          <div className="w-full flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
             <span>Didn't receive the code?</span>
             {canResend ? (
               <button
@@ -451,19 +430,6 @@ export const VerificationPage: React.FC = () => {
               </span>
             )}
           </div>
-        </div>
-
-        {/* Trust Badges */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-neutral-400">
-          <span className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            Verified Campus Access
-          </span>
-          <span className="text-neutral-600">&bull;</span>
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#E5192D]" />
-            Anti-Fraud Protection
-          </span>
         </div>
       </div>
     </div>
