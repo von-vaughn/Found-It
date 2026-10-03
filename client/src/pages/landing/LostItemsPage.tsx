@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Search,
   MapPin,
   Clock,
   Award,
   PlusCircle,
-  ArrowLeft,
   BriefcaseBusiness,
   Smartphone,
   KeyRound,
@@ -13,7 +12,11 @@ import {
   Glasses,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  ItemSearchBar,
+  type ItemSearchType,
+} from "@/components/landing/ItemSearchBar";
 import type { Item } from "@/data/mockItems";
 import { ItemModal } from "@/components/ItemModal";
 import { ReportModal } from "@/components/ReportModal";
@@ -27,18 +30,32 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
   items,
   onAddItem,
 }) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const searchQuery = searchParams.get("q") || "";
+  const [searchType, setSearchType] = useState<ItemSearchType>("lost");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
-  useEffect(() => {
-    const q = searchParams.get("q");
-    if (q !== null) {
-      setSearchQuery(q);
+  const handleSearchQueryChange = (query: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (query) {
+      nextParams.set("q", query);
+    } else {
+      nextParams.delete("q");
     }
-  }, [searchParams]);
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const targetPath = searchType === "found" ? "/found-items" : "/lost-items";
+    const query = searchQuery.trim();
+    navigate(
+      query ? `${targetPath}?q=${encodeURIComponent(query)}` : targetPath,
+    );
+  };
 
   const lostItems = items.filter((item) => item.type === "lost");
 
@@ -66,34 +83,11 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
   return (
     <div className="min-h-screen bg-neutral-50/50 py-10 sm:py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500 mb-6">
-          <Link
-            to="/"
-            className="flex items-center gap-1 hover:text-neutral-900 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Home
-          </Link>
-          <span>/</span>
-          <span className="text-[#E5192D]">Lost Items</span>
-        </div>
-
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-8 border-b border-neutral-200/80">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-8">
           <div>
-            <div className="flex items-center gap-2 mb-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#E5192D] animate-pulse" />
-              <span className="text-xs font-bold uppercase tracking-wider text-[#E5192D]">
-                Community Lost Directory
-              </span>
-            </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-neutral-900 tracking-tight">
               Lost Items
             </h1>
-            <p className="text-neutral-500 text-sm sm:text-base mt-2 max-w-2xl leading-relaxed">
-              Browse belongings recently reported missing by students and
-              community members. Have you spotted any of these? Contact the
-              owner to help reunite them!
-            </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
@@ -107,35 +101,16 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
           </div>
         </div>
 
-        <div className="space-y-4 mb-8">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-2 bg-white rounded-2xl border border-neutral-200/80 shadow-xs">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search lost items by name, location, brand, or details..."
-                className="w-full h-11 pl-10 pr-4 text-sm bg-neutral-50/70 rounded-xl border border-neutral-200/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] text-neutral-800 placeholder-neutral-400 transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400 hover:text-neutral-600 font-semibold"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-xl text-xs font-bold text-[#E5192D] border border-red-100 shrink-0 self-start sm:self-auto">
-              <span className="w-2 h-2 rounded-full bg-[#E5192D]" />
-              <span>
-                {filteredItems.length}{" "}
-                {filteredItems.length === 1 ? "Item" : "Items"} Reported Lost
-              </span>
-            </div>
-          </div>
+        <div className="space-y-4 mb-8 w-full">
+          <ItemSearchBar
+            searchQuery={searchQuery}
+            searchType={searchType}
+            theme="light"
+            showTypeToggle={false}
+            onSearchQueryChange={handleSearchQueryChange}
+            onSearchTypeChange={setSearchType}
+            onSubmit={handleSearchSubmit}
+          />
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             {categories.map((cat) => {
@@ -165,57 +140,57 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
               onClick={() => setSelectedItem(item)}
               className="group bg-white rounded-2xl border border-neutral-200/80 overflow-hidden shadow-xs flex flex-col cursor-pointer"
             >
-                <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+              <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                    <span className="bg-[#E5192D] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      LOST
+                <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                  <span className="bg-[#E5192D] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    LOST
+                  </span>
+
+                  {item.reward && (
+                    <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
+                      <Award className="w-3 h-3" />
+                      {item.reward}
                     </span>
-
-                    {item.reward && (
-                      <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
-                        <Award className="w-3 h-3" />
-                        {item.reward}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="absolute bottom-3 left-3 text-white text-xs font-medium flex items-center gap-1 drop-shadow-md">
-                    <Clock className="w-3.5 h-3.5 text-white/90" />
-                    <span>{item.timeAgo}</span>
-                  </div>
+                  )}
                 </div>
 
-                <div className="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-neutral-900 line-clamp-1">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-neutral-500 mt-1.5 line-clamp-2 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-4 mt-3 border-t border-neutral-100 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs text-neutral-500 max-w-[170px] truncate">
-                      <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                      <span className="truncate">{item.location}</span>
-                    </div>
-
-                    <span className="text-xs font-semibold text-[#E5192D]">
-                      I Found This &rarr;
-                    </span>
-                  </div>
+                <div className="absolute bottom-3 left-3 text-white text-xs font-medium flex items-center gap-1 drop-shadow-md">
+                  <Clock className="w-3.5 h-3.5 text-white/90" />
+                  <span>{item.timeAgo}</span>
                 </div>
               </div>
-            ))}
+
+              <div className="p-4 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-neutral-900 line-clamp-1">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-1.5 line-clamp-2 leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+
+                <div className="pt-4 mt-3 border-t border-neutral-100 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 max-w-[170px] truncate">
+                    <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                    <span className="truncate">{item.location}</span>
+                  </div>
+
+                  <span className="text-xs font-semibold text-[#E5192D]">
+                    I Found This &rarr;
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         {filteredItems.length === 0 && (
@@ -240,7 +215,7 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
               <Button
                 variant="outline"
                 onClick={() => {
-                  setSearchQuery("");
+                  handleSearchQueryChange("");
                   setSelectedCategory("all");
                 }}
                 className="rounded-full text-xs"

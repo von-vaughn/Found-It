@@ -113,12 +113,12 @@ export function App() {
           </Routes>
         </div>
 
+        {location.pathname === "/" && <CommunityReunions />}
         {location.pathname !== "/login" &&
           location.pathname !== "/signup" &&
           location.pathname !== "/verify-otp" &&
           location.pathname !== "/lost-items" &&
           location.pathname !== "/found-items" && <Footer />}
-        {location.pathname === "/" && <CommunityReunions />}
       </div>
     </AuthProvider>
   );

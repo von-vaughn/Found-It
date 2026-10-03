@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import {
-  Search,
   ArrowRight,
   PlusCircle,
-  X,
   Backpack,
   Smartphone,
   KeyRound,
@@ -14,6 +12,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import {
+  ItemSearchBar,
+  type ItemSearchType,
+} from "@/components/landing/ItemSearchBar";
 
 interface HeroSectionProps {
   onBrowseLost: () => void;
@@ -25,7 +27,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onBrowseFound,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchType, setSearchType] = useState<"lost" | "found">("lost");
+  const [searchType, setSearchType] = useState<ItemSearchType>("lost");
   const navigate = useNavigate();
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -157,67 +159,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </p>
 
         <div ref={searchContainerRef} className="w-full max-w-3xl mx-auto mb-6">
-          <form
+          <ItemSearchBar
+            searchQuery={searchQuery}
+            searchType={searchType}
+            onSearchQueryChange={setSearchQuery}
+            onSearchTypeChange={setSearchType}
             onSubmit={handleSearchSubmit}
-            className="p-2 sm:p-2.5 bg-neutral-900/90 rounded-3xl shadow-2xl shadow-black/80 border border-white/15 backdrop-blur-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 transition-all focus-within:border-red-500/80 focus-within:ring-2 focus-within:ring-red-500/20"
-          >
-            <div className="flex items-center p-1 bg-neutral-800/90 rounded-2xl shrink-0 self-center sm:self-auto border border-neutral-700/50">
-              <button
-                type="button"
-                onClick={() => setSearchType("lost")}
-                className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
-                  searchType === "lost"
-                    ? "bg-[#E5192D] text-white shadow-md shadow-red-500/30"
-                    : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                Lost
-              </button>
-              <button
-                type="button"
-                onClick={() => setSearchType("found")}
-                className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
-                  searchType === "found"
-                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/30"
-                    : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                Found
-              </button>
-            </div>
-
-            <div className="relative flex-1 flex items-center min-w-0 px-2">
-              <Search className="w-5 h-5 text-neutral-400 shrink-0 mr-3" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${searchType === "lost" ? "lost" : "found"} items`}
-                className="w-full h-12 text-base sm:text-lg bg-transparent text-white placeholder-neutral-500 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="p-1 rounded-full text-neutral-400 hover:text-white transition-colors shrink-0"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              className={`h-12 sm:h-13 px-7 rounded-2xl font-bold text-sm sm:text-base shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 ${
-                searchType === "lost"
-                  ? "bg-[#E5192D] hover:bg-[#c91424] text-white shadow-red-500/30"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/30"
-              }`}
-            >
-              <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-              <span>Search {searchType === "lost" ? "Lost" : "Found"}</span>
-            </Button>
-          </form>
+          />
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-neutral-400">
             {popularTags.map((tag) => {

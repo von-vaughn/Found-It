@@ -1,9 +1,14 @@
 import React, { useState } from "react";
-import { MapPin, PlusCircle, Search } from "lucide-react";
+import { MapPin, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ItemModal } from "@/components/ItemModal";
 import { ReportModal } from "@/components/ReportModal";
 import type { Item } from "@/data/mockItems";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  ItemSearchBar,
+  type ItemSearchType,
+} from "@/components/landing/ItemSearchBar";
 
 interface FoundItemsPageProps {
   items: Item[];
@@ -14,9 +19,31 @@ export const FoundItemsPage: React.FC<FoundItemsPageProps> = ({
   items,
   onAddItem,
 }) => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const searchQuery = searchParams.get("q") || "";
+  const [searchType, setSearchType] = useState<ItemSearchType>("found");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  const handleSearchQueryChange = (query: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (query) {
+      nextParams.set("q", query);
+    } else {
+      nextParams.delete("q");
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const targetPath =
+      searchType === "lost" ? "/lost-items" : "/found-items";
+    const query = searchQuery.trim();
+    navigate(query ? `${targetPath}?q=${encodeURIComponent(query)}` : targetPath);
+  };
+
   const query = searchQuery.toLowerCase().trim();
   const foundItems = items.filter(
     (item) =>
@@ -29,17 +56,11 @@ export const FoundItemsPage: React.FC<FoundItemsPageProps> = ({
   return (
     <div className="min-h-screen bg-neutral-50/50 py-10 sm:py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 pb-8 border-b border-neutral-200/80">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 pb-8">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-2">
-              Community Found Directory
-            </p>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-900">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-neutral-900 tracking-tight">
               Found Items
             </h1>
-            <p className="text-neutral-500 text-sm sm:text-base mt-2 max-w-2xl">
-              Browse items recently found on campus and in the community.
-            </p>
           </div>
           <Button
             onClick={() => setIsReportModalOpen(true)}
@@ -50,14 +71,15 @@ export const FoundItemsPage: React.FC<FoundItemsPageProps> = ({
           </Button>
         </div>
 
-        <div className="relative mb-8 max-w-xl">
-          <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search found items by name, location, or details..."
-            className="w-full h-11 pl-10 pr-4 text-sm bg-white rounded-xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+        <div className="mb-8 w-full">
+          <ItemSearchBar
+            searchQuery={searchQuery}
+            searchType={searchType}
+            theme="light"
+            showTypeToggle={false}
+            onSearchQueryChange={handleSearchQueryChange}
+            onSearchTypeChange={setSearchType}
+            onSubmit={handleSearchSubmit}
           />
         </div>
 

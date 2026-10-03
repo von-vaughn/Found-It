@@ -28,10 +28,10 @@ export const Footer: React.FC = () => {
   return (
     <footer
       id="about"
-      className="bg-white text-neutral-700 pt-16 pb-12 border-t border-neutral-200"
+      className="bg-neutral-950 text-neutral-300 pt-16 pb-12 border-t border-neutral-800"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pb-12 border-b border-neutral-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pb-12 border-b border-neutral-800">
           <div className="space-y-4">
             <Link
               to="/"
@@ -43,12 +43,12 @@ export const Footer: React.FC = () => {
                 alt="FoundIt logo"
                 className="w-9 h-9 object-cover rounded-none shadow-none ring-0 group-hover:scale-105 transition-transform"
               />
-              <span className="text-2xl font-extrabold tracking-tight text-neutral-900">
+              <span className="text-2xl font-extrabold tracking-tight text-white">
                 Found<span className="text-[#E5192D]">It</span>
               </span>
             </Link>
 
-            <p className="text-sm text-neutral-600 max-w-sm leading-relaxed">
+            <p className="text-sm text-neutral-400 max-w-sm leading-relaxed">
               FoundIt is the modern lost and found network connecting campus
               communities and neighborhoods to reunite people with their
               cherished belongings.
@@ -57,15 +57,15 @@ export const Footer: React.FC = () => {
 
           <div className="space-y-6">
             <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">
                 Explore
               </h4>
-              <ul className="space-y-2 text-sm text-neutral-600">
+              <ul className="space-y-2 text-sm text-neutral-400">
                 <li>
                   <Link
                     to="/"
                     onClick={scrollToTop}
-                    className="hover:text-neutral-900 transition-colors"
+                    className="hover:text-white transition-colors"
                   >
                     Home
                   </Link>
@@ -92,7 +92,7 @@ export const Footer: React.FC = () => {
                   <a
                     href="#how-it-works"
                     onClick={handleHowItWorks}
-                    className="hover:text-neutral-900 transition-colors"
+                    className="hover:text-white transition-colors"
                   >
                     How It Works
                   </a>
@@ -100,7 +100,7 @@ export const Footer: React.FC = () => {
                 <li>
                   <a
                     href="#about"
-                    className="hover:text-neutral-900 transition-colors"
+                    className="hover:text-white transition-colors"
                   >
                     About &amp; Safety
                   </a>
@@ -109,10 +109,10 @@ export const Footer: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">
                 Student Affairs
               </h4>
-              <p className="text-xs text-neutral-600 leading-relaxed">
+              <p className="text-xs text-neutral-400 leading-relaxed">
                 Office of Student Affairs Lost &amp; Found Central Hub. Open
                 Monday &ndash; Friday, 8:00 AM &ndash; 5:00 PM.
               </p>
@@ -126,7 +126,7 @@ export const Footer: React.FC = () => {
           </p>
           <button
             onClick={scrollToTop}
-            className="flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
           >
             Back to top <ArrowUp className="w-3.5 h-3.5" />
           </button>
