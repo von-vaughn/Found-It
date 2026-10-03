@@ -115,6 +115,7 @@ export function App() {
 
         {location.pathname !== "/login" &&
           location.pathname !== "/signup" &&
+          location.pathname !== "/verify-otp" &&
           location.pathname !== "/lost-items" &&
           location.pathname !== "/found-items" && <Footer />}
         {location.pathname === "/" && <CommunityReunions />}

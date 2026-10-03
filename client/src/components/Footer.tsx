@@ -1,5 +1,5 @@
 import React from "react";
-import { Shield, ArrowUp } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 export const Footer: React.FC = () => {
@@ -31,8 +31,8 @@ export const Footer: React.FC = () => {
       className="bg-white text-neutral-700 pt-16 pb-12 border-t border-neutral-200"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-neutral-200">
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pb-12 border-b border-neutral-200">
+          <div className="space-y-4">
             <Link
               to="/"
               onClick={scrollToTop}
@@ -53,131 +53,69 @@ export const Footer: React.FC = () => {
               communities and neighborhoods to reunite people with their
               cherished belongings.
             </p>
+          </div>
 
-            <div className="flex items-center gap-2 text-xs text-neutral-600 pt-2">
-              <Shield className="w-4 h-4 text-[#E5192D]" />
-              <span>Safe Meetup &amp; Verified Ownership Protocol</span>
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                Explore
+              </h4>
+              <ul className="space-y-2 text-sm text-neutral-600">
+                <li>
+                  <Link
+                    to="/"
+                    onClick={scrollToTop}
+                    className="hover:text-neutral-900 transition-colors"
+                  >
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/lost-items"
+                    onClick={scrollToTop}
+                    className="hover:text-[#E5192D] transition-colors"
+                  >
+                    Lost Items Directory
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/found-items"
+                    onClick={scrollToTop}
+                    className="hover:text-[#E5192D] transition-colors"
+                  >
+                    Found Items Directory
+                  </Link>
+                </li>
+                <li>
+                  <a
+                    href="#how-it-works"
+                    onClick={handleHowItWorks}
+                    className="hover:text-neutral-900 transition-colors"
+                  >
+                    How It Works
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#about"
+                    className="hover:text-neutral-900 transition-colors"
+                  >
+                    About &amp; Safety
+                  </a>
+                </li>
+              </ul>
             </div>
-          </div>
 
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-              Explore
-            </h4>
-            <ul className="space-y-2 text-sm text-neutral-600">
-              <li>
-                <Link
-                  to="/"
-                  onClick={scrollToTop}
-                  className="hover:text-neutral-900 transition-colors"
-                >
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/lost-items"
-                  onClick={scrollToTop}
-                  className="hover:text-[#E5192D] transition-colors"
-                >
-                  Lost Items Directory
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/found-items"
-                  onClick={scrollToTop}
-                  className="hover:text-[#E5192D] transition-colors"
-                >
-                  Found Items Directory
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="#how-it-works"
-                  onClick={handleHowItWorks}
-                  className="hover:text-neutral-900 transition-colors"
-                >
-                  How It Works
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#about"
-                  className="hover:text-neutral-900 transition-colors"
-                >
-                  About &amp; Safety
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-              Categories
-            </h4>
-            <ul className="space-y-2 text-sm text-neutral-600">
-              <li>
-                <Link
-                  to="/lost-items"
-                  onClick={scrollToTop}
-                  className="hover:text-neutral-900 transition-colors"
-                >
-                  Backpacks &amp; Bags
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/lost-items"
-                  onClick={scrollToTop}
-                  className="hover:text-neutral-900 transition-colors"
-                >
-                  Phones &amp; Laptops
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/lost-items"
-                  onClick={scrollToTop}
-                  className="hover:text-neutral-900 transition-colors"
-                >
-                  Keys &amp; Fobs
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/lost-items"
-                  onClick={scrollToTop}
-                  className="hover:text-neutral-900 transition-colors"
-                >
-                  Wallets &amp; Cards
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/lost-items"
-                  onClick={scrollToTop}
-                  className="hover:text-neutral-900 transition-colors"
-                >
-                  Eyewear &amp; Watches
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-              Student Affairs
-            </h4>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Office of Student Affairs Lost &amp; Found Central Hub. Open
-              Monday &ndash; Friday, 8:00 AM &ndash; 5:00 PM.
-            </p>
-            <div className="pt-2 text-xs text-neutral-600">
-              <span className="font-semibold text-neutral-700">
-                Desk Support:
-              </span>{" "}
-              Room 102, Student Union Bldg.
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                Student Affairs
+              </h4>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Office of Student Affairs Lost &amp; Found Central Hub. Open
+                Monday &ndash; Friday, 8:00 AM &ndash; 5:00 PM.
+              </p>
             </div>
           </div>
         </div>

@@ -38,6 +38,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
+  const [middleInitial, setMiddleInitial] = useState("");
   const [lastName, setLastName] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(true);
 
@@ -135,8 +136,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         return;
       }
 
+      const fullName =
+        `${safeFirstName} ${middleInitial ? `${middleInitial}.` : ""} ${safeLastName}`
+          .replace(/\s+/g, " ")
+          .trim();
+
       await signup({
-        name: `${safeFirstName} ${safeLastName}`,
+        name: fullName,
         email: safeEmail,
         password: safePassword,
       });
@@ -215,20 +221,43 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
-                      First Name <span className="text-[#E5192D]">*</span>
-                    </label>
-                    <div className="relative">
-                      <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        placeholder="e.g. Alex"
-                        className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
-                      />
+                <div className="space-y-4">
+                  <div className="flex items-end gap-4">
+                    <div className="flex-1 min-w-0">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                        First Name <span className="text-[#E5192D]">*</span>
+                      </label>
+                      <div className="relative">
+                        <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder="e.g. Alex"
+                          className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="w-[38%] min-w-[110px] max-w-[160px]">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                        Middle Initial{" "}
+                        <span className="text-neutral-400 text-[10px] normal-case">
+                          (Optional)
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={middleInitial}
+                          onChange={(e) =>
+                            setMiddleInitial(e.target.value.slice(0, 1))
+                          }
+                          placeholder="e.g. M"
+                          className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
 

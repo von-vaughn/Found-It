@@ -272,13 +272,13 @@ export const VerificationPage: React.FC = () => {
       {/* Foreground Container */}
       <div className="relative z-20 w-full max-w-xl mx-auto px-4 sm:px-6 flex flex-col items-center">
         {/* Navigation Breadcrumb */}
-        <div className="w-full flex items-center justify-between mb-6 text-xs text-neutral-500">
+        <div className="w-full flex justify-start mb-6 text-xs text-neutral-500">
           <Link
             to="/login"
-            className="inline-flex items-center gap-1.5 hover:text-neutral-900 transition-colors"
+            className="inline-flex items-center gap-1.5 hover:text-neutral-900 transition-colors font-semibold text-[#E5192D]"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Change Email / Back</span>
+            <span>Back</span>
           </Link>
         </div>
 
