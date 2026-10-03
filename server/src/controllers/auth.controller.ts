@@ -14,7 +14,6 @@ const registerSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
   email: z.string().trim().toLowerCase().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters').max(128),
-  studentId: z.string().trim().max(50).optional().or(z.literal('')),
 });
 
 const loginSchema = z.object({
@@ -52,7 +51,7 @@ export async function register(req: Request, res: Response): Promise<void> {
     zodError(res, parsed.error);
     return;
   }
-  const { name, email, password, studentId } = parsed.data;
+  const { name, email, password } = parsed.data;
 
   const existing = await findUserByEmail(email);
   if (existing) {
@@ -64,7 +63,6 @@ export async function register(req: Request, res: Response): Promise<void> {
     name,
     email,
     passwordHash: await hashPassword(password),
-    studentId: studentId || null,
     role: 'user', // role escalation only via super_admin
   });
   const tokens = await issueTokens(user);

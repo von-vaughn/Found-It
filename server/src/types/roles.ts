@@ -12,7 +12,6 @@ export interface SafeUser {
   id: string;
   name: string;
   email: string;
-  studentId: string | null;
   role: Role;
   isActive: boolean;
   createdAt: string;

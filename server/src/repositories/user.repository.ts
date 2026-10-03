@@ -6,7 +6,6 @@ interface UserRow {
   name: string;
   email: string;
   password_hash: string;
-  student_id: string | null;
   role: Role;
   is_active: boolean;
   created_at: Date;
@@ -22,7 +21,6 @@ function toSafeUser(row: UserRow): SafeUser {
     id: row.id,
     name: row.name,
     email: row.email,
-    studentId: row.student_id,
     role: row.role,
     isActive: row.is_active,
     createdAt: new Date(row.created_at).toISOString(),
@@ -50,18 +48,16 @@ export async function createUser(input: {
   name: string;
   email: string;
   passwordHash: string;
-  studentId?: string | null;
   role?: Role;
 }): Promise<SafeUser> {
   const { rows } = await pool.query<UserRow>(
-    `INSERT INTO users (name, email, password_hash, student_id, role)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO users (name, email, password_hash, role)
+     VALUES ($1, $2, $3, $4)
      RETURNING *`,
     [
       input.name,
       input.email.toLowerCase(),
       input.passwordHash,
-      input.studentId?.trim() ? input.studentId.trim() : null,
       input.role ?? 'user',
     ],
   );

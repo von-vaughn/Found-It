@@ -13,7 +13,6 @@ export async function migrate(): Promise<void> {
       name VARCHAR(100) NOT NULL,
       email VARCHAR(255) NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      student_id VARCHAR(50),
       role VARCHAR(20) NOT NULL DEFAULT 'user'
         CHECK (role IN ('user', 'admin', 'super_admin')),
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -21,6 +20,9 @@ export async function migrate(): Promise<void> {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  // Cleanup for DBs created before student_id removal
+  await pool.query(`ALTER TABLE users DROP COLUMN IF EXISTS student_id;`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS refresh_tokens (
