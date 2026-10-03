@@ -40,7 +40,7 @@ export const VerificationPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
 
@@ -219,7 +219,7 @@ export const VerificationPage: React.FC = () => {
       if (result.success) {
         setTimeout(() => {
           setIsVerifying(false);
-          navigate("/");
+          navigate("/dashboard");
         }, 600);
       } else {
         setIsVerifying(false);

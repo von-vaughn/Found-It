@@ -54,7 +54,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   useEffect(() => {
     if (isAuthenticated && user) {
       toast(`You are currently signed in as ${user.name}`, { icon: "ℹ️" });
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -129,7 +129,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         setIsLoading(false);
 
         if (success) {
-          navigate("/");
+          navigate("/dashboard");
           return;
         }
 

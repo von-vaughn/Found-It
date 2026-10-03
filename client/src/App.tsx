@@ -13,6 +13,7 @@ import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { HomePage } from "@/pages/landing/HomePage";
 import { LostItemsPage } from "@/pages/landing/LostItemsPage";
 import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
+import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { VerificationPage } from "@/pages/auth/VerificationPage";
 import { AuthProvider } from "@/context/AuthContext";
@@ -43,6 +44,8 @@ export function App() {
     navigate("/found-items");
   };
 
+  const isDashboard = location.pathname === "/dashboard";
+
   return (
     <AuthProvider>
       <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white flex flex-col justify-between">
@@ -61,11 +64,13 @@ export function App() {
           }}
         />
 
-        <Navbar
-          onReportClick={(type) => {
-            navigate(type === "lost" ? "/lost-items" : "/found-items");
-          }}
-        />
+        {!isDashboard && (
+          <Navbar
+            onReportClick={(type) => {
+              navigate(type === "lost" ? "/lost-items" : "/found-items");
+            }}
+          />
+        )}
 
         <div className="flex-1">
           <Routes>
@@ -76,6 +81,13 @@ export function App() {
                   onBrowseLost={handleBrowseLost}
                   onBrowseFound={handleBrowseFound}
                 />
+              }
+            />
+
+            <Route
+              path="/dashboard"
+              element={
+                <DashboardPage items={items} onAddItem={handleAddItem} />
               }
             />
 
@@ -114,7 +126,8 @@ export function App() {
         </div>
 
         {location.pathname === "/" && <CommunityReunions />}
-        {location.pathname !== "/login" &&
+        {!isDashboard &&
+          location.pathname !== "/login" &&
           location.pathname !== "/signup" &&
           location.pathname !== "/verify-otp" &&
           location.pathname !== "/lost-items" &&
