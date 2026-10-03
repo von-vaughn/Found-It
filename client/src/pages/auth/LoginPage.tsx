@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import gsap from "gsap";
 import {
   Mail,
@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

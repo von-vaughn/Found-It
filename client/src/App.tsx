@@ -113,9 +113,10 @@ export function App() {
           </Routes>
         </div>
 
-        {location.pathname !== "/login" && location.pathname !== "/signup" && (
-          <Footer />
-        )}
+        {location.pathname !== "/login" &&
+          location.pathname !== "/signup" &&
+          location.pathname !== "/lost-items" &&
+          location.pathname !== "/found-items" && <Footer />}
         {location.pathname === "/" && <CommunityReunions />}
       </div>
     </AuthProvider>

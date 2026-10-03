@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: foundit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: foundit
+      POSTGRES_PASSWORD: foundit123
+      POSTGRES_DB: foundit
+    ports:
+      - "5432:5432"
+    volumes:
+      - foundit-pgdata:/var/lib/postgresql/data
+
+volumes:
+  foundit-pgdata:
