@@ -26,32 +26,24 @@ export const DashboardStaff: React.FC = () => {
       value: "14",
       change: "+3 today",
       icon: ClipboardList,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
     },
     {
       title: "Active Listed Items",
       value: "128",
       change: "84 found / 44 lost",
       icon: Package,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
     },
     {
       title: "Unresolved Reports",
       value: "5",
       change: "-2 from yesterday",
       icon: AlertCircle,
-      color: "text-[#E5192D]",
-      bg: "bg-rose-50",
     },
     {
       title: "Items Reunited (OSA)",
       value: "342",
       change: "98.2% verified",
       icon: CheckCircle2,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
     },
   ];
 
@@ -150,23 +142,29 @@ export const DashboardStaff: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
+              const isPending = stat.title === "Pending Claim Requests";
+
               return (
                 <div
                   key={stat.title}
                   className="bg-white border border-neutral-100 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-neutral-500">
+                    <span className="text-xs font-medium text-neutral-500">
                       {stat.title}
                     </span>
-                    <div
-                      className={`w-8 h-8 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}
-                    >
-                      <Icon className="w-4 h-4 stroke-[2]" />
-                    </div>
+                    <Icon
+                      className={`w-5 h-5 stroke-[2] ${
+                        isPending ? "text-[#E5192D]" : "text-neutral-900"
+                      }`}
+                    />
                   </div>
                   <div className="mt-3 flex items-baseline justify-between">
-                    <span className="text-2xl font-bold tracking-tight text-neutral-900">
+                    <span
+                      className={`text-2xl font-bold tracking-tight ${
+                        isPending ? "text-[#E5192D]" : "text-neutral-900"
+                      }`}
+                    >
                       {stat.value}
                     </span>
                     <span className="text-[11px] text-neutral-400 font-medium">
