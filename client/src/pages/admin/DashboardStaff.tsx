@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { Header } from "@/components/dashboard/Header";
+import { useNavigate } from "react-router-dom";
 import {
   ClipboardList,
   BarChart2,
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export const DashboardStaff: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -97,6 +99,7 @@ export const DashboardStaff: React.FC = () => {
         <Header
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onOpenReportModal={() => navigate("/dashboard")}
           searchInputRef={searchInputRef}
         />
 

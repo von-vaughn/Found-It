@@ -18,6 +18,7 @@ import {
   Calendar,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 export interface ClaimRequest {
   id: string;
@@ -179,6 +180,7 @@ const initialClaims: ClaimRequest[] = [
 ];
 
 export const ClaimRequestsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [claims, setClaims] = useState<ClaimRequest[]>(initialClaims);
   const [activeTab, setActiveTab] = useState<string>("pending");
   const [searchQuery, setSearchQuery] = useState("");
@@ -372,6 +374,7 @@ export const ClaimRequestsPage: React.FC = () => {
         <Header
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onOpenReportModal={() => navigate("/dashboard")}
           searchInputRef={searchInputRef}
         />
 
@@ -399,7 +402,7 @@ export const ClaimRequestsPage: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200/80 rounded-xl text-xs font-medium text-neutral-600 shadow-xs">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <ShieldCheck className="w-4 h-4 text-[#E5192D]" />
                 <span>Verified ID Required</span>
               </div>
             </div>
@@ -416,30 +419,60 @@ export const ClaimRequestsPage: React.FC = () => {
               <TabsList variant="line" className="h-10 p-0 gap-6">
                 <TabsTrigger
                   value="pending"
-                  className="data-[state=active]:text-[#E5192D] data-[state=active]:font-bold text-xs pb-3.5 pt-1 px-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[#E5192D]"
+                  className={`text-xs pb-3.5 pt-1 px-1 rounded-none border-b-2 transition-all cursor-pointer ${
+                    activeTab === "pending"
+                      ? "text-[#E5192D] font-bold border-[#E5192D]"
+                      : "text-neutral-500 font-medium border-transparent hover:text-neutral-700"
+                  }`}
                 >
                   Pending
-                  <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 text-neutral-700 data-[state=active]:bg-rose-50 data-[state=active]:text-[#E5192D]">
+                  <span
+                    className={`ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${
+                      activeTab === "pending"
+                        ? "bg-rose-50 text-[#E5192D]"
+                        : "bg-neutral-100 text-neutral-600"
+                    }`}
+                  >
                     {pendingCount}
                   </span>
                 </TabsTrigger>
 
                 <TabsTrigger
                   value="approved"
-                  className="data-[state=active]:text-[#E5192D] data-[state=active]:font-bold text-xs pb-3.5 pt-1 px-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[#E5192D]"
+                  className={`text-xs pb-3.5 pt-1 px-1 rounded-none border-b-2 transition-all cursor-pointer ${
+                    activeTab === "approved"
+                      ? "text-[#E5192D] font-bold border-[#E5192D]"
+                      : "text-neutral-500 font-medium border-transparent hover:text-neutral-700"
+                  }`}
                 >
                   Approved
-                  <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 text-neutral-700">
+                  <span
+                    className={`ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${
+                      activeTab === "approved"
+                        ? "bg-rose-50 text-[#E5192D]"
+                        : "bg-neutral-100 text-neutral-600"
+                    }`}
+                  >
                     {approvedCount}
                   </span>
                 </TabsTrigger>
 
                 <TabsTrigger
                   value="rejected"
-                  className="data-[state=active]:text-[#E5192D] data-[state=active]:font-bold text-xs pb-3.5 pt-1 px-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[#E5192D]"
+                  className={`text-xs pb-3.5 pt-1 px-1 rounded-none border-b-2 transition-all cursor-pointer ${
+                    activeTab === "rejected"
+                      ? "text-[#E5192D] font-bold border-[#E5192D]"
+                      : "text-neutral-500 font-medium border-transparent hover:text-neutral-700"
+                  }`}
                 >
                   Rejected
-                  <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 text-neutral-700">
+                  <span
+                    className={`ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${
+                      activeTab === "rejected"
+                        ? "bg-rose-50 text-[#E5192D]"
+                        : "bg-neutral-100 text-neutral-600"
+                    }`}
+                  >
                     {rejectedCount}
                   </span>
                 </TabsTrigger>
@@ -473,7 +506,7 @@ export const ClaimRequestsPage: React.FC = () => {
       {/* Review Modal Dialog */}
       {selectedClaim && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white border border-neutral-100 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-neutral-100 rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
               <div>
