@@ -20,6 +20,11 @@ export const env = {
   SUPER_ADMIN_PASSWORD: process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin123!',
   SUPER_ADMIN_NAME: process.env.SUPER_ADMIN_NAME || 'Super Admin',
   SEED_DEMO_USERS: (process.env.SEED_DEMO_USERS || 'true').toLowerCase() === 'true',
+  /** Comma-separated CORS allowlist. Empty = allow all (dev default). Set in production. */
+  ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
 };
 
 // Fail fast in production with default secrets

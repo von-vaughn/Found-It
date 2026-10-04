@@ -9,13 +9,14 @@ import {
   register,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/authenticate';
+import { authLimiter } from '../middleware/rate-limit';
 
 const router = Router();
 
-// Public
-router.post('/register', register);
-router.post('/login', login);
-router.post('/refresh', refresh);
+// Public (brute-force protected)
+router.post('/register', authLimiter, register);
+router.post('/login', authLimiter, login);
+router.post('/refresh', authLimiter, refresh);
 router.post('/logout', logout);
 
 // Authenticated
