@@ -9,6 +9,7 @@ import { migrate } from './db/migrate';
 import { seed } from './db/seed';
 import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
+import itemsRoutes from './routes/items.routes';
 import { errorHandler, notFound } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
 
@@ -46,6 +47,7 @@ app.get('/ready', async (_req, res) => {
 app.use('/api/', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/items', itemsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

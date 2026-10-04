@@ -2,7 +2,7 @@ import { pool } from "../config/db";
 
 /**
  * Minimal code-first migration for PostgreSQL.
- * Creates the `users` and `refresh_tokens` tables if they don't exist.
+ * Creates the `users`, `refresh_tokens`, and `items` tables if they don't exist.
  */
 export async function migrate(): Promise<void> {
   await pool.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
@@ -33,8 +33,26 @@ export async function migrate(): Promise<void> {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS items (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      reporter_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      report_type VARCHAR(10) NOT NULL
+        CHECK (report_type IN ('lost', 'found')),
+      name VARCHAR(100) NOT NULL,
+      description TEXT NOT NULL,
+      item_date DATE NOT NULL,
+      category VARCHAR(50) NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+    CREATE INDEX IF NOT EXISTS idx_items_reporter_id ON items(reporter_id);
+    CREATE INDEX IF NOT EXISTS idx_items_report_type ON items(report_type);
+    CREATE INDEX IF NOT EXISTS idx_items_category ON items(category);
   `);
 }
