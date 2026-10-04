@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  ShieldCheck,
   X,
   FileText,
   MapPin,
@@ -381,31 +380,13 @@ export const ClaimRequestsPage: React.FC = () => {
         {/* Claim Requests Main Content */}
         <main className="flex-1 min-w-0 w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
           {/* Page Title & Context Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold text-[#E5192D] tracking-wide uppercase">
-                  Verification Desk
-                </span>
-                <span className="text-neutral-300">•</span>
-                <span className="text-xs text-neutral-400 font-medium">
-                  OSA Staff Portal
-                </span>
-              </div>
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-                Claim Requests
-              </h1>
-              <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-                Review, verify, and resolve student ownership claims with authenticated proof.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200/80 rounded-xl text-xs font-medium text-neutral-600 shadow-xs">
-                <ShieldCheck className="w-4 h-4 text-[#E5192D]" />
-                <span>Verified ID Required</span>
-              </div>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
+              Claim Requests
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+              Review incoming claim requests
+            </p>
           </div>
 
           {/* Line Variant Tabs Component */}

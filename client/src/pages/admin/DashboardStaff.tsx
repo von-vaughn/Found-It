@@ -4,13 +4,11 @@ import { Header } from "@/components/admin/Header";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardList,
-  BarChart2,
   CheckCircle2,
+  XCircle,
   Clock,
   AlertCircle,
   Package,
-  ShieldCheck,
-  ArrowUpRight,
   Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -65,7 +63,7 @@ export const DashboardStaff: React.FC = () => {
       claimant: "Joshua Tan",
       studentId: "2023-04912",
       date: "45 mins ago",
-      status: "under_review",
+      status: "pending",
       location: "Gymnasium Bleachers",
     },
     {
@@ -106,39 +104,10 @@ export const DashboardStaff: React.FC = () => {
         {/* Dashboard Main View */}
         <main className="flex-1 min-w-0 w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
           {/* Welcome Banner */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-neutral-100 rounded-2xl p-5 sm:p-6 shadow-xs">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck className="w-4 h-4 text-[#E5192D]" />
-                <span className="text-xs font-semibold text-[#E5192D] tracking-wide uppercase">
-                  Staff Administrative Control
-                </span>
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
-                Welcome to FoundIt Staff Management
-              </h1>
-              <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-                Review submitted claim requests, verify surrender items, and monitor student reports.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <Button
-                variant="outline"
-                className="text-xs font-medium rounded-xl h-9 border-neutral-200"
-                onClick={() => setActiveTab("reports")}
-              >
-                <BarChart2 className="w-3.5 h-3.5 mr-1.5" />
-                View Analytics
-              </Button>
-              <Button
-                className="bg-[#E5192D] hover:bg-[#c81425] text-white text-xs font-medium rounded-xl h-9 shadow-xs"
-                onClick={() => setActiveTab("claims")}
-              >
-                <ClipboardList className="w-3.5 h-3.5 mr-1.5" />
-                Review Claims (14)
-              </Button>
-            </div>
+          <div className="bg-white border border-neutral-100 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
+              Welcome to FoundIt Staff Management
+            </h1>
           </div>
 
           {/* Stats Cards Grid */}
@@ -186,9 +155,6 @@ export const DashboardStaff: React.FC = () => {
                 <h2 className="text-sm font-bold text-neutral-900">
                   Recent Claim Requests
                 </h2>
-                <p className="text-[11px] text-neutral-400">
-                  Verification queue awaiting staff authorization
-                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -205,7 +171,6 @@ export const DashboardStaff: React.FC = () => {
                   onClick={() => setActiveTab("claims")}
                 >
                   View All
-                  <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </div>
             </div>
@@ -251,23 +216,27 @@ export const DashboardStaff: React.FC = () => {
                         {claim.location}
                       </td>
                       <td className="py-3">
-                        {claim.status === "pending" && (
-                          <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[11px] font-semibold">
+                        <Badge
+                          variant={
+                            claim.status === "pending"
+                              ? "default"
+                              : claim.status === "approved"
+                              ? "secondary"
+                              : "destructive"
+                          }
+                          className="capitalize text-[11px] font-semibold"
+                        >
+                          {claim.status === "pending" && (
                             <Clock className="w-3 h-3 mr-1" />
-                            Pending
-                          </Badge>
-                        )}
-                        {claim.status === "under_review" && (
-                          <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[11px] font-semibold">
-                            Under Review
-                          </Badge>
-                        )}
-                        {claim.status === "approved" && (
-                          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[11px] font-semibold">
+                          )}
+                          {claim.status === "approved" && (
                             <CheckCircle2 className="w-3 h-3 mr-1" />
-                            Approved
-                          </Badge>
-                        )}
+                          )}
+                          {claim.status === "rejected" && (
+                            <XCircle className="w-3 h-3 mr-1" />
+                          )}
+                          {claim.status}
+                        </Badge>
                       </td>
                       <td className="py-3 text-right">
                         <Button
