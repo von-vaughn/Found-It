@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Sidebar } from "@/components/admin/Sidebar";
-import { Header } from "@/components/dashboard/Header";
+import { Header } from "@/components/admin/Header";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardList,

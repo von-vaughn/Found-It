@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo } from "react";
 import { Sidebar } from "@/components/admin/Sidebar";
-import { Header } from "@/components/dashboard/Header";
+import { Header } from "@/components/admin/Header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

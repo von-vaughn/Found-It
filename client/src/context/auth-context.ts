@@ -6,6 +6,7 @@ export interface User {
   email: string;
   studentId?: string;
   avatar?: string;
+  role?: string;
   createdAt: string;
 }
 
