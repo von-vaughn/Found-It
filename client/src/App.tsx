@@ -15,6 +15,7 @@ import { LostItemsPage } from "@/pages/landing/LostItemsPage";
 import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
 import { DashboardPage } from "@/pages/school_user/DashboardPage";
 import { DashboardStaff } from "@/pages/admin/DashboardStaff";
+import { ClaimRequestsPage } from "@/pages/admin/ClaimRequestsPage";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { VerificationPage } from "@/pages/auth/VerificationPage";
 import { AuthProvider } from "@/context/AuthContext";
@@ -95,6 +96,7 @@ export function App() {
             />
 
             <Route path="/admin/dashboard" element={<DashboardStaff />} />
+            <Route path="/admin/claims" element={<ClaimRequestsPage />} />
             <Route
               path="/admin"
               element={<Navigate to="/admin/dashboard" replace />}
