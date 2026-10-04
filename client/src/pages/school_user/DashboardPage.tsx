@@ -59,15 +59,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     searchInputRef.current?.focus();
   };
 
-  // Filter items based on active tab and search query
+
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      // Type filter (All vs Lost vs Found)
       if (filterType !== "all" && item.type !== filterType) {
         return false;
       }
 
-      // Search query filter
+
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchesTitle = item.title.toLowerCase().includes(q);
@@ -86,7 +85,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="min-h-screen bg-[#FBFBFC] flex selection:bg-[#E5192D] selection:text-white font-sans text-neutral-900">
-      {/* Left Sidebar */}
       <Sidebar
         activeTab={activeNavTab}
         onTabChange={(tab) => {
@@ -101,9 +99,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         onFocusSearch={handleFocusSearch}
       />
 
-      {/* Main Content Area */}
       <div className="flex-1 min-w-0 ml-16 md:ml-20 flex flex-col min-h-screen">
-        {/* Top Header */}
         <Header
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -111,23 +107,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           searchInputRef={searchInputRef}
         />
 
-        {/* Dashboard Main Container */}
         <main className="flex-1 min-w-0 w-full mx-auto px-4 sm:px-6 lg:px-6 py-5 space-y-5">
-          {/* Subheader / Composer Card ("What's on your mind, Vaughn?") */}
           <ComposerCard
             onOpenReportModal={(type) => handleOpenCreateModal(type || "lost")}
           />
 
-          {/* Filter Pills and Tabs Bar */}
           <div className="flex items-center gap-3 pt-1">
-            {/* "All" Tab with bottom underline */}
             <button
               onClick={() => setFilterType("all")}
-              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer mr-1 ${
-                filterType === "all"
+              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer mr-1 ${filterType === "all"
                   ? "text-neutral-900"
                   : "text-neutral-400 hover:text-neutral-700"
-              }`}
+                }`}
             >
               All
               {filterType === "all" && (
@@ -135,16 +126,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               )}
             </button>
 
-            {/* "Lost Item" Tab */}
             <button
               onClick={() =>
                 setFilterType(filterType === "lost" ? "all" : "lost")
               }
-              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer mr-1 ${
-                filterType === "lost"
+              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer mr-1 ${filterType === "lost"
                   ? "text-neutral-900"
                   : "text-neutral-400 hover:text-neutral-700"
-              }`}
+                }`}
             >
               Lost Item
               {filterType === "lost" && (
@@ -152,16 +141,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               )}
             </button>
 
-            {/* "Found Item" Tab */}
             <button
               onClick={() =>
                 setFilterType(filterType === "found" ? "all" : "found")
               }
-              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer mr-1 ${
-                filterType === "found"
+              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer mr-1 ${filterType === "found"
                   ? "text-neutral-900"
                   : "text-neutral-400 hover:text-neutral-700"
-              }`}
+                }`}
             >
               Found Item
               {filterType === "found" && (
@@ -169,7 +156,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               )}
             </button>
 
-            {/* Result count indicator if filtered or searched */}
             {(searchQuery.trim() || filterType !== "all") && (
               <div className="ml-auto text-xs text-neutral-400 font-medium">
                 Showing {filteredItems.length} items
@@ -188,7 +174,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             )}
           </div>
 
-          {/* Masonry Items Grid */}
           {filteredItems.length > 0 ? (
             <div className="columns-1 md:columns-2 lg:columns-4 gap-4 pb-12">
               {filteredItems.map((item) => (
@@ -223,13 +208,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </main>
       </div>
 
-      {/* Item Detail Modal */}
       <ItemDetailModal
         item={selectedItem}
         onClose={() => setSelectedItem(null)}
       />
 
-      {/* Create / Report Item Modal */}
       <CreatePostModal
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
