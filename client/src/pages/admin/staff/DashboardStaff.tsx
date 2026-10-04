@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Sidebar } from "@/components/admin/Sidebar";
+import { Header } from "@/components/dashboard/Header";
 import {
   ClipboardList,
   BarChart2,
-  Bell,
-  Search,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -19,6 +18,7 @@ import { Button } from "@/components/ui/button";
 export const DashboardStaff: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const stats = [
     {
@@ -102,58 +102,11 @@ export const DashboardStaff: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 min-w-0 ml-16 md:ml-20 flex flex-col min-h-screen">
         {/* Top Header */}
-        <header className="h-16 border-b border-neutral-100 bg-white sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-base tracking-tight text-neutral-900">
-                Staff OSA Portal
-              </span>
-              <Badge
-                variant="secondary"
-                className="bg-neutral-100 text-neutral-600 text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full"
-              >
-                Office of Student Affairs
-              </Badge>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Search Input */}
-            <div className="relative hidden sm:block w-64 lg:w-80">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search claims, posts, students..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 pl-9 pr-3 text-xs bg-neutral-50/80 border border-neutral-200/70 rounded-xl focus:outline-none focus:border-[#E5192D] focus:ring-1 focus:ring-[#E5192D] transition-colors placeholder:text-neutral-400"
-              />
-            </div>
-
-            {/* Notification Indicator Button */}
-            <button
-              onClick={() => setActiveTab("notifications")}
-              title="Notifications"
-              className="w-9 h-9 flex items-center justify-center rounded-xl border border-neutral-200/80 hover:bg-neutral-50 text-neutral-600 relative transition-colors cursor-pointer"
-            >
-              <Bell className="w-4 h-4 stroke-[1.8]" />
-              <span className="w-2 h-2 rounded-full bg-[#E5192D] absolute top-2 right-2 ring-2 ring-white" />
-            </button>
-
-            {/* Staff User Avatar */}
-            <div className="flex items-center gap-2 pl-2 border-l border-neutral-100">
-              <div className="w-9 h-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center text-xs font-semibold shadow-xs">
-                OSA
-              </div>
-              <div className="hidden md:flex flex-col">
-                <span className="text-xs font-bold text-neutral-800 leading-tight">
-                  OSA Officer
-                </span>
-                <span className="text-[11px] text-neutral-400">Admin Staff</span>
-              </div>
-            </div>
-          </div>
-        </header>
+        <Header
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchInputRef={searchInputRef}
+        />
 
         {/* Dashboard Main View */}
         <main className="flex-1 min-w-0 w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
