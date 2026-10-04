@@ -14,7 +14,7 @@ import { HomePage } from "@/pages/landing/HomePage";
 import { LostItemsPage } from "@/pages/landing/LostItemsPage";
 import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
 import { DashboardPage } from "@/pages/school_user/DashboardPage";
-import { DashboardStaff } from "@/pages/admin/staff/DashboardStaff";
+import { DashboardStaff } from "@/pages/admin/DashboardStaff";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { VerificationPage } from "@/pages/auth/VerificationPage";
 import { AuthProvider } from "@/context/AuthContext";
