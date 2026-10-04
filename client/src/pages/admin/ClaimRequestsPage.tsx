@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { Header } from "@/components/admin/Header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,6 +15,8 @@ import {
   FileText,
   MapPin,
   Calendar,
+  Search,
+  ChevronDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -183,8 +185,32 @@ export const ClaimRequestsPage: React.FC = () => {
   const [claims, setClaims] = useState<ClaimRequest[]>(initialClaims);
   const [activeTab, setActiveTab] = useState<string>("pending");
   const [searchQuery, setSearchQuery] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedClaim, setSelectedClaim] = useState<ClaimRequest | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("all");
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const dateDropdownRef = useRef<HTMLDivElement>(null);
+
+  const CATEGORIES = [
+    "All Categories",
+    "Identification & Cards",
+    "Electronics",
+    "Valuables & Keys",
+    "Bags & Containers",
+    "Stationery & School Supplies",
+    "Clothing & Accessories",
+    "Others",
+  ];
+
+  const DATE_FILTERS = [
+    { label: "All Time", value: "all" },
+    { label: "Today", value: "today" },
+    { label: "Yesterday", value: "yesterday" },
+    { label: "Last 7 days", value: "7days" },
+    { label: "Last 30 days", value: "30days" },
+  ];
 
   const getInitials = (name: string) => {
     return name
@@ -210,10 +236,35 @@ export const ClaimRequestsPage: React.FC = () => {
     setSelectedClaim(null);
   };
 
+  const isWithinDateFilter = (dateStr: string, filter: string): boolean => {
+    if (filter === "all") return true;
+    const now = new Date();
+    const claimDate = new Date(dateStr);
+    const diffMs = now.getTime() - claimDate.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    if (filter === "today") return claimDate.toDateString() === now.toDateString();
+    if (filter === "yesterday") {
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      return claimDate.toDateString() === yesterday.toDateString();
+    }
+    if (filter === "7days") return diffDays <= 7;
+    if (filter === "30days") return diffDays <= 30;
+    return true;
+  };
+
   const filteredClaims = useMemo(() => {
     return claims.filter((claim) => {
       const matchesTab = claim.status === activeTab;
       if (!matchesTab) return false;
+
+      if (categoryFilter !== "all") {
+        const matchesCategory =
+          claim.category.toLowerCase() === categoryFilter.toLowerCase();
+        if (!matchesCategory) return false;
+      }
+
+      if (!isWithinDateFilter(claim.dateSubmitted, dateFilter)) return false;
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
@@ -227,11 +278,30 @@ export const ClaimRequestsPage: React.FC = () => {
       }
       return true;
     });
-  }, [claims, activeTab, searchQuery]);
+  }, [claims, activeTab, searchQuery, categoryFilter, dateFilter]);
 
   const pendingCount = claims.filter((c) => c.status === "pending").length;
   const approvedCount = claims.filter((c) => c.status === "approved").length;
   const rejectedCount = claims.filter((c) => c.status === "rejected").length;
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(e.target as Node)
+      ) {
+        setCategoryDropdownOpen(false);
+      }
+      if (
+        dateDropdownRef.current &&
+        !dateDropdownRef.current.contains(e.target as Node)
+      ) {
+        setDateDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const renderTable = (items: ClaimRequest[]) => {
     if (items.length === 0) {
@@ -371,10 +441,10 @@ export const ClaimRequestsPage: React.FC = () => {
       <div className="flex-1 min-w-0 ml-16 md:ml-20 flex flex-col min-h-screen">
         {/* Top Header */}
         <Header
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          searchQuery=""
+          onSearchChange={() => {}}
           onOpenReportModal={() => navigate("/dashboard")}
-          searchInputRef={searchInputRef}
+          searchInputRef={undefined}
         />
 
         {/* Claim Requests Main Content */}
@@ -463,6 +533,96 @@ export const ClaimRequestsPage: React.FC = () => {
             {/* Pending Tab Content */}
             <TabsContent value="pending" className="mt-0 outline-none">
               <Card className="rounded-2xl border border-neutral-100 bg-white shadow-xs overflow-hidden p-0">
+                {/* Search and Filter Controls */}
+                <div className="px-4 sm:px-6 pt-4 pb-3 space-y-2.5">
+                  {/* Search Bar */}
+                  <div className="relative flex items-center">
+                    <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none stroke-[2]" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search Claim ID, item, or student..."
+                      className="w-full h-9 pl-10 pr-4 bg-[#F8F9FA] hover:bg-[#F3F4F6] focus:bg-white rounded-xl border border-neutral-200/80 focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50 text-xs text-neutral-800 placeholder:text-neutral-400 font-normal transition-all"
+                    />
+                  </div>
+                  {/* Filter Row */}
+                  <div className="flex items-center gap-3">
+                    {/* Category Filter */}
+                    <div className="relative" ref={categoryDropdownRef}>
+                      <button
+                        onClick={() => {
+                          setCategoryDropdownOpen(!categoryDropdownOpen);
+                          setDateDropdownOpen(false);
+                        }}
+                        className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
+                      >
+                        <span className="text-neutral-400">Item Category:</span>
+                        <span className="font-semibold text-neutral-900">
+                          {categoryFilter === "all" ? "All" : categoryFilter}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-neutral-400 ml-0.5" />
+                      </button>
+                      {categoryDropdownOpen && (
+                        <div className="absolute left-0 top-full mt-1.5 w-52 bg-white rounded-2xl shadow-xl border border-neutral-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                          {CATEGORIES.map((cat) => (
+                            <button
+                              key={cat}
+                              onClick={() => {
+                                setCategoryFilter(cat === "All Categories" ? "all" : cat);
+                                setCategoryDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                                (cat === "All Categories" ? categoryFilter === "all" : categoryFilter === cat)
+                                  ? "bg-rose-50 text-[#E5192D] font-semibold"
+                                  : "text-neutral-700 hover:bg-neutral-50 font-medium"
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Date Filter */}
+                    <div className="relative" ref={dateDropdownRef}>
+                      <button
+                        onClick={() => {
+                          setDateDropdownOpen(!dateDropdownOpen);
+                          setCategoryDropdownOpen(false);
+                        }}
+                        className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
+                      >
+                        <span className="text-neutral-400">Date:</span>
+                        <span className="font-semibold text-neutral-900">
+                          {DATE_FILTERS.find((d) => d.value === dateFilter)?.label || "All Time"}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-neutral-400 ml-0.5" />
+                      </button>
+                      {dateDropdownOpen && (
+                        <div className="absolute left-0 top-full mt-1.5 w-40 bg-white rounded-2xl shadow-xl border border-neutral-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                          {DATE_FILTERS.map((d) => (
+                            <button
+                              key={d.value}
+                              onClick={() => {
+                                setDateFilter(d.value);
+                                setDateDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                                dateFilter === d.value
+                                  ? "bg-rose-50 text-[#E5192D] font-semibold"
+                                  : "text-neutral-700 hover:bg-neutral-50 font-medium"
+                              }`}
+                            >
+                              {d.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="border-b border-neutral-100" />
                 {renderTable(filteredClaims)}
               </Card>
             </TabsContent>
@@ -470,6 +630,92 @@ export const ClaimRequestsPage: React.FC = () => {
             {/* Approved Tab Content */}
             <TabsContent value="approved" className="mt-0 outline-none">
               <Card className="rounded-2xl border border-neutral-100 bg-white shadow-xs overflow-hidden p-0">
+                {/* Search and Filter Controls */}
+                <div className="px-4 sm:px-6 pt-4 pb-3 space-y-2.5">
+                  <div className="relative flex items-center">
+                    <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none stroke-[2]" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search Claim ID, item, or student..."
+                      className="w-full h-9 pl-10 pr-4 bg-[#F8F9FA] hover:bg-[#F3F4F6] focus:bg-white rounded-xl border border-neutral-200/80 focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50 text-xs text-neutral-800 placeholder:text-neutral-400 font-normal transition-all"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="relative" ref={categoryDropdownRef}>
+                      <button
+                        onClick={() => {
+                          setCategoryDropdownOpen(!categoryDropdownOpen);
+                          setDateDropdownOpen(false);
+                        }}
+                        className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
+                      >
+                        <span className="text-neutral-400">Item Category:</span>
+                        <span className="font-semibold text-neutral-900">
+                          {categoryFilter === "all" ? "All" : categoryFilter}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-neutral-400 ml-0.5" />
+                      </button>
+                      {categoryDropdownOpen && (
+                        <div className="absolute left-0 top-full mt-1.5 w-52 bg-white rounded-2xl shadow-xl border border-neutral-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                          {CATEGORIES.map((cat) => (
+                            <button
+                              key={cat}
+                              onClick={() => {
+                                setCategoryFilter(cat === "All Categories" ? "all" : cat);
+                                setCategoryDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                                (cat === "All Categories" ? categoryFilter === "all" : categoryFilter === cat)
+                                  ? "bg-rose-50 text-[#E5192D] font-semibold"
+                                  : "text-neutral-700 hover:bg-neutral-50 font-medium"
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative" ref={dateDropdownRef}>
+                      <button
+                        onClick={() => {
+                          setDateDropdownOpen(!dateDropdownOpen);
+                          setCategoryDropdownOpen(false);
+                        }}
+                        className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
+                      >
+                        <span className="text-neutral-400">Date:</span>
+                        <span className="font-semibold text-neutral-900">
+                          {DATE_FILTERS.find((d) => d.value === dateFilter)?.label || "All Time"}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-neutral-400 ml-0.5" />
+                      </button>
+                      {dateDropdownOpen && (
+                        <div className="absolute left-0 top-full mt-1.5 w-40 bg-white rounded-2xl shadow-xl border border-neutral-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                          {DATE_FILTERS.map((d) => (
+                            <button
+                              key={d.value}
+                              onClick={() => {
+                                setDateFilter(d.value);
+                                setDateDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                                dateFilter === d.value
+                                  ? "bg-rose-50 text-[#E5192D] font-semibold"
+                                  : "text-neutral-700 hover:bg-neutral-50 font-medium"
+                              }`}
+                            >
+                              {d.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="border-b border-neutral-100" />
                 {renderTable(filteredClaims)}
               </Card>
             </TabsContent>
@@ -477,6 +723,92 @@ export const ClaimRequestsPage: React.FC = () => {
             {/* Rejected Tab Content */}
             <TabsContent value="rejected" className="mt-0 outline-none">
               <Card className="rounded-2xl border border-neutral-100 bg-white shadow-xs overflow-hidden p-0">
+                {/* Search and Filter Controls */}
+                <div className="px-4 sm:px-6 pt-4 pb-3 space-y-2.5">
+                  <div className="relative flex items-center">
+                    <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none stroke-[2]" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search Claim ID, item, or student..."
+                      className="w-full h-9 pl-10 pr-4 bg-[#F8F9FA] hover:bg-[#F3F4F6] focus:bg-white rounded-xl border border-neutral-200/80 focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50 text-xs text-neutral-800 placeholder:text-neutral-400 font-normal transition-all"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="relative" ref={categoryDropdownRef}>
+                      <button
+                        onClick={() => {
+                          setCategoryDropdownOpen(!categoryDropdownOpen);
+                          setDateDropdownOpen(false);
+                        }}
+                        className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
+                      >
+                        <span className="text-neutral-400">Item Category:</span>
+                        <span className="font-semibold text-neutral-900">
+                          {categoryFilter === "all" ? "All" : categoryFilter}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-neutral-400 ml-0.5" />
+                      </button>
+                      {categoryDropdownOpen && (
+                        <div className="absolute left-0 top-full mt-1.5 w-52 bg-white rounded-2xl shadow-xl border border-neutral-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                          {CATEGORIES.map((cat) => (
+                            <button
+                              key={cat}
+                              onClick={() => {
+                                setCategoryFilter(cat === "All Categories" ? "all" : cat);
+                                setCategoryDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                                (cat === "All Categories" ? categoryFilter === "all" : categoryFilter === cat)
+                                  ? "bg-rose-50 text-[#E5192D] font-semibold"
+                                  : "text-neutral-700 hover:bg-neutral-50 font-medium"
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative" ref={dateDropdownRef}>
+                      <button
+                        onClick={() => {
+                          setDateDropdownOpen(!dateDropdownOpen);
+                          setCategoryDropdownOpen(false);
+                        }}
+                        className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-medium text-neutral-700 transition-colors cursor-pointer"
+                      >
+                        <span className="text-neutral-400">Date:</span>
+                        <span className="font-semibold text-neutral-900">
+                          {DATE_FILTERS.find((d) => d.value === dateFilter)?.label || "All Time"}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-neutral-400 ml-0.5" />
+                      </button>
+                      {dateDropdownOpen && (
+                        <div className="absolute left-0 top-full mt-1.5 w-40 bg-white rounded-2xl shadow-xl border border-neutral-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                          {DATE_FILTERS.map((d) => (
+                            <button
+                              key={d.value}
+                              onClick={() => {
+                                setDateFilter(d.value);
+                                setDateDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                                dateFilter === d.value
+                                  ? "bg-rose-50 text-[#E5192D] font-semibold"
+                                  : "text-neutral-700 hover:bg-neutral-50 font-medium"
+                              }`}
+                            >
+                              {d.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="border-b border-neutral-100" />
                 {renderTable(filteredClaims)}
               </Card>
             </TabsContent>
