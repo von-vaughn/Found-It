@@ -1,4 +1,4 @@
-import { pool } from '../config/db';
+import { pool } from "../config/db";
 
 /**
  * Minimal code-first migration for PostgreSQL.
@@ -20,9 +20,6 @@ export async function migrate(): Promise<void> {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
-
-  // Cleanup for DBs created before student_id removal
-  await pool.query(`ALTER TABLE users DROP COLUMN IF EXISTS student_id;`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS refresh_tokens (
