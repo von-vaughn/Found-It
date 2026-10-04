@@ -47,6 +47,29 @@ export async function migrate(): Promise<void> {
     );
   `);
 
+  // Email verification (added after users table existed):
+  // backfill-once so accounts created before this feature stay verified.
+  const { rows: colRows } = await pool.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_name = 'users' AND column_name = 'is_verified' LIMIT 1`,
+  );
+  if (colRows.length === 0) {
+    await pool.query(`ALTER TABLE users ADD COLUMN is_verified BOOLEAN NOT NULL DEFAULT FALSE;`);
+    await pool.query(`UPDATE users SET is_verified = TRUE;`);
+  }
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS email_otps (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      otp_hash TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      consumed BOOLEAN NOT NULL DEFAULT FALSE,
+      attempts INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
@@ -54,5 +77,6 @@ export async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_items_reporter_id ON items(reporter_id);
     CREATE INDEX IF NOT EXISTS idx_items_report_type ON items(report_type);
     CREATE INDEX IF NOT EXISTS idx_items_category ON items(category);
+    CREATE INDEX IF NOT EXISTS idx_email_otps_user_id ON email_otps(user_id);
   `);
 }

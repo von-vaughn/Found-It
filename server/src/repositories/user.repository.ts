@@ -8,6 +8,7 @@ interface UserRow {
   password_hash: string;
   role: Role;
   is_active: boolean;
+  is_verified: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -23,6 +24,7 @@ function toSafeUser(row: UserRow): SafeUser {
     email: row.email,
     role: row.role,
     isActive: row.is_active,
+    isVerified: row.is_verified,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
   };
@@ -104,6 +106,14 @@ export async function updateUserPassword(id: string, passwordHash: string): Prom
     id,
     passwordHash,
   ]);
+}
+
+export async function setUserVerified(id: string): Promise<SafeUser | null> {
+  const { rows } = await pool.query<UserRow>(
+    `UPDATE users SET is_verified = TRUE, updated_at = NOW() WHERE id = $1 RETURNING *`,
+    [id],
+  );
+  return rows[0] ? toSafeUser(rows[0]) : null;
 }
 
 export async function deleteUser(id: string): Promise<boolean> {

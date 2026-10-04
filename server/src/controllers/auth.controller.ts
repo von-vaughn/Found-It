@@ -1,14 +1,22 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { createUser, findUserByEmail, findUserById, updateUserPassword } from '../repositories/user.repository';
+import { createUser, findUserByEmail, findUserById, setUserVerified, updateUserPassword } from '../repositories/user.repository';
 import {
   findValidRefreshToken,
   revokeAllUserTokens,
   revokeRefreshToken,
   storeRefreshToken,
 } from '../repositories/refresh-token.repository';
+import {
+  checkOtp,
+  generateOtp,
+  isResendCoolingDown,
+  otpExpiryDate,
+  storeOtp,
+} from '../repositories/email-otp.repository';
 import { comparePassword, hashPassword } from '../utils/password';
 import { refreshExpiryDate, signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
+import { sendOtpEmail } from '../utils/mailer';
 
 const registerSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
@@ -30,6 +38,15 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8, 'New password must be at least 8 characters').max(128),
 });
 
+const verifyEmailSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Invalid email address'),
+  otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be 6 digits'),
+});
+
+const resendOtpSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Invalid email address'),
+});
+
 function zodError(res: Response, error: z.ZodError): Response {
   return res.status(400).json({
     message: 'Validation failed',
@@ -44,7 +61,7 @@ async function issueTokens(user: { id: string; email: string; role: 'user' | 'ad
   return { accessToken, refreshToken };
 }
 
-/** POST /api/auth/register — public. Always creates a `user` (never admin). */
+/** POST /api/auth/register — public. Always creates a `user` (never admin). Sends a 6-digit OTP; no tokens until verified. */
 export async function register(req: Request, res: Response): Promise<void> {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -55,7 +72,17 @@ export async function register(req: Request, res: Response): Promise<void> {
 
   const existing = await findUserByEmail(email);
   if (existing) {
-    res.status(409).json({ message: 'Email is already registered.' });
+    if (!existing.isVerified) {
+      // Already registered but unverified — (re)send a code without leaking state.
+      if (await isResendCoolingDown(existing.id)) {
+        res.status(429).json({ message: 'A code was just sent. Please wait a minute before trying again.' });
+        return;
+      }
+      const otp = generateOtp();
+      await storeOtp(existing.id, otp, otpExpiryDate());
+      await sendOtpEmail(existing.email, otp, existing.name);
+    }
+    res.status(200).json({ message: 'If this email is registered, a verification code was sent.' });
     return;
   }
 
@@ -65,8 +92,68 @@ export async function register(req: Request, res: Response): Promise<void> {
     passwordHash: await hashPassword(password),
     role: 'user', // role escalation only via super_admin
   });
-  const tokens = await issueTokens(user);
-  res.status(201).json({ message: 'Registered successfully.', user, ...tokens });
+  const otp = generateOtp();
+  await storeOtp(user.id, otp, otpExpiryDate());
+  await sendOtpEmail(user.email, otp, user.name);
+  res.status(201).json({ message: 'Registered. Enter the 6-digit code sent to your email.', user });
+}
+
+/** POST /api/auth/verify-email — public. Verifies the OTP and logs the user in. */
+export async function verifyEmail(req: Request, res: Response): Promise<void> {
+  const parsed = verifyEmailSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+  const user = await findUserByEmail(parsed.data.email);
+  if (!user) {
+    res.status(400).json({ message: 'Invalid code.' });
+    return;
+  }
+  if (user.isVerified) {
+    res.status(200).json({ message: 'Email is already verified. Please log in.' });
+    return;
+  }
+  const check = await checkOtp(user.id, parsed.data.otp);
+  if (!check.ok) {
+    if (check.reason === 'expired') {
+      res.status(400).json({ message: 'Code expired. Request a new one.' });
+      return;
+    }
+    if (check.reason === 'locked') {
+      res.status(429).json({ message: 'Too many wrong attempts. Request a new code.' });
+      return;
+    }
+    res.status(400).json({ message: 'Invalid code.' });
+    return;
+  }
+  const verified = await setUserVerified(user.id);
+  const tokens = await issueTokens(verified!);
+  res.json({ message: 'Email verified.', user: verified, ...tokens });
+}
+
+/** POST /api/auth/resend-otp — public. Sends a fresh OTP (60s cooldown). */
+export async function resendOtp(req: Request, res: Response): Promise<void> {
+  const parsed = resendOtpSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+  // Generic reply so attackers can't enumerate registered emails.
+  const generic = { message: 'If this email is registered, a verification code was sent.' };
+  const user = await findUserByEmail(parsed.data.email);
+  if (!user || user.isVerified) {
+    res.status(200).json(user?.isVerified ? { message: 'Email is already verified. Please log in.' } : generic);
+    return;
+  }
+  if (await isResendCoolingDown(user.id)) {
+    res.status(429).json({ message: 'A code was just sent. Please wait a minute before trying again.' });
+    return;
+  }
+  const otp = generateOtp();
+  await storeOtp(user.id, otp, otpExpiryDate());
+  await sendOtpEmail(user.email, otp, user.name);
+  res.status(200).json(generic);
 }
 
 /** POST /api/auth/login — public */
@@ -85,6 +172,10 @@ export async function login(req: Request, res: Response): Promise<void> {
   }
   if (!user.isActive) {
     res.status(403).json({ message: 'Account is deactivated. Contact an administrator.' });
+    return;
+  }
+  if (!user.isVerified) {
+    res.status(403).json({ message: 'Email not verified. Enter the 6-digit code sent to your inbox.' });
     return;
   }
   const ok = await comparePassword(password, user.passwordHash);

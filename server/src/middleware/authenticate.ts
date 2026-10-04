@@ -24,6 +24,10 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       res.status(403).json({ message: 'Account is deactivated. Contact an administrator.' });
       return;
     }
+    if (!user.isVerified) {
+      res.status(403).json({ message: 'Email not verified. Enter the 6-digit code sent to your inbox.' });
+      return;
+    }
     req.user = { ...payload, role: user.role }; // always use fresh role from DB
     next();
   } catch {

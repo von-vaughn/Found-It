@@ -7,6 +7,8 @@ import {
   me,
   refresh,
   register,
+  resendOtp,
+  verifyEmail,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/authenticate';
 import { authLimiter } from '../middleware/rate-limit';
@@ -15,6 +17,8 @@ const router = Router();
 
 // Public (brute-force protected)
 router.post('/register', authLimiter, register);
+router.post('/verify-email', authLimiter, verifyEmail);
+router.post('/resend-otp', authLimiter, resendOtp);
 router.post('/login', authLimiter, login);
 router.post('/refresh', authLimiter, refresh);
 router.post('/logout', logout);

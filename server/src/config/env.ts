@@ -25,6 +25,14 @@ export const env = {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean),
+  // Gmail OAuth2 (Google Cloud project with Gmail API enabled).
+  // Empty = mailer runs in dev fallback mode (OTP printed to console, nothing sent).
+  GMAIL_USER: process.env.GMAIL_USER || '',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+  GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN || '',
+  MAIL_FROM: process.env.MAIL_FROM || 'FoundIt <no-reply@foundit.local>',
+  OTP_EXPIRES_MINUTES: Number(process.env.OTP_EXPIRES_MINUTES || 10),
 };
 
 // Fail fast in production with default secrets

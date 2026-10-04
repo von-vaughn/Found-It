@@ -14,6 +14,7 @@ export interface SafeUser {
   email: string;
   role: Role;
   isActive: boolean;
+  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
 }
