@@ -7,7 +7,7 @@ import { ROLE_LEVEL, type Role } from '../types/roles';
  * Usage:
  *   authorize('admin')              -> admin + super_admin allowed
  *   authorize('super_admin')        -> super_admin only
- *   authorize('user', 'admin', ...) -> any of the listed roles (hierarchy-aware via minimum level)
+ *   authorize('school_user', 'admin', ...) -> any of the listed roles (hierarchy-aware via minimum level)
  *
  * The check is hierarchy-aware: passing 'admin' allows 'admin' and 'super_admin'.
  * Passing multiple roles allows any role at/above the lowest listed level...

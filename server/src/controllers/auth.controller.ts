@@ -54,14 +54,14 @@ function zodError(res: Response, error: z.ZodError): Response {
   });
 }
 
-async function issueTokens(user: { id: string; email: string; role: 'user' | 'admin' | 'super_admin' }) {
+async function issueTokens(user: { id: string; email: string; role: 'school_user' | 'admin' | 'super_admin' }) {
   const accessToken = signAccessToken(user);
   const refreshToken = signRefreshToken(user);
   await storeRefreshToken(user.id, refreshToken, refreshExpiryDate());
   return { accessToken, refreshToken };
 }
 
-/** POST /api/auth/register — public. Always creates a `user` (never admin). Sends a 6-digit OTP; no tokens until verified. */
+/** POST /api/auth/register — public. Always creates a `school_user` (never admin). Sends a 6-digit OTP; no tokens until verified. */
 export async function register(req: Request, res: Response): Promise<void> {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -90,7 +90,7 @@ export async function register(req: Request, res: Response): Promise<void> {
     name,
     email,
     passwordHash: await hashPassword(password),
-    role: 'user', // role escalation only via super_admin
+    role: 'school_user', // role escalation only via super_admin
   });
   const otp = generateOtp();
   await storeOtp(user.id, otp, otpExpiryDate());

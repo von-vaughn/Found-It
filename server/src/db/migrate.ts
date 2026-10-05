@@ -13,8 +13,8 @@ export async function migrate(): Promise<void> {
       name VARCHAR(100) NOT NULL,
       email VARCHAR(255) NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      role VARCHAR(20) NOT NULL DEFAULT 'user'
-        CHECK (role IN ('user', 'admin', 'super_admin')),
+      role VARCHAR(20) NOT NULL DEFAULT 'school_user'
+        CHECK (role IN ('school_user', 'admin', 'super_admin')),
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -46,6 +46,24 @@ export async function migrate(): Promise<void> {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  // Role rename: 'user' -> 'school_user' (existing DBs only; fresh tables already use it).
+  const { rows: legacyRoleRows } = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM users WHERE role = 'user'`,
+  );
+  const { rows: roleCheckRows } = await pool.query(
+    `SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint
+     WHERE conname = 'users_role_check' AND conrelid = 'users'::regclass`,
+  );
+  const roleDef: string = roleCheckRows[0]?.def ?? '';
+  if (legacyRoleRows[0].count > 0 || !roleDef.includes('school_user')) {
+    await pool.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;`);
+    await pool.query(`UPDATE users SET role = 'school_user' WHERE role = 'user';`);
+    await pool.query(`ALTER TABLE users ALTER COLUMN role SET DEFAULT 'school_user';`);
+    await pool.query(
+      `ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('school_user', 'admin', 'super_admin'));`,
+    );
+  }
 
   // Email verification (added after users table existed):
   // backfill-once so accounts created before this feature stay verified.

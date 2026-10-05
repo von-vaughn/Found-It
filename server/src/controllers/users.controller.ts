@@ -94,7 +94,7 @@ export async function changeUserRole(req: Request, res: Response): Promise<void>
 
 /**
  * PATCH /api/users/:id/status — admin + super_admin.
- * admin may only (de)activate plain `user`s; super_admin may touch anyone except self.
+ * admin may only (de)activate plain `school_user`s; super_admin may touch anyone except self.
  * Cannot deactivate the last super_admin.
  */
 export async function changeUserStatus(req: Request, res: Response): Promise<void> {
@@ -114,8 +114,8 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
     res.status(400).json({ message: 'You cannot change your own status.' });
     return;
   }
-  if (req.user!.role === 'admin' && target.role !== 'user') {
-    res.status(403).json({ message: 'Admins can only manage users with role "user".' });
+  if (req.user!.role === 'admin' && target.role !== 'school_user') {
+    res.status(403).json({ message: 'Admins can only manage users with role "school_user".' });
     return;
   }
   if (!parsed.data.isActive && target.role === 'super_admin') {
@@ -131,7 +131,7 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
 }
 
 /**
- * DELETE /api/users/:id — admin (user-role targets only) + super_admin (anyone except self/last super_admin).
+ * DELETE /api/users/:id — admin (school_user-role targets only) + super_admin (anyone except self/last super_admin).
  */
 export async function removeUser(req: Request, res: Response): Promise<void> {
   const id = getId(req);
@@ -145,8 +145,8 @@ export async function removeUser(req: Request, res: Response): Promise<void> {
     res.status(400).json({ message: 'You cannot delete your own account.' });
     return;
   }
-  if (req.user!.role === 'admin' && target.role !== 'user') {
-    res.status(403).json({ message: 'Admins can only delete users with role "user".' });
+  if (req.user!.role === 'admin' && target.role !== 'school_user') {
+    res.status(403).json({ message: 'Admins can only delete users with role "school_user".' });
     return;
   }
   if (target.role === 'super_admin') {

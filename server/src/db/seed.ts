@@ -22,7 +22,7 @@ export async function seed(): Promise<void> {
   if (env.SEED_DEMO_USERS) {
     const demos = [
       { name: 'Demo Admin', email: 'admin@foundit.local', password: 'Admin123!', role: 'admin' as const },
-      { name: 'Demo User', email: 'user@foundit.local', password: 'User12345!', role: 'user' as const },
+      { name: 'Demo User', email: 'user@foundit.local', password: 'User12345!', role: 'school_user' as const },
     ];
     for (const d of demos) {
       const existing = await findUserByEmail(d.email);

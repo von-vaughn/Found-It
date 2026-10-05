@@ -1,9 +1,9 @@
-export const ROLES = ['user', 'admin', 'super_admin'] as const;
+export const ROLES = ['school_user', 'admin', 'super_admin'] as const;
 export type Role = (typeof ROLES)[number];
 
 /** Higher number = more privilege */
 export const ROLE_LEVEL: Record<Role, number> = {
-  user: 1,
+  school_user: 1,
   admin: 2,
   super_admin: 3,
 };

@@ -60,7 +60,7 @@ export async function createUser(input: {
       input.name,
       input.email.toLowerCase(),
       input.passwordHash,
-      input.role ?? 'user',
+      input.role ?? 'school_user',
     ],
   );
   return toSafeUser(rows[0]);
