@@ -78,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-16 md:w-20 shrink-0 bg-white border-r border-neutral-100 flex flex-col items-center py-5 fixed inset-y-0 left-0 z-40 selection:bg-[#E5192D] selection:text-white">
-      {/* Top Logo */}
+      
       <button
         onClick={() => navigate("/")}
         title="FoundIt Home"
@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       </button>
 
-      {/* Nav Items Stack */}
+      
       <nav className="flex-1 flex flex-col items-center space-y-3 w-full px-2.5">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -114,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }`}
               />
 
-              {/* Tooltip on hover */}
+              
               <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 bg-neutral-900 text-white text-xs font-semibold rounded-lg whitespace-nowrap z-50 pointer-events-none shadow-md">
                 {item.label}
               </span>

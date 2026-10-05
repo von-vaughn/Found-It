@@ -5,14 +5,118 @@ import { useNavigate } from "react-router-dom";
 import {
   ClipboardList,
   CheckCircle2,
-  XCircle,
-  Clock,
   AlertCircle,
   Package,
-  Filter,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
+interface ActivityEntry {
+  id: string;
+  action: string;
+  itemName: string;
+  targetId: string;
+  timestamp: string;
+  staffName: string;
+}
+
+const activityFeed: ActivityEntry[] = [
+  {
+    id: "ACT-001",
+    action: "Approved Claim",
+    itemName: "Apple AirPods Pro (2nd Gen)",
+    targetId: "CLM-1042",
+    timestamp: "10 mins ago",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-002",
+    action: "Rejected Claim",
+    itemName: "Ray-Ban Aviator Sunglasses",
+    targetId: "CLM-1035",
+    timestamp: "45 mins ago",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-003",
+    action: "Posted Item",
+    itemName: "Black Leather Wallet near Cafeteria",
+    targetId: "POST-0091",
+    timestamp: "1 hour ago",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-004",
+    action: "Marked as Returned",
+    itemName: "Herschel Little America Backpack",
+    targetId: "CLM-1039",
+    timestamp: "2 hours ago",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-005",
+    action: "Approved Claim",
+    itemName: "Logitech MX Master 3S Mouse",
+    targetId: "CLM-1036",
+    timestamp: "3 hours ago",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-006",
+    action: "Deleted Post",
+    itemName: "Expired umbrella lost post",
+    targetId: "POST-0088",
+    timestamp: "Yesterday",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-007",
+    action: "Marked as Claimed",
+    itemName: "Secrid Leather Wallet (Black)",
+    targetId: "CLM-1037",
+    timestamp: "Yesterday",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-008",
+    action: "Posted Item",
+    itemName: "Found Casio Calculator — Engineering Bldg",
+    targetId: "POST-0087",
+    timestamp: "Yesterday",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-009",
+    action: "Rejected Claim",
+    itemName: "Apple Pencil (2nd Gen)",
+    targetId: "CLM-1034",
+    timestamp: "Oct 1",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-010",
+    action: "Approved Claim",
+    itemName: "Sony WH-1000XM4 Headphones",
+    targetId: "CLM-1038",
+    timestamp: "Oct 1",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-011",
+    action: "Updated Status",
+    itemName: "Hydro Flask 32oz Cobalt Blue",
+    targetId: "CLM-1041",
+    timestamp: "Sep 30",
+    staffName: "OSA Officer",
+  },
+  {
+    id: "ACT-012",
+    action: "Posted Item",
+    itemName: "Found Student ID near CCS Lobby",
+    targetId: "POST-0086",
+    timestamp: "Sep 30",
+    staffName: "OSA Officer",
+  },
+];
 
 export const DashboardStaff: React.FC = () => {
   const navigate = useNavigate();
@@ -47,53 +151,41 @@ export const DashboardStaff: React.FC = () => {
     },
   ];
 
-  const recentClaims = [
-    {
-      id: "CLM-1042",
-      itemTitle: "Apple AirPods Pro (2nd Gen)",
-      claimant: "Alyssa Marie Cruz",
-      studentId: "2022-10842",
-      date: "10 mins ago",
-      status: "pending",
-      location: "Library 3F Reading Area",
-    },
-    {
-      id: "CLM-1041",
-      itemTitle: "Hydro Flask 32oz Cobalt Blue",
-      claimant: "Joshua Tan",
-      studentId: "2023-04912",
-      date: "45 mins ago",
-      status: "pending",
-      location: "Gymnasium Bleachers",
-    },
-    {
-      id: "CLM-1040",
-      itemTitle: "Leather Wallet (Black, Secrid)",
-      claimant: "Mark Vincent Rivera",
-      studentId: "2021-00213",
-      date: "2 hours ago",
-      status: "approved",
-      location: "OSA Front Desk",
-    },
-    {
-      id: "CLM-1039",
-      itemTitle: "Scientific Calculator Casio fx-991EX",
-      claimant: "Bea Katherine Gomez",
-      studentId: "2024-11002",
-      date: "3 hours ago",
-      status: "pending",
-      location: "Engineering Bldg Rm 402",
-    },
-  ];
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(activityFeed.length / ITEMS_PER_PAGE);
+  const paginatedFeed = activityFeed.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const getActionColor = (action: string): string => {
+    if (
+      action.includes("Approved") ||
+      action.includes("Marked as Returned") ||
+      action.includes("Marked as Claimed")
+    )
+      return "text-emerald-700 bg-emerald-50";
+    if (action.includes("Rejected") || action.includes("Deleted"))
+      return "text-red-600 bg-rose-50";
+    if (action.includes("Posted")) return "text-blue-700 bg-blue-50";
+    return "text-neutral-600 bg-neutral-100";
+  };
+
+  const getViewRoute = (targetId: string): string => {
+    if (targetId.startsWith("CLM-")) return "/admin/claims/review";
+    if (targetId.startsWith("POST-")) return "/admin/posts/manage";
+    return "/admin/dashboard";
+  };
 
   return (
     <div className="min-h-screen bg-[#FBFBFC] flex selection:bg-[#E5192D] selection:text-white font-sans text-neutral-900">
-      {/* Staff OSA Sidebar */}
+      
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Main Content Area */}
+      
       <div className="flex-1 min-w-0 ml-16 md:ml-20 flex flex-col min-h-screen">
-        {/* Top Header */}
+        
         <Header
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -101,16 +193,14 @@ export const DashboardStaff: React.FC = () => {
           searchInputRef={searchInputRef}
         />
 
-        {/* Dashboard Main View */}
+        
         <main className="flex-1 min-w-0 w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-          {/* Welcome Banner */}
-          <div className="bg-white border border-neutral-100 rounded-2xl p-5 sm:p-6 shadow-xs">
-            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
-              Welcome to FoundIt Staff Management
-            </h1>
-          </div>
+          
+          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">
+            Dashboard
+          </h1>
 
-          {/* Stats Cards Grid */}
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
@@ -148,108 +238,112 @@ export const DashboardStaff: React.FC = () => {
             })}
           </div>
 
-          {/* Recent Claims Section */}
-          <div className="bg-white border border-neutral-100 rounded-2xl p-5 shadow-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100 mb-4">
-              <div>
-                <h2 className="text-sm font-bold text-neutral-900">
-                  Recent Claim Requests
-                </h2>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  className="text-xs font-semibold text-neutral-500 h-8 px-2.5 rounded-lg"
-                >
-                  <Filter className="w-3.5 h-3.5 mr-1" />
-                  Filter
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="text-xs font-bold text-[#E5192D] h-8 px-2.5 rounded-lg"
-                  onClick={() => setActiveTab("claims")}
-                >
-                  View All
-                </Button>
-              </div>
+          
+          <div className="bg-white border border-neutral-100 rounded-2xl shadow-xs overflow-hidden">
+            
+            <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
+              <h2 className="text-sm font-bold text-neutral-900">
+                Recent Activity
+              </h2>
+              <span className="text-[11px] text-neutral-400 font-medium">
+                Page {currentPage} of {totalPages}
+              </span>
             </div>
 
+            
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-neutral-400 font-medium border-b border-neutral-100">
-                    <th className="pb-3 font-medium">Claim ID</th>
-                    <th className="pb-3 font-medium">Item Details</th>
-                    <th className="pb-3 font-medium">Claimant</th>
-                    <th className="pb-3 font-medium">Found Location</th>
-                    <th className="pb-3 font-medium">Status</th>
-                    <th className="pb-3 font-medium text-right">Action</th>
+                  <tr className="text-neutral-400 font-medium border-b border-neutral-100 bg-neutral-50/50">
+                    <th className="py-3 px-5 font-medium">Time</th>
+                    <th className="py-3 px-5 font-medium">Staff</th>
+                    <th className="py-3 px-5 font-medium">Action</th>
+                    <th className="py-3 px-5 font-medium">Item</th>
+                    <th className="py-3 px-5 font-medium">Reference</th>
+                    <th className="py-3 px-5 font-medium text-right">View</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {recentClaims.map((claim) => (
+                  {paginatedFeed.map((entry) => (
                     <tr
-                      key={claim.id}
+                      key={entry.id}
                       className="hover:bg-neutral-50/70 transition-colors"
                     >
-                      <td className="py-3 font-mono font-semibold text-neutral-700">
-                        {claim.id}
+                      <td className="py-3.5 px-5 text-neutral-400 font-medium whitespace-nowrap">
+                        {entry.timestamp}
                       </td>
-                      <td className="py-3">
-                        <div className="font-semibold text-neutral-900">
-                          {claim.itemTitle}
-                        </div>
-                        <div className="text-[11px] text-neutral-400">
-                          {claim.date}
-                        </div>
+                      <td className="py-3.5 px-5 text-neutral-700 font-medium whitespace-nowrap">
+                        {entry.staffName}
                       </td>
-                      <td className="py-3">
-                        <div className="font-medium text-neutral-800">
-                          {claim.claimant}
-                        </div>
-                        <div className="text-[11px] text-neutral-400">
-                          ID: {claim.studentId}
-                        </div>
+                      <td className="py-3.5 px-5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${getActionColor(
+                            entry.action
+                          )}`}
+                        >
+                          {entry.action}
+                        </span>
                       </td>
-                      <td className="py-3 text-neutral-600">
-                        {claim.location}
+                      <td className="py-3.5 px-5 text-neutral-700 font-medium max-w-[200px] truncate">
+                        {entry.itemName}
                       </td>
-                      <td className="py-3">
-                        <Badge
-                          variant={
-                            claim.status === "pending"
-                              ? "default"
-                              : claim.status === "approved"
-                              ? "secondary"
-                              : "destructive"
+                      <td className="py-3.5 px-5 font-mono text-[11px] text-neutral-500 font-semibold whitespace-nowrap">
+                        {entry.targetId}
+                      </td>
+                      <td className="py-3.5 px-5 text-right">
+                        <button
+                          onClick={() =>
+                            navigate(getViewRoute(entry.targetId))
                           }
-                          className="capitalize text-[11px] font-semibold"
+                          className="text-xs font-semibold text-[#E5192D] hover:underline cursor-pointer"
                         >
-                          {claim.status === "pending" && (
-                            <Clock className="w-3 h-3 mr-1" />
-                          )}
-                          {claim.status === "approved" && (
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                          )}
-                          {claim.status === "rejected" && (
-                            <XCircle className="w-3 h-3 mr-1" />
-                          )}
-                          {claim.status}
-                        </Badge>
-                      </td>
-                      <td className="py-3 text-right">
-                        <Button
-                          variant="outline"
-                          className="h-7 text-[11px] font-semibold px-2.5 rounded-lg border-neutral-200 hover:bg-neutral-100"
-                        >
-                          Review
-                        </Button>
+                          View →
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            
+            <div className="flex items-center justify-between px-5 py-3.5 border-t border-neutral-100 bg-neutral-50/50">
+              <span className="text-[11px] text-neutral-400 font-medium">
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+                {Math.min(
+                  currentPage * ITEMS_PER_PAGE,
+                  activityFeed.length
+                )}{" "}
+                of {activityFeed.length} entries
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  disabled={currentPage === 1}
+                  className={`h-8 px-3 text-xs font-semibold rounded-xl border-neutral-200 ${
+                    currentPage === 1
+                      ? "opacity-40 cursor-not-allowed"
+                      : "hover:bg-neutral-100 cursor-pointer"
+                  }`}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`h-8 px-3 text-xs font-semibold rounded-xl border-neutral-200 ${
+                    currentPage === totalPages
+                      ? "opacity-40 cursor-not-allowed"
+                      : "hover:bg-neutral-100 cursor-pointer"
+                  }`}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </div>
         </main>

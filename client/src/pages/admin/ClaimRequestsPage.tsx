@@ -340,7 +340,7 @@ export const ClaimRequestsPage: React.FC = () => {
                 key={claim.id}
                 className="border-b border-neutral-100 hover:bg-neutral-50/70 transition-colors"
               >
-                {/* Item Column */}
+                
                 <td className="py-4 px-4 sm:px-6 align-middle">
                   <div className="font-semibold text-neutral-900 text-sm">
                     {claim.itemTitle}
@@ -358,7 +358,7 @@ export const ClaimRequestsPage: React.FC = () => {
                   </div>
                 </td>
 
-                {/* Claimant Column: Avatar + name inline */}
+                
                 <td className="py-4 px-4 sm:px-6 align-middle">
                   <div className="flex items-center gap-2.5">
                     <Avatar size="sm" className="w-8 h-8 rounded-full border border-neutral-200">
@@ -383,12 +383,12 @@ export const ClaimRequestsPage: React.FC = () => {
                   </div>
                 </td>
 
-                {/* Date Submitted Column */}
+                
                 <td className="py-4 px-4 sm:px-6 align-middle text-neutral-600 font-medium">
                   {claim.dateSubmitted}
                 </td>
 
-                {/* Status Column (Badge: default=pending, destructive=rejected, secondary=approved) */}
+                
                 <td className="py-4 px-4 sm:px-6 align-middle">
                   <Badge
                     variant={
@@ -413,7 +413,7 @@ export const ClaimRequestsPage: React.FC = () => {
                   </Badge>
                 </td>
 
-                {/* Action Column: Button size="sm" variant="outline" label="Review" */}
+                
                 <td className="py-4 px-4 sm:px-6 align-middle text-right">
                   <Button
                     size="sm"
@@ -434,12 +434,12 @@ export const ClaimRequestsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FBFBFC] flex selection:bg-[#E5192D] selection:text-white font-sans text-neutral-900">
-      {/* Staff OSA Sidebar */}
+      
       <Sidebar activeTab="claims" />
 
-      {/* Main Content Area */}
+      
       <div className="flex-1 min-w-0 ml-16 md:ml-20 flex flex-col min-h-screen">
-        {/* Top Header */}
+        
         <Header
           searchQuery=""
           onSearchChange={() => {}}
@@ -447,9 +447,9 @@ export const ClaimRequestsPage: React.FC = () => {
           searchInputRef={undefined}
         />
 
-        {/* Claim Requests Main Content */}
+        
         <main className="flex-1 min-w-0 w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-          {/* Page Title & Context Header */}
+          
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
               Claim Requests
@@ -459,7 +459,7 @@ export const ClaimRequestsPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Line Variant Tabs Component */}
+          
           <Tabs
             defaultValue="pending"
             value={activeTab}
@@ -530,12 +530,12 @@ export const ClaimRequestsPage: React.FC = () => {
               </TabsList>
             </div>
 
-            {/* Pending Tab Content */}
+            
             <TabsContent value="pending" className="mt-0 outline-none">
               <Card className="rounded-2xl border border-neutral-100 bg-white shadow-xs overflow-hidden p-0">
-                {/* Search and Filter Controls */}
+                
                 <div className="px-4 sm:px-6 pt-4 pb-3 space-y-2.5">
-                  {/* Search Bar */}
+                  
                   <div className="relative flex items-center">
                     <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none stroke-[2]" />
                     <input
@@ -546,9 +546,9 @@ export const ClaimRequestsPage: React.FC = () => {
                       className="w-full h-9 pl-10 pr-4 bg-[#F8F9FA] hover:bg-[#F3F4F6] focus:bg-white rounded-xl border border-neutral-200/80 focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50 text-xs text-neutral-800 placeholder:text-neutral-400 font-normal transition-all"
                     />
                   </div>
-                  {/* Filter Row */}
+                  
                   <div className="flex items-center gap-3">
-                    {/* Category Filter */}
+                    
                     <div className="relative" ref={categoryDropdownRef}>
                       <button
                         onClick={() => {
@@ -584,7 +584,7 @@ export const ClaimRequestsPage: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    {/* Date Filter */}
+                    
                     <div className="relative" ref={dateDropdownRef}>
                       <button
                         onClick={() => {
@@ -627,10 +627,10 @@ export const ClaimRequestsPage: React.FC = () => {
               </Card>
             </TabsContent>
 
-            {/* Approved Tab Content */}
+            
             <TabsContent value="approved" className="mt-0 outline-none">
               <Card className="rounded-2xl border border-neutral-100 bg-white shadow-xs overflow-hidden p-0">
-                {/* Search and Filter Controls */}
+                
                 <div className="px-4 sm:px-6 pt-4 pb-3 space-y-2.5">
                   <div className="relative flex items-center">
                     <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none stroke-[2]" />
@@ -720,10 +720,10 @@ export const ClaimRequestsPage: React.FC = () => {
               </Card>
             </TabsContent>
 
-            {/* Rejected Tab Content */}
+            
             <TabsContent value="rejected" className="mt-0 outline-none">
               <Card className="rounded-2xl border border-neutral-100 bg-white shadow-xs overflow-hidden p-0">
-                {/* Search and Filter Controls */}
+                
                 <div className="px-4 sm:px-6 pt-4 pb-3 space-y-2.5">
                   <div className="relative flex items-center">
                     <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none stroke-[2]" />
@@ -816,11 +816,11 @@ export const ClaimRequestsPage: React.FC = () => {
         </main>
       </div>
 
-      {/* Review Modal Dialog */}
+      
       {selectedClaim && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white border border-neutral-100 rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
+            
             <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
@@ -853,9 +853,9 @@ export const ClaimRequestsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
+            
             <div className="p-6 space-y-5 text-xs">
-              {/* Item Info Card */}
+              
               <div className="bg-neutral-50/70 border border-neutral-100 rounded-xl p-3.5 space-y-1.5">
                 <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide">
                   Item Details
@@ -875,7 +875,7 @@ export const ClaimRequestsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Claimant Information */}
+              
               <div className="space-y-2">
                 <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide">
                   Claimant Information
@@ -903,7 +903,7 @@ export const ClaimRequestsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Submitted Proof / Note */}
+              
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-500 uppercase tracking-wide">
                   <FileText className="w-3.5 h-3.5 text-neutral-400" />
@@ -914,7 +914,7 @@ export const ClaimRequestsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Security Questions / Extra detail */}
+              
               {selectedClaim.securityQuestionsAnswer && (
                 <div className="space-y-1.5">
                   <div className="text-[11px] font-bold text-neutral-500 uppercase tracking-wide">
@@ -927,7 +927,7 @@ export const ClaimRequestsPage: React.FC = () => {
               )}
             </div>
 
-            {/* Modal Actions */}
+            
             <div className="px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-between">
               <Button
                 variant="ghost"
