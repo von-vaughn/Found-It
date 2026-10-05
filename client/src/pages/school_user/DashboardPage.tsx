@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { Sidebar } from "@/components/dashboard/Sidebar";
-import { Header } from "@/components/dashboard/Header";
-import { ComposerCard } from "@/components/dashboard/ComposerCard";
-import { ItemCard } from "@/components/dashboard/ItemCard";
-import { ItemDetailModal } from "@/components/dashboard/ItemDetailModal";
-import { CreatePostModal } from "@/components/dashboard/CreatePostModal";
+import { Sidebar } from "@/components/school_user/Sidebar";
+import { Header } from "@/components/school_user/Header";
+import { ComposerCard } from "@/components/school_user/ComposerCard";
+import { ItemCard } from "@/components/school_user/ItemCard";
+import { ItemDetailModal } from "@/components/school_user/ItemDetailModal";
+import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { SearchX } from "lucide-react";
 import { initialItems, type Item } from "@/data/mockItems";
 
