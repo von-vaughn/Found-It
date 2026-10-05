@@ -4,6 +4,7 @@ import {
   createItem,
   deleteItem,
   findItemById,
+  findItemOwner,
   listItems,
   updateItem,
 } from '../repositories/item.repository';
@@ -53,6 +54,11 @@ function invalidId(res: Response, id: string): boolean {
   return false;
 }
 
+/** Admins see reporter email; school users see reporter name only. */
+function seesReporterEmail(req: Request): boolean {
+  return req.user!.role === 'admin' || req.user!.role === 'super_admin';
+}
+
 function canManage(req: Request, reporterId: string): boolean {
   if (req.user!.sub === reporterId) return true;
   return req.user!.role === 'admin' || req.user!.role === 'super_admin';
@@ -65,11 +71,12 @@ export async function createItemReport(req: Request, res: Response): Promise<voi
     zodError(res, parsed.error);
     return;
   }
-  const item = await createItem({ reporterId: req.user!.sub, ...parsed.data });
+  const { id } = await createItem({ reporterId: req.user!.sub, ...parsed.data });
+  const item = await findItemById(id, seesReporterEmail(req));
   res.status(201).json({ message: 'Item report submitted.', item });
 }
 
-/** GET /api/items — any authenticated user. Filters: reportType, category, search, mine */
+/** GET /api/items — any authenticated user (admins see reporter emails). Filters: reportType, category, search, mine */
 export async function getAllItems(req: Request, res: Response): Promise<void> {
   const reportType =
     typeof req.query.reportType === 'string' ? (req.query.reportType as ReportType) : undefined;
@@ -80,7 +87,10 @@ export async function getAllItems(req: Request, res: Response): Promise<void> {
     res.status(400).json({ message: `Invalid reportType. Allowed: ${REPORT_TYPES.join(', ')}` });
     return;
   }
-  const items = await listItems({ reportType, category, search, reporterId: mine });
+  const items = await listItems(
+    { reportType, category, search, reporterId: mine },
+    seesReporterEmail(req),
+  );
   res.json({ items, count: items.length });
 }
 
@@ -88,7 +98,7 @@ export async function getAllItems(req: Request, res: Response): Promise<void> {
 export async function getItemById(req: Request, res: Response): Promise<void> {
   const id = getId(req);
   if (invalidId(res, id)) return;
-  const item = await findItemById(id);
+  const item = await findItemById(id, seesReporterEmail(req));
   if (!item) {
     res.status(404).json({ message: 'Item not found.' });
     return;
@@ -109,16 +119,16 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
     res.status(400).json({ message: 'Nothing to update.' });
     return;
   }
-  const existing = await findItemById(id);
-  if (!existing) {
+  const owner = await findItemOwner(id);
+  if (!owner) {
     res.status(404).json({ message: 'Item not found.' });
     return;
   }
-  if (!canManage(req, existing.reporterId)) {
+  if (!canManage(req, owner.reporterId)) {
     res.status(403).json({ message: 'You can only edit your own reports.' });
     return;
   }
-  const updated = await updateItem(id, parsed.data);
+  const updated = await updateItem(id, parsed.data, seesReporterEmail(req));
   res.json({ message: 'Item report updated.', item: updated });
 }
 
@@ -126,12 +136,12 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
 export async function removeItemReport(req: Request, res: Response): Promise<void> {
   const id = getId(req);
   if (invalidId(res, id)) return;
-  const existing = await findItemById(id);
-  if (!existing) {
+  const owner = await findItemOwner(id);
+  if (!owner) {
     res.status(404).json({ message: 'Item not found.' });
     return;
   }
-  if (!canManage(req, existing.reporterId)) {
+  if (!canManage(req, owner.reporterId)) {
     res.status(403).json({ message: 'You can only delete your own reports.' });
     return;
   }

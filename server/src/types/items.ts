@@ -10,6 +10,8 @@ export interface Item {
   /** Date the item was lost or found (YYYY-MM-DD). */
   itemDate: string;
   category: string;
+  /** Reporter identity. Email is included for admin/super_admin only. */
+  reporter: { id: string; name: string; email?: string };
   createdAt: string;
   updatedAt: string;
 }
