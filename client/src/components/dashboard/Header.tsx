@@ -132,22 +132,13 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="relative w-8 h-8 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
               <img
                 src="/images/avatars/vaughn_evangelista.svg"
-                alt="Vaughn Evangelista"
+                alt="User avatar"
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
                     "/images/avatar-vaughn.jpg";
                 }}
               />
-            </div>
-
-            <div className="hidden sm:flex flex-col">
-              <span className="text-xs font-bold text-neutral-900 leading-tight group-hover:text-[#E5192D] transition-colors">
-                {user?.name || "Vaughn Evangelista"}
-              </span>
-              <span className="text-[10.5px] text-neutral-400 font-normal leading-tight">
-                Student
-              </span>
             </div>
 
             <ChevronDown className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-600 transition-colors" />

@@ -55,10 +55,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setCreateModalOpen(true);
   };
 
-  const handleFocusSearch = () => {
-    searchInputRef.current?.focus();
-  };
-
   // Filter items based on active tab and search query
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -93,12 +89,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           setActiveNavTab(tab);
           if (tab === "discover") {
             setFilterType("all");
-          } else if (tab === "search") {
-            handleFocusSearch();
           }
         }}
         onOpenCreateModal={() => handleOpenCreateModal("lost")}
-        onFocusSearch={handleFocusSearch}
       />
 
       {/* Main Content Area */}

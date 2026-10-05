@@ -2,11 +2,8 @@ import React from "react";
 import {
   Home,
   Binoculars,
-  Search,
   PlusCircle,
   MessageSquare,
-  Bell,
-  Settings,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,14 +11,12 @@ interface SidebarProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   onOpenCreateModal?: () => void;
-  onFocusSearch?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab = "home",
   onTabChange,
   onOpenCreateModal,
-  onFocusSearch,
 }) => {
   const navigate = useNavigate();
 
@@ -43,18 +38,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       },
     },
     {
-      id: "search",
-      label: "Search",
-      icon: Search,
-      onClick: () => {
-        if (onFocusSearch) {
-          onFocusSearch();
-        } else if (onTabChange) {
-          onTabChange("search");
-        }
-      },
-    },
-    {
       id: "create",
       label: "Report Item",
       icon: PlusCircle,
@@ -68,22 +51,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: MessageSquare,
       onClick: () => {
         if (onTabChange) onTabChange("messages");
-      },
-    },
-    {
-      id: "notifications",
-      label: "Notifications",
-      icon: Bell,
-      onClick: () => {
-        if (onTabChange) onTabChange("notifications");
-      },
-    },
-    {
-      id: "settings",
-      label: "Settings",
-      icon: Settings,
-      onClick: () => {
-        if (onTabChange) onTabChange("settings");
       },
     },
   ];
