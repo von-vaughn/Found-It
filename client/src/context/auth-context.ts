@@ -1,11 +1,13 @@
 import { createContext } from "react";
 
+export type Role = 'user' | 'admin' | 'super_admin';
 export interface User {
   id: string;
   name: string;
   email: string;
   studentId?: string;
   avatar?: string;
+  role?: Role;
   createdAt: string;
 }
 
