@@ -1,11 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
-import { ArrowUpRight } from "lucide-react";
 
 export const CommunityReunions: React.FC = () => {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   return (
     <section className="relative w-full bg-neutral-950 text-white overflow-hidden py-24 sm:py-32 lg:py-40 flex flex-col justify-center items-center select-none">

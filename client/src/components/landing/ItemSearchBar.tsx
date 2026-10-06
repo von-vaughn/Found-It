@@ -92,7 +92,7 @@ export const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
             type="button"
             onClick={() => onSearchQueryChange("")}
             aria-label="Clear search"
-            className={`p-1 rounded-full transition-colors shrink-0 ${
+            className={`p-1 rounded-full transition-colors shrink-0 cursor-pointer ${
               isLight
                 ? "text-neutral-400 hover:text-neutral-900"
                 : "text-neutral-400 hover:text-white"

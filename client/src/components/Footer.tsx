@@ -1,5 +1,4 @@
 import React from "react";
-import { ArrowUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 export const Footer: React.FC = () => {

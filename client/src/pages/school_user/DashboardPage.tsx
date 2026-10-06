@@ -5,6 +5,12 @@ import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import {
+  applyAdvancedFilters,
+  countActiveFilters,
+  defaultFilters,
+  type ItemFilters,
+} from "@/components/school_user/itemFilters";
+import {
   BriefcaseBusiness,
   Glasses,
   KeyRound,
@@ -37,6 +43,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("q") ?? "",
   );
+  const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
@@ -86,9 +93,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     { id: "accessories", label: "Accessories", icon: Glasses },
   ] as const;
 
-  // Filter items based on active tab and search query
+  // Filter items: search matches item name only; type and category
+  // come from the quick pills; location/color/date from Filters.
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+    const query = searchQuery.trim().toLowerCase();
+    const preFiltered = items.filter((item) => {
       // Type filter (All vs Lost vs Found)
       if (filterType !== "all" && item.type !== filterType) {
         return false;
@@ -99,22 +108,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         return false;
       }
 
-      // Search query filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchesTitle = item.title.toLowerCase().includes(q);
-        const matchesDesc = item.description.toLowerCase().includes(q);
-        const matchesLoc = item.location.toLowerCase().includes(q);
-        const matchesCat = item.category.toLowerCase().includes(q);
-        const matchesUser = item.username?.toLowerCase().includes(q) || false;
-        return (
-          matchesTitle || matchesDesc || matchesLoc || matchesCat || matchesUser
-        );
+      // Item-name search (title only)
+      if (query && !item.title.toLowerCase().includes(query)) {
+        return false;
       }
 
       return true;
     });
-  }, [items, filterType, searchQuery, selectedCategory]);
+    return applyAdvancedFilters(preFiltered, filters);
+  }, [items, filterType, searchQuery, selectedCategory, filters]);
+
+  const activeFilterCount = countActiveFilters(filters);
 
   return (
     <div className="min-h-screen bg-[#FBFBFC] flex selection:bg-[#E5192D] selection:text-white font-sans text-neutral-900">
@@ -142,6 +146,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           onOpenReportModal={() => handleOpenCreateModal("lost")}
           searchInputRef={searchInputRef}
           sidebarExpanded={sidebarExpanded}
+          notificationPanelOpen={notificationsOpen}
+          onCategorySelect={(catId) => {
+            if (["bags", "electronics", "keys", "wallets", "accessories"].includes(catId)) {
+              setSelectedCategory(catId as "bags" | "electronics" | "keys" | "wallets" | "accessories");
+            } else {
+              setSearchQuery(catId);
+            }
+          }}
+          activeFilterCount={activeFilterCount}
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClearFilters={() => setFilters(defaultFilters)}
+          filterResultCount={filteredItems.length}
         />
 
         {/* Dashboard Main Container */}
@@ -205,14 +222,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </button>
 
             {/* Result count indicator if filtered or searched */}
-            {(searchQuery.trim() || filterType !== "all" || selectedCategory !== "all") && (
+            {(searchQuery.trim() || filterType !== "all" || selectedCategory !== "all" || activeFilterCount > 0) && (
               <div className="ml-auto text-xs text-neutral-400 font-medium">
-                {(searchQuery || filterType !== "all" || selectedCategory !== "all") && (
+                {(searchQuery || filterType !== "all" || selectedCategory !== "all" || activeFilterCount > 0) && (
                   <button
                     onClick={() => {
                       setSearchQuery("");
                       setFilterType("all");
                       setSelectedCategory("all");
+                      setFilters(defaultFilters);
                     }}
                     className="ml-2 text-[#E5192D] hover:underline font-bold"
                   >
@@ -225,7 +243,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             {categories.map((category) => {
-              const Icon = category.icon;
+              const Icon = "icon" in category ? category.icon : null;
               return (
                 <button
                   key={category.id}
@@ -273,6 +291,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 onClick={() => {
                   setSearchQuery("");
                   setFilterType("all");
+                  setSelectedCategory("all");
+                  setFilters(defaultFilters);
                 }}
                 className="px-4 py-2 bg-neutral-900 text-white rounded-xl text-xs font-semibold hover:bg-neutral-800 transition-colors"
               >

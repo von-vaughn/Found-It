@@ -252,7 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           exit={{ opacity: 0, x: -16 }}
           transition={{ type: "spring", stiffness: 360, damping: 34 }}
           style={{ left: collapsedWidth }}
-          className="fixed top-20 bottom-0 z-40 w-80 bg-white border-r border-neutral-100 shadow-xl"
+          className="fixed top-0 bottom-0 z-40 w-80 bg-white border-r border-neutral-100 shadow-xl"
         >
           <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100">
             <div>

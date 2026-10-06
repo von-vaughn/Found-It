@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Search,
   User,
   Package,
   Clock,
   MapPin,
   Building2,
   CreditCard,
-  Sparkles,
   Maximize2,
   X,
   ShieldCheck,

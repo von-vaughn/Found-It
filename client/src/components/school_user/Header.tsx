@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, ChevronDown, LogOut, User as UserIcon, Bookmark, PlusCircle } from "lucide-react";
+import { ChevronDown, LogOut, User as UserIcon, Bookmark, PlusCircle, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/context/useAuth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { SearchPaletteModal } from "@/components/SearchPaletteModal";
+import type { ItemFilters } from "@/components/school_user/itemFilters";
 
 interface HeaderProps {
   searchQuery: string;
@@ -10,6 +12,13 @@ interface HeaderProps {
   onOpenReportModal?: () => void;
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
   sidebarExpanded?: boolean;
+  notificationPanelOpen?: boolean;
+  onCategorySelect?: (catId: string) => void;
+  activeFilterCount?: number;
+  filters?: ItemFilters;
+  onFiltersChange?: (filters: ItemFilters) => void;
+  onClearFilters?: () => void;
+  filterResultCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,10 +27,18 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenReportModal,
   searchInputRef,
   sidebarExpanded = false,
+  notificationPanelOpen = false,
+  onCategorySelect,
+  activeFilterCount = 0,
+  filters,
+  onFiltersChange,
+  onClearFilters,
+  filterResultCount,
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -39,26 +56,52 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="h-20 bg-white px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
-      {/* Search Input Bar */}
-      <div className="flex-1 pr-4">
-        <div
-          className={`relative flex items-center transition-[margin] duration-200 ease-out ${
-            sidebarExpanded ? "ml-44 md:ml-40" : ""
-          }`}
-        >
-          <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none stroke-[2]" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search lost items, categories, or location..."
-            className="w-full h-10 pl-10 pr-4 bg-[#F8F9FA] hover:bg-[#F3F4F6] focus:bg-white rounded-lg border border-neutral-200/80 focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50 text-xs text-neutral-800 placeholder:text-neutral-400 font-normal transition-all"
-          />
-
+    <>
+      <header className="h-20 bg-white sticky top-0 z-30">
+        <div className="h-full w-full max-w-[1400px] mx-auto px-8 sm:px-12 lg:px-16 xl:px-20 flex items-center justify-between">
+        {/* Search Input Bar */}
+        <div className="flex-1 pr-4">
+          <div
+            className={`relative flex items-center gap-2 transition-[margin] duration-200 ease-out ${
+              notificationPanelOpen
+                ? "md:ml-80"
+                : sidebarExpanded
+                  ? "ml-44 md:ml-40"
+                  : ""
+            }`}
+          >
+            <div className="relative flex-1 min-w-0 flex items-center">
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search items by name…"
+              aria-label="Search items by name"
+              className="w-full h-10 px-3 bg-[#F8F9FA] rounded-lg border border-neutral-200/80 text-xs text-neutral-800 placeholder:text-neutral-400 font-normal transition-colors hover:bg-[#F3F4F6] focus:bg-white focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50"
+            />
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPaletteOpen(true)}
+              title="Filters"
+              aria-label="Open filters"
+              aria-expanded={isPaletteOpen}
+              className={`relative h-10 w-10 shrink-0 flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer ${
+                isPaletteOpen || activeFilterCount > 0
+                  ? "text-neutral-900 hover:text-neutral-700"
+                  : "text-neutral-500 hover:text-neutral-900"
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 bg-[#E5192D] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white tabular-nums">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* Right User Actions */}
       <div className="flex items-center gap-3 sm:gap-4 shrink-0">
@@ -145,6 +188,31 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+      </div>
     </header>
-  );
+
+    <SearchPaletteModal
+      isOpen={isPaletteOpen}
+      onClose={() => setIsPaletteOpen(false)}
+      initialQuery={searchQuery}
+      onSelectCategory={(categoryId, categoryLabel) => {
+        if (onCategorySelect) {
+          onCategorySelect(categoryId);
+        } else {
+          onSearchChange(categoryLabel);
+        }
+      }}
+      onSelectBuilding={(buildingName) => {
+        onSearchChange(buildingName);
+      }}
+      onSubmitSearch={(query) => {
+        onSearchChange(query);
+      }}
+      filters={filters}
+      onFiltersChange={onFiltersChange}
+      onClearFilters={onClearFilters}
+      filterResultCount={filterResultCount}
+    />
+  </>
+);
 };
