@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import { Header } from "@/components/school_user/Header";
 import { ComposerCard } from "@/components/school_user/ComposerCard";
 import { ItemCard } from "@/components/school_user/ItemCard";
-import { ItemDetailModal } from "@/components/school_user/ItemDetailModal";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { SearchX } from "lucide-react";
 import { initialItems, type Item } from "@/data/mockItems";
@@ -21,16 +21,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const items = propItems ?? internalItems;
 
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
   const [filterType, setFilterType] = useState<"all" | "lost" | "found">("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("q") ?? "",
+  );
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
   >("lost");
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
@@ -43,6 +47,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Keep the URL query in sync so feed search is deep-linkable
+  // (e.g. searching from the item detail page lands here filtered).
+  useEffect(() => {
+    const current = searchParams.get("q") ?? "";
+    if (current === searchQuery) return;
+    setSearchParams(searchQuery ? { q: searchQuery } : {}, { replace: true });
+  }, [searchQuery, searchParams, setSearchParams]);
 
   const handleAddItem = (newItem: Item) => {
     if (propOnAddItem) {
@@ -88,6 +100,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         activeTab={activeNavTab}
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
+        onNotificationsOpenChange={setNotificationsOpen}
         onTabChange={(tab) => {
           setActiveNavTab(tab);
           if (tab === "discover") {
@@ -110,6 +123,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* Dashboard Main Container */}
         <main className="flex-1 min-w-0 w-full max-w-[1400px] mx-auto px-8 sm:px-12 lg:px-16 xl:px-20 py-5 space-y-5">
+          <div
+            className={`@container min-w-0 space-y-5 transition-[margin,width] duration-300 ease-in-out ${
+              notificationsOpen
+                ? "md:ml-80 md:w-[calc(100%-20rem)]"
+                : "w-full"
+            }`}
+          >
           {/* Subheader / Composer Card ("What's on your mind, Vaughn?") */}
           <ComposerCard
             onOpenReportModal={(type) => handleOpenCreateModal(type || "lost")}
@@ -187,10 +207,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           {/* Masonry Items Grid */}
           {filteredItems.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
+            <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 gap-6 pb-12">
               {filteredItems.map((item) => (
                 <div key={item.id} className="w-full">
-                  <ItemCard item={item} onItemClick={setSelectedItem} />
+                  <ItemCard
+                    item={item}
+                    onItemClick={(selected) =>
+                      navigate(`/dashboard/items/${selected.id}`)
+                    }
+                  />
                 </div>
               ))}
             </div>
@@ -217,14 +242,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </button>
             </div>
           )}
+          </div>
         </main>
       </div>
-
-      {/* Item Detail Modal */}
-      <ItemDetailModal
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
-      />
 
       {/* Create / Report Item Modal */}
       <CreatePostModal

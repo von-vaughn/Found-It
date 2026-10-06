@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { X, PlusCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { ImagePlus, Lock, X } from "lucide-react";
 import type { Item } from "@/data/mockItems";
 import { useAuth } from "@/context/useAuth";
 import toast from "react-hot-toast";
@@ -11,6 +11,14 @@ interface CreatePostModalProps {
   initialType?: "lost" | "found";
 }
 
+const todayIso = () => new Date().toISOString().split("T")[0];
+
+const inputClass =
+  "w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors";
+
+const labelClass =
+  "block text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5";
+
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   isOpen,
   onClose,
@@ -20,31 +28,61 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { user } = useAuth();
   const [type, setType] = useState<"lost" | "found">(initialType);
   const [title, setTitle] = useState("");
+  const [color, setColor] = useState("");
+  const [dateValue, setDateValue] = useState(todayIso);
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [confidentialInfo, setConfidentialInfo] = useState("");
   const [category, setCategory] = useState<Item["category"]>("electronics");
-  const [selectedImage, setSelectedImage] = useState<string>("/images/backpack.jpg");
-  const [attachImage, setAttachImage] = useState<boolean>(true);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync type when opened from different entry points; close on Escape.
+  useEffect(() => {
+    if (!isOpen) return;
+    setType(initialType);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, initialType, onClose]);
+
+  // Avoid leaking object URLs created for uploaded previews.
+  useEffect(() => {
+    return () => {
+      if (uploadedImage) URL.revokeObjectURL(uploadedImage);
+    };
+  }, [uploadedImage]);
 
   if (!isOpen) return null;
 
-  const openSourceImageOptions = [
-    { label: "Backpack", value: "/images/backpack.jpg" },
-    { label: "iPhone", value: "/images/iphone.jpg" },
-    { label: "Glasses", value: "/images/glasses.jpg" },
-    { label: "Wallet", value: "/images/wallet.jpg" },
-    { label: "Water Bottle", value: "/images/water-bottle.jpg" },
-    { label: "Laptop Charger", value: "/images/laptop-charger.jpg" },
-    { label: "Notebook", value: "/images/notebook.jpg" },
-    { label: "Calculator", value: "/images/calculator.jpg" },
-    { label: "Jacket", value: "/images/jacket.jpg" },
-    { label: "Keys", value: "/images/keys.jpg" },
-  ];
+  const previewImage = uploadedImage;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+    if (uploadedImage) URL.revokeObjectURL(uploadedImage);
+    setUploadedImage(URL.createObjectURL(file));
+    // Reset so picking the same file twice still fires onChange.
+    e.target.value = "";
+  };
+
+  const handleRemovePhoto = () => {
+    if (uploadedImage) {
+      URL.revokeObjectURL(uploadedImage);
+      setUploadedImage(null);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !location.trim()) {
-      toast.error("Please provide both title and location.");
+      toast.error("Add a title and location first.");
       return;
     }
 
@@ -60,9 +98,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       username,
       userAvatar: "/images/avatar-vaughn.jpg",
       location: location.trim(),
-      date: new Date().toISOString().split("T")[0],
+      date: dateValue || todayIso(),
       timeAgo: "Just now",
-      image: attachImage ? selectedImage : "",
+      image: previewImage ?? "",
       description: description.trim() || "No additional description provided.",
       status: "active",
       contactName: user?.name || "Vaughn Evangelista",
@@ -70,195 +108,293 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       commentsCount: 0,
       saved: false,
     };
+    if (color.trim()) newItem.color = color.trim();
+    // Stored on the report but never rendered publicly.
+    if (confidentialInfo.trim())
+      newItem.confidentialInfo = confidentialInfo.trim();
 
     onAddItem(newItem);
     toast.success(
-      `Successfully published ${type === "lost" ? "lost" : "found"} item report!`,
-      { icon: "✨" }
+      `Published your ${type === "lost" ? "lost" : "found"} item report.`,
     );
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/50 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/40">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden z-10 border border-neutral-100 my-8 p-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="report-modal-title"
+        className="relative w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-neutral-100 my-8 p-6 sm:p-7"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-neutral-900 tracking-tight">
-              Create a Report
+            <h3
+              id="report-modal-title"
+              className="text-base font-extrabold text-neutral-900 tracking-tight text-balance"
+            >
+              Report an item
             </h3>
-            <p className="text-xs text-neutral-400">
-              Share details to help our campus community reunite items.
+            <p className="mt-1 text-xs text-neutral-400">
+              A short post is enough — the details can follow.
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700"
+            aria-label="Close report form"
+            className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Image Attachment Options */}
-          <div className="md:row-start-1">
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
-                Photo Attachment
-              </label>
-              <button
-                type="button"
-                onClick={() => setAttachImage(!attachImage)}
-                className="text-xs font-medium text-[#E5192D] hover:underline"
-              >
-                {attachImage ? "Remove photo (No image)" : "Attach photo"}
-              </button>
-            </div>
+        {/* Type tabs */}
+        <div
+          role="tablist"
+          aria-label="Report type"
+          className="mt-5 flex items-center gap-5 border-b border-neutral-100"
+        >
+          {(
+            [
+              { id: "lost", label: "Lost" },
+              { id: "found", label: "Found" },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={type === tab.id}
+              onClick={() => setType(tab.id)}
+              className={`relative pb-2.5 text-sm font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded-sm ${
+                type === tab.id
+                  ? "text-neutral-900"
+                  : "text-neutral-400 hover:text-neutral-700"
+              }`}
+            >
+              {tab.label}
+              {type === tab.id && (
+                <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-neutral-900 rounded-full" />
+              )}
+            </button>
+          ))}
+        </div>
 
-            {attachImage ? (
-              <div className="space-y-2">
-                <select
-                  value={selectedImage}
-                  onChange={(e) => setSelectedImage(e.target.value)}
-                  className="w-full h-10 px-3 text-xs bg-neutral-50 rounded-xl border border-neutral-200 focus:outline-none focus:border-[#E5192D]"
-                >
-                  {openSourceImageOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="w-full h-64 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
-                  <img
-                    src={selectedImage}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
+        {/* Form: upload left, details right */}
+        <form
+          onSubmit={handleSubmit}
+          className="mt-5 grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6"
+        >
+          {/* Left: photo upload */}
+          <div className="min-w-0">
+            <span className={labelClass}>Photo</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="sr-only"
+              aria-label="Upload a photo of the item"
+              tabIndex={-1}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full aspect-[4/5] rounded-xl overflow-hidden bg-neutral-50 border border-dashed border-neutral-200 flex flex-col items-center justify-center gap-2 p-3 text-center transition-colors hover:border-neutral-400 hover:bg-neutral-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+            >
+              {previewImage ? (
+                <img
+                  src={previewImage}
+                  alt=""
+                  className="h-full w-full object-cover rounded-lg"
+                />
+              ) : (
+                <>
+                  <ImagePlus
+                    className="h-6 w-6 text-neutral-300"
+                    aria-hidden="true"
                   />
-                </div>
-              </div>
-            ) : (
-              <div className="h-[19rem] p-3 bg-neutral-50 border border-dashed border-neutral-200 rounded-xl flex items-center justify-center text-center text-xs text-neutral-400">
-                Item will be posted without an image attached.
+                  <span className="text-xs font-semibold text-neutral-500">
+                    Upload photo
+                  </span>
+                  <span className="text-[11px] text-neutral-400">
+                    Click to choose a file
+                  </span>
+                </>
+              )}
+            </button>
+            {previewImage && (
+              <div className="mt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  className="shrink-0 text-xs font-semibold text-neutral-400 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
+                >
+                  Remove
+                </button>
               </div>
             )}
           </div>
 
-          <div className="space-y-4 md:col-start-2 md:row-start-1">
-            {/* Post Type Selector */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-100 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setType("lost")}
-                className={`py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                  type === "lost"
-                    ? "bg-[#E5192D] text-white shadow-xs"
-                    : "text-neutral-600 hover:text-neutral-900"
-                }`}
-              >
-                <AlertTriangle className="w-3.5 h-3.5" />
-                I Lost An Item
-              </button>
-              <button
-                type="button"
-                onClick={() => setType("found")}
-                className={`py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                  type === "found"
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "text-neutral-600 hover:text-neutral-900"
-                }`}
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                I Found An Item
-              </button>
-            </div>
-
-            {/* Title */}
+          {/* Right: details */}
+          <div className="min-w-0 space-y-4">
             <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
-                Item Title *
+              <label htmlFor="report-title" className={labelClass}>
+                What is it?
               </label>
               <input
+                id="report-title"
+                name="title"
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Black Backpack, iPhone 13, Hydro Flask"
-                className="w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D]"
+                placeholder="Black backpack, iPhone 13…"
+                autoComplete="off"
+                spellCheck={false}
+                className={inputClass}
               />
             </div>
 
-            {/* Location & Category */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
-                  Location *
+            <div className="grid grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <label htmlFor="report-color" className={labelClass}>
+                  Color
+                </label>
+                <div className="relative">
+                  <input
+                    id="report-color"
+                    name="color"
+                    type="text"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    placeholder="Black…"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className={`${inputClass} pr-9`}
+                  />
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      backgroundColor: color.trim() || "transparent",
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-neutral-200"
+                  />
+                </div>
+              </div>
+              <div className="min-w-0">
+                <label htmlFor="report-date" className={labelClass}>
+                  {type === "lost" ? "Date lost" : "Date found"}
                 </label>
                 <input
+                  id="report-date"
+                  name="reportDate"
+                  type="date"
+                  required
+                  value={dateValue}
+                  max={todayIso()}
+                  onChange={(e) => setDateValue(e.target.value)}
+                  className={`${inputClass} cursor-pointer`}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <label htmlFor="report-location" className={labelClass}>
+                  Where?
+                </label>
+                <input
+                  id="report-location"
+                  name="location"
                   type="text"
                   required
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. WMSU Campus, Library"
-                  className="w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D]"
+                  placeholder="Library…"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={inputClass}
                 />
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
+              <div className="min-w-0">
+                <label htmlFor="report-category" className={labelClass}>
                   Category
                 </label>
                 <select
+                  id="report-category"
+                  name="category"
                   value={category}
                   onChange={(e) =>
                     setCategory(e.target.value as Item["category"])
                   }
-                  className="w-full h-11 px-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D]"
+                  className={`${inputClass} cursor-pointer`}
                 >
-                  <option value="bags">Bags & Backpacks</option>
+                  <option value="bags">Bags</option>
                   <option value="electronics">Electronics</option>
-                  <option value="keys">Keys & Fobs</option>
+                  <option value="keys">Keys</option>
                   <option value="wallets">Wallets & IDs</option>
                   <option value="accessories">Accessories</option>
-                  <option value="other">Other Items</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
 
-            {/* Description */}
             <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
-                Description & Details
+              <label htmlFor="report-description" className={labelClass}>
+                Details{" "}
+                <span className="font-medium normal-case tracking-normal text-neutral-400">
+                  (optional)
+                </span>
               </label>
               <textarea
+                id="report-description"
+                name="description"
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe distinctive features, marks, or where it was last seen..."
-                className="w-full p-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] resize-none"
+                placeholder="Marks, where it was last seen…"
+                className="w-full p-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none"
               />
             </div>
-          </div>
 
-          {/* Submit */}
-          <div className="pt-2 flex items-center gap-3 md:col-span-2">
-            <button
-              type="submit"
-              className="flex-1 h-11 rounded-xl bg-[#E5192D] hover:bg-[#c91424] text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
-            >
-              <PlusCircle className="w-4 h-4" />
-              Publish Post
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-11 px-5 rounded-xl border border-neutral-200 font-semibold text-xs text-neutral-700 hover:bg-neutral-50"
-            >
-              Cancel
-            </button>
+            <div>
+              <label
+                htmlFor="report-confidential"
+                className={`${labelClass} flex items-center gap-1.5`}
+              >
+                <Lock className="h-3 w-3" aria-hidden="true" />
+                Confidential info
+              </label>
+              <input
+                id="report-confidential"
+                name="confidentialInfo"
+                type="text"
+                value={confidentialInfo}
+                onChange={(e) => setConfidentialInfo(e.target.value)}
+                placeholder="Serial number, ID number…"
+                autoComplete="off"
+                spellCheck={false}
+                className={inputClass}
+              />
+              <p className="mt-1.5 text-[11px] text-neutral-400">
+                Never shown publicly — only used to verify ownership.
+              </p>
+            </div>
+
+            <div className="pt-1">
+              <button
+                type="submit"
+                className="w-full h-11 rounded-xl bg-neutral-900 text-white font-bold text-sm transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 cursor-pointer"
+              >
+                Publish report
+              </button>
+            </div>
           </div>
         </form>
       </div>

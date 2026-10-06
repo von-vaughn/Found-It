@@ -10,6 +10,8 @@ export interface Item {
   description: string;
   status: 'active' | 'reunited' | 'pending';
   reward?: string;
+  color?: string;
+  confidentialInfo?: string;
   contactName: string;
   username?: string;
   userAvatar?: string;

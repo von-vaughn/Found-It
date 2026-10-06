@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, Bell, ChevronDown, LogOut, User as UserIcon, Bookmark, PlusCircle } from "lucide-react";
+import { Search, ChevronDown, LogOut, User as UserIcon, Bookmark, PlusCircle } from "lucide-react";
 import { useAuth } from "@/context/useAuth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -22,9 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -35,37 +33,10 @@ export const Header: React.FC<HeaderProps> = ({
       ) {
         setProfileDropdownOpen(false);
       }
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotificationsOpen(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const notifications = [
-    {
-      id: 1,
-      title: "New match found!",
-      desc: "Someone reported finding keys near the Parking Lot.",
-      time: "10m ago",
-      unread: true,
-    },
-    {
-      id: 2,
-      title: "Item claimed",
-      desc: "Black Herschel backpack inquiry was answered.",
-      time: "1h ago",
-      unread: true,
-    },
-    {
-      id: 3,
-      title: "Community update",
-      desc: "WMSU Student Affairs posted campus verification guidelines.",
-      time: "2h ago",
-      unread: true,
-    },
-  ];
 
   return (
     <header className="h-20 bg-white px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
@@ -91,44 +62,6 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right User Actions */}
       <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-        {/* Notification Bell */}
-        <div className="relative" ref={notifRef}>
-          <button
-            onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors relative cursor-pointer"
-            aria-label="Notifications"
-          >
-            <Bell className="w-4.5 h-4.5 stroke-[1.8]" />
-            <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-[#E5192D] text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-              3
-            </span>
-          </button>
-
-          {/* Notifications Dropdown */}
-          {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-neutral-100 p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-100">
-                <span className="font-bold text-sm text-neutral-900">Notifications</span>
-                <span className="text-[11px] font-semibold text-[#E5192D] bg-red-50 px-2 py-0.5 rounded-full">
-                  3 New
-                </span>
-              </div>
-              <div className="mt-2 space-y-1">
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className="p-2.5 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors"
-                  >
-                    <p className="text-xs font-bold text-neutral-900">{n.title}</p>
-                    <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2">{n.desc}</p>
-                    <span className="text-[10px] text-neutral-400 mt-1 block">{n.time}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* User Profile Bar */}
         <div className="relative" ref={dropdownRef}>
           <button
