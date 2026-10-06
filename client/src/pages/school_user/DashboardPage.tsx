@@ -2,10 +2,16 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import { Header } from "@/components/school_user/Header";
-import { ComposerCard } from "@/components/school_user/ComposerCard";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
-import { SearchX } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Glasses,
+  KeyRound,
+  SearchX,
+  Smartphone,
+  WalletCards,
+} from "lucide-react";
 import { initialItems, type Item } from "@/data/mockItems";
 
 interface DashboardPageProps {
@@ -24,6 +30,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
   const [filterType, setFilterType] = useState<"all" | "lost" | "found">("all");
+  const [selectedCategory, setSelectedCategory] = useState<
+    "all" | "bags" | "electronics" | "keys" | "wallets" | "accessories"
+  >("all");
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("q") ?? "",
@@ -68,11 +77,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setCreateModalOpen(true);
   };
 
+  const categories = [
+    { id: "all", label: "All Items" },
+    { id: "bags", label: "Bags", icon: BriefcaseBusiness },
+    { id: "electronics", label: "Electronics", icon: Smartphone },
+    { id: "keys", label: "Keys", icon: KeyRound },
+    { id: "wallets", label: "Wallets", icon: WalletCards },
+    { id: "accessories", label: "Accessories", icon: Glasses },
+  ] as const;
+
   // Filter items based on active tab and search query
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       // Type filter (All vs Lost vs Found)
       if (filterType !== "all" && item.type !== filterType) {
+        return false;
+      }
+
+      // Category filter
+      if (selectedCategory !== "all" && item.category !== selectedCategory) {
         return false;
       }
 
@@ -91,7 +114,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       return true;
     });
-  }, [items, filterType, searchQuery]);
+  }, [items, filterType, searchQuery, selectedCategory]);
 
   return (
     <div className="min-h-screen bg-[#FBFBFC] flex selection:bg-[#E5192D] selection:text-white font-sans text-neutral-900">
@@ -130,11 +153,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 : "w-full"
             }`}
           >
-          {/* Subheader / Composer Card ("What's on your mind, Vaughn?") */}
-          <ComposerCard
-            onOpenReportModal={(type) => handleOpenCreateModal(type || "lost")}
-          />
-
           {/* Filter Pills and Tabs Bar */}
           <div className="flex items-center gap-3 pt-1">
             {/* "All" Tab with bottom underline */}
@@ -187,14 +205,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </button>
 
             {/* Result count indicator if filtered or searched */}
-            {(searchQuery.trim() || filterType !== "all") && (
+            {(searchQuery.trim() || filterType !== "all" || selectedCategory !== "all") && (
               <div className="ml-auto text-xs text-neutral-400 font-medium">
-                Showing {filteredItems.length} items
-                {searchQuery && (
+                {(searchQuery || filterType !== "all" || selectedCategory !== "all") && (
                   <button
                     onClick={() => {
                       setSearchQuery("");
                       setFilterType("all");
+                      setSelectedCategory("all");
                     }}
                     className="ml-2 text-[#E5192D] hover:underline font-bold"
                   >
@@ -203,6 +221,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 )}
               </div>
             )}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {categories.map((category) => {
+              const Icon = category.icon;
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-2 ${
+                    selectedCategory === category.id
+                      ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
+                      : "bg-white text-neutral-600 border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
+                  <span>{category.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Masonry Items Grid */}

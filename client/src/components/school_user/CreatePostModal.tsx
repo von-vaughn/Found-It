@@ -115,7 +115,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
     onAddItem(newItem);
     toast.success(
-      `Published your ${type === "lost" ? "lost" : "found"} item report.`,
+      `Published your ${type === "lost" ? "lost" : "found"} item post.`,
     );
     onClose();
   };
@@ -137,11 +137,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               id="report-modal-title"
               className="text-base font-extrabold text-neutral-900 tracking-tight text-balance"
             >
-              Report an item
+              Post an item lost or found
             </h3>
-            <p className="mt-1 text-xs text-neutral-400">
-              A short post is enough — the details can follow.
-            </p>
           </div>
           <button
             type="button"
@@ -156,7 +153,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         {/* Type tabs */}
         <div
           role="tablist"
-          aria-label="Report type"
+          aria-label="Post type"
           className="mt-5 flex items-center gap-5 border-b border-neutral-100"
         >
           {(
@@ -390,7 +387,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <div className="pt-1">
               <button
                 type="submit"
-                className="w-full h-11 rounded-xl bg-neutral-900 text-white font-bold text-sm transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 cursor-pointer"
+                className="w-full h-11 rounded-xl bg-[#E5192D] text-white font-bold text-sm transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
               >
                 Publish report
               </button>

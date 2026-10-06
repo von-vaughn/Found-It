@@ -104,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: "create",
-      label: "Report Item",
+      label: "Post Item",
       icon: PlusCircle,
       onClick: () => {
         if (onOpenCreateModal) onOpenCreateModal();
@@ -128,6 +128,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       },
     },
   ];
+
+  const labelsVisible = expanded && !notificationsOpen;
 
   return (
     <>
@@ -169,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       initial={false}
       animate={{ width: expanded && !notificationsOpen ? 240 : collapsedWidth }}
       transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
-      className={`${notificationsOpen ? "" : "group/sidebar"} shrink-0 bg-white border-r border-neutral-100 flex flex-col items-center py-5 fixed inset-y-0 left-0 z-40 selection:bg-[#E5192D] selection:text-white`}
+      className={`shrink-0 bg-white border-r border-neutral-100 flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
     >
       {/* Top Logo */}
       <button
@@ -182,7 +184,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           alt="FoundIt Logo"
           className="w-10 h-10 object-contain rounded-xl group-hover:scale-105 transition-transform"
         />
-        <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 opacity-0 transition-opacity duration-200 group-hover/sidebar:opacity-100 group-focus-within/sidebar:opacity-100 pointer-events-none">
+        <span className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 transition-opacity duration-200 pointer-events-none ${labelsVisible ? "opacity-100" : "opacity-0"}`}>
           Found<span className="text-[#E5192D]">It</span>
         </span>
       </button>
@@ -230,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </span>
                 )}
 
-                <span className="absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold opacity-0 transition-opacity duration-200 group-hover/sidebar:opacity-100 group-focus-within/sidebar:opacity-100">
+                <span className={`absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold transition-opacity duration-200 ${labelsVisible ? "opacity-100" : "opacity-0"}`}>
                   {item.label}
                 </span>
               </button>

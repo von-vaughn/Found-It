@@ -103,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl transition-colors text-left"
               >
                 <PlusCircle className="w-3.5 h-3.5 text-[#E5192D]" />
-                Report New Item
+                Post New Item
               </button>
 
               <button
