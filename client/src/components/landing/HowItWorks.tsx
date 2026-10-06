@@ -12,6 +12,9 @@ import {
   Maximize2,
   X,
   ShieldCheck,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface HowItWorksProps {
@@ -28,10 +31,67 @@ interface GalleryItem {
   badgeIcon: React.ElementType;
 }
 
+/* ── Step data for the right-side list ── */
+interface ProcessStep {
+  number: string;
+  title: string;
+  category: string;
+  detail: string;
+  readTime: string;
+}
+
+const claimSteps: ProcessStep[] = [
+  {
+    number: "01",
+    title: "Visit the Office of Student Affairs (OSA).",
+    category: "VISIT",
+    detail: "Head to the OSA office on campus to start the claim process.",
+    readTime: "Step 1",
+  },
+  {
+    number: "02",
+    title: "Describe your item — type, color, brand, date & location.",
+    category: "DESCRIBE",
+    detail: "Provide details so staff can match your report with found items.",
+    readTime: "Step 2",
+  },
+  {
+    number: "03",
+    title: "Staff will verify records and help you claim your item.",
+    category: "VERIFY",
+    detail: "Our team checks the database and assists with the return process.",
+    readTime: "Step 3",
+  },
+];
+
+const turnoverSteps: ProcessStep[] = [
+  {
+    number: "01",
+    title: "Bring the found item to the OSA office.",
+    category: "TURN OVER",
+    detail: "Deliver the item to the receiving desk at Student Affairs.",
+    readTime: "Step 1",
+  },
+  {
+    number: "02",
+    title: "Provide your name and contact details (optional).",
+    category: "REGISTER",
+    detail: "Your info helps us follow up and acknowledge your good deed.",
+    readTime: "Step 2",
+  },
+  {
+    number: "03",
+    title: "Staff will log and match it with existing reports.",
+    category: "MATCH",
+    detail: "If a match is found, we'll notify the owner immediately.",
+    readTime: "Step 3",
+  },
+];
+
 export const HowItWorks: React.FC<HowItWorksProps> = ({
   onBrowseLost: _onBrowseLost,
 }) => {
-  // Real images from 10 to 16.jpeg as requested
+  /* ── Gallery data ── */
   const galleryItems: GalleryItem[] = [
     {
       id: "osa-main",
@@ -82,162 +142,163 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
 
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"claim" | "turnover">("claim");
 
   const activeItem = galleryItems[selectedIndex] || galleryItems[0];
-  const thumbnailItems = galleryItems
-    .filter((_, idx) => idx !== selectedIndex)
-    .slice(0, 4);
+  const currentSteps = activeTab === "claim" ? claimSteps : turnoverSteps;
+
+  /* ── Pagination helpers ── */
+  const totalPages = galleryItems.length;
+  const goNext = () =>
+    setSelectedIndex((prev) => (prev + 1) % totalPages);
+  const goPrev = () =>
+    setSelectedIndex((prev) => (prev - 1 + totalPages) % totalPages);
 
   return (
     <section
       id="how-it-works"
       className="py-16 sm:py-24 bg-[#FAFAFA] border-t border-neutral-200/80 relative overflow-hidden"
     >
+      {/* Ambient blurs */}
       <div className="absolute top-1/4 right-10 w-96 h-96 bg-red-500/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 left-10 w-80 h-80 bg-neutral-300/20 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-4 relative z-10">
-        {/* Main 2-Column Split Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-[13fr_11fr] xl:grid-cols-[8fr_5fr] gap-8 items-start">
-          {/* ================= LEFT COLUMN: Visual Showcase & 4 Thumbnail Cards ================= */}
-          <div className="relative">
-            <div className="bg-[#7F1D1D] rounded-[2rem] p-3 sm:p-4 border border-white/10 shadow-sm relative overflow-hidden">
-              <div className="relative z-10 grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-3.5 lg:h-[720px]">
-                {/* Large Featured Card (Spans 8 cols on sm+) */}
-                <motion.div
-                  layout
-                  className="sm:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-900 shadow-md group min-h-[360px] sm:min-h-[460px] lg:min-h-0 lg:h-full flex flex-col justify-between"
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.img
-                      key={activeItem.id}
-                      src={activeItem.image}
-                      alt={activeItem.title}
-                      initial={{ opacity: 0, scale: 1.05 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
-                    />
-                  </AnimatePresence>
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* ═══════════════════════ MAIN 2-COLUMN LAYOUT ═══════════════════════ */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-14 items-start">
+          {/* ─────── LEFT: Featured Card (magazine-style) ─────── */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="relative"
+          >
+            <div className="bg-white rounded-[1.75rem] border border-neutral-200/90 shadow-lg shadow-black/[0.04] overflow-hidden group">
+              {/* Image area */}
+              <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={activeItem.id}
+                    src={activeItem.image}
+                    alt={activeItem.title}
+                    initial={{ opacity: 0, scale: 1.06 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.45, ease: "easeOut" }}
+                    className="w-full h-full object-cover object-center group-hover:scale-[1.03] transition-transform duration-700"
+                  />
+                </AnimatePresence>
 
-                  {/* Top Header Badge: [Search Icon] LOST & FOUND | 01 */}
-                  <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wider shadow-lg">
-                      <div className="w-4 h-4 rounded-full bg-[#E5192D] flex items-center justify-center">
-                        <Search className="w-2.5 h-2.5 text-white stroke-[2.5]" />
-                      </div>
-                      <span>LOST &amp; FOUND</span>
-                      <span className="text-white/40">|</span>
-                      <span className="text-neutral-200">
-                        {activeItem.code}
-                      </span>
+                {/* Top-left badge: FEATURED · 01 */}
+                <div className="absolute top-4 left-4 z-10">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold tracking-[0.14em] uppercase shadow-lg">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#E5192D]" />
+                    <span>Featured</span>
+                    <span className="text-white/40">·</span>
+                    <span className="text-neutral-300">{activeItem.code}</span>
+                  </div>
+                </div>
+
+                {/* Top-right badge: Category pill */}
+                <div className="absolute top-4 right-4 z-10">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#E5192D] text-white text-[11px] font-bold tracking-wider uppercase shadow-lg">
+                    {activeItem.category}
+                  </div>
+                </div>
+
+                {/* Expand button */}
+                <button
+                  onClick={() => setLightboxOpen(true)}
+                  className="absolute bottom-4 right-4 z-10 w-9 h-9 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white flex items-center justify-center cursor-pointer transition-all hover:scale-110"
+                  title="Enlarge Photo"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Text content area below image */}
+              <div className="p-6 sm:p-8">
+                {/* Meta line */}
+                <div className="flex items-center gap-2 text-[11px] font-bold text-neutral-400 tracking-[0.16em] uppercase mb-3">
+                  <span>OSA</span>
+                  <span className="text-neutral-300">·</span>
+                  <span>{galleryItems.length} Locations</span>
+                </div>
+
+                {/* Title */}
+                <h3 className="text-2xl sm:text-[1.75rem] font-black text-neutral-950 leading-snug tracking-tight mb-3">
+                  {activeItem.title}
+                </h3>
+
+                {/* Description */}
+                <p className="text-neutral-500 text-sm sm:text-[15px] leading-relaxed mb-6 max-w-md">
+                  {activeItem.caption}. Where students come together to report,
+                  recover, and return lost belongings through the Office of
+                  Student Affairs.
+                </p>
+
+                {/* CTA row */}
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setLightboxOpen(true)}
+                    className="inline-flex items-center gap-2.5 text-xs font-bold tracking-[0.16em] uppercase text-neutral-950 hover:text-[#E5192D] transition-colors group/cta cursor-pointer"
+                  >
+                    <span>View Location</span>
+                    <div className="w-8 h-8 rounded-full border-2 border-neutral-300 group-hover/cta:border-[#E5192D] flex items-center justify-center transition-colors">
+                      <ArrowRight className="w-3.5 h-3.5 group-hover/cta:translate-x-0.5 transition-transform" />
+                    </div>
+                  </button>
+
+                  {/* Pagination dots */}
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={goPrev}
+                      className="text-xs font-semibold text-neutral-400 hover:text-neutral-900 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span className="tracking-[0.12em] uppercase">Prev</span>
+                    </button>
+
+                    <div className="flex items-center gap-1.5">
+                      {galleryItems.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setSelectedIndex(idx)}
+                          className={`transition-all duration-200 cursor-pointer ${
+                            selectedIndex === idx
+                              ? "w-7 h-7 rounded-full bg-neutral-950 text-white text-[11px] font-bold flex items-center justify-center"
+                              : "text-[12px] font-semibold text-neutral-400 hover:text-neutral-900 px-1"
+                          }`}
+                        >
+                          {String(idx + 1).padStart(2, "0")}
+                        </button>
+                      ))}
                     </div>
 
                     <button
-                      onClick={() => setLightboxOpen(true)}
-                      className="w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white flex items-center justify-center cursor-pointer transition-all hover:scale-105"
-                      title="Enlarge Photo"
+                      onClick={goNext}
+                      className="text-xs font-semibold text-neutral-400 hover:text-neutral-900 transition-colors flex items-center gap-1 cursor-pointer"
                     >
-                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span className="tracking-[0.12em] uppercase">Next</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
-
-                  {/* Bottom Text Overlay: "Real Items. Real People." in stylish cursive font */}
-                  <div className="relative z-10 p-5 sm:p-6 mt-auto">
-                    <div className="mb-2">
-                      <span className="text-xs uppercase tracking-widest text-[#E5192D] font-extrabold bg-white/90 backdrop-blur-sm px-2.5 py-0.5 rounded-md inline-block mb-1.5 shadow-xs">
-                        {activeItem.category}
-                      </span>
-                      <h4 className="text-white font-bold text-base sm:text-lg leading-snug drop-shadow-sm">
-                        {activeItem.title}
-                      </h4>
-                    </div>
-
-                    {/* Cursive Handwriting Flourish */}
-                    <div className="pt-2 border-t border-white/15">
-                      <p
-                        className="text-white text-2xl sm:text-3xl font-bold leading-tight drop-shadow-md select-none"
-                        style={{ fontFamily: "'Caveat', cursive, sans-serif" }}
-                      >
-                        Real Items. <br />
-                        <span className="relative inline-block text-neutral-100">
-                          Real People.
-                          <svg
-                            className="absolute -bottom-1 left-0 w-full h-2 text-[#E5192D]"
-                            viewBox="0 0 100 8"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M2 6C30 2 70 2 98 6"
-                              stroke="currentColor"
-                              strokeWidth="3"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* 4 Stacked Thumbnail Cards (Spans 4 cols on sm+) */}
-                <div className="sm:col-span-4 grid grid-cols-2 sm:grid-cols-1 sm:grid-rows-4 gap-2.5 sm:gap-3 flex-col justify-between lg:min-h-0 lg:h-full">
-                  {thumbnailItems.map((item) => {
-                    const BadgeIcon = item.badgeIcon;
-                    const realIndex = galleryItems.findIndex(
-                      (it) => it.id === item.id,
-                    );
-
-                    return (
-                      <motion.div
-                        key={item.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedIndex(realIndex)}
-                        className="relative h-[95px] sm:h-full sm:min-h-[105px] rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer group border border-neutral-200/80 shadow-xs hover:shadow-md hover:border-[#E5192D]/60 transition-all duration-200 bg-neutral-100"
-                      >
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
-                        />
-                        {/* Pill badge at bottom-left */}
-                        <div className="absolute bottom-2 left-2 z-10">
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15 shadow-sm group-hover:bg-[#E5192D] group-hover:border-transparent transition-colors">
-                            <BadgeIcon className="w-3 h-3 text-white/90" />
-                            <span>{item.category}</span>
-                          </div>
-                        </div>
-
-                        {/* Code index at top right */}
-                        <div className="absolute top-2 right-2 text-[10px] font-bold text-white/60 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-xs">
-                          {item.code}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
                 </div>
               </div>
-
-              {/* Quick instructions indicator below thumbnails */}
-              <div className="relative z-10 mt-3 pt-3 border-t border-white/20 flex items-center justify-between text-xs text-white/75 px-1">
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-white" />
-                  <span>Click any photo to inspect station details</span>
-                </span>
-                <span className="font-semibold text-white">
-                  {selectedIndex + 1} of {galleryItems.length} Photos
-                </span>
-              </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* ================= RIGHT COLUMN: Header & 2 Process Cards ================= */}
-          <div className="flex flex-col justify-between">
-            <div>
-              {/* Header Title */}
+          {/* ─────── RIGHT: Title + Numbered editorial list ─────── */}
+          <div className="flex flex-col">
+            {/* Section header */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="mb-8"
+            >
               <h2 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-black text-neutral-950 tracking-tight leading-[1.08] mb-3">
                 Lost an item? <br />
                 Found something? <br />
@@ -259,175 +320,142 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
                 </span>
               </h2>
 
-              <p className="text-neutral-600 text-base sm:text-lg leading-relaxed max-w-xl font-normal mb-8">
-                Here’s where you can claim your lost item or turn over a lost
-                and found item.
+              <p className="text-neutral-500 text-base sm:text-lg leading-relaxed max-w-xl font-normal">
+                Here's where you can claim your lost item or turn over a found
+                item. Follow the simple steps below.
               </p>
+            </motion.div>
 
-              {/* The Two Process Cards (Side by Side) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {/* Card 1: To Claim Your Lost Item */}
+            {/* Tab switcher: Claim / Turn Over */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="flex items-center gap-1 mb-6 bg-neutral-100 rounded-full p-1 w-fit border border-neutral-200/80"
+            >
+              <button
+                onClick={() => setActiveTab("claim")}
+                className={`px-5 py-2 rounded-full text-sm font-bold tracking-wide transition-all cursor-pointer ${
+                  activeTab === "claim"
+                    ? "bg-[#a3161a] text-white shadow-md"
+                    : "text-neutral-500 hover:text-neutral-900"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Claim Item
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab("turnover")}
+                className={`px-5 py-2 rounded-full text-sm font-bold tracking-wide transition-all cursor-pointer ${
+                  activeTab === "turnover"
+                    ? "bg-[#a3161a] text-white shadow-md"
+                    : "text-neutral-500 hover:text-neutral-900"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Turn Over
+                </span>
+              </button>
+            </motion.div>
+
+            {/* ── Numbered list of steps (editorial style) ── */}
+            <div className="flex flex-col">
+              <AnimatePresence mode="wait">
                 <motion.div
-                  whileHover={{ y: -3 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-[#a3161a] rounded-3xl p-6 sm:p-7 shadow-lg hover:shadow-xl hover:shadow-red-900/40 transition-all duration-300 flex flex-col justify-between relative group overflow-hidden"
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.35 }}
                 >
-                  <div className="absolute -top-16 -right-12 w-48 h-48 rounded-full bg-white/10 blur-[70px] pointer-events-none" />
-                  <div className="absolute -bottom-20 -left-12 w-44 h-44 rounded-full bg-black/10 blur-3xl pointer-events-none" />
-                  <div className="relative z-10">
-                    {/* Top circular icon badge */}
-                    <div className="flex items-center gap-3.5 mb-5">
-                      <div className="w-12 h-12 rounded-full bg-white text-[#a3161a] flex items-center justify-center shrink-0 shadow-md shadow-black/20 group-hover:scale-105 transition-transform">
-                        <User className="w-6 h-6 stroke-[2.2]" />
-                      </div>
-                      <h3 className="text-base font-black text-white leading-snug min-h-[66px]">
-                        To Claim Your <br />
-                        Lost Item
-                      </h3>
-                    </div>
+                  {currentSteps.map((step, idx) => (
+                    <motion.div
+                      key={step.number}
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{
+                        duration: 0.4,
+                        delay: idx * 0.1,
+                      }}
+                      className="group border-t border-neutral-200 last:border-b"
+                    >
+                      <div className="flex items-start gap-5 sm:gap-7 py-6 sm:py-7 cursor-default">
+                        {/* Step number */}
+                        <span className="text-lg sm:text-xl font-black text-neutral-300 group-hover:text-[#E5192D] transition-colors duration-300 shrink-0 mt-0.5 w-8 text-right tabular-nums">
+                          {step.number}
+                        </span>
 
-                    {/* Step list */}
-                    <div className="space-y-4">
-                      {/* Step 1 */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-white text-[#a3161a] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                          1
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-base sm:text-lg font-extrabold text-neutral-900 leading-snug group-hover:text-neutral-950 transition-colors">
+                            {step.title}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1.5 text-[11px] font-bold text-neutral-400 tracking-[0.14em] uppercase">
+                            <span className="text-[#E5192D]/80">
+                              {step.category}
+                            </span>
+                            <span className="text-neutral-300">·</span>
+                            <span>{step.readTime}</span>
+                          </div>
                         </div>
-                        <p className="text-xs sm:text-[13px] text-white/90 leading-relaxed">
-                          Go to the{" "}
-                          <span className="font-bold text-white">
-                            Office of Student Affairs (OSA)
-                          </span>
-                          .
-                        </p>
-                      </div>
 
-                      {/* Step 2 */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-white text-[#a3161a] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                          2
+                        {/* Arrow button */}
+                        <div className="shrink-0 mt-1">
+                          <div className="w-9 h-9 rounded-full border-2 border-neutral-200 group-hover:border-[#E5192D] group-hover:bg-[#E5192D] flex items-center justify-center transition-all duration-300">
+                            <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-white transition-colors duration-300" />
+                          </div>
                         </div>
-                        <p className="text-xs sm:text-[13px] text-white/90 leading-relaxed">
-                          Provide a description of your lost item (e.g.,{" "}
-                          <span className="font-bold text-white">
-                            type, color, brand, date, location
-                          </span>
-                          ).
-                        </p>
                       </div>
-
-                      {/* Step 3 */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-white text-[#a3161a] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                          3
-                        </div>
-                        <p className="text-xs sm:text-[13px] text-white/90 leading-relaxed">
-                          Our staff will check the records and assist you with
-                          the claim process.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                    </motion.div>
+                  ))}
                 </motion.div>
-
-                {/* Card 2: To Turn Over a Lost and Found Item */}
-                <motion.div
-                  whileHover={{ y: -3 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-[#a3161a] rounded-3xl p-6 sm:p-7 shadow-lg hover:shadow-xl hover:shadow-red-900/40 transition-all duration-300 flex flex-col justify-between relative group overflow-hidden"
-                >
-                  <div className="absolute -top-16 -right-12 w-48 h-48 rounded-full bg-white/10 blur-[70px] pointer-events-none" />
-                  <div className="absolute -bottom-20 -left-12 w-44 h-44 rounded-full bg-black/10 blur-3xl pointer-events-none" />
-                  <div className="relative z-10">
-                    {/* Top circular icon badge */}
-                    <div className="flex items-center gap-3.5 mb-5">
-                      <div className="w-12 h-12 rounded-full bg-white text-[#a3161a] flex items-center justify-center shrink-0 shadow-md shadow-black/20 group-hover:scale-105 transition-transform">
-                        <Package className="w-6 h-6 stroke-[2.2]" />
-                      </div>
-                      <h3 className="text-base font-black text-white leading-snug min-h-[66px]">
-                        Turn Over a <br />
-                        Lost and Found Item
-                      </h3>
-                    </div>
-
-                    {/* Step list */}
-                    <div className="space-y-4">
-                      {/* Step 1 */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-white text-[#a3161a] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                          1
-                        </div>
-                        <p className="text-xs sm:text-[13px] text-white/90 leading-relaxed">
-                          Bring the item to the{" "}
-                          <span className="font-bold text-white">
-                            Office of Student Affairs (OSA)
-                          </span>
-                          .
-                        </p>
-                      </div>
-
-                      {/* Step 2 */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-white text-[#a3161a] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                          2
-                        </div>
-                        <p className="text-xs sm:text-[13px] text-white/90 leading-relaxed">
-                          Provide your name and contact details (optional).
-                        </p>
-                      </div>
-
-                      {/* Step 3 */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-white text-[#a3161a] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                          3
-                        </div>
-                        <p className="text-xs sm:text-[13px] text-white/90 leading-relaxed">
-                          Our staff will log the item and compare it with
-                          existing reports. If it matches, we will notify the
-                          owner.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ y: -3 }}
-                  transition={{ duration: 0.2 }}
-                  className="md:col-span-2 bg-[#a3161a] rounded-3xl p-5 sm:p-6 shadow-lg hover:shadow-xl hover:shadow-red-900/40 transition-all duration-300 relative group overflow-hidden"
-                >
-                  <div className="absolute -top-16 -right-12 w-48 h-48 rounded-full bg-white/10 blur-[70px] pointer-events-none" />
-                  <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-full bg-white text-[#a3161a] flex items-center justify-center shrink-0 shadow-md shadow-black/20 group-hover:scale-105 transition-transform">
-                        <Clock className="w-6 h-6 stroke-[2.2]" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-black text-white leading-snug">
-                          Building Hours
-                        </h3>
-                        <p className="text-sm text-white/80">
-                          Office of Student Affairs
-                        </p>
-                      </div>
-                    </div>
-                    <div className="sm:text-right">
-                      <p className="text-xs font-semibold uppercase text-white/80">
-                        Monday–Friday
-                      </p>
-                      <p className="text-lg font-bold text-white">
-                        8:00 AM – 5:00 PM
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
+              </AnimatePresence>
             </div>
+
+            {/* Building hours card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.35 }}
+              whileHover={{ y: -3 }}
+              className="mt-8 bg-[#a3161a] rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-xl hover:shadow-red-900/30 transition-all duration-300 relative group overflow-hidden"
+            >
+              <div className="absolute -top-16 -right-12 w-48 h-48 rounded-full bg-white/10 blur-[70px] pointer-events-none" />
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-full bg-white text-[#a3161a] flex items-center justify-center shrink-0 shadow-md shadow-black/20 group-hover:scale-105 transition-transform">
+                    <Clock className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white leading-snug">
+                      Building Hours
+                    </h3>
+                    <p className="text-sm text-white/80">
+                      Office of Student Affairs
+                    </p>
+                  </div>
+                </div>
+                <div className="sm:text-right">
+                  <p className="text-xs font-semibold uppercase text-white/80">
+                    Monday–Friday
+                  </p>
+                  <p className="text-lg font-bold text-white">
+                    8:00 AM – 5:00 PM
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
 
-      {/* Lightbox Modal for inspecting photos 10 to 16.jpeg in full resolution */}
+      {/* ═══════════════════════ LIGHTBOX ═══════════════════════ */}
       <AnimatePresence>
         {lightboxOpen && (
           <motion.div

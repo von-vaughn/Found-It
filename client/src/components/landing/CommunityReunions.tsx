@@ -39,14 +39,7 @@ export const CommunityReunions: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.35 }}
           className="mt-8 sm:mt-10 flex items-center justify-center px-4"
         >
-          <button
-            type="button"
-            onClick={scrollToTop}
-            className="h-12 px-8 rounded-full bg-white/10 hover:bg-white/15 text-white border border-white/15 font-semibold text-sm backdrop-blur-md transition-all duration-300 flex items-center gap-2 cursor-pointer"
-          >
-            Back to Top
-            <ArrowUpRight className="w-4 h-4 text-neutral-400" />
-          </button>
+
         </motion.div>
       </div>
     </section>

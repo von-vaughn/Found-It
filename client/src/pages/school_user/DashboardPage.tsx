@@ -105,7 +105,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
 
         {/* Dashboard Main Container */}
-        <main className="flex-1 min-w-0 w-full mx-auto px-4 sm:px-6 lg:px-6 py-5 space-y-5">
+        <main className="flex-1 min-w-0 w-full max-w-[1400px] mx-auto px-8 sm:px-12 lg:px-16 xl:px-20 py-5 space-y-5">
           {/* Subheader / Composer Card ("What's on your mind, Vaughn?") */}
           <ComposerCard
             onOpenReportModal={(type) => handleOpenCreateModal(type || "lost")}
@@ -183,9 +183,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           {/* Masonry Items Grid */}
           {filteredItems.length > 0 ? (
-            <div className="columns-1 md:columns-2 lg:columns-4 gap-4 pb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
               {filteredItems.map((item) => (
-                <div key={item.id} className="mb-4 w-full break-inside-avoid">
+                <div key={item.id} className="w-full">
                   <ItemCard item={item} onItemClick={setSelectedItem} />
                 </div>
               ))}
