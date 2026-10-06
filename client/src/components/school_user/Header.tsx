@@ -9,6 +9,7 @@ interface HeaderProps {
   onSearchChange: (query: string) => void;
   onOpenReportModal?: () => void;
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
+  sidebarExpanded?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchChange,
   onOpenReportModal,
   searchInputRef,
+  sidebarExpanded = false,
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -66,10 +68,14 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   return (
-    <header className="h-20 bg-white border-b border-neutral-100 px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-20 bg-white px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
       {/* Search Input Bar */}
       <div className="flex-1 pr-4">
-        <div className="relative flex items-center">
+        <div
+          className={`relative flex items-center transition-[margin] duration-200 ease-out ${
+            sidebarExpanded ? "ml-44 md:ml-40" : ""
+          }`}
+        >
           <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 pointer-events-none stroke-[2]" />
           <input
             ref={searchInputRef}
@@ -77,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search lost items, categories, or location..."
-            className="w-full h-10 pl-10 pr-4 bg-[#F8F9FA] hover:bg-[#F3F4F6] focus:bg-white rounded-full border border-neutral-200/80 focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50 text-xs text-neutral-800 placeholder:text-neutral-400 font-normal transition-all"
+            className="w-full h-10 pl-10 pr-4 bg-[#F8F9FA] hover:bg-[#F3F4F6] focus:bg-white rounded-lg border border-neutral-200/80 focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50 text-xs text-neutral-800 placeholder:text-neutral-400 font-normal transition-all"
           />
 
         </div>

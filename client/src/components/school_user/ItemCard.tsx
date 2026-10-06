@@ -113,42 +113,35 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       </div>
 
       {/* Image with overlay badges — matching landing page format */}
-      {item.image && (
-        <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden mx-3 rounded-xl">
-          <img
-            src={item.image}
-            alt={item.title}
-            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+      <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden mx-3 rounded-xl">
+        {item.image && (
+          <>
+            <img
+              src={item.image}
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
-          {/* Status badge top-left */}
-          <div className="absolute top-3 left-3 flex items-center gap-1.5">
-            <span
-              className={`text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5 ${
-                isLost ? "bg-[#E5192D]" : "bg-emerald-700"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              {isLost ? "LOST" : "FOUND"}
-            </span>
-
+            {/* Reward badge top-left */}
             {item.reward && (
-              <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
-                <Award className="w-3 h-3" />
-                {item.reward}
-              </span>
+              <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
+                  <Award className="w-3 h-3" />
+                  {item.reward}
+                </span>
+              </div>
             )}
-          </div>
 
-          {/* Time badge bottom-left */}
-          <div className="absolute bottom-3 left-3 text-white text-xs font-medium flex items-center gap-1 drop-shadow-md">
-            <Clock className="w-3.5 h-3.5 text-white/90" />
-            <span>{item.timeAgo}</span>
-          </div>
-        </div>
-      )}
+            {/* Time badge bottom-left */}
+            <div className="absolute bottom-3 left-3 text-white text-xs font-medium flex items-center gap-1 drop-shadow-md">
+              <Clock className="w-3.5 h-3.5 text-white/90" />
+              <span>{item.timeAgo}</span>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Text content below image — matching landing page format */}
       <div className="p-4 flex-1 flex flex-col justify-between">

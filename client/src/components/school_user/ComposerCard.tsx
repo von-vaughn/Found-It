@@ -33,7 +33,7 @@ export const ComposerCard: React.FC<ComposerCardProps> = ({
           onClick={() => onOpenReportModal()}
           className="flex-1 text-left py-2 text-neutral-400 text-sm font-normal cursor-pointer hover:text-neutral-500 transition-colors"
         >
-          What&apos;s on your mind, {firstName}?
+          What did you lose or find, {firstName}?
         </button>
 
         {/* Photo Upload Icon Button */}

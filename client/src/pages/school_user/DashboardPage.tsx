@@ -20,6 +20,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [internalItems, setInternalItems] = useState<Item[]>(initialItems);
   const items = propItems ?? internalItems;
 
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
   const [filterType, setFilterType] = useState<"all" | "lost" | "found">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,6 +86,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Left Sidebar */}
       <Sidebar
         activeTab={activeNavTab}
+        expanded={sidebarExpanded}
+        onExpandedChange={setSidebarExpanded}
         onTabChange={(tab) => {
           setActiveNavTab(tab);
           if (tab === "discover") {
@@ -102,6 +105,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           onSearchChange={setSearchQuery}
           onOpenReportModal={() => handleOpenCreateModal("lost")}
           searchInputRef={searchInputRef}
+          sidebarExpanded={sidebarExpanded}
         />
 
         {/* Dashboard Main Container */}
