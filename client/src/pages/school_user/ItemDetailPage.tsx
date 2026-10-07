@@ -3,9 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Award,
-  Calendar,
-  Clock,
+  Building2,
+  CalendarClock,
   MapPin,
+  Package,
   Palette,
   Share2,
 } from "lucide-react";
@@ -14,22 +15,13 @@ import { Sidebar } from "@/components/school_user/Sidebar";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems, type Item } from "@/data/mockItems";
 import { formatItemDateTime } from "@/lib/dateTime";
 
 interface ItemDetailPageProps {
   items?: Item[];
   onAddItem?: (newItem: Item) => void;
-}
-
-function formatReportDate(isoDate: string): string {
-  const parsed = new Date(isoDate);
-  if (Number.isNaN(parsed.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-PH", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(parsed);
 }
 
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
@@ -139,6 +131,8 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const itemDateTime = item.dateTime
     ? formatItemDateTime(item.dateTime)
     : null;
+  const category = ITEM_CATEGORIES.find(({ id }) => id === item.category);
+  const CategoryIcon = category?.icon ?? Package;
 
   const handleShare = async () => {
     try {
@@ -242,7 +236,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   {item.contactName}
                 </p>
                 <p className="truncate text-xs text-neutral-400">
-                  @{username}
+                  {item.timeAgo}
                 </p>
               </div>
               <button
@@ -265,82 +259,80 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             <p className="mt-3 text-sm leading-relaxed text-neutral-600 break-words">
               {item.description}
             </p>
-
+            <dl className="mt-5 divide-y divide-neutral-200/80 border-y border-neutral-200/80 text-xs">
+              {item.color && (
+                <div className="flex items-start gap-2.5 py-3">
+                  <Palette
+                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <dt className="font-bold text-neutral-900">Color</dt>
+                    <dd className="mt-1 capitalize text-neutral-500">
+                      {item.color}
+                    </dd>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-start gap-2.5 py-3">
+                <MapPin
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">Specific location</dt>
+                  <dd className="mt-1 break-words text-neutral-500">
+                    {item.location}
+                  </dd>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 py-3">
+                <Building2
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">Building</dt>
+                  <dd className="mt-1 break-words text-neutral-500">
+                    {item.building?.trim() || "Not provided"}
+                  </dd>
+                </div>
+              </div>
+              {isLost && (
+                <div className="flex items-start gap-2.5 py-3">
+                  <CalendarClock
+                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <dt className="font-bold text-neutral-900">
+                      Date and time lost
+                    </dt>
+                    <dd className="mt-1 text-neutral-500">
+                      {itemDateTime ?? "Not provided"}
+                    </dd>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-start gap-2.5 py-3">
+                <CategoryIcon
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">Category</dt>
+                  <dd className="mt-1 text-neutral-500">
+                    {category?.label ?? "Other"}
+                  </dd>
+                </div>
+              </div>
+            </dl>
             {item.reward && (
               <p className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 border border-amber-200/70">
                 <Award className="h-3.5 w-3.5" aria-hidden="true" />
                 Reward: {item.reward}
               </p>
             )}
-
-            <dl className="mt-6 divide-y divide-neutral-200/80 border-y border-neutral-200/80 text-xs">
-              <div className="flex items-center gap-2.5 py-3 min-w-0">
-                <MapPin
-                  className="h-4 w-4 shrink-0 text-neutral-400"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0 flex flex-1 items-baseline justify-between gap-4">
-                  <dt className="shrink-0 font-bold text-neutral-900">Location</dt>
-                  <dd className="min-w-0 truncate text-neutral-500">
-                    {item.location}
-                  </dd>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5 py-3 min-w-0">
-                <Calendar
-                  className="h-4 w-4 shrink-0 text-neutral-400"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0 flex flex-1 items-baseline justify-between gap-4">
-                  <dt className="shrink-0 font-bold text-neutral-900">Reported</dt>
-                  <dd className="min-w-0 truncate text-neutral-500">
-                    {formatReportDate(item.date)} · {item.timeAgo}
-                  </dd>
-                </div>
-              </div>
-              {isLost && (
-                <div className="flex items-center gap-2.5 py-3 min-w-0">
-                  <Clock
-                    className="h-4 w-4 shrink-0 text-neutral-400"
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0 flex flex-1 items-baseline justify-between gap-4">
-                    <dt className="shrink-0 font-bold text-neutral-900">
-                      Date and time lost
-                    </dt>
-                    <dd className="min-w-0 truncate text-neutral-500">
-                      {itemDateTime ?? "Not provided"}
-                    </dd>
-                  </div>
-                </div>
-              )}
-              {item.color && (
-                <div className="flex items-center gap-2.5 py-3 min-w-0">
-                  <Palette
-                    className="h-4 w-4 shrink-0 text-neutral-400"
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0 flex flex-1 items-baseline justify-between gap-4">
-                    <dt className="shrink-0 font-bold text-neutral-900">Color</dt>
-                    <dd className="min-w-0 truncate capitalize text-neutral-500">
-                      {item.color}
-                    </dd>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-2.5 py-3 min-w-0">
-                <Clock
-                  className="h-4 w-4 shrink-0 text-neutral-400"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0 flex flex-1 items-baseline justify-between gap-4">
-                  <dt className="shrink-0 font-bold text-neutral-900">Status</dt>
-                  <dd className="min-w-0 truncate capitalize text-neutral-500">
-                    {item.status}
-                  </dd>
-                </div>
-              </div>
-            </dl>
 
           </article>
           </div>
@@ -352,7 +344,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 id="similar-heading"
                 className="text-sm font-extrabold text-neutral-900 text-balance"
               >
-                Similar {item.category} reports
+                Similar {category?.label.toLowerCase() ?? "item"} reports
               </h2>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {similarItems.map((similar) => (

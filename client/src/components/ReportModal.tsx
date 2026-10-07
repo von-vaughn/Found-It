@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, PlusCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
 import toast from "react-hot-toast";
 
@@ -46,8 +47,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       bags: "/images/backpack.jpg",
       electronics: "/images/iphone.jpg",
       keys: "/images/keys.jpg",
-      wallets: "/images/wallet.jpg",
-      accessories: "/images/glasses.jpg",
+      "wallets-purses": "/images/wallet.jpg",
+      eyewear: "/images/glasses.jpg",
       other: "/images/backpack.jpg",
     };
 
@@ -166,12 +167,11 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                   }
                   className="w-full h-11 px-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] transition-all"
                 >
-                  <option value="electronics">Electronics</option>
-                  <option value="bags">Bags & Backpacks</option>
-                  <option value="keys">Keys & Fobs</option>
-                  <option value="wallets">Wallets & IDs</option>
-                  <option value="accessories">Accessories</option>
-                  <option value="other">Other</option>
+                  {ITEM_CATEGORIES.map((categoryOption) => (
+                    <option key={categoryOption.id} value={categoryOption.id}>
+                      {categoryOption.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

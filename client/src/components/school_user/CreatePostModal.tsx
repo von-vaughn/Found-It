@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ImagePlus, Lock, X } from "lucide-react";
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
 import { useAuth } from "@/context/useAuth";
 import toast from "react-hot-toast";
@@ -33,6 +34,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [title, setTitle] = useState("");
   const [color, setColor] = useState("");
   const [dateTimeValue, setDateTimeValue] = useState("");
+  const [building, setBuilding] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [confidentialInfo, setConfidentialInfo] = useState("");
@@ -100,6 +102,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       category,
       username,
       userAvatar: "/images/avatar-vaughn.jpg",
+      building: building.trim() || undefined,
       location: location.trim(),
       date: dateTimeValue.slice(0, 10),
       dateTime: new Date(dateTimeValue).toISOString(),
@@ -309,8 +312,27 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="min-w-0">
+                <label htmlFor="report-building" className={labelClass}>
+                  Building{" "}
+                  <span className="font-medium normal-case tracking-normal text-neutral-400">
+                    (optional)
+                  </span>
+                </label>
+                <input
+                  id="report-building"
+                  name="building"
+                  type="text"
+                  value={building}
+                  onChange={(e) => setBuilding(e.target.value)}
+                  placeholder="Library Building…"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={inputClass}
+                />
+              </div>
+              <div className="min-w-0">
                 <label htmlFor="report-location" className={labelClass}>
-                  Where?
+                  Specific location
                 </label>
                 <input
                   id="report-location"
@@ -319,12 +341,15 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   required
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Library…"
+                  placeholder="Near the library entrance…"
                   autoComplete="off"
                   spellCheck={false}
                   className={inputClass}
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div className="min-w-0">
                 <label htmlFor="report-category" className={labelClass}>
                   Category
@@ -338,12 +363,11 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   }
                   className={`${inputClass} cursor-pointer`}
                 >
-                  <option value="bags">Bags</option>
-                  <option value="electronics">Electronics</option>
-                  <option value="keys">Keys</option>
-                  <option value="wallets">Wallets & IDs</option>
-                  <option value="accessories">Accessories</option>
-                  <option value="other">Other</option>
+                  {ITEM_CATEGORIES.map((categoryOption) => (
+                    <option key={categoryOption.id} value={categoryOption.id}>
+                      {categoryOption.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

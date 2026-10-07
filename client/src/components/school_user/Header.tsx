@@ -18,6 +18,8 @@ interface HeaderProps {
   onClearFilters?: () => void;
   filterResultCount?: number;
   notificationsOpen?: boolean;
+  isFilterModalOpen?: boolean;
+  onFilterModalOpenChange?: (open: boolean) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,11 +34,18 @@ export const Header: React.FC<HeaderProps> = ({
   onClearFilters,
   filterResultCount,
   notificationsOpen = false,
+  isFilterModalOpen,
+  onFilterModalOpenChange,
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [localPaletteOpen, setLocalPaletteOpen] = useState(false);
+  const isPaletteOpen = isFilterModalOpen ?? localPaletteOpen;
+  const setIsPaletteOpen = (open: boolean) => {
+    onFilterModalOpenChange?.(open);
+    if (isFilterModalOpen === undefined) setLocalPaletteOpen(open);
+  };
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click

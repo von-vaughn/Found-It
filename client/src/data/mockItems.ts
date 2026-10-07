@@ -1,8 +1,11 @@
+import type { ItemCategory } from "@/data/itemCategories";
+
 export interface Item {
   id: string;
   title: string;
   type: 'lost' | 'found';
-  category: 'bags' | 'electronics' | 'keys' | 'wallets' | 'accessories' | 'other';
+  category: ItemCategory;
+  building?: string;
   location: string;
   date: string;
   dateTime?: string;
@@ -63,7 +66,7 @@ export const initialItems: Item[] = [
     id: 'item-3',
     title: 'Prescription Glasses',
     type: 'lost',
-    category: 'accessories',
+    category: 'eyewear',
     username: 'denji_07',
     userAvatar: '/images/avatars/denji_07.svg',
     location: 'Student Center',
@@ -82,7 +85,7 @@ export const initialItems: Item[] = [
     id: 'item-4',
     title: 'Wallet',
     type: 'found',
-    category: 'wallets',
+    category: 'wallets-purses',
     username: 'luna_p',
     userAvatar: '/images/avatars/luna_p.svg',
     location: 'Main Gate',
@@ -120,7 +123,7 @@ export const initialItems: Item[] = [
     id: 'item-6',
     title: 'Water Bottle',
     type: 'found',
-    category: 'accessories',
+    category: 'tumblers',
     username: 'ella_lynn',
     userAvatar: '/images/avatars/ella_lynn.svg',
     location: 'Cafeteria',
@@ -158,7 +161,7 @@ export const initialItems: Item[] = [
     id: 'item-8',
     title: 'Notebook',
     type: 'found',
-    category: 'other',
+    category: 'books-school-supplies',
     username: 'rohanis',
     userAvatar: '/images/avatars/rohanis.svg',
     location: 'Admin Building',
@@ -196,7 +199,7 @@ export const initialItems: Item[] = [
     id: 'item-10',
     title: 'Jacket',
     type: 'found',
-    category: 'accessories',
+    category: 'clothing-accessories',
     username: 'aldrin_s',
     userAvatar: '/images/avatars/aldrin_s.svg',
     location: 'Auditorium',
@@ -215,7 +218,7 @@ export const initialItems: Item[] = [
     id: 'item-11',
     title: 'Student ID',
     type: 'lost',
-    category: 'wallets',
+    category: 'id',
     username: 'bea_0305',
     userAvatar: '/images/avatars/bea_0305.svg',
     location: 'Library',

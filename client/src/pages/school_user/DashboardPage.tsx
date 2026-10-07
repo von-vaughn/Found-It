@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useLayoutEffect,
+} from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import { Header } from "@/components/school_user/Header";
@@ -10,14 +16,8 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import {
-  BriefcaseBusiness,
-  Glasses,
-  KeyRound,
-  SearchX,
-  Smartphone,
-  WalletCards,
-} from "lucide-react";
+import { SearchX } from "lucide-react";
+import { ITEM_CATEGORIES, type ItemCategory } from "@/data/itemCategories";
 import { initialItems, type Item } from "@/data/mockItems";
 
 interface DashboardPageProps {
@@ -37,13 +37,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
   const [filterType, setFilterType] = useState<"all" | "lost" | "found">("all");
   const [selectedCategory, setSelectedCategory] = useState<
-    "all" | "bags" | "electronics" | "keys" | "wallets" | "accessories"
+    "all" | ItemCategory
   >("all");
+  const [visibleCategoryCount, setVisibleCategoryCount] = useState(0);
+  const categoryRowRef = useRef<HTMLDivElement>(null);
+  const categoryMeasureRef = useRef<HTMLDivElement>(null);
+  const moreCategoryMeasureRef = useRef<HTMLButtonElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("q") ?? "",
   );
   const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
@@ -86,12 +91,67 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const categories = [
     { id: "all", label: "All Items" },
-    { id: "bags", label: "Bags", icon: BriefcaseBusiness },
-    { id: "electronics", label: "Electronics", icon: Smartphone },
-    { id: "keys", label: "Keys", icon: KeyRound },
-    { id: "wallets", label: "Wallets", icon: WalletCards },
-    { id: "accessories", label: "Accessories", icon: Glasses },
+    ...ITEM_CATEGORIES.filter((category) => category.id !== "eyewear"),
   ] as const;
+  const visibleCategories = categories.slice(0, visibleCategoryCount);
+  const hasHiddenSelectedCategory = filters.categories.some(
+    (categoryId) =>
+      !visibleCategories.some((category) => category.id === categoryId),
+  );
+  const selectedVisibleCategory = visibleCategories.find((category) =>
+    filters.categories.includes(category.id),
+  );
+  const activeCategoryId =
+    filters.categories.length > 0
+      ? filters.categories.length > 1 || hasHiddenSelectedCategory
+        ? "more"
+        : (selectedVisibleCategory?.id ?? selectedCategory)
+      : selectedCategory;
+
+  useLayoutEffect(() => {
+    const row = categoryRowRef.current;
+    const measureRow = categoryMeasureRef.current;
+    const moreButton = moreCategoryMeasureRef.current;
+    if (!row || !measureRow || !moreButton) return;
+
+    const updateVisibleCategoryCount = () => {
+      const availableWidth = row.clientWidth;
+      const categoryButtons = Array.from(measureRow.children).slice(
+        0,
+        categories.length,
+      ) as HTMLElement[];
+      const categoryWidths = categoryButtons.map(
+        (button) => button.getBoundingClientRect().width,
+      );
+      const moreWidth = moreButton.getBoundingClientRect().width;
+      const gap = Number.parseFloat(getComputedStyle(measureRow).columnGap) || 0;
+      const allCategoriesWidth =
+        categoryWidths.reduce((total, width) => total + width, 0) +
+        gap * Math.max(0, categoryWidths.length - 1);
+
+      if (allCategoriesWidth <= availableWidth) {
+        setVisibleCategoryCount(categories.length);
+        return;
+      }
+
+      let usedWidth = 0;
+      let count = 0;
+      for (const width of categoryWidths) {
+        const nextWidth = usedWidth + (count > 0 ? gap : 0) + width;
+        const widthWithMore = nextWidth + gap + moreWidth;
+        if (widthWithMore > availableWidth) break;
+        usedWidth = nextWidth;
+        count += 1;
+      }
+      setVisibleCategoryCount(count);
+    };
+
+    updateVisibleCategoryCount();
+    const observer = new ResizeObserver(updateVisibleCategoryCount);
+    observer.observe(row);
+    observer.observe(measureRow);
+    return () => observer.disconnect();
+  }, [categories.length]);
 
   // Filter items: search matches item name only; type and category
   // come from the quick pills; location/color/date-time from the palette.
@@ -151,6 +211,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           onClearFilters={() => setFilters(defaultFilters)}
           filterResultCount={filteredItems.length}
           notificationsOpen={notificationsOpen}
+          isFilterModalOpen={filterModalOpen}
+          onFilterModalOpenChange={setFilterModalOpen}
         />
 
         {/* Dashboard Main Container */}
@@ -231,15 +293,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {categories.map((category) => {
+          <div
+            ref={categoryRowRef}
+            aria-label="Filter items by category"
+            className="relative flex min-w-0 flex-nowrap items-center gap-2 overflow-hidden pb-1"
+          >
+            {visibleCategories.map((category) => {
               const Icon = "icon" in category ? category.icon : null;
+              const isActive = activeCategoryId === category.id;
               return (
                 <button
                   key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-2 ${
-                    selectedCategory === category.id
+                  onClick={() => {
+                    if (category.id === "all") {
+                      setSearchQuery("");
+                      setFilterType("all");
+                      setSelectedCategory("all");
+                      setFilters(defaultFilters);
+                      return;
+                    }
+                    setSelectedCategory(category.id);
+                  }}
+                  aria-pressed={isActive}
+                  className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
+                    isActive
                       ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
                       : "bg-white text-neutral-600 border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50"
                   }`}
@@ -249,6 +326,47 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </button>
               );
             })}
+            {visibleCategoryCount < categories.length && (
+              <button
+                type="button"
+                onClick={() => setFilterModalOpen(true)}
+                aria-label="More category filters"
+                aria-pressed={activeCategoryId === "more"}
+                className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
+                  activeCategoryId === "more"
+                    ? "bg-[#E5192D] text-white border-[#E5192D]"
+                    : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
+                }`}
+              >
+                <span>More</span>
+              </button>
+            )}
+            <div
+              ref={categoryMeasureRef}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-0 top-0 flex w-max flex-nowrap items-center gap-2 invisible"
+            >
+              {categories.map((category) => {
+                const Icon = "icon" in category ? category.icon : null;
+                return (
+                  <button
+                    key={category.id}
+                    tabIndex={-1}
+                    className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold border flex items-center gap-2"
+                  >
+                    {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
+                    <span>{category.label}</span>
+                  </button>
+                );
+              })}
+              <button
+                ref={moreCategoryMeasureRef}
+                tabIndex={-1}
+                className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold border inline-flex items-center gap-2"
+              >
+                <span>More</span>
+              </button>
+            </div>
           </div>
 
           {/* Masonry Items Grid */}

@@ -5,13 +5,9 @@ import {
   Clock,
   Award,
   PlusCircle,
-  BriefcaseBusiness,
-  Smartphone,
-  KeyRound,
-  WalletCards,
-  Glasses,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ItemSearchBar,
@@ -61,11 +57,7 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
 
   const categories = [
     { id: "all", label: "All Items" },
-    { id: "bags", label: "Bags", icon: BriefcaseBusiness },
-    { id: "electronics", label: "Electronics", icon: Smartphone },
-    { id: "keys", label: "Keys", icon: KeyRound },
-    { id: "wallets", label: "Wallets", icon: WalletCards },
-    { id: "accessories", label: "Accessories", icon: Glasses },
+    ...ITEM_CATEGORIES,
   ];
 
   const filteredItems = lostItems.filter((item) => {
@@ -114,7 +106,7 @@ export const LostItemsPage: React.FC<LostItemsPageProps> = ({
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             {categories.map((cat) => {
-              const Icon = cat.icon;
+              const Icon = "icon" in cat ? cat.icon : null;
               return (
                 <button
                   key={cat.id}

@@ -4,18 +4,10 @@ import {
   X,
   Layers,
   Building2,
-  BriefcaseBusiness,
-  Smartphone,
-  KeyRound,
-  WalletCards,
-  Glasses,
-  Package,
-  Shirt,
-  BookOpen,
-  CreditCard,
   ArrowRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { ITEM_CATEGORIES, type ItemCategory } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
 import {
   countActiveFilters,
@@ -48,17 +40,30 @@ interface BuildingOption {
   baseCount: number;
 }
 
-const CATEGORY_OPTIONS: CategoryOption[] = [
-  { id: "electronics", name: "Electronics", icon: Smartphone, baseCount: 191 },
-  { id: "bags", name: "Bags", icon: BriefcaseBusiness, baseCount: 52 },
-  { id: "wallets", name: "Wallets", icon: WalletCards, baseCount: 38 },
-  { id: "keys", name: "Keys", icon: KeyRound, baseCount: 25 },
-  { id: "accessories", name: "Accessories", icon: Glasses, baseCount: 30 },
-  { id: "clothing", name: "Clothing & Apparel", icon: Shirt, baseCount: 21 },
-  { id: "books", name: "Books & Supplies", icon: BookOpen, baseCount: 18 },
-  { id: "ids", name: "IDs & Cards", icon: CreditCard, baseCount: 16 },
-  { id: "other", name: "Other Items", icon: Package, baseCount: 6 },
-];
+const CATEGORY_BASE_COUNTS: Record<ItemCategory, number> = {
+  electronics: 191,
+  id: 16,
+  cards: 0,
+  bags: 52,
+  "wallets-purses": 38,
+  keys: 25,
+  "clothing-accessories": 21,
+  "books-school-supplies": 18,
+  jewelry: 0,
+  eyewear: 0,
+  tumblers: 0,
+  umbrellas: 0,
+  "sports-gym-equipment": 0,
+  "documents-papers": 0,
+  other: 6,
+};
+
+const CATEGORY_OPTIONS: CategoryOption[] = ITEM_CATEGORIES.map((category) => ({
+  id: category.id,
+  name: category.label,
+  icon: category.icon,
+  baseCount: CATEGORY_BASE_COUNTS[category.id],
+}));
 
 const BUILDING_OPTIONS: BuildingOption[] = [
   { id: "library", name: "Library Building", icon: Building2, baseCount: 142 },
