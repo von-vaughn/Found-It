@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MoreHorizontal, MapPin, Clock, Award } from "lucide-react";
+import { MoreHorizontal, MapPin, Award } from "lucide-react";
 import type { Item } from "@/data/mockItems";
 import toast from "react-hot-toast";
 
@@ -29,6 +29,38 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     `/images/avatars/${username}.svg`;
 
   const isLost = item.type === "lost";
+
+  const titleBlock = (
+    <>
+      <h3 className="text-base font-bold text-neutral-900 line-clamp-1 group-hover:text-neutral-950 transition-colors">
+        {item.title}
+      </h3>
+      <div className="mt-1 flex items-center gap-2">
+        <p className={`text-[11px] font-bold ${isLost ? "text-[#E5192D]" : "text-emerald-700"}`}>
+          {isLost ? "Lost" : "Found"}
+        </p>
+        {!item.image && item.reward && (
+          <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            <Award className="w-3 h-3" />
+            {item.reward}
+          </span>
+        )}
+      </div>
+    </>
+  );
+
+  const footerRow = (
+    <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between">
+      <div className="flex items-center gap-1.5 text-xs text-neutral-500 max-w-[170px] truncate">
+        <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+        <span className="truncate">{item.location}</span>
+      </div>
+
+      <span className="text-xs font-semibold text-neutral-900">
+        {isLost ? "I Found This" : "This Is Mine"}
+      </span>
+    </div>
+  );
 
   return (
     <div
@@ -112,10 +144,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </div>
       </div>
 
-      {/* Image with overlay badges — matching landing page format */}
-      <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden mx-3 rounded-xl">
-        {item.image && (
-          <>
+      {item.image ? (
+        <>
+          {/* Photo block */}
+          <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden mx-3 rounded-xl">
             <img
               src={item.image}
               alt={item.title}
@@ -133,38 +165,47 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 </span>
               </div>
             )}
-
-            {/* Time badge bottom-left */}
-            <div className="absolute bottom-3 left-3 text-white text-xs font-medium flex items-center gap-1 drop-shadow-md">
-              <Clock className="w-3.5 h-3.5 text-white/90" />
-              <span>{item.timeAgo}</span>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Text content below image — matching landing page format */}
-      <div className="p-4 flex-1 flex flex-col justify-between">
-        <div>
-          <h3 className="text-base font-bold text-neutral-900 line-clamp-1 group-hover:text-neutral-950 transition-colors">
-            {item.title}
-          </h3>
-          <p className="text-xs text-neutral-500 mt-1.5 line-clamp-2 leading-relaxed">
-            {item.description}
-          </p>
-        </div>
-
-        <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-neutral-500 max-w-[170px] truncate">
-            <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-            <span className="truncate">{item.location}</span>
           </div>
 
-          <span className={`text-xs font-semibold ${isLost ? "text-[#E5192D]" : "text-emerald-700"}`}>
-            {isLost ? "I Found This →" : "This Is Mine →"}
-          </span>
-        </div>
-      </div>
+          {/* Text content below photo */}
+          <div className="p-4 flex-1 flex flex-col justify-between">
+            <div>
+              {titleBlock}
+              <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed break-words line-clamp-2">
+                {item.description}
+              </p>
+            </div>
+
+            {footerRow}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Item name above the description */}
+          <div className="px-4">{titleBlock}</div>
+
+          {/* Description block — same box size as a photo, so every
+              card keeps the same height. */}
+          <div className="aspect-[4/3] mx-3 mt-3 overflow-hidden rounded-xl">
+            <div className="h-full overflow-y-auto px-2">
+              <p className="text-xs text-neutral-500 leading-relaxed break-words">
+                {item.description}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 flex-1 flex flex-col justify-between">
+            <div>
+              {/* Spacer standing in for the 2-line description block
+                  minus the mt-3 gap above (45px - 12px), so imageless
+                  cards measure exactly like photo cards. */}
+              <div aria-hidden="true" className="h-[33px]" />
+            </div>
+
+            {footerRow}
+          </div>
+        </>
+      )}
     </div>
   );
 };

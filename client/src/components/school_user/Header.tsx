@@ -11,13 +11,13 @@ interface HeaderProps {
   onSearchChange: (query: string) => void;
   onOpenReportModal?: () => void;
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
-  sidebarExpanded?: boolean;
   notificationPanelOpen?: boolean;
   activeFilterCount?: number;
   filters?: ItemFilters;
   onFiltersChange?: (filters: ItemFilters) => void;
   onClearFilters?: () => void;
   filterResultCount?: number;
+  notificationsOpen?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,13 +25,13 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchChange,
   onOpenReportModal,
   searchInputRef,
-  sidebarExpanded = false,
   notificationPanelOpen = false,
   activeFilterCount = 0,
   filters,
   onFiltersChange,
   onClearFilters,
   filterResultCount,
+  notificationsOpen = false,
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -55,17 +55,18 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className="h-20 bg-white sticky top-0 z-30">
-        <div className="h-full w-full max-w-[1400px] mx-auto px-8 sm:px-12 lg:px-16 xl:px-20 flex items-center justify-between">
-        {/* Search Input Bar */}
+    <header className="h-20 bg-white sticky top-0 z-30">
+      <div className="h-full w-full max-w-[1600px] mx-auto px-2 sm:px-3 lg:px-4">
+      <div className={`h-full flex items-center justify-between transition-[margin,width] duration-300 ease-in-out ${
+        notificationsOpen
+          ? "md:ml-80 md:w-[calc(100%-20rem)]"
+          : "w-full"
+      }`}>
+      {/* Search Input Bar */}
         <div className="flex-1 pr-4">
           <div
             className={`relative flex items-center gap-2 transition-[margin] duration-200 ease-out ${
-              notificationPanelOpen
-                ? "md:ml-80"
-                : sidebarExpanded
-                  ? "ml-44 md:ml-40"
-                  : ""
+              notificationPanelOpen ? "md:ml-80" : ""
             }`}
           >
             <div className="relative flex-1 min-w-0 flex items-center">
@@ -185,6 +186,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
         </div>
+      </div>
       </div>
       </div>
     </header>

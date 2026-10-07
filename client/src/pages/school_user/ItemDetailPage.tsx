@@ -8,7 +8,6 @@ import {
   MapPin,
   Palette,
   Share2,
-  Tag,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Sidebar } from "@/components/school_user/Sidebar";
@@ -45,7 +44,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
@@ -99,18 +97,15 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           activeTab="home"
           expanded={sidebarExpanded}
           onExpandedChange={setSidebarExpanded}
-          onNotificationsOpenChange={setNotificationsOpen}
           onTabChange={() => navigate("/dashboard")}
           onOpenCreateModal={() => handleOpenCreateModal("lost")}
         />
-        <div className="flex-1 min-w-0 ml-16 md:ml-20 flex flex-col min-h-screen">
+        <div className={`flex-1 min-w-0 ml-16 flex flex-col min-h-screen transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
           <Header
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             onOpenReportModal={() => handleOpenCreateModal("lost")}
             searchInputRef={searchInputRef}
-            sidebarExpanded={sidebarExpanded}
-            notificationPanelOpen={notificationsOpen}
           />
           <div className="flex-1 flex items-center justify-center px-8 py-16">
             <main className="text-center max-w-sm">
@@ -166,24 +161,21 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         activeTab="home"
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
-        onNotificationsOpenChange={setNotificationsOpen}
         onTabChange={() => navigate("/dashboard")}
         onOpenCreateModal={() => handleOpenCreateModal("lost")}
       />
 
-      <div className="flex-1 min-w-0 ml-16 md:ml-20 flex flex-col min-h-screen">
+      <div className={`flex-1 min-w-0 ml-16 flex flex-col min-h-screen transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
         {/* Same search header as the dashboard */}
         <Header
           searchQuery={searchQuery}
           onSearchChange={handleSearchChange}
           onOpenReportModal={() => handleOpenCreateModal("lost")}
           searchInputRef={searchInputRef}
-          sidebarExpanded={sidebarExpanded}
-          notificationPanelOpen={notificationsOpen}
         />
 
         {/* Detail actions row */}
-        <div className="px-8 sm:px-12 lg:px-16 pt-4 flex items-center justify-between max-w-[1100px] mx-auto w-full">
+        <div className="px-2 sm:px-3 lg:px-4 pt-4 flex items-center justify-between max-w-[1100px] mx-auto w-full">
           <Link
             to="/dashboard"
             className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
@@ -205,7 +197,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
         <main
           id="item-detail-main"
-          className="flex-1 min-w-0 w-full max-w-[1100px] mx-auto px-8 sm:px-12 lg:px-16 py-6 space-y-6"
+          className="flex-1 min-w-0 w-full max-w-[1100px] mx-auto px-2 sm:px-3 lg:px-4 py-6 space-y-6"
         >
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
@@ -322,18 +314,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-2.5 py-3 min-w-0">
-                <Tag
-                  className="h-4 w-4 shrink-0 text-neutral-400"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0 flex flex-1 items-baseline justify-between gap-4">
-                  <dt className="shrink-0 font-bold text-neutral-900">Category</dt>
-                  <dd className="min-w-0 truncate capitalize text-neutral-500">
-                    {item.category}
-                  </dd>
-                </div>
-              </div>
               {item.color && (
                 <div className="flex items-center gap-2.5 py-3 min-w-0">
                   <Palette

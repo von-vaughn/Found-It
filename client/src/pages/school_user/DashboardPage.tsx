@@ -138,31 +138,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 min-w-0 ml-16 md:ml-20 flex flex-col min-h-screen">
+      <div className={`flex-1 min-w-0 ml-16 flex flex-col min-h-screen transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
         {/* Top Header */}
         <Header
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onOpenReportModal={() => handleOpenCreateModal("lost")}
           searchInputRef={searchInputRef}
-          sidebarExpanded={sidebarExpanded}
-          notificationPanelOpen={notificationsOpen}
           activeFilterCount={activeFilterCount}
           filters={filters}
           onFiltersChange={setFilters}
           onClearFilters={() => setFilters(defaultFilters)}
           filterResultCount={filteredItems.length}
+          notificationsOpen={notificationsOpen}
         />
 
         {/* Dashboard Main Container */}
-        <main className="flex-1 min-w-0 w-full max-w-[1400px] mx-auto px-8 sm:px-12 lg:px-16 xl:px-20 py-5 space-y-5">
-          <div
-            className={`@container min-w-0 space-y-5 transition-[margin,width] duration-300 ease-in-out ${
-              notificationsOpen
-                ? "md:ml-80 md:w-[calc(100%-20rem)]"
-                : "w-full"
-            }`}
-          >
+        <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto px-2 sm:px-3 lg:px-4 py-5 space-y-5">
+          <div className={`@container min-w-0 space-y-5 transition-[margin,width] duration-300 ease-in-out ${
+            notificationsOpen
+              ? "md:ml-80 md:w-[calc(100%-20rem)]"
+              : "w-full"
+          }`}>
           {/* Filter Pills and Tabs Bar */}
           <div className="flex items-center gap-3 pt-1">
             {/* "All" Tab with bottom underline */}
@@ -256,7 +253,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           {/* Masonry Items Grid */}
           {filteredItems.length > 0 ? (
-            <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 gap-6 pb-12">
+            <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 gap-6 pb-12">
               {filteredItems.map((item) => (
                 <div key={item.id} className="w-full">
                   <ItemCard
