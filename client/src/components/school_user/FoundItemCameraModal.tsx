@@ -9,6 +9,7 @@ import {
   RotateCcw,
   X,
 } from "lucide-react";
+import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 
 interface FoundItemCameraModalProps {
   onClose: () => void;
@@ -367,15 +368,20 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
                     Building
                   </span>
                 </label>
-                <input
+                <select
                   id="found-item-building"
                   name="building"
-                  type="text"
                   value={building}
                   onChange={(event) => setBuilding(event.target.value)}
-                  placeholder="Building name or number"
                   className={inputClass}
-                />
+                >
+                  <option value="">Select a building</option>
+                  {ITEM_BUILDINGS.map((buildingOption) => (
+                    <option key={buildingOption} value={buildingOption}>
+                      {buildingOption}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

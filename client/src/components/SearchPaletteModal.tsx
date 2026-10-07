@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { ITEM_CATEGORIES, type ItemCategory } from "@/data/itemCategories";
+import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { Item } from "@/data/mockItems";
 import {
   countActiveFilters,
@@ -65,20 +66,12 @@ const CATEGORY_OPTIONS: CategoryOption[] = ITEM_CATEGORIES.map((category) => ({
   baseCount: CATEGORY_BASE_COUNTS[category.id],
 }));
 
-const BUILDING_OPTIONS: BuildingOption[] = [
-  { id: "library", name: "Library Building", icon: Building2, baseCount: 142 },
-  { id: "student-center", name: "Student Center", icon: Building2, baseCount: 88 },
-  { id: "science-hall", name: "Science Hall", icon: Building2, baseCount: 64 },
-  { id: "gymnasium", name: "Gymnasium", icon: Building2, baseCount: 45 },
-  { id: "cafeteria", name: "Cafeteria", icon: Building2, baseCount: 39 },
-  { id: "admin-building", name: "Admin Building", icon: Building2, baseCount: 31 },
-  { id: "engineering", name: "Engineering Building", icon: Building2, baseCount: 27 },
-  { id: "auditorium", name: "Auditorium", icon: Building2, baseCount: 22 },
-  { id: "main-gate", name: "Main Gate", icon: Building2, baseCount: 19 },
-  { id: "parking-lot", name: "Parking Lot", icon: Building2, baseCount: 15 },
-  { id: "nursing", name: "College of Nursing", icon: Building2, baseCount: 12 },
-  { id: "education", name: "College of Education", icon: Building2, baseCount: 9 },
-];
+const BUILDING_OPTIONS: BuildingOption[] = ITEM_BUILDINGS.map((name) => ({
+  id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+  name,
+  icon: Building2,
+  baseCount: 0,
+}));
 
 export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
   isOpen,
@@ -140,9 +133,14 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
     const map = new Map<string, number>();
     BUILDING_OPTIONS.forEach((bld) => {
       const liveCount = items?.filter(
-        (i) =>
-          i.location.toLowerCase().includes(bld.name.toLowerCase()) ||
-          bld.name.toLowerCase().includes(i.location.toLowerCase()),
+        (item) => {
+          const normalizedBuilding = bld.name.toLowerCase();
+          return (
+            item.location.toLowerCase().includes(normalizedBuilding) ||
+            normalizedBuilding.includes(item.location.toLowerCase()) ||
+            item.building?.toLowerCase().includes(normalizedBuilding)
+          );
+        },
       ).length;
       map.set(bld.id, liveCount !== undefined && liveCount > 0 ? liveCount : bld.baseCount);
     });
@@ -347,31 +345,6 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
                           onFiltersChange({ ...filters, color: e.target.value })
                         }
                         placeholder="Black"
-                        autoComplete="off"
-                        spellCheck={false}
-                        className="w-full h-9 px-2.5 text-xs bg-white rounded-lg border border-neutral-200 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-300"
-                      />
-                    </div>
-
-                    <div className="min-w-0">
-                      <label
-                        htmlFor="palette-filter-location"
-                        className="block text-xs font-semibold text-neutral-700 mb-1.5"
-                      >
-                        Location
-                      </label>
-                      <input
-                        id="palette-filter-location"
-                        name="filterLocation"
-                        type="text"
-                        value={filters.location}
-                        onChange={(e) =>
-                          onFiltersChange({
-                            ...filters,
-                            location: e.target.value,
-                          })
-                        }
-                        placeholder="Library"
                         autoComplete="off"
                         spellCheck={false}
                         className="w-full h-9 px-2.5 text-xs bg-white rounded-lg border border-neutral-200 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-300"

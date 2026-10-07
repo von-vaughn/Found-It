@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ImagePlus, Lock, X } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { Item } from "@/data/mockItems";
 import { useAuth } from "@/context/useAuth";
 import toast from "react-hot-toast";
@@ -331,17 +332,20 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                     (optional)
                   </span>
                 </label>
-                <input
+                <select
                   id="report-building"
                   name="building"
-                  type="text"
                   value={building}
                   onChange={(e) => setBuilding(e.target.value)}
-                  placeholder="Library Building…"
-                  autoComplete="off"
-                  spellCheck={false}
                   className={inputClass}
-                />
+                >
+                  <option value="">Select a building</option>
+                  {ITEM_BUILDINGS.map((buildingOption) => (
+                    <option key={buildingOption} value={buildingOption}>
+                      {buildingOption}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

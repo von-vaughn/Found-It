@@ -2,7 +2,6 @@ import type { Item } from "@/data/mockItems";
 
 /** Advanced filters kept separate from item-name search. */
 export interface ItemFilters {
-  location: string;
   color: string;
   dateTimeFrom: string;
   categories: string[];
@@ -10,7 +9,6 @@ export interface ItemFilters {
 }
 
 export const defaultFilters: ItemFilters = {
-  location: "",
   color: "",
   dateTimeFrom: "",
   categories: [],
@@ -19,7 +17,6 @@ export const defaultFilters: ItemFilters = {
 
 export function countActiveFilters(filters: ItemFilters): number {
   let count = 0;
-  if (filters.location.trim()) count++;
   if (filters.color.trim()) count++;
   if (filters.dateTimeFrom) count++;
   if (filters.categories.length > 0) count++;
@@ -31,7 +28,6 @@ export function applyAdvancedFilters(
   items: Item[],
   filters: ItemFilters,
 ): Item[] {
-  const location = filters.location.trim().toLowerCase();
   const color = filters.color.trim().toLowerCase();
   const dateTimeFrom = filters.dateTimeFrom
     ? new Date(filters.dateTimeFrom).getTime()
@@ -51,13 +47,14 @@ export function applyAdvancedFilters(
     }
     if (
       filters.buildings.length > 0 &&
-      !filters.buildings.some((building) =>
-        item.location.toLowerCase().includes(building.toLowerCase()),
-      )
+      !filters.buildings.some((building) => {
+        const normalizedBuilding = building.toLowerCase();
+        return (
+          item.location.toLowerCase().includes(normalizedBuilding) ||
+          item.building?.toLowerCase().includes(normalizedBuilding)
+        );
+      })
     ) {
-      return false;
-    }
-    if (location && !item.location.toLowerCase().includes(location)) {
       return false;
     }
     if (color) {
