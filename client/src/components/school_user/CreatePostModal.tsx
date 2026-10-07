@@ -33,7 +33,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [type, setType] = useState<"lost" | "found">(initialType);
   const [title, setTitle] = useState("");
   const [color, setColor] = useState("");
-  const [dateTimeValue, setDateTimeValue] = useState("");
+  const [dateValue, setDateValue] = useState("");
+  const [timeValue, setTimeValue] = useState("");
   const [building, setBuilding] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
@@ -104,8 +105,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       userAvatar: "/images/avatar-vaughn.jpg",
       building: building.trim() || undefined,
       location: location.trim(),
-      date: dateTimeValue.slice(0, 10),
-      dateTime: new Date(dateTimeValue).toISOString(),
+      date: dateValue,
+      dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
       timeAgo: "Just now",
       image: previewImage ?? "",
       description: description.trim() || "No additional description provided.",
@@ -292,25 +293,37 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 </div>
               </div>
               <div className="min-w-0">
-                <label htmlFor="report-datetime" className={labelClass}>
-                  {type === "lost"
-                    ? "Date and time lost *"
-                    : "Date and time found *"}
+                <label htmlFor="report-date" className={labelClass}>
+                  {type === "lost" ? "Date lost *" : "Date found *"}
                 </label>
                 <input
-                  id="report-datetime"
-                  name="reportDateTime"
-                  type="datetime-local"
+                  id="report-date"
+                  name="reportDate"
+                  type="date"
                   required
-                  value={dateTimeValue}
-                  max={localDateTime()}
-                  onChange={(e) => setDateTimeValue(e.target.value)}
+                  value={dateValue}
+                  max={localDateTime().slice(0, 10)}
+                  onChange={(e) => setDateValue(e.target.value)}
                   className={`${inputClass} cursor-pointer`}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <label htmlFor="report-time" className={labelClass}>
+                  {type === "lost" ? "Time lost *" : "Time found *"}
+                </label>
+                <input
+                  id="report-time"
+                  name="reportTime"
+                  type="time"
+                  required
+                  value={timeValue}
+                  onChange={(e) => setTimeValue(e.target.value)}
+                  className={`${inputClass} cursor-pointer`}
+                />
+              </div>
               <div className="min-w-0">
                 <label htmlFor="report-building" className={labelClass}>
                   Building{" "}
@@ -330,6 +343,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   className={inputClass}
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div className="min-w-0">
                 <label htmlFor="report-location" className={labelClass}>
                   Specific location
@@ -347,9 +363,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   className={inputClass}
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
               <div className="min-w-0">
                 <label htmlFor="report-category" className={labelClass}>
                   Category

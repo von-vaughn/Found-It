@@ -15,6 +15,7 @@ import { Sidebar } from "@/components/school_user/Sidebar";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
+import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems, type Item } from "@/data/mockItems";
 import { formatItemDateTime } from "@/lib/dateTime";
@@ -37,6 +38,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [foundItemCameraOpen, setFoundItemCameraOpen] = useState(false);
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
   >("lost");
@@ -241,9 +243,13 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() =>
-                  toast.success(`Message sent to ${item.contactName}!`)
-                }
+                onClick={() => {
+                  if (isLost) {
+                    setFoundItemCameraOpen(true);
+                    return;
+                  }
+                  toast.success(`Message sent to ${item.contactName}!`);
+                }}
                 className="shrink-0 h-10 px-5 rounded-full bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
               >
                 {isLost ? "I Found This" : "This Is Mine"}
@@ -369,6 +375,9 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         onAddItem={handleAddItem}
         initialType={createModalInitialType}
       />
+      {foundItemCameraOpen && (
+        <FoundItemCameraModal onClose={() => setFoundItemCameraOpen(false)} />
+      )}
     </div>
   );
 };
