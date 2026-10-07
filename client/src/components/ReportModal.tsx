@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import type { Item } from "@/data/mockItems";
 import toast from "react-hot-toast";
 
+const localDateTime = (date = new Date()) => {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,6 +26,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const [type, setType] = useState<"lost" | "found">(defaultType);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Item["category"]>("electronics");
+  const [color, setColor] = useState("");
+  const [dateTimeValue, setDateTimeValue] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [reward, setReward] = useState("");
@@ -50,7 +57,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       type: type,
       category: category,
       location: location.trim(),
-      date: new Date().toISOString().split("T")[0],
+      date: dateTimeValue.slice(0, 10),
+      dateTime: new Date(dateTimeValue).toISOString(),
+      color: color.trim() || undefined,
       timeAgo: "Just now",
       image: defaultImages[category] || "/images/backpack.jpg",
       description: description.trim() || "No additional details provided.",
@@ -179,6 +188,41 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                   className="w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] transition-all"
                 />
               </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="report-color"
+                className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5"
+              >
+                Color
+              </label>
+              <input
+                id="report-color"
+                type="text"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                placeholder="e.g. Black"
+                className="w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] transition-all"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="report-date-time"
+                className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5"
+              >
+                {type === "lost" ? "Date and time lost" : "Date and time found"} *
+              </label>
+              <input
+                id="report-date-time"
+                type="datetime-local"
+                required
+                value={dateTimeValue}
+                max={localDateTime()}
+                onChange={(e) => setDateTimeValue(e.target.value)}
+                className="w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] transition-all"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

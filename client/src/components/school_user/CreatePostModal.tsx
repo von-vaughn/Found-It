@@ -11,7 +11,10 @@ interface CreatePostModalProps {
   initialType?: "lost" | "found";
 }
 
-const todayIso = () => new Date().toISOString().split("T")[0];
+const localDateTime = (date = new Date()) => {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 const inputClass =
   "w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors";
@@ -29,7 +32,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [type, setType] = useState<"lost" | "found">(initialType);
   const [title, setTitle] = useState("");
   const [color, setColor] = useState("");
-  const [dateValue, setDateValue] = useState(todayIso);
+  const [dateTimeValue, setDateTimeValue] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [confidentialInfo, setConfidentialInfo] = useState("");
@@ -98,7 +101,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       username,
       userAvatar: "/images/avatar-vaughn.jpg",
       location: location.trim(),
-      date: dateValue || todayIso(),
+      date: dateTimeValue.slice(0, 10),
+      dateTime: new Date(dateTimeValue).toISOString(),
       timeAgo: "Just now",
       image: previewImage ?? "",
       description: description.trim() || "No additional description provided.",
@@ -285,17 +289,19 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 </div>
               </div>
               <div className="min-w-0">
-                <label htmlFor="report-date" className={labelClass}>
-                  {type === "lost" ? "Date lost" : "Date found"}
+                <label htmlFor="report-datetime" className={labelClass}>
+                  {type === "lost"
+                    ? "Date and time lost *"
+                    : "Date and time found *"}
                 </label>
                 <input
-                  id="report-date"
-                  name="reportDate"
-                  type="date"
+                  id="report-datetime"
+                  name="reportDateTime"
+                  type="datetime-local"
                   required
-                  value={dateValue}
-                  max={todayIso()}
-                  onChange={(e) => setDateValue(e.target.value)}
+                  value={dateTimeValue}
+                  max={localDateTime()}
+                  onChange={(e) => setDateTimeValue(e.target.value)}
                   className={`${inputClass} cursor-pointer`}
                 />
               </div>

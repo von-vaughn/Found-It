@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { Item } from "@/data/mockItems";
 import toast from "react-hot-toast";
+import { formatItemDateTime } from "@/lib/dateTime";
 
 interface ItemDetailModalProps {
   item: Item | null;
@@ -63,6 +64,10 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
   const avatarUrl =
     item.userAvatar ||
     `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(username)}`;
+  const itemDateTime =
+    item.dateTime
+      ? formatItemDateTime(item.dateTime)
+      : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/50 backdrop-blur-xs">
@@ -155,6 +160,15 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
                 <strong>Reported:</strong> {item.date} ({item.timeAgo})
               </span>
             </div>
+            {item.type === "lost" && (
+              <div className="col-span-2 flex items-center gap-2 text-neutral-600">
+                <Calendar className="w-4 h-4 text-neutral-400 shrink-0" />
+                <span>
+                  <strong>Date and time lost:</strong>{" "}
+                  {itemDateTime ?? "Not provided"}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Comments section */}

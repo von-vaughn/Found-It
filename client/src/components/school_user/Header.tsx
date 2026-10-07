@@ -13,7 +13,6 @@ interface HeaderProps {
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
   sidebarExpanded?: boolean;
   notificationPanelOpen?: boolean;
-  onCategorySelect?: (catId: string) => void;
   activeFilterCount?: number;
   filters?: ItemFilters;
   onFiltersChange?: (filters: ItemFilters) => void;
@@ -28,7 +27,6 @@ export const Header: React.FC<HeaderProps> = ({
   searchInputRef,
   sidebarExpanded = false,
   notificationPanelOpen = false,
-  onCategorySelect,
   activeFilterCount = 0,
   filters,
   onFiltersChange,
@@ -195,16 +193,6 @@ export const Header: React.FC<HeaderProps> = ({
       isOpen={isPaletteOpen}
       onClose={() => setIsPaletteOpen(false)}
       initialQuery={searchQuery}
-      onSelectCategory={(categoryId, categoryLabel) => {
-        if (onCategorySelect) {
-          onCategorySelect(categoryId);
-        } else {
-          onSearchChange(categoryLabel);
-        }
-      }}
-      onSelectBuilding={(buildingName) => {
-        onSearchChange(buildingName);
-      }}
       onSubmitSearch={(query) => {
         onSearchChange(query);
       }}

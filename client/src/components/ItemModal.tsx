@@ -4,6 +4,7 @@ import {
   X,
   MapPin,
   Clock,
+  Calendar,
   Award,
   User,
   ShieldCheck,
@@ -12,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Item } from "@/data/mockItems";
 import toast from "react-hot-toast";
+import { formatItemDateTime } from "@/lib/dateTime";
 
 interface ItemModalProps {
   item: Item | null;
@@ -22,6 +24,9 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
   if (!item) return null;
 
   const isLost = item.type === "lost";
+  const itemDateTime = item.dateTime
+    ? formatItemDateTime(item.dateTime)
+    : null;
 
   const handleAction = () => {
     if (isLost) {
@@ -145,6 +150,21 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
                   </div>
                 </div>
               </div>
+              {item.type === "lost" && (
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-red-50 text-[#E5192D] shrink-0 mt-0.5">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-neutral-400">
+                      Date and time lost
+                    </div>
+                    <div className="text-sm font-semibold text-neutral-800">
+                      {itemDateTime ?? "Not provided"}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2.5 text-xs text-neutral-500 bg-amber-50/70 border border-amber-200/50 p-3 rounded-xl">

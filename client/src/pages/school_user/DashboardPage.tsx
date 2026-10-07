@@ -94,7 +94,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   ] as const;
 
   // Filter items: search matches item name only; type and category
-  // come from the quick pills; location/color/date from Filters.
+  // come from the quick pills; location/color/date-time from the palette.
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const preFiltered = items.filter((item) => {
@@ -147,13 +147,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           searchInputRef={searchInputRef}
           sidebarExpanded={sidebarExpanded}
           notificationPanelOpen={notificationsOpen}
-          onCategorySelect={(catId) => {
-            if (["bags", "electronics", "keys", "wallets", "accessories"].includes(catId)) {
-              setSelectedCategory(catId as "bags" | "electronics" | "keys" | "wallets" | "accessories");
-            } else {
-              setSearchQuery(catId);
-            }
-          }}
           activeFilterCount={activeFilterCount}
           filters={filters}
           onFiltersChange={setFilters}

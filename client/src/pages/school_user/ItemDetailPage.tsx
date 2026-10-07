@@ -16,6 +16,7 @@ import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { initialItems, type Item } from "@/data/mockItems";
+import { formatItemDateTime } from "@/lib/dateTime";
 
 interface ItemDetailPageProps {
   items?: Item[];
@@ -44,6 +45,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
@@ -97,6 +99,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           activeTab="home"
           expanded={sidebarExpanded}
           onExpandedChange={setSidebarExpanded}
+          onNotificationsOpenChange={setNotificationsOpen}
           onTabChange={() => navigate("/dashboard")}
           onOpenCreateModal={() => handleOpenCreateModal("lost")}
         />
@@ -107,6 +110,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             onOpenReportModal={() => handleOpenCreateModal("lost")}
             searchInputRef={searchInputRef}
             sidebarExpanded={sidebarExpanded}
+            notificationPanelOpen={notificationsOpen}
           />
           <div className="flex-1 flex items-center justify-center px-8 py-16">
             <main className="text-center max-w-sm">
@@ -137,6 +141,9 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     "student_user";
   const avatarUrl = item.userAvatar || `/images/avatars/${username}.svg`;
   const isLost = item.type === "lost";
+  const itemDateTime = item.dateTime
+    ? formatItemDateTime(item.dateTime)
+    : null;
 
   const handleShare = async () => {
     try {
@@ -159,6 +166,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         activeTab="home"
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
+        onNotificationsOpenChange={setNotificationsOpen}
         onTabChange={() => navigate("/dashboard")}
         onOpenCreateModal={() => handleOpenCreateModal("lost")}
       />
@@ -171,6 +179,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           onOpenReportModal={() => handleOpenCreateModal("lost")}
           searchInputRef={searchInputRef}
           sidebarExpanded={sidebarExpanded}
+          notificationPanelOpen={notificationsOpen}
         />
 
         {/* Detail actions row */}
@@ -297,6 +306,22 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   </dd>
                 </div>
               </div>
+              {isLost && (
+                <div className="flex items-center gap-2.5 py-3 min-w-0">
+                  <Clock
+                    className="h-4 w-4 shrink-0 text-neutral-400"
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0 flex flex-1 items-baseline justify-between gap-4">
+                    <dt className="shrink-0 font-bold text-neutral-900">
+                      Date and time lost
+                    </dt>
+                    <dd className="min-w-0 truncate text-neutral-500">
+                      {itemDateTime ?? "Not provided"}
+                    </dd>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-2.5 py-3 min-w-0">
                 <Tag
                   className="h-4 w-4 shrink-0 text-neutral-400"

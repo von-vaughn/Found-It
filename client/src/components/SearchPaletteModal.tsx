@@ -14,7 +14,6 @@ import {
   BookOpen,
   CreditCard,
   ArrowRight,
-  SlidersHorizontal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import type { Item } from "@/data/mockItems";
@@ -27,8 +26,6 @@ export interface SearchPaletteModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialQuery?: string;
-  onSelectCategory?: (categoryId: string, categoryLabel: string) => void;
-  onSelectBuilding?: (buildingName: string) => void;
   onSubmitSearch?: (query: string) => void;
   items?: Item[];
   filters?: ItemFilters;
@@ -82,8 +79,6 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
   isOpen,
   onClose,
   initialQuery = "",
-  onSelectCategory,
-  onSelectBuilding,
   onSubmitSearch,
   items,
   filters,
@@ -91,9 +86,9 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
   onClearFilters,
   filterResultCount,
 }) => {
-  const [activeTab, setActiveTab] = useState<
-    "categories" | "building" | "filters"
-  >("categories");
+  const [activeTab, setActiveTab] = useState<"categories" | "building">(
+    "categories",
+  );
   const [query, setQuery] = useState(initialQuery);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -149,12 +144,11 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
     return map;
   }, [items]);
 
-  const showFiltersTab = !!filters && !!onFiltersChange;
   const filterCount = filters ? countActiveFilters(filters) : 0;
-  const tabOrder: Array<"categories" | "building" | "filters"> =
-    showFiltersTab
-      ? ["categories", "building", "filters"]
-      : ["categories", "building"];
+  const tabOrder: Array<"categories" | "building"> = [
+    "categories",
+    "building",
+  ];
 
   // Filter lists based on query
   const filteredCategories = useMemo(() => {
@@ -170,11 +164,7 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
   }, [query]);
 
   const currentItems =
-    activeTab === "filters"
-      ? []
-      : activeTab === "categories"
-        ? filteredCategories
-        : filteredBuildings;
+    activeTab === "categories" ? filteredCategories : filteredBuildings;
 
   // Reset highlight index when filtering or changing tabs
   useEffect(() => {
@@ -190,14 +180,20 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
     }
   }, [highlightedIndex]);
 
-  const handleSelectCategory = (cat: CategoryOption) => {
-    onSelectCategory?.(cat.id, cat.name);
-    onClose();
+  const toggleCategory = (categoryId: string) => {
+    if (!filters || !onFiltersChange) return;
+    const categories = filters.categories.includes(categoryId)
+      ? filters.categories.filter((category) => category !== categoryId)
+      : [...filters.categories, categoryId];
+    onFiltersChange({ ...filters, categories });
   };
 
-  const handleSelectBuilding = (bld: BuildingOption) => {
-    onSelectBuilding?.(bld.name);
-    onClose();
+  const toggleBuilding = (buildingName: string) => {
+    if (!filters || !onFiltersChange) return;
+    const buildings = filters.buildings.includes(buildingName)
+      ? filters.buildings.filter((building) => building !== buildingName)
+      : [...filters.buildings, buildingName];
+    onFiltersChange({ ...filters, buildings });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -219,13 +215,12 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
       });
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (activeTab === "filters") return;
       if (currentItems.length > 0 && currentItems[highlightedIndex]) {
         const item = currentItems[highlightedIndex];
         if (activeTab === "categories") {
-          handleSelectCategory(item as CategoryOption);
+          toggleCategory(item.id);
         } else {
-          handleSelectBuilding(item as BuildingOption);
+          toggleBuilding(item.name);
         }
       } else if (query.trim()) {
         onSubmitSearch?.(query.trim());
@@ -298,202 +293,118 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
 
             {/* Main Content Area (2 columns: Sidebar & List) */}
             <div className="flex flex-1 min-h-0 divide-x divide-neutral-150">
-              {/* Left Sidebar: ONLY Categories and Building */}
-              <div className="w-44 sm:w-48 shrink-0 p-3 sm:p-4 flex flex-col gap-1.5 bg-neutral-50/80 select-none">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("categories")}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer text-left ${
-                    activeTab === "categories"
-                      ? "bg-white text-neutral-900 font-semibold shadow-xs border border-neutral-200/80"
-                      : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/70 font-medium"
-                  }`}
-                >
-                  <Layers className={`w-4 h-4 shrink-0 ${activeTab === "categories" ? "text-neutral-900" : "text-neutral-400"}`} />
-                  <span>Categories</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("building")}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer text-left ${
-                    activeTab === "building"
-                      ? "bg-white text-neutral-900 font-semibold shadow-xs border border-neutral-200/80"
-                      : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/70 font-medium"
-                  }`}
-                >
-                  <Building2 className={`w-4 h-4 shrink-0 ${activeTab === "building" ? "text-neutral-900" : "text-neutral-400"}`} />
-                  <span>Building</span>
-                </button>
-
-                {showFiltersTab && (
+              <aside className="w-48 sm:w-60 shrink-0 p-3 sm:p-4 flex flex-col gap-3 bg-neutral-50/80 overflow-y-auto">
+                <nav aria-label="Filter groups" className="flex flex-col gap-1.5">
                   <button
                     type="button"
-                    onClick={() => setActiveTab("filters")}
+                    onClick={() => setActiveTab("categories")}
+                    aria-pressed={activeTab === "categories"}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer text-left ${
-                      activeTab === "filters"
+                      activeTab === "categories"
                         ? "bg-white text-neutral-900 font-semibold shadow-xs border border-neutral-200/80"
                         : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/70 font-medium"
                     }`}
                   >
-                    <SlidersHorizontal className={`w-4 h-4 shrink-0 ${activeTab === "filters" ? "text-neutral-900" : "text-neutral-400"}`} />
-                    <span>Filters</span>
-                    {filterCount > 0 && (
-                      <span className="ml-auto min-w-5 h-5 px-1 bg-neutral-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center tabular-nums">
-                        {filterCount}
-                      </span>
-                    )}
+                    <Layers className={`w-4 h-4 shrink-0 ${activeTab === "categories" ? "text-neutral-900" : "text-neutral-400"}`} />
+                    <span>Categories</span>
                   </button>
-                )}
-              </div>
 
-              {/* Right Panel: Content items with counts */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("building")}
+                    aria-pressed={activeTab === "building"}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer text-left ${
+                      activeTab === "building"
+                        ? "bg-white text-neutral-900 font-semibold shadow-xs border border-neutral-200/80"
+                        : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/70 font-medium"
+                    }`}
+                  >
+                    <Building2 className={`w-4 h-4 shrink-0 ${activeTab === "building" ? "text-neutral-900" : "text-neutral-400"}`} />
+                    <span>Buildings</span>
+                  </button>
+                </nav>
+
+                {filters && onFiltersChange && (
+                  <div className="border-t border-neutral-200 pt-3 space-y-3">
+                    <div className="min-w-0">
+                      <label
+                        htmlFor="palette-filter-color"
+                        className="block text-xs font-semibold text-neutral-700 mb-1.5"
+                      >
+                        Color
+                      </label>
+                      <input
+                        id="palette-filter-color"
+                        name="filterColor"
+                        type="text"
+                        value={filters.color}
+                        onChange={(e) =>
+                          onFiltersChange({ ...filters, color: e.target.value })
+                        }
+                        placeholder="Black"
+                        autoComplete="off"
+                        spellCheck={false}
+                        className="w-full h-9 px-2.5 text-xs bg-white rounded-lg border border-neutral-200 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-300"
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <label
+                        htmlFor="palette-filter-location"
+                        className="block text-xs font-semibold text-neutral-700 mb-1.5"
+                      >
+                        Location
+                      </label>
+                      <input
+                        id="palette-filter-location"
+                        name="filterLocation"
+                        type="text"
+                        value={filters.location}
+                        onChange={(e) =>
+                          onFiltersChange({
+                            ...filters,
+                            location: e.target.value,
+                          })
+                        }
+                        placeholder="Library"
+                        autoComplete="off"
+                        spellCheck={false}
+                        className="w-full h-9 px-2.5 text-xs bg-white rounded-lg border border-neutral-200 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-300"
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <label
+                        htmlFor="palette-filter-datetime-from"
+                        className="block text-xs font-semibold text-neutral-700 mb-1.5"
+                      >
+                        From date and time
+                      </label>
+                      <input
+                        id="palette-filter-datetime-from"
+                        name="filterDateTime"
+                        type="datetime-local"
+                        value={filters.dateTimeFrom}
+                        onChange={(e) =>
+                          onFiltersChange({
+                            ...filters,
+                            dateTimeFrom: e.target.value,
+                          })
+                        }
+                        className="w-full h-9 px-2 text-[11px] bg-white rounded-lg border border-neutral-200 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-300"
+                      />
+                    </div>
+                  </div>
+                )}
+              </aside>
+
               <div
                 ref={listRef}
                 className="flex-1 p-3 sm:p-4 overflow-y-auto flex flex-col bg-white scrollbar-thin scrollbar-thumb-neutral-200"
               >
-                {activeTab === "filters" && filters && onFiltersChange ? (
-                  <>
-                    <div className="px-3 py-1 mb-1">
-                      <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-                        Advanced filters
-                      </h3>
-                    </div>
-                    <div className="px-3 py-2 space-y-3">
-                      <div className="min-w-0">
-                        <label
-                          htmlFor="palette-filter-location"
-                          className="block text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5"
-                        >
-                          Location
-                        </label>
-                        <input
-                          id="palette-filter-location"
-                          name="filterLocation"
-                          type="text"
-                          value={filters.location}
-                          onChange={(e) =>
-                            onFiltersChange({
-                              ...filters,
-                              location: e.target.value,
-                            })
-                          }
-                          placeholder="Library…"
-                          autoComplete="off"
-                          spellCheck={false}
-                          className="w-full h-10 px-3 text-xs bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:border-neutral-400 transition-colors"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <label
-                          htmlFor="palette-filter-color"
-                          className="block text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5"
-                        >
-                          Color
-                        </label>
-                        <div className="relative">
-                          <input
-                            id="palette-filter-color"
-                            name="filterColor"
-                            type="text"
-                            value={filters.color}
-                            onChange={(e) =>
-                              onFiltersChange({
-                                ...filters,
-                                color: e.target.value,
-                              })
-                            }
-                            placeholder="Black…"
-                            autoComplete="off"
-                            spellCheck={false}
-                            className="w-full h-10 pl-3 pr-9 text-xs bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:border-neutral-400 transition-colors"
-                          />
-                          <span
-                            aria-hidden="true"
-                            style={{
-                              backgroundColor:
-                                filters.color.trim() || "transparent",
-                            }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-neutral-200"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="min-w-0">
-                          <label
-                            htmlFor="palette-filter-date-from"
-                            className="block text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5"
-                          >
-                            From
-                          </label>
-                          <input
-                            id="palette-filter-date-from"
-                            name="filterDateFrom"
-                            type="date"
-                            value={filters.dateFrom}
-                            max={filters.dateTo || undefined}
-                            onChange={(e) =>
-                              onFiltersChange({
-                                ...filters,
-                                dateFrom: e.target.value,
-                              })
-                            }
-                            className="w-full h-10 px-2 text-xs bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:border-neutral-400 transition-colors cursor-pointer"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <label
-                            htmlFor="palette-filter-date-to"
-                            className="block text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5"
-                          >
-                            To
-                          </label>
-                          <input
-                            id="palette-filter-date-to"
-                            name="filterDateTo"
-                            type="date"
-                            value={filters.dateTo}
-                            min={filters.dateFrom || undefined}
-                            onChange={(e) =>
-                              onFiltersChange({
-                                ...filters,
-                                dateTo: e.target.value,
-                              })
-                            }
-                            className="w-full h-10 px-2 text-xs bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:border-neutral-400 transition-colors cursor-pointer"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-auto px-3 pt-3 flex items-center justify-between gap-3">
-                      <button
-                        type="button"
-                        onClick={() => onClearFilters?.()}
-                        disabled={filterCount === 0}
-                        className="text-xs font-bold text-neutral-400 transition-colors hover:text-[#E5192D] cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:text-neutral-400"
-                      >
-                        Clear all
-                      </button>
-                      <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold cursor-pointer transition-colors"
-                      >
-                        Show{" "}
-                        {filterResultCount !== undefined ? (
-                          <span className="tabular-nums">
-                            {filterResultCount}
-                          </span>
-                        ) : null}{" "}
-                        results
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                <>
                 <div className="px-3 py-1 mb-1">
                   <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-                    {activeTab === "categories" ? "Categories" : "Building"}
+                    {activeTab === "categories" ? "Categories" : "Buildings"}
                   </h3>
                 </div>
 
@@ -506,36 +417,51 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
                         ? categoryCounts.get(item.id) ?? item.baseCount
                         : buildingCounts.get(item.id) ?? item.baseCount;
 
+                    const isCategory = activeTab === "categories";
+                    const checked = isCategory
+                      ? filters?.categories.includes(item.id) ?? false
+                      : filters?.buildings.includes(item.name) ?? false;
+                    const checkboxId = `palette-${activeTab}-${item.id}`;
+
                     return (
-                      <button
+                      <label
                         key={item.id}
-                        type="button"
+                        htmlFor={checkboxId}
                         data-index={idx}
-                        onClick={() => {
-                          if (activeTab === "categories") {
-                            handleSelectCategory(item as CategoryOption);
-                          } else {
-                            handleSelectBuilding(item as BuildingOption);
-                          }
-                        }}
                         onMouseEnter={() => setHighlightedIndex(idx)}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all cursor-pointer group text-left ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors cursor-pointer group ${
                           isHighlighted
-                            ? "bg-neutral-100 text-neutral-900 font-medium"
+                            ? "bg-neutral-100 text-neutral-900"
                             : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Icon className={`w-4 h-4 shrink-0 transition-colors ${isHighlighted ? "text-neutral-900" : "text-neutral-400 group-hover:text-neutral-700"}`} />
-                          <span className="text-sm truncate">
-                            {item.name}
-                          </span>
-                        </div>
+                        <span className="flex items-center gap-3 min-w-0">
+                          <input
+                            id={checkboxId}
+                            type="checkbox"
+                            checked={checked}
+                            disabled={!filters || !onFiltersChange}
+                            onChange={() =>
+                              isCategory
+                                ? toggleCategory(item.id)
+                                : toggleBuilding(item.name)
+                            }
+                            className="h-4 w-4 shrink-0 rounded border-neutral-300 accent-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed"
+                          />
+                          <Icon
+                            className={`w-4 h-4 shrink-0 transition-colors ${
+                              isHighlighted
+                                ? "text-neutral-900"
+                                : "text-neutral-400 group-hover:text-neutral-700"
+                            }`}
+                          />
+                          <span className="text-sm truncate">{item.name}</span>
+                        </span>
 
                         <span className="text-xs font-mono text-neutral-400 group-hover:text-neutral-600 shrink-0 ml-2">
                           {count}
                         </span>
-                      </button>
+                      </label>
                     );
                   })}
 
@@ -558,9 +484,29 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
                     </div>
                   )}
                 </div>
-                </>
-                )}
               </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-neutral-150 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => onClearFilters?.()}
+                disabled={!onClearFilters || filterCount === 0}
+                className="text-xs font-semibold text-neutral-500 hover:text-[#E5192D] cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:text-neutral-500"
+              >
+                Clear all
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold cursor-pointer transition-colors"
+              >
+                Show{" "}
+                {filterResultCount !== undefined ? (
+                  <span className="tabular-nums">{filterResultCount}</span>
+                ) : null}{" "}
+                results
+              </button>
             </div>
 
           </motion.div>

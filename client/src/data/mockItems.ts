@@ -5,6 +5,7 @@ export interface Item {
   category: 'bags' | 'electronics' | 'keys' | 'wallets' | 'accessories' | 'other';
   location: string;
   date: string;
+  dateTime?: string;
   timeAgo: string;
   image: string;
   description: string;
@@ -30,6 +31,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/ken_21.svg',
     location: 'WMSU Campus',
     date: '2026-10-03',
+    color: 'Black',
     timeAgo: '2 hours ago',
     image: '/images/backpack.jpg',
     description: 'Lost my black Herschel backpack around the library area near the engineering building. It has a laptop, notebooks, and some personal items. Please help!',
@@ -66,6 +68,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/denji_07.svg',
     location: 'Student Center',
     date: '2026-10-02',
+    color: 'Black',
     timeAgo: '1 day ago',
     image: '/images/black-glasses.jpg',
     description: 'Lost my prescription glasses around the Student Center. Black frame, rectangular. If you found them, please contact me. Thanks!',
@@ -84,6 +87,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/luna_p.svg',
     location: 'Main Gate',
     date: '2026-10-01',
+    color: 'Brown',
     timeAgo: '2 days ago',
     image: '/images/wallet.jpg',
     description: 'Found a brown leather wallet near the main gate. It has some cash and student ID inside. Please claim it if it\'s yours.',
@@ -102,6 +106,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/jayceee.svg',
     location: 'Gymnasium',
     date: '2026-10-01',
+    color: 'White',
     timeAgo: '2 days ago',
     image: '',
     description: 'Lost my AirPods case (white) in the gymnasium. Last seen after basketball practice. Please let me know if you found it!',
@@ -120,6 +125,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/ella_lynn.svg',
     location: 'Cafeteria',
     date: '2026-09-30',
+    color: 'Blue',
     timeAgo: '3 days ago',
     image: '/images/water-bottle.jpg',
     description: 'Found a blue water bottle at the cafeteria table near the south side. It\'s a Hydro Flask with a few stickers. Message me if it\'s yours!',
@@ -138,6 +144,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/kylee_23.svg',
     location: 'Parking Lot',
     date: '2026-09-29',
+    color: 'White',
     timeAgo: '4 days ago',
     image: '/images/laptop-charger.jpg',
     description: 'Lost my laptop charger in the parking lot near the library. It\'s a white MacBook charger. Please help!',
@@ -156,6 +163,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/rohanis.svg',
     location: 'Admin Building',
     date: '2026-09-29',
+    color: 'Blue',
     timeAgo: '4 days ago',
     image: '/images/blue-notebook.jpg',
     description: 'Found a blue spiral notebook near the administration building. Has some handwritten notes. Please DM me if it\'s yours.',
@@ -174,6 +182,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/trixiee.svg',
     location: 'Science Hall',
     date: '2026-09-28',
+    color: 'Black',
     timeAgo: '5 days ago',
     image: '/images/casio-calculator.jpg',
     description: 'Lost my Casio scientific calculator somewhere in the Science Hall. It\'s black with a blue cover. Please contact me if you found it!',
@@ -192,6 +201,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/aldrin_s.svg',
     location: 'Auditorium',
     date: '2026-09-28',
+    color: 'Gray',
     timeAgo: '5 days ago',
     image: '/images/gray-jacket.jpg',
     description: 'Found a gray jacket at the auditorium seats. It has a small logo on the sleeve. Please DM me if it\'s yours!',
@@ -210,6 +220,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/bea_0305.svg',
     location: 'Library',
     date: '2026-09-27',
+    color: 'Red',
     timeAgo: '6 days ago',
     image: '',
     description: 'Lost my student ID around the library. It\'s from WMSU and has a red lanyard. Please help!',
@@ -228,6 +239,7 @@ export const initialItems: Item[] = [
     userAvatar: '/images/avatars/joshua_t.svg',
     location: 'Parking Lot',
     date: '2026-09-27',
+    color: 'Black',
     timeAgo: '6 days ago',
     image: '/images/keys.jpg',
     description: 'Found a set of car keys near the parking lot. Has a black key fob and a Toyota logo. Please claim it if it\'s yours!',
