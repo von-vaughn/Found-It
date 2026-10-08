@@ -424,15 +424,7 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-wrap justify-between gap-2 border-t border-neutral-200 pt-4">
-              <button
-                type="button"
-                onClick={() => setStep("details")}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
-              >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Back to details
-              </button>
+            <div className="flex justify-end gap-2 border-t border-neutral-200 pt-4">
               <button
                 type="button"
                 onClick={onClose}

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { MoreHorizontal, MapPin, Award } from "lucide-react";
+import { MoreHorizontal, Award, Package } from "lucide-react";
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
 import toast from "react-hot-toast";
 
@@ -29,31 +30,28 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     `/images/avatars/${username}.svg`;
 
   const isLost = item.type === "lost";
+  const category = ITEM_CATEGORIES.find(({ id }) => id === item.category);
+  const CategoryIcon = category?.icon ?? Package;
 
   const titleBlock = (
     <>
       <h3 className="text-base font-bold text-neutral-900 line-clamp-1 group-hover:text-neutral-950 transition-colors">
         {item.title}
       </h3>
-      <div className="mt-1 flex items-center gap-2">
-        <p className={`text-[11px] font-bold ${isLost ? "text-[#E5192D]" : "text-emerald-700"}`}>
-          {isLost ? "Lost" : "Found"}
-        </p>
-        {!item.image && item.reward && (
-          <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-            <Award className="w-3 h-3" />
-            {item.reward}
-          </span>
-        )}
-      </div>
+      {!item.image && item.reward && (
+        <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold text-white">
+          <Award className="h-3 w-3" aria-hidden="true" />
+          {item.reward}
+        </span>
+      )}
     </>
   );
 
   const footerRow = (
     <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between">
-      <div className="flex items-center gap-1.5 text-xs text-neutral-500 max-w-[170px] truncate">
-        <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-        <span className="truncate">{item.location}</span>
+      <div className="flex min-w-0 items-center gap-1.5 text-xs text-neutral-500">
+        <CategoryIcon className="h-3.5 w-3.5 shrink-0 text-neutral-400" aria-hidden="true" />
+        <span className="truncate">{category?.label ?? "Other"}</span>
       </div>
 
       <span className="text-xs font-semibold text-neutral-900">
@@ -65,7 +63,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   return (
     <div
       onClick={() => onItemClick && onItemClick(item)}
-      className="bg-white rounded-2xl border border-neutral-200/80 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
+      className="bg-white rounded-lg border border-neutral-200/80 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
     >
       {/* Top Author Row — kept in same position */}
       <div className="flex items-center justify-between gap-3 p-4 pb-2.5">
@@ -147,7 +145,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       {item.image ? (
         <>
           {/* Photo block */}
-          <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden mx-3 rounded-xl">
+          <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden mx-3 rounded-lg">
             <img
               src={item.image}
               alt={item.title}

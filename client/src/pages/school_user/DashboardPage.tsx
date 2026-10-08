@@ -40,6 +40,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     "all" | ItemCategory
   >("all");
   const [visibleCategoryCount, setVisibleCategoryCount] = useState(0);
+  const typeTabsRef = useRef<HTMLElement>(null);
   const categoryRowRef = useRef<HTMLDivElement>(null);
   const categoryMeasureRef = useRef<HTMLDivElement>(null);
   const moreCategoryMeasureRef = useRef<HTMLButtonElement>(null);
@@ -49,6 +50,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   );
   const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [showHeaderTypeTabs, setShowHeaderTypeTabs] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
@@ -67,6 +69,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const tabs = typeTabsRef.current;
+    if (!tabs) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowHeaderTypeTabs(
+          !entry.isIntersecting && entry.boundingClientRect.bottom <= 80,
+        );
+      },
+      { rootMargin: "-80px 0px 0px 0px", threshold: 0 },
+    );
+    observer.observe(tabs);
+    return () => observer.disconnect();
   }, []);
 
   // Keep the URL query in sync so feed search is deep-linkable
@@ -213,6 +231,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           notificationsOpen={notificationsOpen}
           isFilterModalOpen={filterModalOpen}
           onFilterModalOpenChange={setFilterModalOpen}
+          dashboardTypeTabsVisible={showHeaderTypeTabs}
+          filterType={filterType}
+          onFilterTypeChange={setFilterType}
         />
 
         {/* Dashboard Main Container */}
@@ -225,9 +246,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {/* Filter Pills and Tabs Bar */}
           <div className="flex items-center gap-3 pt-1">
             {/* "All" Tab with bottom underline */}
+            <nav
+              ref={typeTabsRef}
+              aria-label="Filter items by type"
+              className="flex items-center gap-4"
+            >
             <button
               onClick={() => setFilterType("all")}
-              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer mr-1 ${
+              aria-pressed={filterType === "all"}
+              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer ${
                 filterType === "all"
                   ? "text-neutral-900"
                   : "text-neutral-400 hover:text-neutral-700"
@@ -244,7 +271,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               onClick={() =>
                 setFilterType(filterType === "lost" ? "all" : "lost")
               }
-              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer mr-1 ${
+              aria-pressed={filterType === "lost"}
+              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer ${
                 filterType === "lost"
                   ? "text-neutral-900"
                   : "text-neutral-400 hover:text-neutral-700"
@@ -261,7 +289,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               onClick={() =>
                 setFilterType(filterType === "found" ? "all" : "found")
               }
-              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer mr-1 ${
+              aria-pressed={filterType === "found"}
+              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer ${
                 filterType === "found"
                   ? "text-neutral-900"
                   : "text-neutral-400 hover:text-neutral-700"
@@ -272,6 +301,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-neutral-900 rounded-full" />
               )}
             </button>
+            </nav>
 
             {/* Result count indicator if filtered or searched */}
             {(searchQuery.trim() || filterType !== "all" || selectedCategory !== "all" || activeFilterCount > 0) && (

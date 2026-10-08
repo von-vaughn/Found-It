@@ -3,6 +3,7 @@ import { ChevronDown, LogOut, User as UserIcon, Bookmark, PlusCircle, SlidersHor
 import { useAuth } from "@/context/useAuth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { SearchPaletteModal } from "@/components/SearchPaletteModal";
 import type { ItemFilters } from "@/components/school_user/itemFilters";
 
@@ -20,6 +21,9 @@ interface HeaderProps {
   notificationsOpen?: boolean;
   isFilterModalOpen?: boolean;
   onFilterModalOpenChange?: (open: boolean) => void;
+  dashboardTypeTabsVisible?: boolean;
+  filterType?: "all" | "lost" | "found";
+  onFilterTypeChange?: (type: "all" | "lost" | "found") => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,11 +40,15 @@ export const Header: React.FC<HeaderProps> = ({
   notificationsOpen = false,
   isFilterModalOpen,
   onFilterModalOpenChange,
+  dashboardTypeTabsVisible = false,
+  filterType = "all",
+  onFilterTypeChange,
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [localPaletteOpen, setLocalPaletteOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const isPaletteOpen = isFilterModalOpen ?? localPaletteOpen;
   const setIsPaletteOpen = (open: boolean) => {
     onFilterModalOpenChange?.(open);
@@ -78,6 +86,71 @@ export const Header: React.FC<HeaderProps> = ({
               notificationPanelOpen ? "md:ml-80" : ""
             }`}
           >
+            <AnimatePresence initial={false}>
+              {dashboardTypeTabsVisible && onFilterTypeChange && (
+                <motion.div
+                  key="dashboard-type-tabs"
+                  initial={{ width: 0, opacity: 0, x: -6 }}
+                  animate={{ width: "auto", opacity: 1, x: 0 }}
+                  exit={{ width: 0, opacity: 0, x: -6 }}
+                  transition={{
+                    width: {
+                      duration: reduceMotion ? 0 : 0.24,
+                      ease: [0.16, 1, 0.3, 1],
+                    },
+                    opacity: { duration: reduceMotion ? 0 : 0.16 },
+                    x: {
+                      duration: reduceMotion ? 0 : 0.2,
+                      ease: [0.16, 1, 0.3, 1],
+                    },
+                  }}
+                  className="shrink-0 overflow-hidden"
+                >
+                  <nav
+                    aria-label="Filter items by type"
+                    className="flex items-center gap-0.5 whitespace-nowrap px-1 sm:gap-2 sm:px-2"
+                  >
+                    {(
+                      [
+                        { id: "all", label: "All", compactLabel: "All" },
+                        {
+                          id: "lost",
+                          label: "Lost Item",
+                          compactLabel: "Lost",
+                        },
+                        {
+                          id: "found",
+                          label: "Found Item",
+                          compactLabel: "Found",
+                        },
+                      ] as const
+                    ).map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        aria-label={tab.label}
+                        aria-pressed={filterType === tab.id}
+                        onClick={() => onFilterTypeChange(tab.id)}
+                        className={`relative cursor-pointer px-1 pt-1 pb-1.5 text-[11px] font-bold transition-colors sm:px-1.5 sm:text-sm ${
+                          filterType === tab.id
+                            ? "text-neutral-900"
+                            : "text-neutral-400 hover:text-neutral-700"
+                        }`}
+                      >
+                        <span className="sm:hidden">{tab.compactLabel}</span>
+                        <span className="hidden sm:inline">{tab.label}</span>
+                        {filterType === tab.id && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute bottom-0 left-1 right-1 h-0.5 rounded-full bg-neutral-900"
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </nav>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <div className="relative flex-1 min-w-0 flex items-center">
             <input
               ref={searchInputRef}

@@ -16,6 +16,7 @@ import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
+import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems, type Item } from "@/data/mockItems";
 import { formatItemDateTime } from "@/lib/dateTime";
@@ -39,6 +40,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [foundItemCameraOpen, setFoundItemCameraOpen] = useState(false);
+  const [ownershipClaimOpen, setOwnershipClaimOpen] = useState(false);
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
   >("lost");
@@ -248,7 +250,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                     setFoundItemCameraOpen(true);
                     return;
                   }
-                  toast.success(`Message sent to ${item.contactName}!`);
+                  setOwnershipClaimOpen(true);
                 }}
                 className="shrink-0 h-10 px-5 rounded-full bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
               >
@@ -377,6 +379,12 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       />
       {foundItemCameraOpen && (
         <FoundItemCameraModal onClose={() => setFoundItemCameraOpen(false)} />
+      )}
+      {ownershipClaimOpen && (
+        <OwnershipClaimModal
+          itemTitle={item.title}
+          onClose={() => setOwnershipClaimOpen(false)}
+        />
       )}
     </div>
   );
