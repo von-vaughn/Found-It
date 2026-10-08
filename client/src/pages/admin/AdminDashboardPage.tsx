@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDownToLine,
   ArrowUpRight,
@@ -8,7 +9,6 @@ import {
   Check,
   CheckCheck,
   ChevronDown,
-  CircleAlert,
   Clock3,
   FileSearch,
   Flag,
@@ -30,8 +30,6 @@ type AdminSection =
   | "lost"
   | "found"
   | "claims"
-  | "reports"
-  | "matches"
   | "history";
 
 type RecordStatus = "Open" | "Under review" | "Returned" | "Pending";
@@ -40,8 +38,11 @@ interface AdminReport {
   id: string;
   title: string;
   type: "Lost" | "Found";
+  image: string;
   category: string;
-  location: string;
+  description: string;
+  building: string;
+  color: string;
   reportedBy: string;
   status: RecordStatus;
   date: string;
@@ -51,10 +52,13 @@ const adminReports: AdminReport[] = initialItems.map((item) => ({
   id: item.id,
   title: item.title,
   type: item.type === "lost" ? "Lost" : "Found",
+  image: item.image,
   category:
     ITEM_CATEGORIES.find((category) => category.id === item.category)?.label ??
     "Other",
-  location: item.building || item.location,
+  description: item.description,
+  building: item.building || item.location,
+  color: item.color ?? "",
   reportedBy: item.contactName,
   status:
     item.status === "reunited"
@@ -70,6 +74,7 @@ const claims = [
     id: "CL-2408",
     status: "Pending" as const,
     item: "Black Backpack",
+    itemId: "item-1",
     claimant: "Mika Ross",
     dateLost: "October 3, 2026",
     timeLost: "Around 2:30 PM",
@@ -82,6 +87,7 @@ const claims = [
     id: "CL-2407",
     status: "Pending" as const,
     item: "Wallet",
+    itemId: "item-4",
     claimant: "Janelle Cruz",
     dateLost: "October 1, 2026",
     timeLost: "Around 11:00 AM",
@@ -94,6 +100,7 @@ const claims = [
     id: "CL-2402",
     status: "Pending" as const,
     item: "Water Bottle",
+    itemId: "item-6",
     claimant: "Noah Ibrahim",
     dateLost: "September 30, 2026",
     timeLost: "After lunch",
@@ -104,49 +111,23 @@ const claims = [
   },
 ];
 
-const userReports = [
-  {
-    id: "RP-108",
-    subject: "Black Backpack report",
-    reason: "Incorrect contact information",
-    submittedBy: "Mika Ross",
-    submitted: "Today, 10:06 AM",
-    status: "Pending" as const,
-  },
-  {
-    id: "RP-105",
-    subject: "Wallet claim conversation",
-    reason: "Possible duplicate claim",
-    submittedBy: "Janelle Cruz",
-    submitted: "Yesterday, 1:32 PM",
-    status: "Under review" as const,
-  },
-  {
-    id: "RP-099",
-    subject: "iPhone 13 report",
-    reason: "Needs location clarification",
-    submittedBy: "OSA desk",
-    submitted: "October 5, 2026",
-    status: "Open" as const,
-  },
-];
+interface AdminNotification {
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  claimId: string;
+  read: boolean;
+}
 
-const possibleMatches = [
-  {
-    lost: "Black Backpack",
-    found: "Backpack near the Library",
-    location: "Library Building",
-    submitted: "Today",
-    reason: "Similar color, category, and reported location",
-  },
-  {
-    lost: "iPhone 13",
-    found: "Phone with a clear case",
-    location: "Library Building",
-    submitted: "Yesterday",
-    reason: "Matching model and nearby report location",
-  },
-];
+const initialNotifications: AdminNotification[] = claims.map((claim) => ({
+  id: claim.id,
+  title: "Ownership claim submitted",
+  description: `${claim.claimant} submitted a claim for the ${claim.item}.`,
+  time: claim.submitted,
+  claimId: claim.id,
+  read: false,
+}));
 
 const activityHistory = [
   {
@@ -201,8 +182,6 @@ const navigation: {
   { id: "lost", label: "Lost items", compactLabel: "Lost", icon: PackageSearch },
   { id: "found", label: "Found items", compactLabel: "Found", icon: PackageCheck },
   { id: "claims", label: "Claims", compactLabel: "Claims", icon: BadgeCheck },
-  { id: "reports", label: "Reports", compactLabel: "Reports", icon: Flag },
-  { id: "matches", label: "Possible matches", compactLabel: "Matches", icon: GitCompare },
   { id: "history", label: "History", compactLabel: "History", icon: History },
 ];
 
@@ -222,14 +201,6 @@ const pageCopy: Record<AdminSection, { title: string; description: string }> = {
   claims: {
     title: "Ownership claims",
     description: "Review the details submitted to verify an item claim.",
-  },
-  reports: {
-    title: "Community reports",
-    description: "Review users and posts flagged for OSA attention.",
-  },
-  matches: {
-    title: "Possible matches",
-    description: "Compare lost and found reports before connecting them.",
   },
   history: {
     title: "Activity history",
@@ -280,7 +251,15 @@ function Panel({
   );
 }
 
-function ItemTable({ rows }: { rows: AdminReport[] }) {
+function ItemTable({
+  rows,
+  onViewDetails,
+  showColumnHeadings = true,
+}: {
+  rows: AdminReport[];
+  onViewDetails: (report: AdminReport) => void;
+  showColumnHeadings?: boolean;
+}) {
   if (rows.length === 0) {
     return (
       <p className="px-5 py-10 text-center text-sm text-neutral-500">
@@ -291,31 +270,66 @@ function ItemTable({ rows }: { rows: AdminReport[] }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[680px] text-left text-xs">
-        <thead className="bg-neutral-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+      <table className="w-full min-w-[1040px] text-left text-xs">
+        <thead
+          className={
+            showColumnHeadings
+              ? "bg-neutral-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500"
+              : "sr-only"
+          }
+        >
           <tr>
-            <th scope="col" className="px-5 py-3">Item</th>
+            <th scope="col" className="px-5 py-3">Item name</th>
+            <th scope="col" className="max-w-72 px-4 py-3">Description</th>
             <th scope="col" className="px-4 py-3">Category</th>
-            <th scope="col" className="px-4 py-3">Location</th>
+            <th scope="col" className="px-4 py-3">Building</th>
+            <th scope="col" className="px-4 py-3">Color</th>
             <th scope="col" className="px-4 py-3">Reported by</th>
             <th scope="col" className="px-4 py-3">Date</th>
-            <th scope="col" className="px-5 py-3">Status</th>
+            <th scope="col" className="px-5 py-3">Details</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
           {rows.map((row) => (
             <tr key={row.id} className="text-neutral-700">
               <td className="px-5 py-3.5">
-                <span className="block font-semibold text-neutral-900">
-                  {row.title}
-                </span>
-                <span className="mt-0.5 block text-[10px] text-neutral-400">
-                  {row.id}
+                <div className="flex min-w-0 items-center gap-3">
+                  {row.image ? (
+                    <img
+                      src={row.image}
+                      alt={`${row.title} item`}
+                      loading="lazy"
+                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
+                    >
+                      <Package className="h-5 w-5" />
+                    </span>
+                  )}
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold text-neutral-900">
+                      {row.title}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] text-neutral-400">
+                      {row.id}
+                    </span>
+                  </span>
+                </div>
+              </td>
+              <td className="max-w-72 px-4 py-3.5">
+                <span className="line-clamp-2 leading-relaxed">
+                  {row.description}
                 </span>
               </td>
               <td className="px-4 py-3.5 capitalize">{row.category}</td>
               <td className="max-w-40 px-4 py-3.5">
-                <span className="block truncate">{row.location}</span>
+                <span className="block truncate">{row.building}</span>
+              </td>
+              <td className="px-4 py-3.5">
+                {row.color || "—"}
               </td>
               <td className="px-4 py-3.5">{row.reportedBy}</td>
               <td className="whitespace-nowrap px-4 py-3.5">
@@ -326,25 +340,19 @@ function ItemTable({ rows }: { rows: AdminReport[] }) {
                 }).format(new Date(`${row.date}T12:00:00`))}
               </td>
               <td className="px-5 py-3.5">
-                <StatusBadge status={row.status} />
+                <button
+                  type="button"
+                  onClick={() => onViewDetails(row)}
+                  aria-label={`View details for ${row.title}`}
+                  className="inline-flex h-8 items-center rounded-md border border-neutral-200 px-3 text-[11px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                >
+                  View details
+                </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-function PreviewActions({ className = "" }: { className?: string }) {
-  return (
-    <div className={`rounded-lg bg-neutral-50 px-3 py-2.5 ${className}`}>
-      <p className="text-xs font-semibold text-neutral-700">
-        Actions are preview-only
-      </p>
-      <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
-        This interface does not update or save records.
-      </p>
     </div>
   );
 }
@@ -355,6 +363,62 @@ export function AdminDashboardPage() {
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [selectedClaimId, setSelectedClaimId] = useState(claims[0].id);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const [selectedReport, setSelectedReport] = useState<AdminReport | null>(null);
+  const itemDetailsDialogRef = useRef<HTMLDialogElement>(null);
+  const notificationButtonRef = useRef<HTMLButtonElement>(null);
+  const notificationPanelRef = useRef<HTMLDivElement>(null);
+  const unreadNotificationCount = notifications.filter(
+    (notification) => !notification.read,
+  ).length;
+
+  useEffect(() => {
+    const dialog = itemDetailsDialogRef.current;
+    if (selectedReport && dialog && !dialog.open) {
+      dialog.showModal();
+    }
+
+    return () => {
+      if (dialog?.open) dialog.close();
+    };
+  }, [selectedReport]);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (
+        notificationPanelRef.current?.contains(event.target as Node) ||
+        notificationButtonRef.current?.contains(event.target as Node)
+      ) {
+        return;
+      }
+      setNotificationsOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setNotificationsOpen(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [notificationsOpen]);
+
+  const handleNotificationSelect = (notification: AdminNotification) => {
+    setNotifications((current) =>
+      current.map((entry) =>
+        entry.id === notification.id ? { ...entry, read: true } : entry,
+      ),
+    );
+    setSelectedClaimId(notification.claimId);
+    setSection("claims");
+    setQuery("");
+    setStatusFilter("All statuses");
+    setNotificationsOpen(false);
+  };
 
   const copy = pageCopy[section];
   const normalizedQuery = query.trim().toLowerCase();
@@ -371,23 +435,21 @@ export function AdminDashboardPage() {
           !normalizedQuery ||
           [
             report.title,
+            report.description,
             report.category,
-            report.location,
+            report.building,
+            report.color,
             report.reportedBy,
             report.id,
           ].some((value) => value.toLowerCase().includes(normalizedQuery));
-        const statusMatches =
-          statusFilter === "All statuses" || report.status === statusFilter;
-        return typeMatches && queryMatches && statusMatches;
+        return typeMatches && queryMatches;
       }),
-    [normalizedQuery, section, statusFilter],
+    [normalizedQuery, section],
   );
 
   const selectedClaim =
     claims.find((claim) => claim.id === selectedClaimId) ?? claims[0];
-  const pageNeedsSearch = ["lost", "found", "claims", "reports"].includes(
-    section,
-  );
+  const pageNeedsSearch = ["lost", "found", "claims"].includes(section);
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
@@ -430,18 +492,43 @@ export function AdminDashboardPage() {
                   setQuery("");
                   setStatusFilter("All statuses");
                 }}
-                className={`flex min-h-11 items-center justify-center gap-3 rounded-lg px-2 text-left text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 md:justify-start md:px-3 ${
+                className={`flex min-h-11 items-center justify-center gap-3 rounded-lg px-2 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 md:justify-start md:px-3 ${
                   active
                     ? "bg-red-50 text-[#C81424]"
                     : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                 }`}
               >
-                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                 <span className="hidden md:inline">{label}</span>
                 <span className="sr-only md:hidden">{compactLabel}</span>
               </button>
             );
           })}
+          <button
+            ref={notificationButtonRef}
+            type="button"
+            aria-label={`Notifications, ${unreadNotificationCount} unread`}
+            aria-expanded={notificationsOpen}
+            aria-controls="admin-notification-panel"
+            onClick={() => setNotificationsOpen((open) => !open)}
+            className={`relative flex min-h-11 items-center justify-center gap-3 rounded-lg px-2 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 md:justify-start md:px-3 ${
+              notificationsOpen
+                ? "bg-red-50 text-[#C81424]"
+                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+            }`}
+          >
+            <Bell className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <span className="hidden md:inline">Notifications</span>
+            <span className="sr-only md:hidden">Notifications</span>
+            {unreadNotificationCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#E5192D] px-1 text-[9px] font-bold leading-none text-white md:right-2"
+              >
+                {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
+              </span>
+            )}
+          </button>
         </nav>
 
         <div className="mt-auto border-t border-neutral-100 pt-4">
@@ -463,7 +550,113 @@ export function AdminDashboardPage() {
         </div>
       </aside>
 
-      <div className="min-h-screen min-w-0 pl-[68px] md:pl-[232px]">
+      <AnimatePresence>
+        {notificationsOpen && (
+          <motion.aside
+            ref={notificationPanelRef}
+            id="admin-notification-panel"
+            aria-label="Notifications"
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ type: "spring", stiffness: 360, damping: 34 }}
+            className="fixed bottom-0 left-[68px] top-0 z-40 flex w-[min(320px,calc(100vw-5rem))] flex-col border-r border-neutral-100 bg-white shadow-xl md:left-[232px]"
+          >
+            <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-5">
+              <div>
+                <h2 className="text-base font-bold text-neutral-900">
+                  Notifications
+                </h2>
+                <p className="mt-0.5 text-xs text-neutral-500">
+                  Updates about campus items and claims
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNotificationsOpen(false)}
+                aria-label="Close notifications"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-5 py-2.5">
+              <p className="text-xs font-semibold text-neutral-600">
+                {unreadNotificationCount} unread
+              </p>
+              {unreadNotificationCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setNotifications((current) =>
+                      current.map((notification) => ({
+                        ...notification,
+                        read: true,
+                      })),
+                    )
+                  }
+                  className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                >
+                  Mark all as read
+                </button>
+              )}
+            </div>
+            {notifications.length > 0 ? (
+              <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 pt-0">
+                {notifications.map((notification) => (
+                  <button
+                    key={notification.id}
+                    type="button"
+                    onClick={() => handleNotificationSelect(notification)}
+                    className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
+                      notification.read ? "" : "bg-red-50/60"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                        notification.read
+                          ? "bg-transparent"
+                          : "bg-[#E5192D]"
+                      }`}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={`block text-xs ${
+                          notification.read
+                            ? "font-medium text-neutral-700"
+                            : "font-bold text-neutral-900"
+                        }`}
+                      >
+                        {notification.title}
+                      </span>
+                      <span className="mt-1 line-clamp-2 block text-xs text-neutral-500">
+                        {notification.description}
+                      </span>
+                      <span className="mt-1.5 block text-[10px] text-neutral-400">
+                        {notification.time}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="px-5 py-8 text-center text-xs text-neutral-500">
+                You’re all caught up.
+              </p>
+            )}
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      <div
+        style={{
+          marginLeft: notificationsOpen
+            ? "min(320px, calc(100vw - 5rem))"
+            : undefined,
+        }}
+        className="min-h-screen min-w-0 pl-[68px] transition-[margin-left] duration-300 ease-in-out md:pl-[232px]"
+      >
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-neutral-200 bg-white/95 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
           {pageNeedsSearch && (
           <div className="relative hidden min-w-0 max-w-xl flex-1 sm:block">
@@ -482,71 +675,6 @@ export function AdminDashboardPage() {
               className="h-10 w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-xs text-neutral-800 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             />
           </div>
-          )}
-          <div className="flex min-w-0 items-center gap-3 sm:ml-auto">
-            <span className="hidden rounded-md border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-[10px] font-semibold text-neutral-600 sm:inline-flex">
-              UI preview
-            </span>
-            <button
-              type="button"
-              aria-label="Notifications, 6 pending actions"
-              aria-expanded={notificationsOpen}
-              aria-controls="admin-notification-panel"
-              onClick={() => setNotificationsOpen((open) => !open)}
-              className="relative flex h-10 w-10 items-center justify-center rounded-lg text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-            >
-              <Bell className="h-4 w-4" aria-hidden="true" />
-              <span
-                aria-hidden="true"
-                className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#E5192D]"
-              />
-            </button>
-            <div className="hidden h-8 w-px bg-neutral-200 sm:block" />
-            <div className="hidden text-right sm:block">
-              <p className="text-[11px] font-bold text-neutral-800">
-                Office of Student Affairs
-              </p>
-              <p className="text-[10px] text-neutral-500">WMSU</p>
-            </div>
-          </div>
-          {notificationsOpen && (
-            <div
-              id="admin-notification-panel"
-              className="absolute right-4 top-14 w-[min(340px,calc(100vw-5rem))] rounded-xl border border-neutral-200 bg-white p-4 shadow-lg sm:right-6 lg:right-8"
-            >
-              <h2 className="text-sm font-bold text-neutral-900">
-                Pending actions
-              </h2>
-              <p className="mt-1 text-xs text-neutral-500">
-                3 claims and 3 community reports are in this demo queue.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSection("claims");
-                    setQuery("");
-                    setStatusFilter("All statuses");
-                    setNotificationsOpen(false);
-                  }}
-                  className="inline-flex h-8 items-center rounded-md bg-neutral-900 px-3 text-[11px] font-semibold text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                >
-                  Review claims
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSection("reports");
-                    setQuery("");
-                    setStatusFilter("All statuses");
-                    setNotificationsOpen(false);
-                  }}
-                  className="inline-flex h-8 items-center rounded-md border border-neutral-200 px-3 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                >
-                  View reports
-                </button>
-              </div>
-            </div>
           )}
         </header>
 
@@ -571,10 +699,6 @@ export function AdminDashboardPage() {
                 {copy.description}
               </p>
             </div>
-            <span className="inline-flex w-fit items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-neutral-500">
-              <CircleAlert className="h-3.5 w-3.5" aria-hidden="true" />
-              Sample data. Changes are not saved.
-            </span>
           </div>
 
           {pageNeedsSearch && (
@@ -598,6 +722,7 @@ export function AdminDashboardPage() {
           {section === "overview" && (
             <Overview
               onNavigate={setSection}
+              onViewReport={setSelectedReport}
               onSelectClaim={(id) => {
                 setSelectedClaimId(id);
                 setSection("claims");
@@ -611,10 +736,6 @@ export function AdminDashboardPage() {
                 <p className="text-xs text-neutral-500">
                   {reportRows.length} reports
                 </p>
-                <StatusFilter
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                />
               </div>
               <Panel
                 title={section === "lost" ? "Lost reports" : "Found reports"}
@@ -630,9 +751,12 @@ export function AdminDashboardPage() {
                   </button>
                 }
               >
-                <ItemTable rows={reportRows} />
+                <ItemTable
+                  rows={reportRows}
+                  onViewDetails={setSelectedReport}
+                  showColumnHeadings={false}
+                />
               </Panel>
-              <PreviewActions className="mt-4" />
             </>
           )}
 
@@ -647,19 +771,95 @@ export function AdminDashboardPage() {
             />
           )}
 
-          {section === "reports" && (
-            <CommunityReports
-              query={normalizedQuery}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-            />
-          )}
-
-          {section === "matches" && <MatchesView />}
-
           {section === "history" && <HistoryView />}
         </main>
       </div>
+      {selectedReport && (
+        <dialog
+          ref={itemDetailsDialogRef}
+          aria-labelledby="item-details-title"
+          onClose={() => setSelectedReport(null)}
+          className="m-auto max-h-[min(90dvh,800px)] w-[min(640px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-neutral-200 bg-white p-0 text-neutral-900 shadow-xl backdrop:bg-neutral-950/50"
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                {selectedReport.type} item · {selectedReport.id}
+              </p>
+              <h2
+                id="item-details-title"
+                className="mt-1 text-lg font-bold text-neutral-900"
+              >
+                {selectedReport.title}
+              </h2>
+            </div>
+            <form method="dialog">
+              <button
+                type="submit"
+                aria-label="Close item details"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </form>
+          </div>
+          <div className="space-y-5 p-5">
+            {selectedReport.image ? (
+              <img
+                src={selectedReport.image}
+                alt={selectedReport.title}
+                className="max-h-72 w-full rounded-lg bg-neutral-50 object-contain"
+              />
+            ) : (
+              <div
+                aria-hidden="true"
+                className="flex h-48 items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
+              >
+                <Package className="h-8 w-8" />
+              </div>
+            )}
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">
+              {selectedReport.description}
+            </p>
+            <dl className="grid grid-cols-2 gap-x-5 gap-y-4 border-t border-neutral-100 pt-4 text-xs sm:grid-cols-3">
+              <div>
+                <dt className="text-[10px] text-neutral-500">Category</dt>
+                <dd className="mt-1 font-semibold text-neutral-800">
+                  {selectedReport.category}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[10px] text-neutral-500">Building</dt>
+                <dd className="mt-1 font-semibold text-neutral-800">
+                  {selectedReport.building}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[10px] text-neutral-500">Color</dt>
+                <dd className="mt-1 font-semibold text-neutral-800">
+                  {selectedReport.color || "Not specified"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[10px] text-neutral-500">Reported by</dt>
+                <dd className="mt-1 font-semibold text-neutral-800">
+                  {selectedReport.reportedBy}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[10px] text-neutral-500">Date reported</dt>
+                <dd className="mt-1 font-semibold text-neutral-800">
+                  {new Intl.DateTimeFormat("en", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  }).format(new Date(`${selectedReport.date}T12:00:00`))}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </dialog>
+      )}
     </div>
   );
 }
@@ -693,15 +893,16 @@ function StatusFilter({
 
 function Overview({
   onNavigate,
+  onViewReport,
   onSelectClaim,
 }: {
   onNavigate: (section: AdminSection) => void;
+  onViewReport: (report: AdminReport) => void;
   onSelectClaim: (id: string) => void;
 }) {
   const lostCount = adminReports.filter((item) => item.type === "Lost").length;
   const foundCount = adminReports.filter((item) => item.type === "Found").length;
   const pendingCount = claims.length;
-  const reviewCount = userReports.length;
   const metrics = [
     {
       label: "Lost reports",
@@ -724,13 +925,6 @@ function Overview({
       icon: BadgeCheck,
       section: "claims" as const,
     },
-    {
-      label: "Community reports",
-      value: reviewCount,
-      note: "Posts or users flagged",
-      icon: Flag,
-      section: "reports" as const,
-    },
   ];
   const recentRows = [...adminReports]
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -740,7 +934,7 @@ function Overview({
     <>
       <section
         aria-label="Report totals"
-        className="grid grid-cols-2 overflow-hidden rounded-xl border border-neutral-200 bg-white xl:grid-cols-4"
+        className="grid grid-cols-2 overflow-hidden rounded-xl border border-neutral-200 bg-white xl:grid-cols-3"
       >
         {metrics.map(({ label, value, note, icon: Icon, section }) => (
           <button
@@ -786,7 +980,7 @@ function Overview({
             </button>
           }
         >
-          <ItemTable rows={recentRows} />
+          <ItemTable rows={recentRows} onViewDetails={onViewReport} />
         </Panel>
 
         <div className="flex min-w-0 flex-col gap-5">
@@ -794,7 +988,7 @@ function Overview({
             title="Pending actions"
             action={
               <span className="rounded-md bg-red-50 px-2 py-1 text-[10px] font-bold text-red-700">
-                {claims.length + userReports.length}
+                {claims.length}
               </span>
             }
           >
@@ -823,27 +1017,6 @@ function Overview({
                   />
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => onNavigate("reports")}
-                className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
-              >
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-700">
-                  <Flag className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-xs font-semibold text-neutral-800">
-                    Review community reports
-                  </span>
-                  <span className="mt-1 block text-[10px] text-neutral-500">
-                    {userReports.length} reports need attention
-                  </span>
-                </span>
-                <ArrowUpRight
-                  className="mt-1 h-3.5 w-3.5 shrink-0 text-neutral-400"
-                  aria-hidden="true"
-                />
-              </button>
             </div>
           </Panel>
 
@@ -902,6 +1075,10 @@ function ClaimsView({
   )
     ? selectedClaim
     : null;
+  const selectedItemImage = visibleSelectedClaim
+    ? adminReports.find((report) => report.id === visibleSelectedClaim.itemId)
+        ?.image
+    : "";
 
   return (
     <div>
@@ -917,39 +1094,57 @@ function ClaimsView({
           </p>
         ) : (
           <div className="divide-y divide-neutral-100">
-            {filteredClaims.map((claim) => (
-              <button
-                key={claim.id}
-                type="button"
-                aria-pressed={selectedClaimId === claim.id}
-                onClick={() => onSelectClaim(claim.id)}
-                className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5 ${
-                  selectedClaimId === claim.id
-                    ? "bg-neutral-50"
-                    : "hover:bg-neutral-50/70"
-                }`}
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#C81424]">
-                  <Package className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-bold text-neutral-900">
-                    {claim.item}
+            {filteredClaims.map((claim) => {
+              const itemImage =
+                adminReports.find((report) => report.id === claim.itemId)
+                  ?.image ?? "";
+
+              return (
+                <button
+                  key={claim.id}
+                  type="button"
+                  aria-pressed={selectedClaimId === claim.id}
+                  onClick={() => onSelectClaim(claim.id)}
+                  className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5 ${
+                    selectedClaimId === claim.id
+                      ? "bg-neutral-50"
+                      : "hover:bg-neutral-50/70"
+                  }`}
+                >
+                  {itemImage ? (
+                    <img
+                      src={itemImage}
+                      alt={`${claim.item} item`}
+                      loading="lazy"
+                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
+                    >
+                      <Package className="h-5 w-5" />
+                    </span>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-bold text-neutral-900">
+                      {claim.item}
+                    </span>
+                    <span className="mt-1 block truncate text-[11px] text-neutral-500">
+                      {claim.claimant} · {claim.id}
+                    </span>
                   </span>
-                  <span className="mt-1 block truncate text-[11px] text-neutral-500">
-                    {claim.claimant} · {claim.id}
+                  <span className="hidden text-right sm:block">
+                    <span className="block text-[10px] text-neutral-500">
+                      Submitted
+                    </span>
+                    <span className="mt-1 block text-[10px] font-medium text-neutral-700">
+                      {claim.submitted}
+                    </span>
                   </span>
-                </span>
-                <span className="hidden text-right sm:block">
-                  <span className="block text-[10px] text-neutral-500">
-                    Submitted
-                  </span>
-                  <span className="mt-1 block text-[10px] font-medium text-neutral-700">
-                    {claim.submitted}
-                  </span>
-                </span>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
       </Panel>
@@ -957,6 +1152,20 @@ function ClaimsView({
       <Panel title="Claim details">
         {visibleSelectedClaim ? (
         <div className="space-y-4 p-4 sm:p-5">
+          {selectedItemImage ? (
+            <img
+              src={selectedItemImage}
+              alt={`${visibleSelectedClaim.item} item`}
+              className="h-40 w-full rounded-lg object-cover"
+            />
+          ) : (
+            <div
+              aria-hidden="true"
+              className="flex h-40 w-full items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
+            >
+              <Package className="h-8 w-8" />
+            </div>
+          )}
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
               Claimant
@@ -1031,7 +1240,6 @@ function ClaimsView({
               Reject
             </button>
           </div>
-          <PreviewActions />
         </div>
         ) : (
           <p className="px-5 py-10 text-center text-sm text-neutral-500">
@@ -1040,185 +1248,6 @@ function ClaimsView({
         )}
       </Panel>
       </div>
-    </div>
-  );
-}
-
-function CommunityReports({
-  query,
-  statusFilter,
-  onStatusFilterChange,
-}: {
-  query: string;
-  statusFilter: string;
-  onStatusFilterChange: (value: string) => void;
-}) {
-  const filteredReports = userReports.filter((report) =>
-    (statusFilter === "All statuses" || report.status === statusFilter) &&
-    [
-      report.id,
-      report.subject,
-      report.reason,
-      report.submittedBy,
-      report.status,
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(query),
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-neutral-500">
-          {filteredReports.length} community reports
-        </p>
-        <StatusFilter value={statusFilter} onChange={onStatusFilterChange} />
-      </div>
-      <Panel title="Reported users and posts">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[660px] text-left text-xs">
-            <thead className="bg-neutral-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-              <tr>
-                <th scope="col" className="px-5 py-3">Report</th>
-                <th scope="col" className="px-4 py-3">Reason</th>
-                <th scope="col" className="px-4 py-3">Submitted by</th>
-                <th scope="col" className="px-4 py-3">Received</th>
-                <th scope="col" className="px-5 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {filteredReports.map((report) => (
-                <tr key={report.id}>
-                  <td className="px-5 py-4">
-                    <span className="block font-semibold text-neutral-900">
-                      {report.subject}
-                    </span>
-                    <span className="mt-1 block text-[10px] text-neutral-400">
-                      {report.id}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-neutral-700">
-                    {report.reason}
-                  </td>
-                  <td className="px-4 py-4 text-neutral-700">
-                    {report.submittedBy}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-neutral-600">
-                    {report.submitted}
-                  </td>
-                  <td className="px-5 py-4">
-                    <StatusBadge status={report.status} />
-                  </td>
-                </tr>
-              ))}
-              {filteredReports.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-5 py-10 text-center text-sm text-neutral-500"
-                  >
-                    No community reports match this search.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
-      <Panel
-        title="Found It submissions"
-        action={
-          <span className="text-[10px] font-medium text-neutral-500">
-            Reported by students
-          </span>
-        }
-      >
-        <ItemTable
-          rows={adminReports.filter(
-            (report) =>
-              report.type === "Found" &&
-              (statusFilter === "All statuses" ||
-                report.status === statusFilter) &&
-              [report.title, report.reportedBy, report.location, report.id]
-                .join(" ")
-                .toLowerCase()
-                .includes(query),
-          )}
-        />
-      </Panel>
-      <PreviewActions />
-    </div>
-  );
-}
-
-function MatchesView() {
-  return (
-    <>
-      <div className="mb-4 flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-4">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
-          <GitCompare className="h-4 w-4" aria-hidden="true" />
-        </span>
-        <div>
-          <p className="text-xs font-bold text-neutral-900">
-            Suggested matches need staff review
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-neutral-600">
-            Compare item details and locations before connecting the reports.
-            Similarity suggestions are examples only.
-          </p>
-        </div>
-      </div>
-      <div className="space-y-3">
-        {possibleMatches.map((match) => (
-          <article
-            key={match.lost}
-            className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-5"
-          >
-            <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-center">
-              <MatchRecord label="Lost report" title={match.lost} />
-              <span className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-600">
-                <GitCompare className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <MatchRecord label="Found report" title={match.found} />
-            </div>
-            <div className="mt-4 flex flex-col justify-between gap-3 border-t border-neutral-100 pt-4 sm:flex-row sm:items-center">
-              <div>
-                <p className="text-xs font-semibold text-neutral-800">
-                  {match.reason}
-                </p>
-                <p className="mt-1 text-[10px] text-neutral-500">
-                  <MapPin className="mr-1 inline h-3 w-3" aria-hidden="true" />
-                  {match.location} · {match.submitted}
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled
-                title="Match confirmation is a visual preview only"
-                className="inline-flex h-9 items-center justify-center gap-1.5 self-start rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-400 sm:self-auto"
-              >
-                <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                Confirm match
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
-      <div className="mt-4">
-        <PreviewActions />
-      </div>
-    </>
-  );
-}
-
-function MatchRecord({ label, title }: { label: string; title: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-bold text-neutral-900">{title}</p>
     </div>
   );
 }
@@ -1258,9 +1287,6 @@ function HistoryView() {
           ))}
         </ol>
       </Panel>
-      <div className="mt-4">
-        <PreviewActions />
-      </div>
     </>
   );
 }
