@@ -221,7 +221,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <Header
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onOpenReportModal={() => handleOpenCreateModal("lost")}
           searchInputRef={searchInputRef}
           activeFilterCount={activeFilterCount}
           filters={filters}

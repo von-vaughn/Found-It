@@ -100,7 +100,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           <Header
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
-            onOpenReportModal={() => handleOpenCreateModal("lost")}
             searchInputRef={searchInputRef}
           />
           <div className="flex-1 flex items-center justify-center px-8 py-16">
@@ -168,7 +167,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         <Header
           searchQuery={searchQuery}
           onSearchChange={handleSearchChange}
-          onOpenReportModal={() => handleOpenCreateModal("lost")}
           searchInputRef={searchInputRef}
         />
 

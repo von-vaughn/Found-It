@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, LogOut, User as UserIcon, Bookmark, PlusCircle, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, LogOut, User as UserIcon, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/context/useAuth";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { SearchPaletteModal } from "@/components/SearchPaletteModal";
 import type { ItemFilters } from "@/components/school_user/itemFilters";
@@ -10,7 +9,6 @@ import type { ItemFilters } from "@/components/school_user/itemFilters";
 interface HeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  onOpenReportModal?: () => void;
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
   notificationPanelOpen?: boolean;
   activeFilterCount?: number;
@@ -29,7 +27,6 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   searchQuery,
   onSearchChange,
-  onOpenReportModal,
   searchInputRef,
   notificationPanelOpen = false,
   activeFilterCount = 0,
@@ -56,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  // Close the account menu on outside click or Escape.
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -66,8 +63,15 @@ export const Header: React.FC<HeaderProps> = ({
         setProfileDropdownOpen(false);
       }
     };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setProfileDropdownOpen(false);
+    };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   return (
@@ -189,14 +193,18 @@ export const Header: React.FC<HeaderProps> = ({
         {/* User Profile Bar */}
         <div className="relative" ref={dropdownRef}>
           <button
+            type="button"
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            className="flex items-center gap-2.5 p-1 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer group text-left"
+            aria-label="Open profile menu"
+            aria-expanded={profileDropdownOpen}
+            aria-controls="account-profile-dropdown"
+            className="flex items-center gap-2.5 rounded-full p-1 text-left transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 active:scale-[0.97] cursor-pointer group"
           >
             <div className="relative w-8 h-8 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
               <img
-                src="/images/avatars/vaughn_evangelista.svg"
+                src={user?.avatar || "/images/avatars/vaughn_evangelista.svg"}
                 alt="User avatar"
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
                     "/images/avatar-vaughn.jpg";
@@ -204,12 +212,12 @@ export const Header: React.FC<HeaderProps> = ({
               />
             </div>
 
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-600 transition-colors" />
+            <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform duration-150 group-hover:text-neutral-600 ${profileDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 
           {/* Profile Dropdown */}
           {profileDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div id="account-profile-dropdown" className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="px-3 py-2 border-b border-neutral-100 mb-1">
                 <p className="text-xs font-bold text-neutral-900">
                   {user?.name || "Vaughn Evangelista"}
@@ -222,34 +230,12 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   setProfileDropdownOpen(false);
-                  if (onOpenReportModal) onOpenReportModal();
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl transition-colors text-left"
-              >
-                <PlusCircle className="w-3.5 h-3.5 text-[#E5192D]" />
-                Post New Item
-              </button>
-
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  toast.success("Viewing saved items");
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl transition-colors text-left"
-              >
-                <Bookmark className="w-3.5 h-3.5 text-neutral-500" />
-                Saved Items
-              </button>
-
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  navigate("/");
+                  navigate("/dashboard/profile");
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl transition-colors text-left"
               >
                 <UserIcon className="w-3.5 h-3.5 text-neutral-500" />
-                Landing Page
+                Profile
               </button>
 
               <div className="border-t border-neutral-100 my-1" />

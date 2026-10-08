@@ -15,6 +15,7 @@ import { LostItemsPage } from "@/pages/landing/LostItemsPage";
 import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
 import { DashboardPage } from "@/pages/school_user/DashboardPage";
 import { ItemDetailPage } from "@/pages/school_user/ItemDetailPage";
+import { ProfilePage } from "@/pages/school_user/ProfilePage";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { VerificationPage } from "@/pages/auth/VerificationPage";
 import { AuthProvider } from "@/context/AuthContext";
@@ -97,6 +98,11 @@ export function App() {
               element={
                 <ItemDetailPage items={items} onAddItem={handleAddItem} />
               }
+            />
+
+            <Route
+              path="/dashboard/profile"
+              element={<ProfilePage items={items} onAddItem={handleAddItem} />}
             />
 
             <Route
