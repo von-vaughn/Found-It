@@ -16,6 +16,7 @@ import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
 import { DashboardPage } from "@/pages/school_user/DashboardPage";
 import { ItemDetailPage } from "@/pages/school_user/ItemDetailPage";
 import { ProfilePage } from "@/pages/school_user/ProfilePage";
+import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { VerificationPage } from "@/pages/auth/VerificationPage";
 import { AuthProvider } from "@/context/AuthContext";
@@ -46,7 +47,9 @@ export function App() {
     navigate("/found-items");
   };
 
-  const isDashboard = location.pathname.startsWith("/dashboard");
+  const isDashboard =
+    location.pathname.startsWith("/dashboard") ||
+    location.pathname.startsWith("/admin");
 
   return (
     <AuthProvider>
@@ -104,6 +107,8 @@ export function App() {
               path="/dashboard/profile"
               element={<ProfilePage items={items} onAddItem={handleAddItem} />}
             />
+
+            <Route path="/admin" element={<AdminDashboardPage />} />
 
             <Route
               path="/lost-items"

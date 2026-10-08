@@ -38,6 +38,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [foundItemCameraOpen, setFoundItemCameraOpen] = useState(false);
   const [ownershipClaimOpen, setOwnershipClaimOpen] = useState(false);
@@ -93,6 +94,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           activeTab="home"
           expanded={sidebarExpanded}
           onExpandedChange={setSidebarExpanded}
+          onNotificationsOpenChange={setNotificationsOpen}
           onTabChange={() => navigate("/dashboard")}
           onOpenCreateModal={() => handleOpenCreateModal("lost")}
         />
@@ -101,24 +103,33 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             searchInputRef={searchInputRef}
+            notificationsOpen={notificationsOpen}
           />
-          <div className="flex-1 flex items-center justify-center px-8 py-16">
-            <main className="text-center max-w-sm">
-            <h1 className="text-lg font-extrabold text-neutral-900 text-balance">
-              Item not found
-            </h1>
-            <p className="mt-2 text-sm text-neutral-500 break-words">
-              The item you are looking for may have been removed or the link is
-              incorrect.
-            </p>
-            <Link
-              to="/dashboard"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-              Back to feed
-            </Link>
-            </main>
+          <div
+            className={`min-w-0 flex-1 transition-[margin,width] duration-300 ease-in-out ${
+              notificationsOpen
+                ? "md:ml-80 md:w-[calc(100%-20rem)]"
+                : "w-full"
+            }`}
+          >
+            <div className="flex h-full items-center justify-center px-8 py-16">
+              <main className="max-w-sm text-center">
+                <h1 className="text-lg font-extrabold text-neutral-900 text-balance">
+                  Item not found
+                </h1>
+                <p className="mt-2 break-words text-sm text-neutral-500">
+                  The item you are looking for may have been removed or the link
+                  is incorrect.
+                </p>
+                <Link
+                  to="/dashboard"
+                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                  Back to feed
+                </Link>
+              </main>
+            </div>
           </div>
         </div>
       </div>
@@ -158,6 +169,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         activeTab="home"
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
+        onNotificationsOpenChange={setNotificationsOpen}
         onTabChange={() => navigate("/dashboard")}
         onOpenCreateModal={() => handleOpenCreateModal("lost")}
       />
@@ -168,8 +180,16 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           searchQuery={searchQuery}
           onSearchChange={handleSearchChange}
           searchInputRef={searchInputRef}
+          notificationsOpen={notificationsOpen}
         />
 
+        <div
+          className={`min-w-0 flex-1 transition-[margin,width] duration-300 ease-in-out ${
+            notificationsOpen
+              ? "md:ml-80 md:w-[calc(100%-20rem)]"
+              : "w-full"
+          }`}
+        >
         {/* Detail actions row */}
         <div className="px-2 sm:px-3 lg:px-4 pt-4 flex items-center justify-between max-w-[1100px] mx-auto w-full">
           <Link
@@ -193,7 +213,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
         <main
           id="item-detail-main"
-          className="flex-1 min-w-0 w-full max-w-[1100px] mx-auto px-2 sm:px-3 lg:px-4 py-6 space-y-6"
+          className="min-w-0 w-full max-w-[1100px] mx-auto px-2 sm:px-3 lg:px-4 py-6 space-y-6"
         >
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
@@ -366,6 +386,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             </section>
           )}
         </main>
+        </div>
       </div>
 
       {/* Create / Report Item Modal (same as dashboard) */}

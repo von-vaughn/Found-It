@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import gsap from "gsap";
+import { useReducedMotion } from "motion/react";
 import {
   Mail,
   Lock,
@@ -43,6 +44,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   const { login, signup, isAuthenticated, user } = useAuth();
+  const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
 
   // GSAP animation refs
@@ -59,6 +61,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   }, [isAuthenticated, user, navigate]);
 
   useEffect(() => {
+    if (reduceMotion) return;
+
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
@@ -82,7 +86,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     }, pageRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [reduceMotion]);
 
   const handleFillDemo = () => {
     setEmail("student@campus.edu");
@@ -224,55 +228,64 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <div className="space-y-4">
                   <div className="flex items-end gap-4">
                     <div className="flex-1 min-w-0">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                      <label htmlFor="first-name" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
                         First Name <span className="text-[#E5192D]">*</span>
                       </label>
                       <div className="relative">
-                        <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
                         <input
+                          id="first-name"
+                          name="firstName"
                           type="text"
+                          autoComplete="given-name"
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
                           placeholder="e.g. Alex"
-                          className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                          className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus-visible:border-red-400 focus-visible:ring-2 focus-visible:ring-red-100 text-neutral-900 placeholder-neutral-500 text-sm transition-[border-color,background-color,box-shadow] focus-visible:outline-none"
                         />
                       </div>
                     </div>
 
                     <div className="w-[38%] min-w-[110px] max-w-[160px]">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                      <label htmlFor="middle-initial" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
                         Middle Initial{" "}
                         <span className="text-neutral-400 text-[10px] normal-case">
                           (Optional)
                         </span>
                       </label>
                       <div className="relative">
-                        <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
                         <input
+                          id="middle-initial"
+                          name="middleInitial"
                           type="text"
+                          autoComplete="additional-name"
                           value={middleInitial}
                           onChange={(e) =>
                             setMiddleInitial(e.target.value.slice(0, 1))
                           }
                           placeholder="e.g. M"
-                          className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                          className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus-visible:border-red-400 focus-visible:ring-2 focus-visible:ring-red-100 text-neutral-900 placeholder-neutral-500 text-sm transition-[border-color,background-color,box-shadow] focus-visible:outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                    <label htmlFor="last-name" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
                       Last Name <span className="text-[#E5192D]">*</span>
                     </label>
                     <div className="relative">
-                      <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <UserIcon className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
                       <input
+                        id="last-name"
+                        name="lastName"
                         type="text"
+                        autoComplete="family-name"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         placeholder="e.g. Rivera"
-                        className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                        className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus-visible:border-red-400 focus-visible:ring-2 focus-visible:ring-red-100 text-neutral-900 placeholder-neutral-500 text-sm transition-[border-color,background-color,box-shadow] focus-visible:outline-none"
                       />
                     </div>
                   </div>
@@ -282,35 +295,39 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500">
+                <label htmlFor="auth-email" className="block text-xs font-bold uppercase tracking-wider text-neutral-500">
                   School Email <span className="text-[#E5192D]">*</span>
                 </label>
                 {mode === "signin" && (
                   <button
                     type="button"
                     onClick={handleFillDemo}
-                    className="text-[11px] text-[#E5192D] hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                    className="text-[11px] text-[#E5192D] hover:underline flex items-center gap-1 font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
-                    <Sparkles className="w-3 h-3" />
+                    <Sparkles className="w-3 h-3" aria-hidden="true" />
                     Fill Demo User
                   </button>
                 )}
               </div>
               <div className="relative">
-                <Mail className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
                 <input
+                  id="auth-email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
+                  spellCheck={false}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="user@wmsu.edu.ph"
-                  className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                  className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus-visible:border-red-400 focus-visible:ring-2 focus-visible:ring-red-100 text-neutral-900 placeholder-neutral-500 text-sm transition-[border-color,background-color,box-shadow] focus-visible:outline-none"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500">
+                <label htmlFor="auth-password" className="block text-xs font-bold uppercase tracking-wider text-neutral-500">
                   Password <span className="text-[#E5192D]">*</span>
                 </label>
                 {mode === "signin" && (
@@ -324,30 +341,37 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                         },
                       )
                     }
-                    className="text-[11px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                    className="text-[11px] text-neutral-400 hover:text-neutral-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                   >
                     Forgot password?
                   </button>
                 )}
               </div>
               <div className="relative">
-                <Lock className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
                 <input
+                  id="auth-password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete={
+                    mode === "signin" ? "current-password" : "new-password"
+                  }
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full h-12 pl-11 pr-11 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                  className="w-full h-12 pl-11 pr-11 bg-neutral-50 rounded-xl border border-neutral-200 focus-visible:border-red-400 focus-visible:ring-2 focus-visible:ring-red-100 text-neutral-900 placeholder-neutral-500 text-sm transition-[border-color,background-color,box-shadow] focus-visible:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded p-1 text-neutral-500 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
+                    <EyeOff className="w-4 h-4" aria-hidden="true" />
                   ) : (
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4" aria-hidden="true" />
                   )}
                 </button>
               </div>
@@ -355,17 +379,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
             {mode === "signup" && (
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                <label htmlFor="auth-confirm-password" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
                   Confirm Password <span className="text-[#E5192D]">*</span>
                 </label>
                 <div className="relative">
-                  <Lock className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-5 h-5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
                   <input
+                    id="auth-confirm-password"
+                    name="confirm-password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm your password"
-                    className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-neutral-900 placeholder-neutral-400 text-sm transition-all focus:outline-none"
+                    className="w-full h-12 pl-11 pr-4 bg-neutral-50 rounded-xl border border-neutral-200 focus-visible:border-red-400 focus-visible:ring-2 focus-visible:ring-red-100 text-neutral-900 placeholder-neutral-500 text-sm transition-[border-color,background-color,box-shadow] focus-visible:outline-none"
                   />
                 </div>
               </div>
@@ -374,6 +401,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             {mode === "signup" && (
               <label className="flex items-start gap-2.5 pt-1 text-xs text-neutral-500 cursor-pointer">
                 <input
+                  name="honor-code"
                   type="checkbox"
                   checked={agreeTerms}
                   onChange={(e) => setAgreeTerms(e.target.checked)}
@@ -390,7 +418,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               <Button
                 type="submit"
                 disabled={isLoading || (mode === "signup" && !agreeTerms)}
-                className="w-full h-12 sm:h-13 rounded-2xl bg-[#E5192D] hover:bg-[#c91424] text-white font-bold text-sm sm:text-base shadow-xl shadow-red-600/30 hover:shadow-red-600/50 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full h-12 sm:h-13 rounded-2xl bg-[#E5192D] hover:bg-[#c91424] text-white font-bold text-sm sm:text-base shadow-xl shadow-red-600/30 hover:shadow-red-600/50 transition-[background-color,box-shadow,transform] duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
@@ -400,7 +428,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 ) : (
                   <>
                     <span>{mode === "signin" ? "Sign In" : "Register"}</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
                   </>
                 )}
               </Button>
@@ -414,7 +442,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setMode("signup")}
-                  className="font-semibold text-[#E5192D] hover:underline"
+                  className="rounded-sm font-semibold text-[#E5192D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 >
                   Create account
                 </button>
@@ -425,13 +453,29 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setMode("signin")}
-                  className="font-semibold text-[#E5192D] hover:underline"
+                  className="rounded-sm font-semibold text-[#E5192D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 >
                   Sign in
                 </button>
               </>
             )}
           </div>
+
+          {mode === "signin" && (
+            <div className="mt-6 border-t border-neutral-100 pt-5 text-center">
+              <p className="text-xs text-neutral-500">Office of Student Affairs</p>
+              <Link
+                to="/admin"
+                className="mt-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 text-xs font-semibold text-neutral-800 transition-colors hover:border-neutral-300 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+              >
+                Open OSA dashboard demo
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+              <p className="mt-2 text-[10px] text-neutral-400">
+                UI preview only. No staff sign-in is performed.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
