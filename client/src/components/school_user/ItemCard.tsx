@@ -63,7 +63,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   return (
     <div
       onClick={() => onItemClick && onItemClick(item)}
-      className="bg-white rounded-lg border border-neutral-200/80 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
+      className="bg-white rounded-lg border border-neutral-200/80 overflow-hidden shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
     >
       {/* Top Author Row — kept in same position */}
       <div className="flex items-center justify-between gap-3 p-4 pb-2.5">

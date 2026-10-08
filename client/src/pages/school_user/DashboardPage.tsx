@@ -199,7 +199,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const activeFilterCount = countActiveFilters(filters);
 
   return (
-    <div className="min-h-screen bg-[#FBFBFC] flex selection:bg-[#E5192D] selection:text-white font-sans text-neutral-900">
+    <div className="min-h-screen bg-white flex selection:bg-[#E5192D] selection:text-white font-open-sans text-neutral-900">
       {/* Left Sidebar */}
       <Sidebar
         activeTab={activeNavTab}
@@ -236,7 +236,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
 
         {/* Dashboard Main Container */}
-        <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto px-2 sm:px-3 lg:px-4 py-5 space-y-5">
+        <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto bg-white px-2 sm:px-3 lg:px-4 py-5 space-y-5">
           <div className={`@container min-w-0 space-y-5 transition-[margin,width] duration-300 ease-in-out ${
             notificationsOpen
               ? "md:ml-80 md:w-[calc(100%-20rem)]"

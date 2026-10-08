@@ -66,7 +66,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-[#FBFBFC] font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
       <Sidebar
         activeTab="profile"
         expanded={sidebarExpanded}
@@ -97,7 +97,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               : "w-full"
           }`}
         >
-          <main className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-6 lg:px-8">
+          <main className="mx-auto w-full max-w-[1100px] bg-white px-4 py-8 sm:px-6 lg:px-8">
             <header className="mb-8">
               <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">
                 Your profile

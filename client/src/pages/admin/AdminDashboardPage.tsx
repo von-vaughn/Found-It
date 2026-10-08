@@ -1,14 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDownToLine,
   ArrowUpRight,
   BadgeCheck,
-  Bell,
   Check,
   CheckCheck,
-  ChevronDown,
   Clock3,
   FileSearch,
   Flag,
@@ -24,6 +20,11 @@ import {
 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems } from "@/data/mockItems";
+import {
+  AdminSidebar,
+  type AdminNotification,
+  type AdminSidebarItem,
+} from "@/pages/admin/AdminSidebar";
 
 type AdminSection =
   | "overview"
@@ -111,15 +112,6 @@ const claims = [
   },
 ];
 
-interface AdminNotification {
-  id: string;
-  title: string;
-  description: string;
-  time: string;
-  claimId: string;
-  read: boolean;
-}
-
 const initialNotifications: AdminNotification[] = claims.map((claim) => ({
   id: claim.id,
   title: "Ownership claim submitted",
@@ -172,12 +164,7 @@ const activityHistory = [
   },
 ];
 
-const navigation: {
-  id: AdminSection;
-  label: string;
-  compactLabel: string;
-  icon: React.ElementType;
-}[] = [
+const navigation: AdminSidebarItem<AdminSection>[] = [
   { id: "overview", label: "Dashboard", compactLabel: "Home", icon: LayoutDashboard },
   { id: "lost", label: "Lost items", compactLabel: "Lost", icon: PackageSearch },
   { id: "found", label: "Found items", compactLabel: "Found", icon: PackageCheck },
@@ -359,6 +346,7 @@ function ItemTable({
 
 export function AdminDashboardPage() {
   const [section, setSection] = useState<AdminSection>("overview");
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [selectedClaimId, setSelectedClaimId] = useState(claims[0].id);
@@ -366,11 +354,6 @@ export function AdminDashboardPage() {
   const [notifications, setNotifications] = useState(initialNotifications);
   const [selectedReport, setSelectedReport] = useState<AdminReport | null>(null);
   const itemDetailsDialogRef = useRef<HTMLDialogElement>(null);
-  const notificationButtonRef = useRef<HTMLButtonElement>(null);
-  const notificationPanelRef = useRef<HTMLDivElement>(null);
-  const unreadNotificationCount = notifications.filter(
-    (notification) => !notification.read,
-  ).length;
 
   useEffect(() => {
     const dialog = itemDetailsDialogRef.current;
@@ -382,30 +365,6 @@ export function AdminDashboardPage() {
       if (dialog?.open) dialog.close();
     };
   }, [selectedReport]);
-
-  useEffect(() => {
-    if (!notificationsOpen) return;
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (
-        notificationPanelRef.current?.contains(event.target as Node) ||
-        notificationButtonRef.current?.contains(event.target as Node)
-      ) {
-        return;
-      }
-      setNotificationsOpen(false);
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setNotificationsOpen(false);
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [notificationsOpen]);
 
   const handleNotificationSelect = (notification: AdminNotification) => {
     setNotifications((current) =>
@@ -452,212 +411,38 @@ export function AdminDashboardPage() {
   const pageNeedsSearch = ["lost", "found", "claims"].includes(section);
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-[68px] flex-col border-r border-neutral-200 bg-white px-2 py-4 md:w-[232px] md:px-4">
-        <Link
-          to="/"
-          aria-label="FoundIt home"
-          className="mb-7 flex h-11 items-center justify-center gap-3 rounded-lg md:justify-start md:px-2"
-        >
-          <img
-            src="/logo.jpeg"
-            alt=""
-            width={36}
-            height={36}
-            className="h-9 w-9 rounded-lg object-cover"
-          />
-          <span className="hidden text-base font-extrabold tracking-tight md:inline">
-            Found<span className="text-[#E5192D]">It</span>
-            <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-              OSA
-            </span>
-          </span>
-        </Link>
-
-        <div className="hidden px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400 md:block">
-          Workspace
-        </div>
-        <nav aria-label="OSA workspace" className="flex flex-col gap-1">
-          {navigation.map(({ id, label, compactLabel, icon: Icon }) => {
-            const active = section === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                title={label}
-                aria-label={label}
-                aria-current={active ? "page" : undefined}
-                onClick={() => {
-                  setSection(id);
-                  setQuery("");
-                  setStatusFilter("All statuses");
-                }}
-                className={`flex min-h-11 items-center justify-center gap-3 rounded-lg px-2 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 md:justify-start md:px-3 ${
-                  active
-                    ? "bg-red-50 text-[#C81424]"
-                    : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                }`}
-              >
-                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="hidden md:inline">{label}</span>
-                <span className="sr-only md:hidden">{compactLabel}</span>
-              </button>
-            );
-          })}
-          <button
-            ref={notificationButtonRef}
-            type="button"
-            aria-label={`Notifications, ${unreadNotificationCount} unread`}
-            aria-expanded={notificationsOpen}
-            aria-controls="admin-notification-panel"
-            onClick={() => setNotificationsOpen((open) => !open)}
-            className={`relative flex min-h-11 items-center justify-center gap-3 rounded-lg px-2 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 md:justify-start md:px-3 ${
-              notificationsOpen
-                ? "bg-red-50 text-[#C81424]"
-                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-            }`}
-          >
-            <Bell className="h-5 w-5 shrink-0" aria-hidden="true" />
-            <span className="hidden md:inline">Notifications</span>
-            <span className="sr-only md:hidden">Notifications</span>
-            {unreadNotificationCount > 0 && (
-              <span
-                aria-hidden="true"
-                className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#E5192D] px-1 text-[9px] font-bold leading-none text-white md:right-2"
-              >
-                {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
-              </span>
-            )}
-          </button>
-        </nav>
-
-        <div className="mt-auto border-t border-neutral-100 pt-4">
-          <div className="flex items-center justify-center gap-3 rounded-lg px-2 py-2 md:justify-start">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-bold text-white">
-              OSA
-            </div>
-            <div className="hidden min-w-0 md:block">
-              <p className="truncate text-xs font-bold text-neutral-900">
-                OSA staff
-              </p>
-              <p className="text-[10px] text-neutral-500">Demo workspace</p>
-            </div>
-            <ChevronDown
-              className="ml-auto hidden h-3.5 w-3.5 text-neutral-400 md:block"
-              aria-hidden="true"
-            />
-          </div>
-        </div>
-      </aside>
-
-      <AnimatePresence>
-        {notificationsOpen && (
-          <motion.aside
-            ref={notificationPanelRef}
-            id="admin-notification-panel"
-            aria-label="Notifications"
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -16 }}
-            transition={{ type: "spring", stiffness: 360, damping: 34 }}
-            className="fixed bottom-0 left-[68px] top-0 z-40 flex w-[min(320px,calc(100vw-5rem))] flex-col border-r border-neutral-100 bg-white shadow-xl md:left-[232px]"
-          >
-            <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-5">
-              <div>
-                <h2 className="text-base font-bold text-neutral-900">
-                  Notifications
-                </h2>
-                <p className="mt-0.5 text-xs text-neutral-500">
-                  Updates about campus items and claims
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setNotificationsOpen(false)}
-                aria-label="Close notifications"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="flex items-center justify-between gap-3 px-5 py-2.5">
-              <p className="text-xs font-semibold text-neutral-600">
-                {unreadNotificationCount} unread
-              </p>
-              {unreadNotificationCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setNotifications((current) =>
-                      current.map((notification) => ({
-                        ...notification,
-                        read: true,
-                      })),
-                    )
-                  }
-                  className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                >
-                  Mark all as read
-                </button>
-              )}
-            </div>
-            {notifications.length > 0 ? (
-              <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 pt-0">
-                {notifications.map((notification) => (
-                  <button
-                    key={notification.id}
-                    type="button"
-                    onClick={() => handleNotificationSelect(notification)}
-                    className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
-                      notification.read ? "" : "bg-red-50/60"
-                    }`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                        notification.read
-                          ? "bg-transparent"
-                          : "bg-[#E5192D]"
-                      }`}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span
-                        className={`block text-xs ${
-                          notification.read
-                            ? "font-medium text-neutral-700"
-                            : "font-bold text-neutral-900"
-                        }`}
-                      >
-                        {notification.title}
-                      </span>
-                      <span className="mt-1 line-clamp-2 block text-xs text-neutral-500">
-                        {notification.description}
-                      </span>
-                      <span className="mt-1.5 block text-[10px] text-neutral-400">
-                        {notification.time}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="px-5 py-8 text-center text-xs text-neutral-500">
-                You’re all caught up.
-              </p>
-            )}
-          </motion.aside>
-        )}
-      </AnimatePresence>
+    <div className="min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+      <AdminSidebar
+        activeSection={section}
+        navigation={navigation}
+        expanded={sidebarExpanded}
+        onExpandedChange={setSidebarExpanded}
+        notifications={notifications}
+        notificationsOpen={notificationsOpen}
+        onNotificationsOpenChange={setNotificationsOpen}
+        onSectionChange={(newSection) => {
+          setSection(newSection);
+          setQuery("");
+          setStatusFilter("All statuses");
+        }}
+        onNotificationSelect={handleNotificationSelect}
+        onMarkAllRead={() =>
+          setNotifications((current) =>
+            current.map((notification) => ({ ...notification, read: true })),
+          )
+        }
+      />
 
       <div
-        style={{
-          marginLeft: notificationsOpen
-            ? "min(320px, calc(100vw - 5rem))"
-            : undefined,
-        }}
-        className="min-h-screen min-w-0 pl-[68px] transition-[margin-left] duration-300 ease-in-out md:pl-[232px]"
+        className={`min-h-screen min-w-0 pl-16 transition-[margin] duration-300 ease-in-out ${
+          sidebarExpanded ? "md:ml-60" : "md:ml-20"
+        }`}
       >
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-neutral-200 bg-white/95 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
+        <header className={`sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-neutral-200 bg-white/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8 ${
+          notificationsOpen
+            ? "md:ml-80 md:w-[calc(100%-20rem)]"
+            : "w-full"
+        }`}>
           {pageNeedsSearch && (
           <div className="relative hidden min-w-0 max-w-xl flex-1 sm:block">
             <Search
@@ -678,7 +463,11 @@ export function AdminDashboardPage() {
           )}
         </header>
 
-        <main id="admin-main" className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main id="admin-main" className={`mx-auto max-w-[1440px] px-4 py-6 transition-[margin,width] duration-300 sm:px-6 lg:px-8 lg:py-8 ${
+          notificationsOpen
+            ? "md:ml-80 md:w-[calc(100%-20rem)]"
+            : "w-full"
+        }`}>
           <a
             href="#admin-main"
             className="sr-only focus:not-sr-only focus:mb-4 focus:inline-flex focus:rounded-md focus:bg-neutral-900 focus:px-3 focus:py-2 focus:text-xs focus:font-semibold focus:text-white"

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, LogOut, User as UserIcon, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, LogOut, User as UserIcon, Search, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/context/useAuth";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -163,7 +163,11 @@ export const Header: React.FC<HeaderProps> = ({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search items by name…"
               aria-label="Search items by name"
-              className="w-full h-10 px-3 bg-[#F8F9FA] rounded-lg border border-neutral-200/80 text-xs text-neutral-800 placeholder:text-neutral-400 font-normal transition-colors hover:bg-[#F3F4F6] focus:bg-white focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50"
+              className="w-full h-10 pl-3 pr-9 bg-[#cecec5] rounded-lg border border-neutral-200/80 text-xs text-neutral-950 placeholder:text-neutral-600 font-normal transition-colors hover:bg-[#cecec5] focus:bg-[#cecec5] focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50"
+            />
+            <Search
+              className="absolute right-3 h-4 w-4 text-neutral-600 pointer-events-none"
+              aria-hidden="true"
             />
             </div>
             <button

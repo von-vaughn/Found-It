@@ -89,7 +89,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-[#FBFBFC] flex font-sans text-neutral-900">
+      <div className="min-h-screen bg-white flex font-open-sans text-neutral-900">
         <Sidebar
           activeTab="home"
           expanded={sidebarExpanded}
@@ -158,7 +158,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#FBFBFC] flex font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="min-h-screen bg-white flex font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
       <a
         href="#item-detail-main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-20 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-neutral-900 focus:px-3 focus:py-2 focus:text-xs focus:font-bold focus:text-white"
@@ -213,7 +213,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
         <main
           id="item-detail-main"
-          className="min-w-0 w-full max-w-[1100px] mx-auto px-2 sm:px-3 lg:px-4 py-6 space-y-6"
+          className="min-w-0 w-full max-w-[1100px] mx-auto bg-white px-2 sm:px-3 lg:px-4 py-6 space-y-6"
         >
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
