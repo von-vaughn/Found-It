@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CalendarDays, Clock3, ImagePlus, Info, MapPin, X } from "lucide-react";
 import toast from "react-hot-toast";
+import type { NewClaimRequest } from "@/types/claim";
 
 interface OwnershipClaimModalProps {
+  itemId: string;
   itemTitle: string;
+  claimant: string;
   onClose: () => void;
+  onSubmitClaim: (claim: NewClaimRequest) => void;
 }
 
 const localDate = () => {
@@ -22,15 +26,21 @@ const inputClass =
 const MAX_EVIDENCE_IMAGES = 4;
 
 export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
+  itemId,
   itemTitle,
+  claimant,
   onClose,
+  onSubmitClaim,
 }) => {
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [dateLost, setDateLost] = useState("");
   const [timeLost, setTimeLost] = useState("");
   const [locationLost, setLocationLost] = useState("");
-  const [evidencePreviews, setEvidencePreviews] = useState<string[]>([]);
+  const [evidenceFiles, setEvidenceFiles] = useState<
+    { file: File; preview: string }[]
+  >([]);
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const evidenceUrlsRef = useRef<string[]>([]);
@@ -64,7 +74,7 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
     const selectedFiles = Array.from(event.target.files ?? []);
     if (selectedFiles.length === 0) return;
 
-    const remainingSlots = MAX_EVIDENCE_IMAGES - evidencePreviews.length;
+    const remainingSlots = MAX_EVIDENCE_IMAGES - evidenceFiles.length;
     const imageFiles = selectedFiles.filter((file) =>
       file.type.startsWith("image/"),
     );
@@ -75,7 +85,13 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
         URL.createObjectURL(file),
       );
       evidenceUrlsRef.current.push(...newPreviews);
-      setEvidencePreviews((current) => [...current, ...newPreviews]);
+      setEvidenceFiles((current) => [
+        ...current,
+        ...filesToAdd.map((file, index) => ({
+          file,
+          preview: newPreviews[index],
+        })),
+      ]);
     }
 
     if (imageFiles.length !== selectedFiles.length) {
@@ -93,13 +109,25 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
     evidenceUrlsRef.current = evidenceUrlsRef.current.filter(
       (url) => url !== previewToRemove,
     );
-    setEvidencePreviews((current) =>
-      current.filter((url) => url !== previewToRemove),
+    setEvidenceFiles((current) =>
+      current.filter(({ preview }) => preview !== previewToRemove),
     );
     setFormError("");
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("The selected evidence image could not be read."));
+      };
+      reader.onerror = () =>
+        reject(reader.error ?? new Error("The selected evidence image could not be read."));
+      reader.readAsDataURL(file);
+    });
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (
       !additionalInfo.trim() ||
@@ -112,11 +140,29 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
     }
 
     setFormError("");
-    toast.success(
-      "Claim details are complete. Demo only: nothing was saved or sent.",
-      { duration: 6000 },
-    );
-    onClose();
+    setIsSubmitting(true);
+    try {
+      const evidence = await Promise.all(
+        evidenceFiles.map(({ file }) => readFileAsDataUrl(file)),
+      );
+      onSubmitClaim({
+        item: itemTitle,
+        itemId,
+        claimant,
+        dateLost,
+        timeLost,
+        location: locationLost.trim(),
+        details: additionalInfo.trim(),
+        evidence,
+      });
+      toast.success("Claim request submitted for admin review.");
+      onClose();
+    } catch (error) {
+      console.error("Failed to read claim evidence images.", error);
+      setFormError("We couldn't read the selected pictures. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -174,8 +220,8 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
             aria-hidden="true"
           />
           <p>
-            In a connected workflow, these details would be used to verify
-            ownership. This demo does not save or send claim information.
+            This demo keeps claim details and pictures available for admin
+            review during this browser session. Nothing is sent to a server.
           </p>
         </div>
 
@@ -202,7 +248,7 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
             />
             <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 p-3">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {evidencePreviews.map((preview, index) => (
+                {evidenceFiles.map(({ preview }, index) => (
                   <div
                     key={preview}
                     className="relative aspect-square overflow-hidden rounded-lg bg-white"
@@ -222,7 +268,7 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
                     </button>
                   </div>
                 ))}
-                {evidencePreviews.length < MAX_EVIDENCE_IMAGES && (
+                {evidenceFiles.length < MAX_EVIDENCE_IMAGES && (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -239,7 +285,7 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
                 )}
               </div>
               <p className="mt-2 text-center text-[11px] text-neutral-500">
-                {evidencePreviews.length} of {MAX_EVIDENCE_IMAGES} pictures
+                {evidenceFiles.length} of {MAX_EVIDENCE_IMAGES} pictures
                 selected. You can add up to 4.
               </p>
             </div>
@@ -329,15 +375,17 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               className="h-11 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="h-11 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+              disabled={isSubmitting}
+              className="h-11 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
             >
-              Submit Claim
+              {isSubmitting ? "Submitting..." : "Submit Claim"}
             </button>
           </div>
         </form>

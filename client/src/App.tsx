@@ -21,6 +21,7 @@ import { LoginPage } from "@/pages/auth/LoginPage";
 import { VerificationPage } from "@/pages/auth/VerificationPage";
 import { AuthProvider } from "@/context/AuthContext";
 import { initialItems, type Item } from "@/data/mockItems";
+import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -32,11 +33,28 @@ function ScrollToTop() {
 
 export function App() {
   const [items, setItems] = useState<Item[]>(initialItems);
+  const [submittedClaims, setSubmittedClaims] = useState<ClaimRequest[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleAddItem = (newItem: Item) => {
     setItems((prev) => [newItem, ...prev]);
+  };
+
+  const handleSubmitClaim = (claim: NewClaimRequest) => {
+    const submittedAt = new Date();
+    setSubmittedClaims((current) => [
+      {
+        ...claim,
+        id: `CL-${String(Date.now()).slice(-4)}`,
+        status: "Pending",
+        submitted: new Intl.DateTimeFormat("en", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(submittedAt),
+      },
+      ...current,
+    ]);
   };
 
   const handleBrowseLost = () => {
@@ -99,7 +117,11 @@ export function App() {
             <Route
               path="/dashboard/items/:id"
               element={
-                <ItemDetailPage items={items} onAddItem={handleAddItem} />
+                <ItemDetailPage
+                  items={items}
+                  onAddItem={handleAddItem}
+                  onSubmitClaim={handleSubmitClaim}
+                />
               }
             />
 
@@ -108,7 +130,10 @@ export function App() {
               element={<ProfilePage items={items} onAddItem={handleAddItem} />}
             />
 
-            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route
+              path="/admin"
+              element={<AdminDashboardPage additionalClaims={submittedClaims} />}
+            />
 
             <Route
               path="/lost-items"

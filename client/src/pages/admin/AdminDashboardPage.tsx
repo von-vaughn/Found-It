@@ -1,15 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowDownToLine,
   ArrowUpRight,
   BadgeCheck,
   Check,
   CheckCheck,
-  Clock3,
   FileSearch,
   Flag,
   GitCompare,
-  History,
   LayoutDashboard,
   MapPin,
   Package,
@@ -20,6 +17,7 @@ import {
 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems } from "@/data/mockItems";
+import type { ClaimRequest } from "@/types/claim";
 import {
   AdminSidebar,
   type AdminNotification,
@@ -30,10 +28,9 @@ type AdminSection =
   | "overview"
   | "lost"
   | "found"
-  | "claims"
-  | "history";
+  | "claims";
 
-type RecordStatus = "Open" | "Under review" | "Returned" | "Pending";
+type RecordStatus = "Lost" | "Found" | "Returned" | "Claimed";
 
 interface AdminReport {
   id: string;
@@ -49,6 +46,8 @@ interface AdminReport {
   date: string;
 }
 
+type AdminClaim = ClaimRequest;
+
 const adminReports: AdminReport[] = initialItems.map((item) => ({
   id: item.id,
   title: item.title,
@@ -63,14 +62,16 @@ const adminReports: AdminReport[] = initialItems.map((item) => ({
   reportedBy: item.contactName,
   status:
     item.status === "reunited"
-      ? "Returned"
-      : item.status === "pending"
-        ? "Under review"
-        : "Open",
+      ? item.type === "lost"
+        ? "Returned"
+        : "Claimed"
+      : item.type === "lost"
+        ? "Lost"
+        : "Found",
   date: item.date,
 }));
 
-const claims = [
+const claims: AdminClaim[] = [
   {
     id: "CL-2408",
     status: "Pending" as const,
@@ -98,6 +99,58 @@ const claims = [
     submitted: "Today, 8:15 AM",
   },
   {
+    id: "CL-2406",
+    status: "Under review" as const,
+    item: "iPhone 13",
+    itemId: "item-2",
+    claimant: "Alyssa Moore",
+    dateLost: "October 3, 2026",
+    timeLost: "Around 10:15 AM",
+    location: "Library Building",
+    details:
+      "White iPhone 13 with a clear case. The lock screen has a photo of my dog.",
+    submitted: "Today, 7:54 AM",
+  },
+  {
+    id: "CL-2405",
+    status: "Pending" as const,
+    item: "Notebook",
+    itemId: "item-8",
+    claimant: "Rohan Patel",
+    dateLost: "September 29, 2026",
+    timeLost: "Around 1:00 PM",
+    location: "Admin Building",
+    details:
+      "Blue spiral notebook with my initials written inside the front cover.",
+    submitted: "October 8, 2026, 2:40 PM",
+  },
+  {
+    id: "CL-2404",
+    status: "Under review" as const,
+    item: "Jacket",
+    itemId: "item-10",
+    claimant: "Sofia Reyes",
+    dateLost: "September 28, 2026",
+    timeLost: "After the afternoon program",
+    location: "Auditorium",
+    details:
+      "Gray jacket with a small department logo on the left sleeve.",
+    submitted: "October 8, 2026, 11:05 AM",
+  },
+  {
+    id: "CL-2403",
+    status: "Pending" as const,
+    item: "Keys",
+    itemId: "item-12",
+    claimant: "Gabriel Santos",
+    dateLost: "September 27, 2026",
+    timeLost: "Around 4:30 PM",
+    location: "Parking Lot",
+    details:
+      "Toyota car keys with a black fob and a small red tag on the key ring.",
+    submitted: "October 7, 2026, 4:22 PM",
+  },
+  {
     id: "CL-2402",
     status: "Pending" as const,
     item: "Water Bottle",
@@ -108,7 +161,7 @@ const claims = [
     location: "Cafeteria B",
     details:
       "Blue bottle with two stickers near the base and a name written underneath.",
-    submitted: "Yesterday, 3:18 PM",
+    submitted: "October 7, 2026, 3:18 PM",
   },
 ];
 
@@ -169,7 +222,6 @@ const navigation: AdminSidebarItem<AdminSection>[] = [
   { id: "lost", label: "Lost items", compactLabel: "Lost", icon: PackageSearch },
   { id: "found", label: "Found items", compactLabel: "Found", icon: PackageCheck },
   { id: "claims", label: "Claims", compactLabel: "Claims", icon: BadgeCheck },
-  { id: "history", label: "History", compactLabel: "History", icon: History },
 ];
 
 const pageCopy: Record<AdminSection, { title: string; description: string }> = {
@@ -189,15 +241,13 @@ const pageCopy: Record<AdminSection, { title: string; description: string }> = {
     title: "Ownership claims",
     description: "Review the details submitted to verify an item claim.",
   },
-  history: {
-    title: "Activity history",
-    description: "Review recent report, claim, and matching activity.",
-  },
 };
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     Open: "bg-neutral-100 text-neutral-700",
+    Lost: "bg-red-50 text-red-700",
+    Found: "bg-sky-50 text-sky-800",
     Claimed: "bg-blue-50 text-blue-800",
     "Under review": "bg-amber-50 text-amber-800",
     Returned: "bg-emerald-50 text-emerald-800",
@@ -218,18 +268,32 @@ function Panel({
   action,
   children,
   className = "",
+  borderless = false,
+  onMouseEnter,
+  onMouseLeave,
+  onFocusCapture,
+  onBlurCapture,
 }: {
   title: string;
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  borderless?: boolean;
+  onMouseEnter?: React.MouseEventHandler<HTMLElement>;
+  onMouseLeave?: React.MouseEventHandler<HTMLElement>;
+  onFocusCapture?: React.FocusEventHandler<HTMLElement>;
+  onBlurCapture?: React.FocusEventHandler<HTMLElement>;
 }) {
   return (
     <section
       aria-label={title}
-      className={`min-w-0 rounded-xl border border-neutral-200 bg-white ${className}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
+      className={`min-w-0 bg-white ${borderless ? "" : "rounded-xl border border-neutral-200"} ${className}`}
     >
-      <div className="flex min-h-14 items-center justify-between gap-3 border-b border-neutral-100 px-4 sm:px-5">
+      <div className={`flex min-h-14 items-center justify-between gap-3 px-4 sm:px-5 ${borderless ? "" : "border-b border-neutral-100"}`}>
         <h2 className="text-sm font-bold text-neutral-900">{title}</h2>
         {action}
       </div>
@@ -241,10 +305,12 @@ function Panel({
 function ItemTable({
   rows,
   onViewDetails,
+  wholeRowClickable = false,
   showColumnHeadings = true,
 }: {
   rows: AdminReport[];
   onViewDetails: (report: AdminReport) => void;
+  wholeRowClickable?: boolean;
   showColumnHeadings?: boolean;
 }) {
   if (rows.length === 0) {
@@ -257,7 +323,7 @@ function ItemTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1040px] text-left text-xs">
+      <table className="w-full min-w-[1120px] text-left text-xs">
         <thead
           className={
             showColumnHeadings
@@ -273,12 +339,42 @@ function ItemTable({
             <th scope="col" className="px-4 py-3">Color</th>
             <th scope="col" className="px-4 py-3">Reported by</th>
             <th scope="col" className="px-4 py-3">Date</th>
-            <th scope="col" className="px-5 py-3">Details</th>
+            <th scope="col" className="px-4 py-3">Status</th>
+            {!wholeRowClickable && (
+              <th scope="col" className="px-5 py-3">Details</th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
           {rows.map((row) => (
-            <tr key={row.id} className="text-neutral-700">
+            <tr
+              key={row.id}
+              tabIndex={wholeRowClickable ? 0 : undefined}
+              aria-label={
+                wholeRowClickable
+                  ? `Open full details for ${row.title}`
+                  : undefined
+              }
+              aria-keyshortcuts={wholeRowClickable ? "Enter Space" : undefined}
+              onClick={
+                wholeRowClickable ? () => onViewDetails(row) : undefined
+              }
+              onKeyDown={
+                wholeRowClickable
+                  ? (event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onViewDetails(row);
+                      }
+                    }
+                  : undefined
+              }
+              className={`text-neutral-700 ${
+                wholeRowClickable
+                  ? "cursor-pointer hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-[#E5192D] focus-visible:outline-offset-[-2px]"
+                  : ""
+              }`}
+            >
               <td className="px-5 py-3.5">
                 <div className="flex min-w-0 items-center gap-3">
                   {row.image ? (
@@ -326,16 +422,21 @@ function ItemTable({
                   year: "numeric",
                 }).format(new Date(`${row.date}T12:00:00`))}
               </td>
-              <td className="px-5 py-3.5">
-                <button
-                  type="button"
-                  onClick={() => onViewDetails(row)}
-                  aria-label={`View details for ${row.title}`}
-                  className="inline-flex h-8 items-center rounded-md border border-neutral-200 px-3 text-[11px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                >
-                  View details
-                </button>
+              <td className="px-4 py-3.5">
+                <StatusBadge status={row.status} />
               </td>
+              {!wholeRowClickable && (
+                <td className="px-5 py-3.5">
+                  <button
+                    type="button"
+                    onClick={() => onViewDetails(row)}
+                    aria-label={`View details for ${row.title}`}
+                    className="inline-flex h-8 items-center rounded-md border border-neutral-200 px-3 text-[11px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  >
+                    View details
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -344,7 +445,11 @@ function ItemTable({
   );
 }
 
-export function AdminDashboardPage() {
+export function AdminDashboardPage({
+  additionalClaims = [],
+}: {
+  additionalClaims?: ClaimRequest[];
+}) {
   const [section, setSection] = useState<AdminSection>("overview");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [query, setQuery] = useState("");
@@ -406,8 +511,9 @@ export function AdminDashboardPage() {
     [normalizedQuery, section],
   );
 
+  const allClaims = [...additionalClaims, ...claims];
   const selectedClaim =
-    claims.find((claim) => claim.id === selectedClaimId) ?? claims[0];
+    allClaims.find((claim) => claim.id === selectedClaimId) ?? allClaims[0];
   const pageNeedsSearch = ["lost", "found", "claims"].includes(section);
 
   return (
@@ -438,7 +544,7 @@ export function AdminDashboardPage() {
           sidebarExpanded ? "md:ml-60" : "md:ml-20"
         }`}
       >
-        <header className={`sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-neutral-200 bg-white/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8 ${
+        <header className={`sticky top-0 z-20 flex h-16 items-center justify-between gap-3 bg-white/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8 ${
           notificationsOpen
             ? "md:ml-80 md:w-[calc(100%-20rem)]"
             : "w-full"
@@ -463,7 +569,7 @@ export function AdminDashboardPage() {
           )}
         </header>
 
-        <main id="admin-main" className={`mx-auto max-w-[1440px] px-4 py-6 transition-[margin,width] duration-300 sm:px-6 lg:px-8 lg:py-8 ${
+        <main id="admin-main" className={`min-w-0 px-4 py-6 transition-[margin,width] duration-300 sm:px-6 lg:px-8 lg:py-8 ${
           notificationsOpen
             ? "md:ml-80 md:w-[calc(100%-20rem)]"
             : "w-full"
@@ -528,22 +634,11 @@ export function AdminDashboardPage() {
               </div>
               <Panel
                 title={section === "lost" ? "Lost reports" : "Found reports"}
-                action={
-                  <button
-                    type="button"
-                    disabled
-                    title="Export is a visual preview only"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 px-2.5 text-[11px] font-semibold text-neutral-400"
-                  >
-                    <ArrowDownToLine className="h-3.5 w-3.5" aria-hidden="true" />
-                    Export
-                  </button>
-                }
               >
                 <ItemTable
                   rows={reportRows}
                   onViewDetails={setSelectedReport}
-                  showColumnHeadings={false}
+                  wholeRowClickable
                 />
               </Panel>
             </>
@@ -551,6 +646,7 @@ export function AdminDashboardPage() {
 
           {section === "claims" && (
             <ClaimsView
+              claims={allClaims}
               query={normalizedQuery}
               selectedClaim={selectedClaim}
               selectedClaimId={selectedClaimId}
@@ -560,7 +656,6 @@ export function AdminDashboardPage() {
             />
           )}
 
-          {section === "history" && <HistoryView />}
         </main>
       </div>
       {selectedReport && (
@@ -838,6 +933,7 @@ function Overview({
 }
 
 function ClaimsView({
+  claims: claimRequests,
   query,
   selectedClaim,
   selectedClaimId,
@@ -845,14 +941,16 @@ function ClaimsView({
   statusFilter,
   onStatusFilterChange,
 }: {
+  claims: ClaimRequest[];
   query: string;
-  selectedClaim: (typeof claims)[number];
+  selectedClaim: ClaimRequest;
   selectedClaimId: string;
   onSelectClaim: (id: string) => void;
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
 }) {
-  const filteredClaims = claims.filter((claim) =>
+  const [submittedClaimsActive, setSubmittedClaimsActive] = useState(false);
+  const filteredClaims = claimRequests.filter((claim) =>
     (statusFilter === "All statuses" || claim.status === statusFilter) &&
     [claim.id, claim.item, claim.claimant, claim.location]
       .join(" ")
@@ -864,220 +962,335 @@ function ClaimsView({
   )
     ? selectedClaim
     : null;
-  const selectedItemImage = visibleSelectedClaim
+  const selectedItemPost = visibleSelectedClaim
     ? adminReports.find((report) => report.id === visibleSelectedClaim.itemId)
-        ?.image
-    : "";
+    : undefined;
+  const selectedItemImage = selectedItemPost?.image ?? "";
 
   return (
-    <div>
+    <div className="overflow-x-clip">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-neutral-500">{filteredClaims.length} claims</p>
-        <StatusFilter value={statusFilter} onChange={onStatusFilterChange} />
       </div>
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]">
-      <Panel title="Submitted claims">
-        {filteredClaims.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-neutral-500">
-            No claims match this search.
-          </p>
-        ) : (
-          <div className="divide-y divide-neutral-100">
-            {filteredClaims.map((claim) => {
-              const itemImage =
-                adminReports.find((report) => report.id === claim.itemId)
-                  ?.image ?? "";
+      <div
+        className={`grid min-w-0 gap-5 transition-[grid-template-columns] duration-300 ease-in-out ${
+          submittedClaimsActive
+            ? "xl:grid-cols-[minmax(0,0.7fr)_minmax(360px,1.3fr)]"
+            : "xl:grid-cols-[minmax(240px,0.35fr)_minmax(360px,1.65fr)]"
+        }`}
+      >
+          <Panel
+            title="Submitted claims"
+            className="group xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:self-start xl:overflow-y-auto"
+            onMouseEnter={() => setSubmittedClaimsActive(true)}
+            onMouseLeave={(event) =>
+              setSubmittedClaimsActive(
+                event.currentTarget.contains(document.activeElement),
+              )
+            }
+            onFocusCapture={() => setSubmittedClaimsActive(true)}
+            onBlurCapture={(event) => {
+              const nextTarget = event.relatedTarget;
+              if (
+                (!(nextTarget instanceof Node) ||
+                  !event.currentTarget.contains(nextTarget)) &&
+                !event.currentTarget.matches(":hover")
+              ) {
+                setSubmittedClaimsActive(false);
+              }
+            }}
+            action={
+              <div className="flex xl:hidden xl:group-hover:flex xl:group-focus-within:flex">
+                <StatusFilter
+                  value={statusFilter}
+                  onChange={onStatusFilterChange}
+                />
+              </div>
+            }
+          >
+            {filteredClaims.length === 0 ? (
+              <p className="px-5 py-10 text-center text-sm text-neutral-500">
+                No claims match this search.
+              </p>
+            ) : (
+              <div className="divide-y divide-neutral-100">
+                {filteredClaims.map((claim) => {
+                  const itemImage =
+                    adminReports.find((report) => report.id === claim.itemId)
+                      ?.image ?? "";
 
-              return (
-                <button
-                  key={claim.id}
-                  type="button"
-                  aria-pressed={selectedClaimId === claim.id}
-                  onClick={() => onSelectClaim(claim.id)}
-                  className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5 ${
-                    selectedClaimId === claim.id
-                      ? "bg-neutral-50"
-                      : "hover:bg-neutral-50/70"
-                  }`}
-                >
-                  {itemImage ? (
-                    <img
-                      src={itemImage}
-                      alt={`${claim.item} item`}
-                      loading="lazy"
-                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
+                  return (
+                    <button
+                      key={claim.id}
+                      type="button"
+                      aria-pressed={selectedClaimId === claim.id}
+                      onClick={() => onSelectClaim(claim.id)}
+                      className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5 ${
+                        selectedClaimId === claim.id
+                          ? "bg-neutral-50"
+                          : "hover:bg-neutral-50/70"
+                      }`}
                     >
-                      <Package className="h-5 w-5" />
-                    </span>
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-bold text-neutral-900">
-                      {claim.item}
-                    </span>
-                    <span className="mt-1 block truncate text-[11px] text-neutral-500">
-                      {claim.claimant} · {claim.id}
-                    </span>
-                  </span>
-                  <span className="hidden text-right sm:block">
-                    <span className="block text-[10px] text-neutral-500">
-                      Submitted
-                    </span>
-                    <span className="mt-1 block text-[10px] font-medium text-neutral-700">
-                      {claim.submitted}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </Panel>
+                      {itemImage ? (
+                        <img
+                          src={itemImage}
+                          alt={`${claim.item} item`}
+                          loading="lazy"
+                          className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <span
+                          aria-hidden="true"
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
+                        >
+                          <Package className="h-5 w-5" />
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block break-normal text-sm font-bold leading-snug text-neutral-900">
+                          {claim.item}
+                        </span>
+                        <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 transition-[max-height,opacity] duration-200 xl:max-h-0 xl:overflow-hidden xl:opacity-0 xl:group-hover:max-h-8 xl:group-hover:opacity-100 xl:group-focus-within:max-h-8 xl:group-focus-within:opacity-100">
+                          {claim.claimant} · {claim.id}
+                        </span>
+                      </span>
+                      <span className="hidden text-right transition-[max-height,opacity] duration-200 sm:block xl:max-h-0 xl:overflow-hidden xl:opacity-0 xl:group-hover:max-h-10 xl:group-hover:opacity-100 xl:group-focus-within:max-h-10 xl:group-focus-within:opacity-100">
+                        <span className="block text-[10px] text-neutral-500">
+                          Submitted
+                        </span>
+                        <span className="mt-1 block text-[10px] font-medium text-neutral-700">
+                          {claim.submitted}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </Panel>
 
-      <Panel title="Claim details">
-        {visibleSelectedClaim ? (
-        <div className="space-y-4 p-4 sm:p-5">
-          {selectedItemImage ? (
-            <img
-              src={selectedItemImage}
-              alt={`${visibleSelectedClaim.item} item`}
-              className="h-40 w-full rounded-lg object-cover"
-            />
-          ) : (
-            <div
-              aria-hidden="true"
-              className="flex h-40 w-full items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
-            >
-              <Package className="h-8 w-8" />
-            </div>
-          )}
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-              Claimant
-            </p>
-            <h2 className="mt-1 text-base font-bold text-neutral-900">
-              {visibleSelectedClaim.claimant}
-            </h2>
-            <p className="mt-1 text-xs text-neutral-500">
-              Claim for {visibleSelectedClaim.item}
-            </p>
-          </div>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-y border-neutral-100 py-4 text-xs">
-            <div>
-              <dt className="text-[10px] text-neutral-500">Date lost</dt>
-              <dd className="mt-1 font-semibold text-neutral-800">
-                {visibleSelectedClaim.dateLost}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[10px] text-neutral-500">Approx. time</dt>
-              <dd className="mt-1 font-semibold text-neutral-800">
-                {visibleSelectedClaim.timeLost}
-              </dd>
-            </div>
-            <div className="col-span-2">
-              <dt className="text-[10px] text-neutral-500">Location lost</dt>
-              <dd className="mt-1 inline-flex items-center gap-1.5 font-semibold text-neutral-800">
-                <MapPin className="h-3.5 w-3.5 text-neutral-400" aria-hidden="true" />
-                {visibleSelectedClaim.location}
-              </dd>
-            </div>
-          </dl>
-          <div>
-            <p className="text-[10px] font-semibold text-neutral-500">
-              Additional identifying details
-            </p>
-            <p className="mt-1.5 text-xs leading-relaxed text-neutral-700">
-              {visibleSelectedClaim.details}
-            </p>
-          </div>
-          <label className="block text-[10px] font-semibold text-neutral-500">
-            Update item status
-            <select
-              disabled
-              name="item-status"
-              defaultValue="Open"
-              aria-label="Update item status, preview only"
-              className="mt-1.5 h-9 w-full rounded-md border border-neutral-200 bg-neutral-50 px-2.5 text-xs font-medium text-neutral-500"
-            >
-              <option>Open</option>
-              <option>Claimed</option>
-              <option>Returned</option>
-            </select>
-          </label>
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <button
-              type="button"
-              disabled
-              title="Approval is a visual preview only"
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white opacity-50"
-            >
-              <Check className="h-3.5 w-3.5" aria-hidden="true" />
-              Approve claim
-            </button>
-            <button
-              type="button"
-              disabled
-              title="Rejection is a visual preview only"
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-400"
-            >
-              <X className="h-3.5 w-3.5" aria-hidden="true" />
-              Reject
-            </button>
-          </div>
-        </div>
-        ) : (
-          <p className="px-5 py-10 text-center text-sm text-neutral-500">
-            No selected claim matches this search.
-          </p>
-        )}
-      </Panel>
+          <Panel title="Claim details" borderless>
+            {visibleSelectedClaim ? (
+              <div className="space-y-4 p-4 sm:p-5">
+                <section aria-labelledby="claim-item-post-heading">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h2
+                      id="claim-item-post-heading"
+                      className="text-sm font-bold text-neutral-900"
+                    >
+                      {selectedItemPost?.type === "Found"
+                        ? "Found item post"
+                        : "Original item post"}
+                    </h2>
+                    {selectedItemPost && (
+                      <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold text-neutral-600">
+                        {selectedItemPost.type}
+                      </span>
+                    )}
+                  </div>
+                  {selectedItemImage ? (
+                    <div className="flex h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 sm:h-56">
+                      <img
+                        src={selectedItemImage}
+                        alt={`${visibleSelectedClaim.item} item`}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      aria-hidden="true"
+                      className="flex h-40 w-full items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
+                    >
+                      <Package className="h-8 w-8" />
+                    </div>
+                  )}
+                  {selectedItemPost ? (
+                    <>
+                      <h3 className="mt-3 text-base font-bold text-neutral-900">
+                        {selectedItemPost.title}
+                      </h3>
+                      <p className="mt-1 text-xs leading-relaxed text-neutral-700">
+                        {selectedItemPost.description}
+                      </p>
+                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-neutral-100 py-3 text-xs">
+                        <div>
+                          <dt className="text-[10px] text-neutral-500">Category</dt>
+                          <dd className="mt-1 font-semibold text-neutral-800">
+                            {selectedItemPost.category}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-[10px] text-neutral-500">Post status</dt>
+                          <dd className="mt-1 font-semibold text-neutral-800">
+                            {selectedItemPost.status}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-[10px] text-neutral-500">Posted by</dt>
+                          <dd className="mt-1 font-semibold text-neutral-800">
+                            {selectedItemPost.reportedBy}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-[10px] text-neutral-500">Post date</dt>
+                          <dd className="mt-1 font-semibold text-neutral-800">
+                            {selectedItemPost.date}
+                          </dd>
+                        </div>
+                        <div className="col-span-2">
+                          <dt className="text-[10px] text-neutral-500">Post location</dt>
+                          <dd className="mt-1 inline-flex items-center gap-1.5 font-semibold text-neutral-800">
+                            <MapPin
+                              className="h-3.5 w-3.5 text-neutral-400"
+                              aria-hidden="true"
+                            />
+                            {selectedItemPost.building}
+                          </dd>
+                        </div>
+                        {selectedItemPost.color && (
+                          <div className="col-span-2">
+                            <dt className="text-[10px] text-neutral-500">Color</dt>
+                            <dd className="mt-1 font-semibold text-neutral-800">
+                              {selectedItemPost.color}
+                            </dd>
+                          </div>
+                        )}
+                      </dl>
+                    </>
+                  ) : (
+                    <p className="mt-3 text-xs text-neutral-500">
+                      The original item post could not be found.
+                    </p>
+                  )}
+                </section>
+                <section
+                  aria-labelledby="claim-request-heading"
+                  className="border-t border-neutral-100 pt-4"
+                >
+                  <h2
+                    id="claim-request-heading"
+                    className="text-sm font-bold text-neutral-900"
+                  >
+                    Claim request
+                  </h2>
+                  <p className="mt-2 text-sm font-semibold text-neutral-800">
+                    {visibleSelectedClaim.claimant}
+                  </p>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                    <div>
+                      <dt className="text-[10px] text-neutral-500">Request ID</dt>
+                      <dd className="mt-1 font-semibold text-neutral-800">
+                        {visibleSelectedClaim.id}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-neutral-500">Claim status</dt>
+                      <dd className="mt-1 font-semibold text-neutral-800">
+                        {visibleSelectedClaim.status}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-neutral-500">Submitted</dt>
+                      <dd className="mt-1 font-semibold text-neutral-800">
+                        {visibleSelectedClaim.submitted}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-neutral-500">Date lost</dt>
+                      <dd className="mt-1 font-semibold text-neutral-800">
+                        {visibleSelectedClaim.dateLost}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-neutral-500">Approx. time lost</dt>
+                      <dd className="mt-1 font-semibold text-neutral-800">
+                        {visibleSelectedClaim.timeLost}
+                      </dd>
+                    </div>
+                    <div className="col-span-2">
+                      <dt className="text-[10px] text-neutral-500">Location lost</dt>
+                      <dd className="mt-1 inline-flex items-center gap-1.5 font-semibold text-neutral-800">
+                        <MapPin
+                          className="h-3.5 w-3.5 text-neutral-400"
+                          aria-hidden="true"
+                        />
+                        {visibleSelectedClaim.location}
+                      </dd>
+                    </div>
+                    <div className="col-span-2">
+                      <dt className="text-[10px] text-neutral-500">
+                        Identifying details provided
+                      </dt>
+                      <dd className="mt-1.5 leading-relaxed text-neutral-700">
+                        {visibleSelectedClaim.details}
+                      </dd>
+                    </div>
+                    {visibleSelectedClaim.evidence &&
+                      visibleSelectedClaim.evidence.length > 0 && (
+                        <div className="col-span-2">
+                          <dt className="text-[10px] font-semibold text-neutral-500">
+                            Claimant photo evidence
+                          </dt>
+                          <dd className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                            {visibleSelectedClaim.evidence.map((image, index) => (
+                              <img
+                                key={`${visibleSelectedClaim.id}-evidence-${index}`}
+                                src={image}
+                                alt={`Photo evidence ${index + 1} submitted by ${visibleSelectedClaim.claimant}`}
+                                loading="lazy"
+                                className="aspect-square w-full rounded-lg bg-neutral-50 object-contain"
+                              />
+                            ))}
+                          </dd>
+                        </div>
+                      )}
+                  </dl>
+                </section>
+                <label className="block text-[10px] font-semibold text-neutral-500">
+                  Update item status
+                  <select
+                    disabled
+                    name="item-status"
+                    defaultValue="Open"
+                    aria-label="Update item status, preview only"
+                    className="mt-1.5 h-9 w-full rounded-md border border-neutral-200 bg-neutral-50 px-2.5 text-xs font-medium text-neutral-500"
+                  >
+                    <option>Open</option>
+                    <option>Claimed</option>
+                    <option>Returned</option>
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    disabled
+                    title="Approval is a visual preview only"
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white opacity-50"
+                  >
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    Approve claim
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    title="Rejection is a visual preview only"
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-400"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="px-5 py-10 text-center text-sm text-neutral-500">
+                No selected claim matches this search.
+              </p>
+            )}
+          </Panel>
       </div>
     </div>
   );
 }
 
-function HistoryView() {
-  return (
-    <>
-      <Panel
-        title="Recent activity"
-        action={
-          <span className="inline-flex items-center gap-1.5 text-[10px] text-neutral-500">
-            <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-            Latest entries
-          </span>
-        }
-      >
-        <ol className="divide-y divide-neutral-100">
-          {activityHistory.map(({ id, title, detail, time, status, icon: Icon }) => (
-            <li
-              key={id}
-              className="flex items-start gap-3 px-4 py-4 sm:px-5"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
-                <Icon className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-neutral-900">{title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-neutral-600">
-                  {detail}
-                </p>
-                <time className="mt-1.5 block text-[10px] text-neutral-400">
-                  {time}
-                </time>
-              </div>
-              <StatusBadge status={status} />
-            </li>
-          ))}
-        </ol>
-      </Panel>
-    </>
-  );
-}
 
 export default AdminDashboardPage;

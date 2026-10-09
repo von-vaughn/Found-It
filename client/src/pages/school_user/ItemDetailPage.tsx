@@ -20,18 +20,23 @@ import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModa
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems, type Item } from "@/data/mockItems";
 import { formatItemDateTime } from "@/lib/dateTime";
+import { useAuth } from "@/context/useAuth";
+import type { NewClaimRequest } from "@/types/claim";
 
 interface ItemDetailPageProps {
   items?: Item[];
   onAddItem?: (newItem: Item) => void;
+  onSubmitClaim?: (claim: NewClaimRequest) => void;
 }
 
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   items: propItems,
   onAddItem: propOnAddItem,
+  onSubmitClaim,
 }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const items = propItems ?? initialItems;
 
   const item = useMemo(() => items.find((entry) => entry.id === id), [items, id]);
@@ -401,8 +406,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       )}
       {ownershipClaimOpen && (
         <OwnershipClaimModal
+          itemId={item.id}
           itemTitle={item.title}
+          claimant={user?.name ?? "Campus user"}
           onClose={() => setOwnershipClaimOpen(false)}
+          onSubmitClaim={(claim) => onSubmitClaim?.(claim)}
         />
       )}
     </div>
