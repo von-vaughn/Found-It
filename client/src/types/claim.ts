@@ -1,6 +1,6 @@
 export interface ClaimRequest {
   id: string;
-  status: "Pending" | "Under review";
+  status: "Pending" | "Under review" | "Approved" | "Claimed" | "Returned" | "Rejected";
   item: string;
   itemId: string;
   claimant: string;

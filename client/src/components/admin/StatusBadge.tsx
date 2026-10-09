@@ -4,9 +4,11 @@ export function StatusBadge({ status }: { status: string }) {
     Lost: "bg-red-50 text-red-700",
     Found: "bg-sky-50 text-sky-800",
     Claimed: "bg-blue-50 text-blue-800",
+    Approved: "bg-blue-50 text-blue-800",
     "Under review": "bg-amber-50 text-amber-800",
     Returned: "bg-emerald-50 text-emerald-800",
     Pending: "bg-red-50 text-red-700",
+    Rejected: "bg-neutral-100 text-neutral-500",
   };
 
   return (

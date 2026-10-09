@@ -156,18 +156,19 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </AnimatePresence>
             <div className="relative flex-1 min-w-0 flex items-center">
+            <Search
+              className="absolute left-3 h-4 w-4 text-neutral-400 pointer-events-none"
+              aria-hidden="true"
+            />
             <input
               ref={searchInputRef}
-              type="text"
+              type="search"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search items by name…"
               aria-label="Search items by name"
-              className="w-full h-10 pl-3 pr-9 bg-[#cecec5] rounded-lg border border-neutral-200/80 text-xs text-neutral-950 placeholder:text-neutral-600 font-normal transition-colors hover:bg-[#cecec5] focus:bg-[#cecec5] focus:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-200/50"
-            />
-            <Search
-              className="absolute right-3 h-4 w-4 text-neutral-600 pointer-events-none"
-              aria-hidden="true"
+              autoComplete="off"
+              className="h-10 w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-xs text-neutral-800 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             />
             </div>
             <button

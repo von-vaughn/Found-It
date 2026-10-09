@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PAGE_SIZE = 10;
 import {
-  BadgeCheck,
   Building2,
   CalendarClock,
   CalendarDays,
@@ -15,16 +14,33 @@ import {
   Tag,
   X,
 } from "lucide-react";
-import { formatItemDateTime } from "@/lib/dateTime";
 import { Panel } from "./Panel";
 import { NoItemImage } from "./NoItemImage";
 import { StatusBadge } from "./StatusBadge";
 import { StatusFilter } from "./StatusFilter";
 import { adminReports } from "./adminData";
+import type { RecordStatus } from "./types";
 import type { ClaimRequest } from "@/types/claim";
+
+function formatEventDate(value: string | undefined): string {
+  if (!value) return "Not provided";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not provided";
+  return new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(date);
+}
+
+function formatEventTime(value: string | undefined): string {
+  if (!value) return "Not provided";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not provided";
+  return new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(date);
+}
 
 export function ClaimsView({
   claims: claimRequests,
+  onClaimStatusChange,
+  onItemStatusChange,
+  itemStatusOverrides,
   query,
   selectedClaim,
   selectedClaimId,
@@ -33,6 +49,9 @@ export function ClaimsView({
   onStatusFilterChange,
 }: {
   claims: ClaimRequest[];
+  onClaimStatusChange: (id: string, status: ClaimRequest["status"]) => void;
+  onItemStatusChange: (itemId: string, status: RecordStatus) => void;
+  itemStatusOverrides: Record<string, RecordStatus>;
   query: string;
   selectedClaim: ClaimRequest;
   selectedClaimId: string;
@@ -42,6 +61,26 @@ export function ClaimsView({
 }) {
   const [submittedClaimsActive, setSubmittedClaimsActive] = useState(false);
   const [page, setPage] = useState(1);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    claimId: string;
+    status: "Approved" | "Returned" | "ItemClaimed" | "Rejected";
+  } | null>(null);
+  const approvalDialogRef = useRef<HTMLDialogElement>(null);
+  const claimForStatusChange = claimRequests.find(
+    (claim) => claim.id === pendingStatusChange?.claimId,
+  );
+
+  useEffect(() => {
+    const dialog = approvalDialogRef.current;
+    if (!dialog) return;
+
+    if (pendingStatusChange && !dialog.open) {
+      dialog.showModal();
+    } else if (!pendingStatusChange && dialog.open) {
+      dialog.close();
+    }
+  }, [pendingStatusChange]);
+
   const filteredClaims = claimRequests.filter(
     (claim) =>
       (statusFilter === "All statuses" || claim.status === statusFilter) &&
@@ -80,13 +119,102 @@ export function ClaimsView({
   )
     ? selectedClaim
     : null;
-  const selectedItemPost = visibleSelectedClaim
+  const baseItemPost = visibleSelectedClaim
     ? adminReports.find((report) => report.id === visibleSelectedClaim.itemId)
     : undefined;
+  const selectedItemPost =
+    baseItemPost && itemStatusOverrides[baseItemPost.id]
+      ? { ...baseItemPost, status: itemStatusOverrides[baseItemPost.id] }
+      : baseItemPost;
   const selectedItemImage = selectedItemPost?.image ?? "";
+  const isLostItem = selectedItemPost?.type === "Lost";
+
+  const closeApprovalDialog = () => {
+    setPendingStatusChange(null);
+    if (approvalDialogRef.current?.open) approvalDialogRef.current.close();
+  };
+
+  const confirmStatusChange = () => {
+    if (!pendingStatusChange || !claimForStatusChange) return;
+    if (pendingStatusChange.status === "ItemClaimed") {
+      onItemStatusChange(claimForStatusChange.itemId, "Claimed");
+      onClaimStatusChange(pendingStatusChange.claimId, "Claimed");
+    } else {
+      onClaimStatusChange(
+        pendingStatusChange.claimId,
+        pendingStatusChange.status,
+      );
+    }
+    closeApprovalDialog();
+  };
 
   return (
     <div className="overflow-x-clip">
+      {pendingStatusChange && claimForStatusChange && (
+        <dialog
+          ref={approvalDialogRef}
+          aria-labelledby="claim-status-title"
+          aria-describedby="claim-status-description"
+          onClose={() => setPendingStatusChange(null)}
+          className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-xl border border-neutral-200 bg-white p-0 text-neutral-900 shadow-xl backdrop:bg-neutral-950/50"
+        >
+          <div className="p-5 sm:p-6">
+            <h2
+              id="claim-status-title"
+              className="text-base font-bold text-neutral-900"
+            >
+              {pendingStatusChange.status === "Approved"
+                ? "Approve this request?"
+                : pendingStatusChange.status === "ItemClaimed"
+                  ? "Mark this item as claimed?"
+                  : pendingStatusChange.status === "Rejected"
+                    ? "Reject this request?"
+                    : "Mark this item as returned?"}
+            </h2>
+            <p
+              id="claim-status-description"
+              className="mt-2 text-sm leading-relaxed text-neutral-600"
+            >
+              {pendingStatusChange.status === "Approved"
+                ? `Are you sure you want to approve ${claimForStatusChange.claimant}'s claim for ${claimForStatusChange.item}?`
+                : pendingStatusChange.status === "ItemClaimed"
+                  ? `Has ${claimForStatusChange.claimant} already claimed the ${claimForStatusChange.item}?`
+                  : pendingStatusChange.status === "Rejected"
+                    ? `Are you sure you want to reject ${claimForStatusChange.claimant}'s claim for ${claimForStatusChange.item}?`
+                    : `Confirm that ${claimForStatusChange.claimant} has received ${claimForStatusChange.item}.`}
+            </p>
+            {pendingStatusChange.status === "Approved" && (
+              <p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-xs leading-relaxed text-neutral-700">
+                Once approved, the system will notify{" "}
+                {claimForStatusChange.claimant} to proceed to the OSA office
+                to claim the item.
+              </p>
+            )}
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeApprovalDialog}
+                className="h-9 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmStatusChange}
+                className="h-9 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+              >
+                {pendingStatusChange.status === "Approved"
+                  ? "Confirm"
+                  : pendingStatusChange.status === "ItemClaimed"
+                    ? "Confirm claimed"
+                    : pendingStatusChange.status === "Rejected"
+                      ? "Confirm"
+                      : "Confirm returned"}
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-neutral-500">
           {filteredClaims.length} claims
@@ -301,15 +429,6 @@ export function ClaimsView({
                       </div>
                       <div>
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
-                          <BadgeCheck className="h-3 w-3" aria-hidden="true" />
-                          Post status
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
-                          {selectedItemPost.status}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
                           <CalendarDays className="h-3 w-3" aria-hidden="true" />
                           Post date
                         </dt>
@@ -328,13 +447,20 @@ export function ClaimsView({
                             : "Date lost"}
                         </dt>
                         <dd className="mt-1 font-semibold text-neutral-800">
-                          {selectedItemPost.eventDateTime
-                            ? (formatItemDateTime(
-                                selectedItemPost.eventDateTime,
-                              ) ?? "Not provided")
-                            : "Not provided"}
+                          {formatEventDate(selectedItemPost.eventDateTime)}
                         </dd>
                       </div>
+                      {selectedItemPost.type === "Found" && (
+                        <div>
+                          <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                            <Clock3 className="h-3 w-3" aria-hidden="true" />
+                            Time found
+                          </dt>
+                          <dd className="mt-1 font-semibold text-neutral-800">
+                            {formatEventTime(selectedItemPost.eventDateTime)}
+                          </dd>
+                        </div>
+                      )}
                       <div>
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
                           <MapPin className="h-3 w-3" aria-hidden="true" />
@@ -423,18 +549,64 @@ export function ClaimsView({
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        disabled
-                        title="Approval is a visual preview only"
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white opacity-50"
+                        disabled={
+                          visibleSelectedClaim.status === "Returned" ||
+                          visibleSelectedClaim.status === "Claimed" ||
+                          visibleSelectedClaim.status === "Rejected" ||
+                          (!isLostItem &&
+                            selectedItemPost?.status === "Claimed")
+                        }
+                        onClick={() =>
+                          setPendingStatusChange({
+                            claimId: visibleSelectedClaim.id,
+                            status:
+                              !isLostItem &&
+                              visibleSelectedClaim.status === "Approved"
+                                ? "ItemClaimed"
+                                : isLostItem
+                                  ? "Returned"
+                                  : "Approved",
+                          })
+                        }
+                        className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-default ${
+                          visibleSelectedClaim.status === "Approved" ||
+                          (isLostItem &&
+                            visibleSelectedClaim.status !== "Returned")
+                            ? "bg-emerald-700 hover:bg-emerald-800 focus-visible:ring-emerald-700 disabled:bg-emerald-700"
+                            : "bg-[#E5192D] hover:bg-red-700 focus-visible:ring-[#E5192D] disabled:bg-emerald-700"
+                        }`}
                       >
                         <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                        Approve claim
+                        {visibleSelectedClaim.status === "Returned"
+                          ? "Returned"
+                          : visibleSelectedClaim.status === "Rejected"
+                            ? "Rejected"
+                            : visibleSelectedClaim.status === "Claimed" ||
+                                (visibleSelectedClaim.status === "Approved" &&
+                                  !isLostItem)
+                              ? "Claimed"
+                              : isLostItem
+                              ? "Mark as returned"
+                              : "Approve request"}
                       </button>
                       <button
                         type="button"
-                        disabled
-                        title="Rejection is a visual preview only"
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-400"
+                        disabled={
+                          visibleSelectedClaim.status !== "Pending" &&
+                          visibleSelectedClaim.status !== "Under review"
+                        }
+                        onClick={() =>
+                          setPendingStatusChange({
+                            claimId: visibleSelectedClaim.id,
+                            status: "Rejected",
+                          })
+                        }
+                        className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default ${
+                          visibleSelectedClaim.status === "Pending" ||
+                          visibleSelectedClaim.status === "Under review"
+                            ? "border-neutral-200 text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
+                            : "border-neutral-200 text-neutral-400"
+                        }`}
                       >
                         <X className="h-3.5 w-3.5" aria-hidden="true" />
                         Reject

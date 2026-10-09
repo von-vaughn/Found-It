@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { ClaimRequest } from "@/types/claim";
+import type { RecordStatus } from "@/components/admin/types";
 import { ClaimsView } from "@/components/admin/ClaimsView";
 import { claims } from "@/components/admin/adminData";
 import { AdminLayout } from "./AdminLayout";
@@ -14,10 +15,21 @@ export function ClaimsPage({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [manualClaimId, setManualClaimId] = useState<string | null>(null);
+  const [claimStatuses, setClaimStatuses] = useState<
+    Record<string, ClaimRequest["status"]>
+  >({});
+  const [itemStatuses, setItemStatuses] = useState<
+    Record<string, RecordStatus>
+  >({});
 
   const allClaims = useMemo(
-    () => [...additionalClaims, ...claims],
-    [additionalClaims],
+    () =>
+      [...additionalClaims, ...claims].map((claim) =>
+        claimStatuses[claim.id]
+          ? { ...claim, status: claimStatuses[claim.id] }
+          : claim,
+      ),
+    [additionalClaims, claimStatuses],
   );
 
   const claimIdFromUrl = searchParams.get("claimId");
@@ -44,6 +56,17 @@ export function ClaimsPage({
       },
       { replace: true },
     );
+  };
+
+  const handleClaimStatusChange = (
+    id: string,
+    status: ClaimRequest["status"],
+  ) => {
+    setClaimStatuses((current) => ({ ...current, [id]: status }));
+  };
+
+  const handleItemStatusChange = (itemId: string, status: RecordStatus) => {
+    setItemStatuses((current) => ({ ...current, [itemId]: status }));
   };
 
   const selectedClaim = allClaims.find(
@@ -80,6 +103,9 @@ export function ClaimsPage({
         onSelectClaim={handleSelectClaim}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        onClaimStatusChange={handleClaimStatusChange}
+        onItemStatusChange={handleItemStatusChange}
+        itemStatusOverrides={itemStatuses}
       />
     </AdminLayout>
   );
