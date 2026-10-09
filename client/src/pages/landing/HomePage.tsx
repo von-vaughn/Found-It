@@ -22,7 +22,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
         <FoundItMarquee />
 
-        <HowItWorks onBrowseLost={onBrowseLost} />
+        <HowItWorks />
       </main>
     </div>
   );

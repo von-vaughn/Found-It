@@ -15,10 +15,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-interface HowItWorksProps {
-  onBrowseLost: () => void;
-}
-
 interface GalleryItem {
   id: string;
   image: string;
@@ -86,9 +82,7 @@ const turnoverSteps: ProcessStep[] = [
   },
 ];
 
-export const HowItWorks: React.FC<HowItWorksProps> = ({
-  onBrowseLost: _onBrowseLost,
-}) => {
+export const HowItWorks: React.FC = () => {
   /* ── Gallery data ── */
   const galleryItems: GalleryItem[] = [
     {

@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return code;
   };
 
-  const login = async (email: string, _password?: string): Promise<boolean> => {
+  const login = async (email: string): Promise<boolean> => {
     const trimmedEmail = email.trim().toLowerCase();
     const allowedDomains = ["@wmsu.edu.ph", "@campus.edu"];
     const isKnownUser =

@@ -113,7 +113,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               <button
                 onClick={() => {
                   setMenuOpen(false);
-                  onItemClick && onItemClick(item);
+                  onItemClick?.(item);
                 }}
                 className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 transition-colors"
               >

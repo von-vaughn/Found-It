@@ -1,25 +1,11 @@
 import { useState, useEffect } from "react";
-import {
-  Routes,
-  Route,
-  useNavigate,
-  useLocation,
-  Navigate,
-} from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CommunityReunions } from "@/components/landing/CommunityReunions";
-import { HomePage } from "@/pages/landing/HomePage";
-import { LostItemsPage } from "@/pages/landing/LostItemsPage";
-import { FoundItemsPage } from "@/pages/landing/FoundItemsPage";
-import { DashboardPage } from "@/pages/school_user/DashboardPage";
-import { ItemDetailPage } from "@/pages/school_user/ItemDetailPage";
-import { ProfilePage } from "@/pages/school_user/ProfilePage";
-import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
-import { LoginPage } from "@/pages/auth/LoginPage";
-import { VerificationPage } from "@/pages/auth/VerificationPage";
 import { AuthProvider } from "@/context/AuthContext";
+import { AppRoutes } from "@/routes";
 import { initialItems, type Item } from "@/data/mockItems";
 import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
 
@@ -96,77 +82,14 @@ export function App() {
         )}
 
         <div className="flex-1">
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <HomePage
-                  onBrowseLost={handleBrowseLost}
-                  onBrowseFound={handleBrowseFound}
-                />
-              }
-            />
-
-            <Route
-              path="/dashboard"
-              element={
-                <DashboardPage items={items} onAddItem={handleAddItem} />
-              }
-            />
-
-            <Route
-              path="/dashboard/items/:id"
-              element={
-                <ItemDetailPage
-                  items={items}
-                  onAddItem={handleAddItem}
-                  onSubmitClaim={handleSubmitClaim}
-                />
-              }
-            />
-
-            <Route
-              path="/dashboard/profile"
-              element={<ProfilePage items={items} onAddItem={handleAddItem} />}
-            />
-
-            <Route
-              path="/admin"
-              element={<AdminDashboardPage additionalClaims={submittedClaims} />}
-            />
-
-            <Route
-              path="/lost-items"
-              element={
-                <LostItemsPage items={items} onAddItem={handleAddItem} />
-              }
-            />
-
-            <Route
-              path="/found-items"
-              element={
-                <FoundItemsPage items={items} onAddItem={handleAddItem} />
-              }
-            />
-
-            <Route path="/login" element={<LoginPage defaultMode="signin" />} />
-
-            <Route path="/signin" element={<Navigate to="/login" replace />} />
-
-            <Route
-              path="/signup"
-              element={<LoginPage defaultMode="signup" />}
-            />
-
-            <Route path="/verify-otp" element={<VerificationPage />} />
-
-            <Route
-              path="/verify"
-              element={<Navigate to="/verify-otp" replace />}
-            />
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <AppRoutes
+            items={items}
+            submittedClaims={submittedClaims}
+            onAddItem={handleAddItem}
+            onSubmitClaim={handleSubmitClaim}
+            onBrowseLost={handleBrowseLost}
+            onBrowseFound={handleBrowseFound}
+          />
         </div>
 
         {location.pathname === "/" && <CommunityReunions />}

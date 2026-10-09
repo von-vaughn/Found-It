@@ -92,17 +92,31 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Sync initial query when opened
-  useEffect(() => {
+  // Sync query when (re)opened — derived state applied during render.
+  const [prevOpenSync, setPrevOpenSync] = useState({
+    isOpen: false,
+    initialQuery: "",
+  });
+  if (
+    isOpen !== prevOpenSync.isOpen ||
+    initialQuery !== prevOpenSync.initialQuery
+  ) {
+    setPrevOpenSync({ isOpen, initialQuery });
     if (isOpen) {
       setQuery(initialQuery);
       setHighlightedIndex(0);
-      setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      }, 50);
     }
-  }, [isOpen, initialQuery]);
+  }
+
+  // Focus the input when opened (external DOM sync only).
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
 
   // Escape listener
   useEffect(() => {
@@ -169,10 +183,15 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
   const currentItems =
     activeTab === "categories" ? filteredCategories : filteredBuildings;
 
-  // Reset highlight index when filtering or changing tabs
-  useEffect(() => {
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
     setHighlightedIndex(0);
-  }, [activeTab, query]);
+  };
+
+  const handleTabChange = (tab: "categories" | "building") => {
+    setActiveTab(tab);
+    setHighlightedIndex(0);
+  };
 
   // Scroll active item into view
   useEffect(() => {
@@ -216,6 +235,7 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
         const idx = tabOrder.indexOf(prev);
         return tabOrder[(idx + 1) % tabOrder.length];
       });
+      setHighlightedIndex(0);
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (currentItems.length > 0 && currentItems[highlightedIndex]) {
@@ -264,7 +284,7 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
                 ref={inputRef}
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => handleQueryChange(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search categories or buildings..."
                 className="flex-1 bg-transparent text-neutral-900 placeholder-neutral-400 text-base sm:text-lg focus:outline-none font-normal"
@@ -274,7 +294,7 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setQuery("");
+                    handleQueryChange("");
                     inputRef.current?.focus();
                   }}
                   className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors cursor-pointer"
@@ -300,7 +320,7 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
                 <nav aria-label="Filter groups" className="flex flex-col gap-1.5">
                   <button
                     type="button"
-                    onClick={() => setActiveTab("categories")}
+                    onClick={() => handleTabChange("categories")}
                     aria-pressed={activeTab === "categories"}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer text-left ${
                       activeTab === "categories"
@@ -314,7 +334,7 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setActiveTab("building")}
+                    onClick={() => handleTabChange("building")}
                     aria-pressed={activeTab === "building"}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer text-left ${
                       activeTab === "building"

@@ -44,16 +44,28 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync type when opened from different entry points; close on Escape.
+  // Sync type when opened from different entry points (derived state).
+  const [prevTypeSync, setPrevTypeSync] = useState({
+    isOpen: false,
+    initialType: initialType as "lost" | "found",
+  });
+  if (
+    isOpen !== prevTypeSync.isOpen ||
+    initialType !== prevTypeSync.initialType
+  ) {
+    setPrevTypeSync({ isOpen, initialType });
+    if (isOpen) setType(initialType);
+  }
+
+  // Close on Escape.
   useEffect(() => {
     if (!isOpen) return;
-    setType(initialType);
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, initialType, onClose]);
+  }, [isOpen, onClose]);
 
   // Avoid leaking object URLs created for uploaded previews.
   useEffect(() => {

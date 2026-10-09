@@ -1,0 +1,88 @@
+import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import type { ClaimRequest } from "@/types/claim";
+import { ClaimsView } from "@/components/admin/ClaimsView";
+import { claims } from "@/components/admin/adminData";
+import { AdminLayout } from "./AdminLayout";
+
+export function ClaimsPage({
+  additionalClaims = [],
+}: {
+  additionalClaims?: ClaimRequest[];
+}) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All statuses");
+  const [manualClaimId, setManualClaimId] = useState<string | null>(null);
+
+  const allClaims = useMemo(
+    () => [...additionalClaims, ...claims],
+    [additionalClaims],
+  );
+
+  const claimIdFromUrl = searchParams.get("claimId");
+  const urlClaimValid =
+    claimIdFromUrl !== null &&
+    allClaims.some((claim) => claim.id === claimIdFromUrl);
+  const manualClaimValid =
+    manualClaimId !== null &&
+    allClaims.some((claim) => claim.id === manualClaimId);
+
+  const selectedClaimId =
+    (urlClaimValid ? claimIdFromUrl : null) ??
+    (manualClaimValid ? manualClaimId : null) ??
+    allClaims[0]?.id ??
+    "";
+
+  const handleSelectClaim = (id: string) => {
+    setManualClaimId(id);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("claimId", id);
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const selectedClaim = allClaims.find(
+    (claim) => claim.id === selectedClaimId,
+  );
+
+  if (!selectedClaim) {
+    return (
+      <AdminLayout
+        activeSection="claims"
+        showSearch
+        query={query}
+        onQueryChange={setQuery}
+      >
+        <p className="px-5 py-10 text-center text-sm text-neutral-500">
+          No claims found.
+        </p>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout
+      activeSection="claims"
+      showSearch
+      query={query}
+      onQueryChange={setQuery}
+    >
+      <ClaimsView
+        claims={allClaims}
+        query={query.trim().toLowerCase()}
+        selectedClaim={selectedClaim}
+        selectedClaimId={selectedClaimId}
+        onSelectClaim={handleSelectClaim}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+      />
+    </AdminLayout>
+  );
+}
+
+export default ClaimsPage;
