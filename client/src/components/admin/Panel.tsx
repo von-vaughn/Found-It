@@ -7,6 +7,7 @@ export function Panel({
   className = "",
   borderless = false,
   stickyHeader = false,
+  titleSize = "default",
   onMouseEnter,
   onMouseLeave,
   onFocusCapture,
@@ -18,6 +19,7 @@ export function Panel({
   className?: string;
   borderless?: boolean;
   stickyHeader?: boolean;
+  titleSize?: "default" | "large";
   onMouseEnter?: React.MouseEventHandler<HTMLElement>;
   onMouseLeave?: React.MouseEventHandler<HTMLElement>;
   onFocusCapture?: React.FocusEventHandler<HTMLElement>;
@@ -35,7 +37,11 @@ export function Panel({
       <div
         className={`flex min-h-14 items-center justify-between gap-3 px-4 sm:px-5 ${borderless ? "" : "border-b border-neutral-100"} ${stickyHeader ? "sticky top-0 z-10 bg-white" : ""}`}
       >
-        <h2 className="min-w-0 truncate whitespace-nowrap text-sm font-bold text-neutral-900">
+        <h2
+          className={`min-w-0 truncate whitespace-nowrap font-bold text-neutral-900 ${
+            titleSize === "large" ? "text-lg" : "text-sm"
+          }`}
+        >
           {title}
         </h2>
         {action ? <div className="shrink-0">{action}</div> : null}

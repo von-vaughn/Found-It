@@ -29,14 +29,14 @@ export function Overview({
       value: lostCount,
       note: "Across all statuses",
       icon: PackageSearch,
-      section: "lost" as const,
+      section: "items" as const,
     },
     {
       label: "Found reports",
       value: foundCount,
       note: "Reports on file",
       icon: PackageCheck,
-      section: "found" as const,
+      section: "items" as const,
     },
     {
       label: "Claims to review",
@@ -89,7 +89,7 @@ export function Overview({
           action={
             <button
               type="button"
-              onClick={() => onNavigate("lost")}
+              onClick={() => onNavigate("items")}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               View reports

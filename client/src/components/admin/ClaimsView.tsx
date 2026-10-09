@@ -1,12 +1,15 @@
 import { useState } from "react";
+
+const PAGE_SIZE = 10;
 import {
   BadgeCheck,
   Building2,
   CalendarClock,
   CalendarDays,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
-  Image,
   MapPin,
   Palette,
   Tag,
@@ -38,6 +41,7 @@ export function ClaimsView({
   onStatusFilterChange: (value: string) => void;
 }) {
   const [submittedClaimsActive, setSubmittedClaimsActive] = useState(false);
+  const [page, setPage] = useState(1);
   const filteredClaims = claimRequests.filter(
     (claim) =>
       (statusFilter === "All statuses" || claim.status === statusFilter) &&
@@ -46,6 +50,31 @@ export function ClaimsView({
         .toLowerCase()
         .includes(query),
   );
+
+  // Reset to the first page whenever the list inputs change (derived state).
+  const [prevListKey, setPrevListKey] = useState({
+    query: "",
+    statusFilter: "",
+    total: -1,
+  });
+  if (
+    query !== prevListKey.query ||
+    statusFilter !== prevListKey.statusFilter ||
+    claimRequests.length !== prevListKey.total
+  ) {
+    setPrevListKey({ query, statusFilter, total: claimRequests.length });
+    setPage(1);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(filteredClaims.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedClaims = filteredClaims.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
+  const rangeStart =
+    filteredClaims.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * PAGE_SIZE, filteredClaims.length);
   const visibleSelectedClaim = filteredClaims.some(
     (claim) => claim.id === selectedClaimId,
   )
@@ -73,7 +102,7 @@ export function ClaimsView({
         <Panel
           title="Submitted claims"
           stickyHeader
-          className={`group overflow-x-clip no-scrollbar xl:sticky xl:top-20 xl:max-h-[min(53.5rem,calc(100dvh-6rem))] xl:self-start ${
+          className={`group overflow-x-clip no-scrollbar xl:sticky xl:top-20 xl:flex xl:h-[min(53.5rem,calc(100dvh-6rem))] xl:flex-col xl:self-start ${
             submittedClaimsActive ? "xl:overflow-y-auto" : "xl:overflow-hidden"
           }`}
           onMouseEnter={() => setSubmittedClaimsActive(true)}
@@ -107,8 +136,9 @@ export function ClaimsView({
               No claims match this search.
             </p>
           ) : (
+            <>
             <div className="divide-y divide-neutral-100">
-              {filteredClaims.map((claim) => {
+              {pagedClaims.map((claim) => {
                 const itemImage =
                   adminReports.find((report) => report.id === claim.itemId)
                     ?.image ?? "";
@@ -155,11 +185,60 @@ export function ClaimsView({
                 );
               })}
             </div>
+            {submittedClaimsActive && (
+            <div className="sticky bottom-0 z-10 mt-auto flex items-center justify-between gap-2 border-t border-neutral-100 bg-white px-4 py-3 sm:px-5">
+              <p className="text-[11px] text-neutral-500">
+                Showing {rangeStart}–{rangeEnd} of {filteredClaims.length}
+              </p>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPage(safePage - 1)}
+                    disabled={safePage <= 1}
+                    aria-label="Previous page"
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+                  >
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, index) => (
+                    <button
+                      key={index + 1}
+                      type="button"
+                      onClick={() => setPage(index + 1)}
+                      aria-label={`Page ${index + 1}`}
+                      aria-current={
+                        safePage === index + 1 ? "page" : undefined
+                      }
+                      className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors ${
+                        safePage === index + 1
+                          ? "bg-neutral-900 text-white"
+                          : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setPage(safePage + 1)}
+                    disabled={safePage >= totalPages}
+                    aria-label="Next page"
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+                  >
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+            </div>
+            )}
+            </>
           )}
         </Panel>
 
         <Panel
           title={visibleSelectedClaim?.item ?? "Claim details"}
+          titleSize="large"
           borderless
         >
           {visibleSelectedClaim ? (
@@ -171,8 +250,8 @@ export function ClaimsView({
                     className="text-sm font-bold text-neutral-900"
                   >
                     {selectedItemPost?.type === "Found"
-                      ? "Found item post"
-                      : "Original item post"}
+                      ? "Found item"
+                      : "Lost item"}
                   </h2>
                   {selectedItemPost && (
                     <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold text-neutral-600">
@@ -207,7 +286,7 @@ export function ClaimsView({
                         <p className="mt-0.5 truncate text-xs text-neutral-500">
                           {selectedItemPost.reporterEmail}
                         </p>
-                        <p className="mt-1 text-xs leading-relaxed text-neutral-700">
+                        <p className="mt-3 text-xs leading-relaxed text-neutral-700">
                           {selectedItemPost.description}
                         </p>
                         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-neutral-100 py-3 text-xs">
@@ -311,10 +390,6 @@ export function ClaimsView({
                 </div>
                 <div className="mt-3 grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                   <div className="min-w-0">
-                    <p className="inline-flex items-center gap-1 text-[10px] font-semibold text-neutral-500">
-                      <Image className="h-3 w-3" aria-hidden="true" />
-                      Claimant photo evidence
-                    </p>
                     {visibleSelectedClaim.evidence &&
                     visibleSelectedClaim.evidence.length > 0 ? (
                       <div
@@ -345,61 +420,6 @@ export function ClaimsView({
                         className="mt-2 h-72"
                       />
                     )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-neutral-800">
-                      {visibleSelectedClaim.claimant}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-neutral-500">
-                      {visibleSelectedClaim.email ??
-                        `${visibleSelectedClaim.claimant
-                          .toLowerCase()
-                          .replace(/[^a-z0-9]+/g, "_")
-                          .replace(/^_|_$/g, "")}@wmsu.edu.ph`}
-                    </p>
-                    <div className="mt-3">
-                      <p className="text-xs leading-relaxed text-neutral-700">
-                        {visibleSelectedClaim.details}
-                      </p>
-                    </div>
-                    <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                    <div>
-                      <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
-                        <CalendarDays className="h-3 w-3" aria-hidden="true" />
-                        Submitted
-                      </dt>
-                      <dd className="mt-1 font-semibold text-neutral-800">
-                        {visibleSelectedClaim.submitted}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
-                        <CalendarDays className="h-3 w-3" aria-hidden="true" />
-                        Date lost
-                      </dt>
-                      <dd className="mt-1 font-semibold text-neutral-800">
-                        {visibleSelectedClaim.dateLost}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
-                        <Clock3 className="h-3 w-3" aria-hidden="true" />
-                        Time lost
-                      </dt>
-                      <dd className="mt-1 font-semibold text-neutral-800">
-                        {visibleSelectedClaim.timeLost}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
-                        <MapPin className="h-3 w-3" aria-hidden="true" />
-                        Location lost
-                      </dt>
-                      <dd className="mt-1 font-semibold text-neutral-800">
-                        {visibleSelectedClaim.location}
-                      </dd>
-                    </div>
-                  </dl>
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       <button
                         type="button"
@@ -420,6 +440,65 @@ export function ClaimsView({
                         Reject
                       </button>
                     </div>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-neutral-800">
+                      {visibleSelectedClaim.claimant}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-neutral-500">
+                      {visibleSelectedClaim.email ??
+                        `${visibleSelectedClaim.claimant
+                          .toLowerCase()
+                          .replace(/[^a-z0-9]+/g, "_")
+                          .replace(/^_|_$/g, "")}@wmsu.edu.ph`}
+                    </p>
+                    <div className="mt-3 border-b border-neutral-100 pb-3">
+                      <p className="text-xs leading-relaxed text-neutral-700">
+                        {visibleSelectedClaim.details}
+                      </p>
+                    </div>
+                    <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                    <div>
+                      <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <CalendarDays className="h-3 w-3" aria-hidden="true" />
+                        Submitted
+                      </dt>
+                      <dd className="mt-1 font-semibold text-neutral-800">
+                        {visibleSelectedClaim.submitted}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <CalendarDays className="h-3 w-3" aria-hidden="true" />
+                        {selectedItemPost?.type === "Lost"
+                          ? "Date found"
+                          : "Date lost"}
+                      </dt>
+                      <dd className="mt-1 font-semibold text-neutral-800">
+                        {visibleSelectedClaim.dateLost}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <Clock3 className="h-3 w-3" aria-hidden="true" />
+                        {selectedItemPost?.type === "Lost"
+                          ? "Time found"
+                          : "Time lost"}
+                      </dt>
+                      <dd className="mt-1 font-semibold text-neutral-800">
+                        {visibleSelectedClaim.timeLost}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <MapPin className="h-3 w-3" aria-hidden="true" />
+                        Location lost
+                      </dt>
+                      <dd className="mt-1 font-semibold text-neutral-800">
+                        {visibleSelectedClaim.location}
+                      </dd>
+                    </div>
+                  </dl>
                   </div>
                 </div>
               </section>

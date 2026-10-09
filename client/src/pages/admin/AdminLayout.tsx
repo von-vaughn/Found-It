@@ -86,7 +86,7 @@ export function AdminLayout({
           }`}
         >
           {showSearch && onQueryChange && (
-            <div className="relative hidden min-w-0 max-w-xl flex-1 sm:block">
+            <div className="relative hidden min-w-0 flex-1 sm:block">
               <Search
                 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
                 aria-hidden="true"
@@ -141,7 +141,7 @@ export function AdminLayout({
                 onChange={(event) => onQueryChange(event.target.value)}
                 placeholder={`Search ${copy.title.toLowerCase()}…`}
                 autoComplete="off"
-                className="h-10 rounded-lg border border-neutral-200 bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
               />
             </div>
           )}

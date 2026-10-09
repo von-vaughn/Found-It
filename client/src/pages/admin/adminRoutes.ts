@@ -3,7 +3,6 @@ import { paths } from "@/routes/paths";
 
 export const adminSectionPaths: Record<AdminSection, string> = {
   overview: paths.admin,
-  lost: paths.adminLost,
-  found: paths.adminFound,
+  items: paths.adminItems,
   claims: paths.adminClaims,
 };

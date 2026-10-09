@@ -167,14 +167,6 @@ export function AdminSidebar<TSection extends string>({
           aria-label="OSA workspace"
           className="absolute left-2.5 top-[5.5rem] flex flex-col items-center space-y-3 md:left-4.5"
         >
-          <span
-            aria-hidden="true"
-            className={`absolute -top-5 left-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400 transition-opacity duration-200 ${
-              labelsVisible ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            Workspace
-          </span>
           {navigation.map(({ id, label, compactLabel, icon: Icon }) => {
             const active = activeSection === id;
             return (
@@ -326,7 +318,7 @@ export function AdminSidebar<TSection extends string>({
             </div>
             {notifications.length > 0 ? (
               <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 pt-0">
-                {notifications.map((notification) => (
+                {notifications.slice(0, 4).map((notification) => (
                   <button
                     key={notification.id}
                     type="button"

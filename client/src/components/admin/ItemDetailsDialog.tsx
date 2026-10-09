@@ -3,6 +3,28 @@ import { X } from "lucide-react";
 import { NoItemImage } from "./NoItemImage";
 import type { AdminReport } from "./types";
 
+function formatEventDate(report: AdminReport): string {
+  const eventDate = report.eventDateTime
+    ? new Date(report.eventDateTime)
+    : new Date(`${report.date}T12:00:00`);
+  if (Number.isNaN(eventDate.getTime())) return "Not provided";
+
+  return new Intl.DateTimeFormat("en-PH", {
+    dateStyle: "long",
+  }).format(eventDate);
+}
+
+function formatEventTime(report: AdminReport): string {
+  if (!report.eventDateTime) return "Not provided";
+
+  const eventDate = new Date(report.eventDateTime);
+  if (Number.isNaN(eventDate.getTime())) return "Not provided";
+
+  return new Intl.DateTimeFormat("en-PH", {
+    timeStyle: "short",
+  }).format(eventDate);
+}
+
 export function ItemDetailsDialog({
   report,
   dialogRef,
@@ -32,6 +54,12 @@ export function ItemDetailsDialog({
           >
             {report.title}
           </h2>
+          <p className="mt-1 text-xs font-medium text-neutral-800">
+            Reported by {report.reportedBy}
+          </p>
+          <p className="mt-0.5 text-xs text-neutral-500">
+            {report.reporterEmail}
+          </p>
         </div>
         <form method="dialog">
           <button
@@ -74,15 +102,15 @@ export function ItemDetailsDialog({
             </dd>
           </div>
           <div>
-            <dt className="text-[10px] text-neutral-500">Color</dt>
+            <dt className="text-[10px] text-neutral-500">Specific location</dt>
             <dd className="mt-1 font-semibold text-neutral-800">
-              {report.color || "Not specified"}
+              {report.specificLocation || "Not provided"}
             </dd>
           </div>
           <div>
-            <dt className="text-[10px] text-neutral-500">Reported by</dt>
+            <dt className="text-[10px] text-neutral-500">Color</dt>
             <dd className="mt-1 font-semibold text-neutral-800">
-              {report.reportedBy}
+              {report.color || "Not specified"}
             </dd>
           </div>
           <div>
@@ -93,6 +121,22 @@ export function ItemDetailsDialog({
                 day: "numeric",
                 year: "numeric",
               }).format(new Date(`${report.date}T12:00:00`))}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[10px] text-neutral-500">
+              {report.type === "Lost" ? "Date lost" : "Date found"}
+            </dt>
+            <dd className="mt-1 font-semibold text-neutral-800">
+              {formatEventDate(report)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[10px] text-neutral-500">
+              {report.type === "Lost" ? "Time lost" : "Time found"}
+            </dt>
+            <dd className="mt-1 font-semibold text-neutral-800">
+              {formatEventTime(report)}
             </dd>
           </div>
         </dl>

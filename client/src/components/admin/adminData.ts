@@ -263,16 +263,10 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
     icon: LayoutDashboard,
   },
   {
-    id: "lost",
-    label: "Lost items",
-    compactLabel: "Lost",
+    id: "items",
+    label: "Items",
+    compactLabel: "Items",
     icon: PackageSearch,
-  },
-  {
-    id: "found",
-    label: "Found items",
-    compactLabel: "Found",
-    icon: PackageCheck,
   },
   { id: "claims", label: "Claims", compactLabel: "Claims", icon: BadgeCheck },
 ];
@@ -282,13 +276,9 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
     title: "Operations overview",
     description: "A current view of campus lost and found activity.",
   },
-  lost: {
-    title: "Lost item reports",
-    description: "Search and review reports for items reported lost.",
-  },
-  found: {
-    title: "Found item reports",
-    description: "Track found items and reports awaiting collection.",
+  items: {
+    title: "Lost & found reports",
+    description: "Search, filter, and review all lost and found item reports.",
   },
   claims: {
     title: "Ownership claims",

@@ -1,7 +1,7 @@
 import type { RouteObject } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { OverviewPage } from "@/pages/admin/OverviewPage";
-import { LostReportsPage } from "@/pages/admin/LostReportsPage";
-import { FoundReportsPage } from "@/pages/admin/FoundReportsPage";
+import { ReportsPage } from "@/pages/admin/ReportsPage";
 import { ClaimsPage } from "@/pages/admin/ClaimsPage";
 import type { ClaimRequest } from "@/types/claim";
 import { paths } from "./paths";
@@ -15,8 +15,9 @@ export function getAdminRoutes({
 }: AdminRoutesOptions): RouteObject[] {
   return [
     { path: paths.admin, element: <OverviewPage /> },
-    { path: paths.adminLost, element: <LostReportsPage /> },
-    { path: paths.adminFound, element: <FoundReportsPage /> },
+    { path: paths.adminItems, element: <ReportsPage /> },
+    { path: paths.adminLost, element: <Navigate to={paths.adminItems} replace /> },
+    { path: paths.adminFound, element: <Navigate to={paths.adminItems} replace /> },
     {
       path: paths.adminClaims,
       element: <ClaimsPage additionalClaims={submittedClaims} />,
