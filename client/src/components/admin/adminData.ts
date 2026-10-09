@@ -23,8 +23,14 @@ export const adminReports: AdminReport[] = initialItems.map((item) => ({
     "Other",
   description: item.description,
   building: item.building || item.location,
+  buildingName: item.building,
+  specificLocation: item.location,
   color: item.color ?? "",
   reportedBy: item.contactName,
+  reporterEmail: `${(
+    item.username ||
+    item.contactName.toLowerCase().replace(/\s+/g, "_")
+  ).toLowerCase()}@wmsu.edu.ph`,
   status:
     item.status === "reunited"
       ? item.type === "lost"
@@ -34,6 +40,7 @@ export const adminReports: AdminReport[] = initialItems.map((item) => ({
         ? "Lost"
         : "Found",
   date: item.date,
+  eventDateTime: item.dateTime,
 }));
 
 export const claims: AdminClaim[] = [
@@ -44,7 +51,7 @@ export const claims: AdminClaim[] = [
     itemId: "item-1",
     claimant: "Mika Ross",
     dateLost: "October 3, 2026",
-    timeLost: "Around 2:30 PM",
+    timeLost: "2:30 PM",
     location: "Library Building",
     details:
       "The front pocket has a small keychain shaped like a blue star. A physics notebook is inside.",
@@ -57,7 +64,7 @@ export const claims: AdminClaim[] = [
     itemId: "item-4",
     claimant: "Janelle Cruz",
     dateLost: "October 1, 2026",
-    timeLost: "Around 11:00 AM",
+    timeLost: "11:00 AM",
     location: "Main Gate",
     details:
       "Brown leather wallet with a folded library receipt behind the student ID.",
@@ -70,7 +77,7 @@ export const claims: AdminClaim[] = [
     itemId: "item-2",
     claimant: "Alyssa Moore",
     dateLost: "October 3, 2026",
-    timeLost: "Around 10:15 AM",
+    timeLost: "10:15 AM",
     location: "Library Building",
     details:
       "White iPhone 13 with a clear case. The lock screen has a photo of my dog.",
@@ -83,7 +90,7 @@ export const claims: AdminClaim[] = [
     itemId: "item-8",
     claimant: "Rohan Patel",
     dateLost: "September 29, 2026",
-    timeLost: "Around 1:00 PM",
+    timeLost: "1:00 PM",
     location: "Admin Building",
     details:
       "Blue spiral notebook with my initials written inside the front cover.",
@@ -108,7 +115,7 @@ export const claims: AdminClaim[] = [
     itemId: "item-12",
     claimant: "Gabriel Santos",
     dateLost: "September 27, 2026",
-    timeLost: "Around 4:30 PM",
+    timeLost: "4:30 PM",
     location: "Parking Lot",
     details:
       "Toyota car keys with a black fob and a small red tag on the key ring.",
@@ -126,6 +133,71 @@ export const claims: AdminClaim[] = [
     details:
       "Blue bottle with two stickers near the base and a name written underneath.",
     submitted: "October 7, 2026, 3:18 PM",
+  },
+  {
+    id: "CL-2401",
+    status: "Under review" as const,
+    item: "Prescription Glasses",
+    itemId: "item-3",
+    claimant: "Denise Aquino",
+    dateLost: "October 2, 2026",
+    timeLost: "9:00 AM",
+    location: "Student Center",
+    details:
+      "Black rectangular frames with a small scratch on the left lens. The case has my initials on it.",
+    submitted: "October 7, 2026, 10:05 AM",
+  },
+  {
+    id: "CL-2400",
+    status: "Pending" as const,
+    item: "AirPods (Case)",
+    itemId: "item-5",
+    claimant: "Marco Villanueva",
+    dateLost: "October 1, 2026",
+    timeLost: "After gym class",
+    location: "Gymnasium",
+    details:
+      "White charging case with a small dentist sticker on the lid. Only the case, the buds were in my ears.",
+    submitted: "October 6, 2026, 5:47 PM",
+  },
+  {
+    id: "CL-2399",
+    status: "Pending" as const,
+    item: "Laptop Charger",
+    itemId: "item-7",
+    claimant: "Paula Domingo",
+    dateLost: "September 26, 2026",
+    timeLost: "3:15 PM",
+    location: "Parking Lot",
+    details:
+      "Black 65W charger with a frayed cable near the brick. A white label with my surname is wrapped around it.",
+    submitted: "October 6, 2026, 1:20 PM",
+  },
+  {
+    id: "CL-2398",
+    status: "Under review" as const,
+    item: "Calculator",
+    itemId: "item-9",
+    claimant: "Kevin Tan",
+    dateLost: "September 25, 2026",
+    timeLost: "During the morning exam",
+    location: "Science Hall",
+    details:
+      "Black scientific calculator with a faded solar panel. My student number is written on the back cover.",
+    submitted: "October 5, 2026, 8:33 AM",
+  },
+  {
+    id: "CL-2397",
+    status: "Pending" as const,
+    item: "Student ID",
+    itemId: "item-11",
+    claimant: "Andrea Lim",
+    dateLost: "September 24, 2026",
+    timeLost: "12:30 PM",
+    location: "Library",
+    details:
+      "WMSU student ID with a blue lanyard. The photo corner is slightly bent from daily use.",
+    submitted: "October 4, 2026, 4:02 PM",
   },
 ];
 

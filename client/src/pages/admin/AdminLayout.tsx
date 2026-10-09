@@ -12,6 +12,7 @@ import {
   pageCopy,
 } from "@/components/admin/adminData";
 import type { AdminSection } from "@/components/admin/types";
+import { takeAdminSidebarExpanded } from "@/components/admin/sidebarStickyState";
 import { adminSectionPaths } from "./adminRoutes";
 
 interface AdminLayoutProps {
@@ -32,7 +33,11 @@ export function AdminLayout({
   children,
 }: AdminLayoutProps) {
   const navigate = useNavigate();
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  // Restore the expanded state carried over from a nav-icon click (only set
+  // when the pointer was over the sidebar). Fresh loads start collapsed.
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
+    takeAdminSidebarExpanded(),
+  );
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] =
     useState<AdminNotification[]>(initialNotifications);
@@ -114,11 +119,6 @@ export function AdminLayout({
           </a>
           <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div className="min-w-0">
-              <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold text-neutral-500">
-                <span>OSA workspace</span>
-                <span aria-hidden="true">/</span>
-                <span>{copy.title}</span>
-              </div>
               <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 sm:text-2xl">
                 {copy.title}
               </h1>

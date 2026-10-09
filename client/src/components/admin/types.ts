@@ -12,10 +12,14 @@ export interface AdminReport {
   category: string;
   description: string;
   building: string;
+  buildingName?: string;
+  specificLocation: string;
   color: string;
   reportedBy: string;
+  reporterEmail: string;
   status: RecordStatus;
   date: string;
+  eventDateTime?: string;
 }
 
 export type AdminClaim = ClaimRequest;

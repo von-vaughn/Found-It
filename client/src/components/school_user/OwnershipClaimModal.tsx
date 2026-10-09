@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CalendarDays, Clock3, ImagePlus, Info, MapPin, X } from "lucide-react";
+import { CalendarDays, Clock3, ImagePlus, MapPin, X } from "lucide-react";
 import toast from "react-hot-toast";
 import type { NewClaimRequest } from "@/types/claim";
 
@@ -210,20 +210,6 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
           additional information, lost date, time, and location are required;
           picture evidence is optional.
         </p>
-
-        <div
-          role="note"
-          className="mt-4 flex gap-2.5 rounded-xl bg-neutral-50 p-3.5 text-xs leading-relaxed text-neutral-600"
-        >
-          <Info
-            className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500"
-            aria-hidden="true"
-          />
-          <p>
-            This demo keeps claim details and pictures available for admin
-            review during this browser session. Nothing is sent to a server.
-          </p>
-        </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>

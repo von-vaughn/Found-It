@@ -4,6 +4,7 @@ export type {
   AdminSidebarItem,
 } from "./AdminSidebar";
 export { StatusBadge } from "./StatusBadge";
+export { NoItemImage } from "./NoItemImage";
 export { Panel } from "./Panel";
 export { StatusFilter } from "./StatusFilter";
 export { ItemTable } from "./ItemTable";

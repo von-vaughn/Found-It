@@ -259,9 +259,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <h2 className="font-bold text-base text-neutral-900">
                 Notifications
               </h2>
-              <p className="mt-0.5 text-xs text-neutral-500">
-                Updates about your items
-              </p>
             </div>
             <button
               type="button"

@@ -1,5 +1,5 @@
-import { Package } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
+import { NoItemImage } from "./NoItemImage";
 import type { AdminReport } from "./types";
 
 export function ItemTable({
@@ -103,12 +103,7 @@ export function ItemTable({
                       className="h-12 w-12 shrink-0 rounded-lg object-cover"
                     />
                   ) : (
-                    <span
-                      aria-hidden="true"
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
-                    >
-                      <Package className="h-5 w-5" />
-                    </span>
+                    <NoItemImage compact className="h-12 w-12" />
                   )}
                   <span className="min-w-0">
                     <span className="block truncate font-semibold text-neutral-900">

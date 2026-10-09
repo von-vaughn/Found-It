@@ -1,5 +1,6 @@
 import type { RefObject } from "react";
-import { Package, X } from "lucide-react";
+import { X } from "lucide-react";
+import { NoItemImage } from "./NoItemImage";
 import type { AdminReport } from "./types";
 
 export function ItemDetailsDialog({
@@ -50,12 +51,11 @@ export function ItemDetailsDialog({
             className="max-h-72 w-full rounded-lg bg-neutral-50 object-contain"
           />
         ) : (
-          <div
-            aria-hidden="true"
-            className="flex h-48 items-center justify-center rounded-lg bg-neutral-100 text-neutral-400"
-          >
-            <Package className="h-8 w-8" />
-          </div>
+          <NoItemImage
+            title="No item photo provided"
+            subtitle="This report did not include any photos of the item."
+            className="h-48"
+          />
         )}
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">
           {report.description}

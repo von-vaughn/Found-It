@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, ChevronDown, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { rememberAdminSidebarExpanded } from "./sidebarStickyState";
 
 export interface AdminNotification {
   id: string;
@@ -151,7 +152,7 @@ export function AdminSidebar<TSection extends string>({
           />
           <span
             aria-hidden="true"
-            className={`pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 transition-opacity duration-200 ${
+            className={`absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 transition-opacity duration-200 ${
               labelsVisible ? "opacity-100" : "opacity-0"
             }`}
           >
@@ -183,7 +184,16 @@ export function AdminSidebar<TSection extends string>({
                 title={label}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
-                onClick={() => onSectionChange(id)}
+                onClick={() => {
+                  // Keep the sidebar open across navigation only while the
+                  // pointer is over it; otherwise let the next layout mount
+                  // collapsed. Moving the mouse out still closes it via
+                  // onMouseLeave.
+                  rememberAdminSidebarExpanded(
+                    asideRef.current?.matches(":hover") ?? false,
+                  );
+                  onSectionChange(id);
+                }}
                 className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl ${
                   active
                     ? "bg-rose-50 text-[#E5192D] shadow-xs"
@@ -199,7 +209,7 @@ export function AdminSidebar<TSection extends string>({
                 <span className="sr-only">{compactLabel}</span>
                 <span
                   aria-hidden="true"
-                  className={`pointer-events-none absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold transition-opacity duration-200 ${
+                  className={`absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold transition-opacity duration-200 ${
                     labelsVisible ? "opacity-100" : "opacity-0"
                   }`}
                 >
@@ -237,7 +247,7 @@ export function AdminSidebar<TSection extends string>({
             )}
             <span
               aria-hidden="true"
-              className={`pointer-events-none absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold transition-opacity duration-200 ${
+              className={`absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold transition-opacity duration-200 ${
                 labelsVisible ? "opacity-100" : "opacity-0"
               }`}
             >
@@ -290,9 +300,6 @@ export function AdminSidebar<TSection extends string>({
                 <h2 className="text-base font-bold text-neutral-900">
                   Notifications
                 </h2>
-                <p className="mt-0.5 text-xs text-neutral-500">
-                  Updates about campus items and claims
-                </p>
               </div>
               <button
                 type="button"
