@@ -4,6 +4,7 @@ import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 interface NavbarProps {
   onReportClick?: (type: "lost" | "found") => void;
@@ -12,11 +13,19 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<"signin" | "signup" | null>(
+    null,
+  );
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
+
+  const openAuthModal = (mode: "signin" | "signup") => {
+    setMobileMenuOpen(false);
+    setAuthModalMode(mode);
+  };
 
   const moveIndicator = (linkElement: HTMLButtonElement) => {
     const indicator = indicatorRef.current;
@@ -99,6 +108,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-neutral-100 transition-all shadow-xs">
       <div
         className={`${isScrolled ? "md:w-[calc(100%-15rem)]" : ""} w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between transition-[width] duration-300 ease-out`}
@@ -166,7 +176,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 variant="outline"
                 size="sm"
                 onClick={logout}
-                className="h-10 px-4 rounded-full border-neutral-200 text-neutral-700 hover:text-[#E5192D] hover:border-red-200 hover:bg-red-50 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all"
+                className="h-10 px-4 rounded-full border-neutral-200 text-neutral-700 hover:text-[#E5192D] hover:border-neutral-300 hover:bg-neutral-50 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 Sign out
@@ -176,23 +186,17 @@ export const Navbar: React.FC<NavbarProps> = () => {
             <>
               <button
                 type="button"
-                onClick={() => {
-                  navigate("/signup");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                onClick={() => openAuthModal("signin")}
                 className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 px-3 py-2 transition-colors cursor-pointer"
               >
-                Sign up
+                Sign in
               </button>
 
               <Button
-                onClick={() => {
-                  navigate("/login");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                onClick={() => openAuthModal("signup")}
                 className="h-11 px-6 rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               >
-                Sign in
+                Sign up
               </Button>
             </>
           )}
@@ -211,10 +215,10 @@ export const Navbar: React.FC<NavbarProps> = () => {
           ) : (
             <Button
               size="sm"
-              onClick={() => navigate("/login")}
+              onClick={() => openAuthModal("signup")}
               className="h-9 px-3.5 rounded-full bg-[#E5192D] text-white text-xs font-semibold cursor-pointer"
             >
-              Sign in
+              Sign up
             </Button>
           )}
           <button
@@ -276,22 +280,16 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 ) : (
                   <>
                     <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        navigate("/signup");
-                      }}
+                      onClick={() => openAuthModal("signin")}
                       className="text-left py-2 text-sm font-semibold text-neutral-700 hover:text-neutral-900"
                     >
-                      Create an account (Sign up)
+                      Sign in
                     </button>
                     <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        navigate("/login");
-                      }}
+                      onClick={() => openAuthModal("signup")}
                       className="text-left py-2 text-sm font-semibold text-[#E5192D]"
                     >
-                      Sign in with 6-digit code
+                      Create an account (Sign up)
                     </button>
                   </>
                 )}
@@ -301,5 +299,15 @@ export const Navbar: React.FC<NavbarProps> = () => {
         )}
       </AnimatePresence>
     </header>
+    <AnimatePresence>
+      {authModalMode && (
+        <AuthModal
+          key={authModalMode}
+          initialMode={authModalMode}
+          onClose={() => setAuthModalMode(null)}
+        />
+      )}
+    </AnimatePresence>
+    </>
   );
 };
