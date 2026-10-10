@@ -7,7 +7,13 @@ import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppRoutes } from "@/routes";
 import { initialItems, type Item } from "@/data/mockItems";
-import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
+import { initialReturnRequests } from "@/components/admin/adminData";
+import type {
+  ClaimRequest,
+  NewClaimRequest,
+  NewReturnItemRequest,
+  ReturnItemRequest,
+} from "@/types/claim";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -20,6 +26,9 @@ function ScrollToTop() {
 export function App() {
   const [items, setItems] = useState<Item[]>(initialItems);
   const [submittedClaims, setSubmittedClaims] = useState<ClaimRequest[]>([]);
+  const [returnRequests, setReturnRequests] = useState<ReturnItemRequest[]>(
+    initialReturnRequests,
+  );
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -59,6 +68,37 @@ export function App() {
   ) => {
     setSubmittedClaims((current) =>
       current.map((claim) => (claim.id === claimId ? { ...claim, status } : claim)),
+    );
+  };
+
+  const handleSubmitReturnRequest = (request: NewReturnItemRequest) => {
+    setReturnRequests((current) => {
+      if (current.some((entry) => entry.sourceClaimId === request.sourceClaimId)) {
+        return current;
+      }
+      return [
+        {
+          ...request,
+          id: `RT-${String(Date.now()).slice(-6)}`,
+          status: "Pending",
+          submitted: new Intl.DateTimeFormat("en", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }).format(new Date()),
+        },
+        ...current,
+      ];
+    });
+  };
+
+  const handleUpdateReturnRequestStatus = (
+    requestId: string,
+    status: ReturnItemRequest["status"],
+  ) => {
+    setReturnRequests((current) =>
+      current.map((request) =>
+        request.id === requestId ? { ...request, status } : request,
+      ),
     );
   };
 
@@ -111,6 +151,9 @@ export function App() {
             onDeleteItem={handleDeleteItem}
             onSubmitClaim={handleSubmitClaim}
             onUpdateClaimStatus={handleUpdateClaimStatus}
+            returnRequests={returnRequests}
+            onSubmitReturnRequest={handleSubmitReturnRequest}
+            onUpdateReturnRequestStatus={handleUpdateReturnRequestStatus}
             onBrowseLost={handleBrowseLost}
             onBrowseFound={handleBrowseFound}
           />

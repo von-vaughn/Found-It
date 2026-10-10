@@ -25,17 +25,24 @@ import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems, type Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
-import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
+import type {
+  ClaimRequest,
+  NewClaimRequest,
+  NewReturnItemRequest,
+  ReturnItemRequest,
+} from "@/types/claim";
 import { getClaimantEmail } from "@/types/claim";
 import { claims as demoClaims } from "@/components/admin/adminData";
 
 interface ItemDetailPageProps {
   items?: Item[];
   submittedClaims?: ClaimRequest[];
+  returnRequests?: ReturnItemRequest[];
   onAddItem?: (newItem: Item) => void;
   onUpdateItem?: (updatedItem: Item) => void;
   onDeleteItem?: (id: string) => void;
   onSubmitClaim?: (claim: NewClaimRequest) => void;
+  onSubmitReturnRequest?: (request: NewReturnItemRequest) => void;
   onUpdateClaimStatus?: (
     claimId: string,
     status: ClaimRequest["status"],
@@ -46,6 +53,7 @@ const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
 
 const finderStatusStyles: Record<string, string> = {
   Pending: "bg-amber-50 text-amber-700",
+  "Pending admin approval": "bg-amber-50 text-amber-700",
   "Under review": "bg-blue-50 text-blue-800",
   Approved: "bg-emerald-50 text-emerald-700",
   Claimed: "bg-emerald-50 text-emerald-700",
@@ -56,10 +64,12 @@ const finderStatusStyles: Record<string, string> = {
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   items: propItems,
   submittedClaims = [],
+  returnRequests = [],
   onAddItem: propOnAddItem,
   onUpdateItem: propOnUpdateItem,
   onDeleteItem: propOnDeleteItem,
   onSubmitClaim,
+  onSubmitReturnRequest,
   onUpdateClaimStatus,
 }) => {
   const { id } = useParams<{ id: string }>();
@@ -148,23 +158,41 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   };
 
   const handleResponseDecision = (
-    claimId: string,
+    claim: ClaimRequest,
     decision: "mine" | "not-mine",
+    lostItemTitle: string,
   ) => {
     if (decision === "mine") {
-      setClaimStatusOverrides((current) => ({
-        ...current,
-        [claimId]: "Pending",
-      }));
-      toast.success("Marked as yours. The response remains pending.");
+      if (
+        returnRequests.some(
+          (request) => request.sourceClaimId === claim.id,
+        )
+      ) {
+        toast.error("This response has already been sent for admin review.");
+        return;
+      }
+      onSubmitReturnRequest?.({
+        sourceClaimId: claim.id,
+        lostItemTitle,
+        item: claim.item,
+        itemId: claim.itemId,
+        claimant: claim.claimant,
+        email: claim.email,
+        dateLost: claim.dateLost,
+        timeLost: claim.timeLost,
+        location: claim.location,
+        details: claim.details,
+        evidence: claim.evidence,
+      });
+      toast.success("Sent to the admin for return approval.");
       return;
     }
 
     setClaimStatusOverrides((current) => ({
       ...current,
-      [claimId]: "Rejected",
+      [claim.id]: "Rejected",
     }));
-    onUpdateClaimStatus?.(claimId, "Rejected");
+    onUpdateClaimStatus?.(claim.id, "Rejected");
     toast.success("Response marked as not yours.");
   };
 
@@ -526,8 +554,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               {finderReports.length > 0 ? (
                 <ul className="mt-4 space-y-3">
                   {finderReports.map((claim) => {
-                    const claimStatus =
-                      claimStatusOverrides[claim.id] ?? claim.status;
+                    const returnRequest = returnRequests.find(
+                      (request) => request.sourceClaimId === claim.id,
+                    );
+                    const claimStatus = returnRequest
+                      ? returnRequest.status === "Pending"
+                        ? "Pending admin approval"
+                        : returnRequest.status
+                      : claimStatusOverrides[claim.id] ?? claim.status;
 
                     return (
                       <li
@@ -618,12 +652,12 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </dd>
                             </div>
                           </dl>
-                          {claimStatus === "Pending" && (
+                          {claimStatus === "Pending" && !returnRequest && (
                             <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-neutral-100 pt-3">
                               <button
                                 type="button"
                                 onClick={() =>
-                                  handleResponseDecision(claim.id, "not-mine")
+                                  handleResponseDecision(claim, "not-mine", item.title)
                                 }
                                 className="min-h-10 rounded-full border border-neutral-300 px-4 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
                               >
@@ -632,7 +666,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               <button
                                 type="button"
                                 onClick={() =>
-                                  handleResponseDecision(claim.id, "mine")
+                                  handleResponseDecision(claim, "mine", item.title)
                                 }
                                 className="min-h-10 rounded-full bg-[#E5192D] px-4 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                               >

@@ -20,7 +20,7 @@ interface BrowseItemsPageProps {
   onAddItem: (newItem: Item) => void;
 }
 
-type BrowseTab = "lost" | "found";
+type BrowseTab = "all" | "lost" | "found";
 
 export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
   items,
@@ -36,8 +36,11 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
   const categoryMeasureRef = useRef<HTMLDivElement>(null);
   const moreCategoryMeasureRef = useRef<HTMLButtonElement>(null);
   const searchQuery = searchParams.get("q") || "";
+  const requestedType = searchParams.get("type");
   const activeTab: BrowseTab =
-    searchParams.get("type") === "found" ? "found" : "lost";
+    requestedType === "all" || requestedType === "found"
+      ? requestedType
+      : "lost";
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
@@ -66,7 +69,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
   };
 
   const categories = [
-    { id: "all", label: "All Items" },
+    { id: "all", label: "All" },
     ...ITEM_CATEGORIES,
   ];
   const visibleCategories = categories.slice(0, visibleCategoryCount);
@@ -124,7 +127,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
 
   const filteredItems = applyAdvancedFilters(
     items.filter((item) => {
-      if (item.type !== activeTab) return false;
+      if (activeTab !== "all" && item.type !== activeTab) return false;
       const matchesCategory =
         selectedCategory === "all"
           ? true
@@ -141,31 +144,74 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
 
   const activeFilterCount = countActiveFilters(filters);
 
-  const isLost = activeTab === "lost";
+  const activeTabLabel =
+    activeTab === "all" ? "all" : activeTab === "lost" ? "lost" : "found";
 
   return (
     <div className="min-h-screen bg-neutral-50/50 py-10 sm:py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-4 mb-8 w-full">
-          <form onSubmit={handleSearchSubmit} className="w-full">
-            <div className="relative flex min-w-0 flex-1 items-center">
-              <Search
-                className="pointer-events-none absolute left-3.5 h-4 w-4 text-neutral-400"
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) =>
-                  handleSearchQueryChange(event.target.value)
-                }
-                placeholder={`Search ${activeTab} items by name…`}
-                aria-label={`Search ${activeTab} items by name`}
-                autoComplete="off"
-                className="h-12 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-4 text-sm text-neutral-800 shadow-xs placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-              />
-            </div>
-          </form>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <nav
+              aria-label="Filter items by type"
+              className="flex shrink-0 items-center gap-4"
+            >
+              {(
+                [
+                  { id: "all", label: "All" },
+                  { id: "lost", label: "Lost Item" },
+                  { id: "found", label: "Found Item" },
+                ] as const
+              ).map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() =>
+                      updateParams({
+                        type: isActive && tab.id !== "all" ? "all" : tab.id,
+                      })
+                    }
+                    aria-pressed={isActive}
+                    className={`relative cursor-pointer whitespace-nowrap px-1 py-1 text-sm font-bold transition-colors ${
+                      isActive
+                        ? "text-neutral-900"
+                        : "text-neutral-400 hover:text-neutral-700"
+                    }`}
+                  >
+                    {tab.label}
+                    {isActive && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute -bottom-1 left-0 right-0 h-[2.5px] rounded-full bg-neutral-900"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            <form onSubmit={handleSearchSubmit} className="min-w-0 flex-1">
+              <div className="relative flex min-w-0 flex-1 items-center">
+                <Search
+                  className="pointer-events-none absolute left-3.5 h-4 w-4 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) =>
+                    handleSearchQueryChange(event.target.value)
+                  }
+                  placeholder={`Search ${activeTab} items by name…`}
+                  aria-label={`Search ${activeTab} items by name`}
+                  autoComplete="off"
+                  className="h-12 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-4 text-sm text-neutral-800 shadow-xs placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                />
+              </div>
+            </form>
+          </div>
 
           <div
             ref={categoryRowRef}
@@ -255,26 +301,29 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
               />
             ))}
           </div>
-        ) : isLost ? (
+        ) : (
           <div className="text-center py-16 px-4 bg-white rounded-3xl border border-dashed border-neutral-200 mt-6 shadow-xs">
             <div className="w-14 h-14 bg-red-100/60 rounded-full flex items-center justify-center mx-auto mb-4 text-[#E5192D]">
               <Search className="w-7 h-7" />
             </div>
             <h3 className="text-lg font-bold text-neutral-800">
-              No lost items match your search
+              No {activeTabLabel} items match your search
             </h3>
             <p className="text-sm text-neutral-500 mt-1 max-w-md mx-auto">
-              We couldn&apos;t find any lost items matching &ldquo;
+              We couldn&apos;t find any {activeTabLabel} items matching &ldquo;
               {searchQuery}
-              &rdquo;. Try clearing your filters or report a new lost item.
+              &rdquo;. Try clearing your filters
+              {activeTab === "lost" ? " or report a new lost item." : "."}
             </p>
             <div className="mt-6 flex justify-center gap-3">
-              <Button
-                onClick={() => setIsReportModalOpen(true)}
-                className="rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold text-xs px-5 shadow-sm"
-              >
-                Report Lost Item
-              </Button>
+              {activeTab === "lost" && (
+                <Button
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold text-xs px-5 shadow-sm"
+                >
+                  Report Lost Item
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => {
@@ -288,10 +337,6 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
               </Button>
             </div>
           </div>
-        ) : (
-          <p className="text-center text-neutral-500 py-16">
-            No found items match your search.
-          </p>
         )}
       </div>
 
@@ -301,7 +346,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
         key={activeTab}
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
-        defaultType={activeTab}
+        defaultType={activeTab === "found" ? "found" : "lost"}
         onAddItem={onAddItem}
       />
 

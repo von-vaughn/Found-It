@@ -3,12 +3,15 @@ import { useSearchParams } from "react-router-dom";
 import type { ClaimRequest } from "@/types/claim";
 import type { RecordStatus } from "@/components/admin/types";
 import { ClaimsView } from "@/components/admin/ClaimsView";
-import { claims } from "@/components/admin/adminData";
+import { claims, itemToAdminReport } from "@/components/admin/adminData";
+import type { Item } from "@/data/mockItems";
 import { AdminLayout } from "./AdminLayout";
 
 export function ClaimsPage({
+  items,
   additionalClaims = [],
 }: {
+  items: Item[];
   additionalClaims?: ClaimRequest[];
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,25 +28,43 @@ export function ClaimsPage({
   const allClaims = useMemo(
     () =>
       [...additionalClaims, ...claims].map((claim) =>
-        claimStatuses[claim.id]
-          ? { ...claim, status: claimStatuses[claim.id] }
-          : claim,
+        {
+          const status = claimStatuses[claim.id] ?? claim.status;
+          return {
+            ...claim,
+            status: status === "Under review" ? "Pending" : status,
+          };
+        },
       ),
     [additionalClaims, claimStatuses],
+  );
+  const reports = useMemo(() => items.map(itemToAdminReport), [items]);
+  const foundItemIds = useMemo(
+    () =>
+      new Set(
+        reports
+          .filter((report) => report.type === "Found")
+          .map((report) => report.id),
+      ),
+    [reports],
+  );
+  const foundItemClaims = useMemo(
+    () => allClaims.filter((claim) => foundItemIds.has(claim.itemId)),
+    [allClaims, foundItemIds],
   );
 
   const claimIdFromUrl = searchParams.get("claimId");
   const urlClaimValid =
     claimIdFromUrl !== null &&
-    allClaims.some((claim) => claim.id === claimIdFromUrl);
+    foundItemClaims.some((claim) => claim.id === claimIdFromUrl);
   const manualClaimValid =
     manualClaimId !== null &&
-    allClaims.some((claim) => claim.id === manualClaimId);
+    foundItemClaims.some((claim) => claim.id === manualClaimId);
 
   const selectedClaimId =
     (urlClaimValid ? claimIdFromUrl : null) ??
     (manualClaimValid ? manualClaimId : null) ??
-    allClaims[0]?.id ??
+    foundItemClaims[0]?.id ??
     "";
 
   const handleSelectClaim = (id: string) => {
@@ -69,7 +90,7 @@ export function ClaimsPage({
     setItemStatuses((current) => ({ ...current, [itemId]: status }));
   };
 
-  const selectedClaim = allClaims.find(
+  const selectedClaim = foundItemClaims.find(
     (claim) => claim.id === selectedClaimId,
   );
 
@@ -96,7 +117,8 @@ export function ClaimsPage({
       onQueryChange={setQuery}
     >
       <ClaimsView
-        claims={allClaims}
+        claims={foundItemClaims}
+        reports={reports}
         query={query.trim().toLowerCase()}
         selectedClaim={selectedClaim}
         selectedClaimId={selectedClaimId}

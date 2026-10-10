@@ -111,7 +111,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   const categories = [
-    { id: "all", label: "All Items" },
+    { id: "all", label: "All" },
     ...ITEM_CATEGORIES.filter((category) => category.id !== "eyewear"),
   ] as const;
   const visibleCategories = categories.slice(0, visibleCategoryCount);

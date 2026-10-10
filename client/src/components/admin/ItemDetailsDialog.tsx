@@ -1,5 +1,6 @@
 import type { RefObject } from "react";
-import { X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
+import toast from "react-hot-toast";
 import { NoItemImage } from "./NoItemImage";
 import type { AdminReport } from "./types";
 
@@ -29,12 +30,23 @@ export function ItemDetailsDialog({
   report,
   dialogRef,
   onClose,
+  onDelete,
 }: {
   report: AdminReport | null;
   dialogRef: RefObject<HTMLDialogElement | null>;
   onClose: () => void;
+  onDelete?: (id: string) => void;
 }) {
   if (!report) return null;
+
+  const handleDelete = () => {
+    if (!onDelete) return;
+    if (!window.confirm(`Delete the report for "${report.title}"? This cannot be undone.`)) {
+      return;
+    }
+    onDelete(report.id);
+    toast.success("Item report deleted.");
+  };
 
   return (
     <dialog
@@ -140,6 +152,18 @@ export function ItemDetailsDialog({
             </dd>
           </div>
         </dl>
+        {onDelete && (
+          <div className="flex justify-end border-t border-neutral-100 pt-4">
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 px-3 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Delete report
+            </button>
+          </div>
+        )}
       </div>
     </dialog>
   );

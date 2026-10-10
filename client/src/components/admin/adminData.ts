@@ -7,13 +7,15 @@ import {
   LayoutDashboard,
   PackageCheck,
   PackageSearch,
+  RotateCcw,
 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems } from "@/data/mockItems";
 import type { AdminNotification, AdminSidebarItem } from "./AdminSidebar";
 import type { AdminReport, AdminSection, AdminClaim } from "./types";
+import type { ReturnItemRequest } from "@/types/claim";
 
-export const adminReports: AdminReport[] = initialItems.map((item) => ({
+export const itemToAdminReport = (item: (typeof initialItems)[number]): AdminReport => ({
   id: item.id,
   title: item.title,
   type: item.type === "lost" ? "Lost" : "Found",
@@ -41,7 +43,9 @@ export const adminReports: AdminReport[] = initialItems.map((item) => ({
         : "Found",
   date: item.date,
   eventDateTime: item.dateTime,
-}));
+});
+
+export const adminReports: AdminReport[] = initialItems.map(itemToAdminReport);
 
 export const claims: AdminClaim[] = [
   {
@@ -214,6 +218,26 @@ export const claims: AdminClaim[] = [
   },
 ];
 
+export const initialReturnRequests: ReturnItemRequest[] = [
+  {
+    id: "RT-EXAMPLE-1",
+    sourceClaimId: "CL-2408",
+    lostItemTitle: "Black Backpack",
+    status: "Pending",
+    item: "Black Backpack",
+    itemId: "item-1",
+    claimant: "Mika Ross",
+    email: "mika.ross@wmsu.edu.ph",
+    dateLost: "October 10, 2026",
+    timeLost: "9:15 AM",
+    location: "Library Building",
+    details:
+      "I found this black backpack near the library. It has a small blue star keychain on the front pocket.",
+    submitted: "Today, 9:30 AM",
+    evidence: [],
+  },
+];
+
 export const initialNotifications: AdminNotification[] = claims.map(
   (claim) => ({
     id: claim.id,
@@ -282,6 +306,12 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
     icon: PackageSearch,
   },
   { id: "claims", label: "Claims", compactLabel: "Claims", icon: BadgeCheck },
+  {
+    id: "returns",
+    label: "Return Items",
+    compactLabel: "Returns",
+    icon: RotateCcw,
+  },
 ];
 
 export const pageCopy: Record<AdminSection, { title: string; description: string }> = {
@@ -296,5 +326,9 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
   claims: {
     title: "Ownership claims",
     description: "Review the details submitted to verify an item claim.",
+  },
+  returns: {
+    title: "Return item requests",
+    description: "Review ownership confirmations submitted by school users.",
   },
 };

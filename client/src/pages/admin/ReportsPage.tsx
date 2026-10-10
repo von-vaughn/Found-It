@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { ItemTable } from "@/components/admin/ItemTable";
 import { Panel } from "@/components/admin/Panel";
 import { ItemDetailsDialog } from "@/components/admin/ItemDetailsDialog";
-import { adminReports } from "@/components/admin/adminData";
+import { itemToAdminReport } from "@/components/admin/adminData";
+import { CreatePostModal } from "@/components/school_user/CreatePostModal";
+import type { Item } from "@/data/mockItems";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { AdminLayout } from "./AdminLayout";
@@ -11,19 +13,29 @@ import { useSelectedReport } from "./useSelectedReport";
 
 const PAGE_SIZE = 10;
 
-export function ReportsPage() {
+export function ReportsPage({
+  items,
+  onAddItem,
+  onDeleteItem,
+}: {
+  items: Item[];
+  onAddItem: (newItem: Item) => void;
+  onDeleteItem: (id: string) => void;
+}) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [categoryFilter, setCategoryFilter] = useState("All categories");
   const [buildingFilter, setBuildingFilter] = useState("All buildings");
   const [currentPage, setCurrentPage] = useState(1);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
+  const reports = useMemo(() => items.map(itemToAdminReport), [items]);
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return adminReports.filter((report) => {
+    return reports.filter((report) => {
       if (statusFilter !== "All statuses" && report.status !== statusFilter) {
         return false;
       }
@@ -57,7 +69,7 @@ export function ReportsPage() {
         report.id,
       ].some((value) => value.toLowerCase().includes(normalizedQuery));
     });
-  }, [buildingFilter, categoryFilter, query, statusFilter]);
+  }, [buildingFilter, categoryFilter, query, reports, statusFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
   const page = Math.min(currentPage, pageCount);
@@ -100,9 +112,19 @@ export function ReportsPage() {
       <Panel
         title="Item reports"
         action={
-          <span className="text-xs text-neutral-500">
-            {filteredRows.length} reports
-          </span>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="text-xs text-neutral-500">
+              {filteredRows.length} reports
+            </span>
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              Report an item
+            </button>
+          </div>
         }
       >
         <div className="flex flex-col gap-3 border-b border-neutral-100 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5">
@@ -218,8 +240,18 @@ export function ReportsPage() {
           report={selectedReport}
           dialogRef={dialogRef}
           onClose={() => setSelectedReport(null)}
+          onDelete={(id) => {
+            onDeleteItem(id);
+            setSelectedReport(null);
+          }}
         />
       )}
+      <CreatePostModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onAddItem={onAddItem}
+        initialType="lost"
+      />
     </AdminLayout>
   );
 }

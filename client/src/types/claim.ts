@@ -18,6 +18,16 @@ export type NewClaimRequest = Omit<
   "id" | "status" | "submitted"
 >;
 
+export interface ReturnItemRequest extends ClaimRequest {
+  sourceClaimId: string;
+  lostItemTitle: string;
+}
+
+export type NewReturnItemRequest = Omit<
+  ReturnItemRequest,
+  "id" | "status" | "submitted"
+>;
+
 export function getClaimantEmail(
   claim: Pick<ClaimRequest, "claimant" | "email">,
 ): string {

@@ -1,6 +1,6 @@
 import type { ClaimRequest } from "@/types/claim";
 
-export type AdminSection = "overview" | "items" | "claims";
+export type AdminSection = "overview" | "items" | "claims" | "returns";
 
 export type RecordStatus = "Lost" | "Found" | "Returned" | "Claimed";
 

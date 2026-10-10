@@ -18,27 +18,27 @@ import { Panel } from "./Panel";
 import { NoItemImage } from "./NoItemImage";
 import { StatusBadge } from "./StatusBadge";
 import { StatusFilter } from "./StatusFilter";
-import { adminReports } from "./adminData";
-import type { RecordStatus } from "./types";
+import type { AdminReport, RecordStatus } from "./types";
 import type { ClaimRequest } from "@/types/claim";
 import { getClaimantEmail } from "@/types/claim";
 
 function formatEventDate(value: string | undefined): string {
-  if (!value) return "Not provided";
+  if (!value) return "None";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Not provided";
+  if (Number.isNaN(date.getTime())) return "None";
   return new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(date);
 }
 
 function formatEventTime(value: string | undefined): string {
-  if (!value) return "Not provided";
+  if (!value) return "None";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Not provided";
+  if (Number.isNaN(date.getTime())) return "None";
   return new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(date);
 }
 
 export function ClaimsView({
   claims: claimRequests,
+  reports,
   onClaimStatusChange,
   onItemStatusChange,
   itemStatusOverrides,
@@ -50,6 +50,7 @@ export function ClaimsView({
   onStatusFilterChange,
 }: {
   claims: ClaimRequest[];
+  reports: AdminReport[];
   onClaimStatusChange: (id: string, status: ClaimRequest["status"]) => void;
   onItemStatusChange: (itemId: string, status: RecordStatus) => void;
   itemStatusOverrides: Record<string, RecordStatus>;
@@ -120,7 +121,7 @@ export function ClaimsView({
     ? selectedClaim
     : null;
   const baseItemPost = visibleSelectedClaim
-    ? adminReports.find((report) => report.id === visibleSelectedClaim.itemId)
+    ? reports.find((report) => report.id === visibleSelectedClaim.itemId)
     : undefined;
   const selectedItemPost =
     baseItemPost && itemStatusOverrides[baseItemPost.id]
@@ -243,7 +244,7 @@ export function ClaimsView({
             <div className="divide-y divide-neutral-100">
               {pagedClaims.map((claim) => {
                 const itemImage =
-                  adminReports.find((report) => report.id === claim.itemId)
+                  reports.find((report) => report.id === claim.itemId)
                     ?.image ?? "";
 
                 return (
@@ -397,7 +398,7 @@ export function ClaimsView({
                           Category
                         </dt>
                         <dd className="mt-1 font-semibold text-neutral-800">
-                          {selectedItemPost.category}
+                          {selectedItemPost.category || "None"}
                         </dd>
                       </div>
                       <div>
@@ -406,7 +407,7 @@ export function ClaimsView({
                           Post date
                         </dt>
                         <dd className="mt-1 font-semibold text-neutral-800">
-                          {selectedItemPost.date}
+                          {selectedItemPost.date || "None"}
                         </dd>
                       </div>
                       <div>
@@ -423,24 +424,22 @@ export function ClaimsView({
                           {formatEventDate(selectedItemPost.eventDateTime)}
                         </dd>
                       </div>
-                      {selectedItemPost.type === "Found" && (
-                        <div>
-                          <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
-                            <Clock3 className="h-3 w-3" aria-hidden="true" />
-                            Time found
-                          </dt>
-                          <dd className="mt-1 font-semibold text-neutral-800">
-                            {formatEventTime(selectedItemPost.eventDateTime)}
-                          </dd>
-                        </div>
-                      )}
+                      <div>
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                          <Clock3 className="h-3 w-3" aria-hidden="true" />
+                          Time found
+                        </dt>
+                        <dd className="mt-1 font-semibold text-neutral-800">
+                          {formatEventTime(selectedItemPost.eventDateTime)}
+                        </dd>
+                      </div>
                       <div>
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
                           <MapPin className="h-3 w-3" aria-hidden="true" />
                           Specific location
                         </dt>
                         <dd className="mt-1 font-semibold text-neutral-800">
-                          {selectedItemPost.specificLocation}
+                          {selectedItemPost.specificLocation || "None"}
                         </dd>
                       </div>
                       <div>
@@ -449,21 +448,18 @@ export function ClaimsView({
                           Building
                         </dt>
                         <dd className="mt-1 font-semibold text-neutral-800">
-                          {selectedItemPost.buildingName?.trim() ||
-                            "Not provided"}
+                          {selectedItemPost.buildingName?.trim() || "None"}
                         </dd>
                       </div>
-                      {selectedItemPost.color && (
-                        <div className="col-span-2">
-                          <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
-                            <Palette className="h-3 w-3" aria-hidden="true" />
-                            Color
-                          </dt>
-                          <dd className="mt-1 font-semibold text-neutral-800">
-                            {selectedItemPost.color}
-                          </dd>
-                        </div>
-                      )}
+                      <div className="col-span-2">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                          <Palette className="h-3 w-3" aria-hidden="true" />
+                          Color
+                        </dt>
+                        <dd className="mt-1 font-semibold text-neutral-800">
+                          {selectedItemPost.color?.trim() || "None"}
+                        </dd>
+                      </div>
                     </dl>
                       </>
                     ) : (
@@ -565,8 +561,7 @@ export function ClaimsView({
                       <button
                         type="button"
                         disabled={
-                          visibleSelectedClaim.status !== "Pending" &&
-                          visibleSelectedClaim.status !== "Under review"
+                          visibleSelectedClaim.status !== "Pending"
                         }
                         onClick={() =>
                           setPendingStatusChange({
@@ -575,8 +570,7 @@ export function ClaimsView({
                           })
                         }
                         className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default ${
-                          visibleSelectedClaim.status === "Pending" ||
-                          visibleSelectedClaim.status === "Under review"
+                          visibleSelectedClaim.status === "Pending"
                             ? "border-neutral-200 text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
                             : "border-neutral-200 text-neutral-400"
                         }`}

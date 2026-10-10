@@ -5,4 +5,5 @@ export const adminSectionPaths: Record<AdminSection, string> = {
   overview: paths.admin,
   items: paths.adminItems,
   claims: paths.adminClaims,
+  returns: paths.adminReturns,
 };

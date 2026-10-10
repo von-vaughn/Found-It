@@ -8,6 +8,7 @@ export const paths = {
   adminLost: "/admin/lost",
   adminFound: "/admin/found",
   adminClaims: "/admin/claims",
+  adminReturns: "/admin/returns",
   lostItems: "/lost-items",
   foundItems: "/found-items",
   browse: "/browse",
