@@ -19,14 +19,17 @@ import {
 import { SearchX } from "lucide-react";
 import { ITEM_CATEGORIES, type ItemCategory } from "@/data/itemCategories";
 import { initialItems, type Item } from "@/data/mockItems";
+import type { ClaimRequest } from "@/types/claim";
 
 interface DashboardPageProps {
   items?: Item[];
+  submittedClaims?: ClaimRequest[];
   onAddItem?: (newItem: Item) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   items: propItems,
+  submittedClaims = [],
   onAddItem: propOnAddItem,
 }) => {
   const [internalItems, setInternalItems] = useState<Item[]>(initialItems);
@@ -206,6 +209,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
         onNotificationsOpenChange={setNotificationsOpen}
+        items={items}
+        submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           setActiveNavTab(tab);
           if (tab === "discover") {

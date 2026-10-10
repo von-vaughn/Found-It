@@ -7,9 +7,11 @@ import { ItemCard } from "@/components/school_user/ItemCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import { useAuth } from "@/context/useAuth";
 import { initialItems, type Item } from "@/data/mockItems";
+import type { ClaimRequest } from "@/types/claim";
 
 interface ProfilePageProps {
   items?: Item[];
+  submittedClaims?: ClaimRequest[];
   onAddItem?: (newItem: Item) => void;
 }
 
@@ -21,6 +23,7 @@ const DEFAULT_PROFILE = {
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({
   items: propItems,
+  submittedClaims = [],
   onAddItem,
 }) => {
   const { user } = useAuth();
@@ -79,6 +82,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
         onNotificationsOpenChange={setNotificationsOpen}
+        items={items}
+        submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
         }}
@@ -204,7 +209,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                       key={item.id}
                       item={item}
                       onItemClick={(selected) =>
-                        navigate(`/dashboard/items/${selected.id}`)
+                        navigate(`/dashboard/items/${selected.id}`, {
+                          state: { from: "/dashboard/profile" },
+                        })
                       }
                     />
                   ))}

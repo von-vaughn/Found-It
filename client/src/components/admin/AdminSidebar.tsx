@@ -136,7 +136,7 @@ export function AdminSidebar<TSection extends string>({
           width: expanded && !notificationsOpen ? 240 : collapsedWidth,
         }}
         transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
-        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center border-r border-neutral-100 bg-white py-5 selection:bg-[#E5192D] selection:text-white"
+        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center border-r border-neutral-200 bg-white py-5 selection:bg-[#E5192D] selection:text-white"
       >
         <Link
           to="/"

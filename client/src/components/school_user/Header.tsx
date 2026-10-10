@@ -243,8 +243,6 @@ export const Header: React.FC<HeaderProps> = ({
                 Profile
               </button>
 
-              <div className="border-t border-neutral-100 my-1" />
-
               <button
                 onClick={() => {
                   setProfileDropdownOpen(false);

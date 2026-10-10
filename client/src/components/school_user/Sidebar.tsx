@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Home,
   PlusCircle,
@@ -8,6 +8,10 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/useAuth";
+import { initialItems, type Item } from "@/data/mockItems";
+import { claims as demoClaims } from "@/components/admin/adminData";
+import type { ClaimRequest } from "@/types/claim";
 
 interface SidebarProps {
   activeTab?: string;
@@ -16,6 +20,18 @@ interface SidebarProps {
   onOpenCreateModal?: () => void;
   onExpandedChange?: (expanded: boolean) => void;
   onNotificationsOpenChange?: (open: boolean) => void;
+  items?: Item[];
+  submittedClaims?: ClaimRequest[];
+}
+
+const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
+
+interface SidebarNotification {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  itemId?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -25,8 +41,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenCreateModal,
   onExpandedChange,
   onNotificationsOpenChange,
+  items: propItems,
+  submittedClaims = [],
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const asideRef = useRef<HTMLElement>(null);
   const notificationsPanelRef = useRef<HTMLElement>(null);
   const notificationsButtonRef = useRef<HTMLButtonElement>(null);
@@ -35,26 +54,62 @@ export const Sidebar: React.FC<SidebarProps> = ({
     window.matchMedia("(min-width: 768px)").matches ? 80 : 64,
   );
 
-  const notifications = [
+  const items = propItems ?? initialItems;
+  const profileName = user?.name || FALLBACK_PROFILE_NAME;
+  const profileUsername = profileName.toLowerCase().replace(/\s+/g, "_");
+
+  const myLostItemIds = useMemo(
+    () =>
+      new Set(
+        items
+          .filter(
+            (item) =>
+              item.type === "lost" &&
+              (item.username?.toLowerCase() === profileUsername ||
+                item.contactName.trim().toLowerCase() ===
+                  profileName.trim().toLowerCase()),
+          )
+          .map((item) => item.id),
+      ),
+    [items, profileName, profileUsername],
+  );
+
+  const responseNotifications: SidebarNotification[] = useMemo(
+    () =>
+      [...submittedClaims, ...demoClaims]
+        .filter((claim) => myLostItemIds.has(claim.itemId))
+        .map((claim) => ({
+          id: `response-${claim.id}`,
+          title: "Someone responded to your lost item",
+          desc: `${claim.claimant} submitted a found report for your ${claim.item}.`,
+          time: claim.submitted,
+          itemId: claim.itemId,
+        })),
+    [submittedClaims, myLostItemIds],
+  );
+
+  const staticNotifications: SidebarNotification[] = [
     {
-      id: 1,
+      id: "demo-1",
       title: "New match found!",
       desc: "Someone reported finding keys near the Parking Lot.",
       time: "10m ago",
     },
     {
-      id: 2,
+      id: "demo-2",
       title: "Item claimed",
       desc: "Black Herschel backpack inquiry was answered.",
       time: "1h ago",
     },
     {
-      id: 3,
+      id: "demo-3",
       title: "Community update",
       desc: "WMSU Student Affairs posted campus verification guidelines.",
       time: "2h ago",
     },
   ];
+
+  const notifications = [...responseNotifications, ...staticNotifications];
 
   useEffect(() => {
     if (!notificationsOpen) return;
@@ -171,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       initial={false}
       animate={{ width: expanded && !notificationsOpen ? 240 : collapsedWidth }}
       transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
-      className={`shrink-0 bg-white border-r border-neutral-100 flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
+      className={`shrink-0 bg-white border-r border-neutral-200 flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
     >
       {/* Top Logo */}
       <button
@@ -227,8 +282,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
 
                 {item.id === "notifications" && (
-                  <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-[#E5192D] text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                    3
+                  <span className="absolute top-1 right-1 min-w-3.5 h-3.5 bg-[#E5192D] text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white px-0.5">
+                    {notifications.length > 9 ? "9+" : notifications.length}
                   </span>
                 )}
 
@@ -252,7 +307,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           exit={{ opacity: 0, x: -16 }}
           transition={{ type: "spring", stiffness: 360, damping: 34 }}
           style={{ left: collapsedWidth }}
-          className="fixed top-0 bottom-0 z-40 w-80 bg-white border-r border-neutral-100 shadow-xl"
+          className="fixed top-0 bottom-0 z-40 w-80 bg-white border-r border-neutral-200 shadow-xl"
         >
           <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100">
             <div>
@@ -270,22 +325,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
           <div className="p-3 space-y-1">
-            {notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className="p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors"
-              >
-                <p className="text-xs font-bold text-neutral-900">
-                  {notification.title}
-                </p>
-                <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
-                  {notification.desc}
-                </p>
-                <span className="text-[10px] text-neutral-400 mt-1.5 block">
-                  {notification.time}
-                </span>
-              </div>
-            ))}
+            {notifications.map((notification) =>
+              notification.itemId ? (
+                <button
+                  key={notification.id}
+                  type="button"
+                  onClick={() => {
+                    setNotificationsOpen(false);
+                    navigate(`/dashboard/items/${notification.itemId}`);
+                  }}
+                  className="block w-full p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
+                >
+                  <p className="text-xs font-bold text-neutral-900">
+                    {notification.title}
+                  </p>
+                  <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
+                    {notification.desc}
+                  </p>
+                  <span className="text-[10px] text-neutral-400 mt-1.5 block">
+                    {notification.time}
+                  </span>
+                </button>
+              ) : (
+                <div
+                  key={notification.id}
+                  className="p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors"
+                >
+                  <p className="text-xs font-bold text-neutral-900">
+                    {notification.title}
+                  </p>
+                  <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
+                    {notification.desc}
+                  </p>
+                  <span className="text-[10px] text-neutral-400 mt-1.5 block">
+                    {notification.time}
+                  </span>
+                </div>
+              ),
+            )}
           </div>
         </motion.aside>
       )}

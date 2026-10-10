@@ -22,7 +22,13 @@ export function getDashboardRoutes({
   return [
     {
       path: paths.dashboard,
-      element: <DashboardPage items={items} onAddItem={onAddItem} />,
+      element: (
+        <DashboardPage
+          items={items}
+          submittedClaims={submittedClaims}
+          onAddItem={onAddItem}
+        />
+      ),
     },
     {
       path: paths.dashboardItem,
@@ -37,7 +43,13 @@ export function getDashboardRoutes({
     },
     {
       path: paths.dashboardProfile,
-      element: <ProfilePage items={items} onAddItem={onAddItem} />,
+      element: (
+        <ProfilePage
+          items={items}
+          submittedClaims={submittedClaims}
+          onAddItem={onAddItem}
+        />
+      ),
     },
   ];
 }

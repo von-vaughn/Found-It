@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Award,
   Building2,
-  CalendarClock,
+  CalendarDays,
+  Clock3,
+  Lock,
   MapPin,
   Package,
   Palette,
@@ -19,7 +21,6 @@ import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraMo
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems, type Item } from "@/data/mockItems";
-import { formatItemDateTime } from "@/lib/dateTime";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
 import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
@@ -52,6 +53,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as { from?: string } | null;
+  const sidebarActiveTab =
+    locationState?.from === "/dashboard/profile" ? "profile" : "home";
   const { user } = useAuth();
   const items = propItems ?? initialItems;
 
@@ -138,12 +143,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     return (
       <div className="min-h-screen bg-white flex font-open-sans text-neutral-900">
         <Sidebar
-          activeTab="home"
+          activeTab={sidebarActiveTab}
           expanded={sidebarExpanded}
           onExpandedChange={setSidebarExpanded}
           onNotificationsOpenChange={setNotificationsOpen}
           onTabChange={() => navigate("/dashboard")}
           onOpenCreateModal={() => handleOpenCreateModal("lost")}
+          items={items}
+          submittedClaims={submittedClaims}
         />
         <div className={`flex-1 min-w-0 ml-16 flex flex-col min-h-screen transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
           <Header
@@ -190,8 +197,19 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     "student_user";
   const avatarUrl = item.userAvatar || `/images/avatars/${username}.svg`;
   const isLost = item.type === "lost";
-  const itemDateTime = item.dateTime
-    ? formatItemDateTime(item.dateTime)
+  const eventDate =
+    item.dateTime && !Number.isNaN(new Date(item.dateTime).getTime())
+      ? new Date(item.dateTime)
+      : null;
+  const itemDate = eventDate
+    ? new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(
+        eventDate,
+      )
+    : null;
+  const itemTime = eventDate
+    ? new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(
+        eventDate,
+      )
     : null;
   const category = ITEM_CATEGORIES.find(({ id }) => id === item.category);
   const CategoryIcon = category?.icon ?? Package;
@@ -214,12 +232,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         Skip to item details
       </a>
       <Sidebar
-        activeTab="home"
+        activeTab={sidebarActiveTab}
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
         onNotificationsOpenChange={setNotificationsOpen}
         onTabChange={() => navigate("/dashboard")}
         onOpenCreateModal={() => handleOpenCreateModal("lost")}
+        items={items}
+        submittedClaims={submittedClaims}
       />
 
       <div className={`flex-1 min-w-0 ml-16 flex flex-col min-h-screen transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
@@ -337,7 +357,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             <p className="mt-3 text-sm leading-relaxed text-neutral-600 break-words">
               {item.description}
             </p>
-            <dl className="mt-5 divide-y divide-neutral-200/80 border-y border-neutral-200/80 text-xs">
+            <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 text-xs sm:grid-cols-2">
               {item.color && (
                 <div className="flex items-start gap-2.5 py-3">
                   <Palette
@@ -376,22 +396,34 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   </dd>
                 </div>
               </div>
-              {isLost && (
-                <div className="flex items-start gap-2.5 py-3">
-                  <CalendarClock
-                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900">
-                      Date and time lost
-                    </dt>
-                    <dd className="mt-1 text-neutral-500">
-                      {itemDateTime ?? "Not provided"}
-                    </dd>
-                  </div>
+              <div className="flex items-start gap-2.5 py-3">
+                <CalendarDays
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">
+                    {isLost ? "Date lost" : "Date found"}
+                  </dt>
+                  <dd className="mt-1 text-neutral-500">
+                    {itemDate ?? "Not provided"}
+                  </dd>
                 </div>
-              )}
+              </div>
+              <div className="flex items-start gap-2.5 py-3">
+                <Clock3
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">
+                    {isLost ? "Time lost" : "Time found"}
+                  </dt>
+                  <dd className="mt-1 text-neutral-500">
+                    {itemTime ?? "Not provided"}
+                  </dd>
+                </div>
+              </div>
               <div className="flex items-start gap-2.5 py-3">
                 <CategoryIcon
                   className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
@@ -404,6 +436,22 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   </dd>
                 </div>
               </div>
+              {isOwnItem && item.confidentialInfo?.trim() && (
+                <div className="flex items-start gap-2.5 py-3">
+                  <Lock
+                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <dt className="font-bold text-neutral-900">
+                      Confidential info
+                    </dt>
+                    <dd className="mt-1 break-words text-neutral-500">
+                      {item.confidentialInfo}
+                    </dd>
+                  </div>
+                </div>
+              )}
             </dl>
             {item.reward && (
               <p className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 border border-amber-200/70">
