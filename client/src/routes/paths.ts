@@ -10,6 +10,7 @@ export const paths = {
   adminClaims: "/admin/claims",
   lostItems: "/lost-items",
   foundItems: "/found-items",
+  browse: "/browse",
   login: "/login",
   signin: "/signin",
   signup: "/signup",

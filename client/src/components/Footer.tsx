@@ -64,7 +64,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link
-                  to="/lost-items"
+                  to="/browse?type=lost"
                   onClick={scrollToTop}
                   className="hover:text-[#E5192D] transition-colors"
                 >
@@ -73,7 +73,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link
-                  to="/found-items"
+                  to="/browse?type=found"
                   onClick={scrollToTop}
                   className="hover:text-[#E5192D] transition-colors"
                 >

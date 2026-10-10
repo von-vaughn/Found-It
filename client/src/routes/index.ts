@@ -5,3 +5,4 @@ export { getDashboardRoutes } from "./dashboardRoutes";
 export { getAdminRoutes } from "./adminRoutes";
 export { getAuthRoutes } from "./authRoutes";
 export { AppRoutes } from "./AppRoutes";
+export { LegacyItemsRedirect } from "./LegacyItemsRedirect";

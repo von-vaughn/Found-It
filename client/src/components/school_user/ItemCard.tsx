@@ -24,20 +24,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     });
   };
 
-  const username = item.username || item.contactName?.toLowerCase().replace(/\s+/g, "_") || "student_user";
-  const avatarUrl =
-    item.userAvatar ||
-    `/images/avatars/${username}.svg`;
-
   const isLost = item.type === "lost";
   const category = ITEM_CATEGORIES.find(({ id }) => id === item.category);
   const CategoryIcon = category?.icon ?? Package;
 
   const titleBlock = (
     <>
-      <h3 className="text-base font-bold text-neutral-900 line-clamp-1 group-hover:text-neutral-950 transition-colors">
-        {item.title}
-      </h3>
       {!item.image && item.reward && (
         <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold text-white">
           <Award className="h-3 w-3" aria-hidden="true" />
@@ -68,26 +60,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       {/* Top Author Row — kept in same position */}
       <div className="flex items-center justify-between gap-3 p-4 pb-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
-          {/* User Avatar */}
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
-            <img
-              src={avatarUrl}
-              alt={username}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "https://api.dicebear.com/7.x/adventurer/svg?seed=ken_21";
-              }}
-            />
-          </div>
-
           <div className="min-w-0">
-            <div className="text-xs font-bold text-neutral-900 truncate hover:text-[#E5192D] transition-colors leading-tight">
-              {item.contactName || username}
+            <div className="text-lg font-bold text-neutral-900 truncate hover:text-[#E5192D] transition-colors leading-tight">
+              {item.title}
             </div>
             <div className="text-[11px] text-neutral-400 font-normal truncate mt-0.5">
-              {item.timeAgo}
+              {isLost ? "Lost" : "Found"} • {item.timeAgo}
             </div>
           </div>
         </div>

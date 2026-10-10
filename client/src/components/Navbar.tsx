@@ -63,16 +63,17 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
   const navLinks = [
     { name: "Home", path: "/", key: "home" },
-    { name: "Dashboard", path: "/dashboard", key: "dashboard" },
-    { name: "Lost Items", path: "/lost-items", key: "lost" },
-    { name: "Found Items", path: "/found-items", key: "found" },
+    { name: "Browse Items", path: "/browse", key: "browse" },
     { name: "How It Works", path: "/#how-it-works", key: "how-it-works" },
   ];
 
   const getIsActive = (link: (typeof navLinks)[0]) => {
-    if (link.key === "dashboard") return location.pathname === "/dashboard";
-    if (link.key === "lost") return location.pathname === "/lost-items";
-    if (link.key === "found") return location.pathname === "/found-items";
+    if (link.key === "browse")
+      return (
+        location.pathname === "/browse" ||
+        location.pathname === "/lost-items" ||
+        location.pathname === "/found-items"
+      );
     if (link.key === "how-it-works") return location.hash === "#how-it-works";
     if (link.key === "home") return location.pathname === "/" && !location.hash;
     return false;
@@ -84,14 +85,8 @@ export const Navbar: React.FC<NavbarProps> = () => {
     if (link.key === "home") {
       navigate("/");
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (link.key === "dashboard") {
-      navigate("/dashboard");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (link.key === "lost") {
-      navigate("/lost-items");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (link.key === "found") {
-      navigate("/found-items");
+    } else if (link.key === "browse") {
+      navigate("/browse?type=lost");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (link.key === "how-it-works") {
       if (location.pathname === "/") {

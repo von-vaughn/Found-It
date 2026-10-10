@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Eye, EyeOff, KeyRound, Mail, RotateCcw, Sparkles, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
+import { paths } from "@/routes/paths";
 
 type AuthMode = "signin" | "signup";
 type SignupScreen = "email" | "profile" | "verify";
@@ -275,6 +276,11 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     setError("");
   };
 
+  const openTemporaryDashboard = (destination: typeof paths.dashboard | typeof paths.admin) => {
+    onClose();
+    navigate(destination);
+  };
+
   const title =
     mode === "signin"
       ? "Welcome back"
@@ -401,6 +407,22 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
               >
                 {isLoading ? "Signing in…" : "Sign In"}
               </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => openTemporaryDashboard(paths.dashboard)}
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                >
+                  School User (temporary)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openTemporaryDashboard(paths.admin)}
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                >
+                  Admin (temporary)
+                </button>
+              </div>
               <p className="pt-1 text-center text-sm text-neutral-600">
                 New to FoundIt?{" "}
                 <button

@@ -77,17 +77,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const query = searchQuery.trim();
-    const targetPath = searchType === "found" ? "/found-items" : "/lost-items";
+    const targetPath = `/browse?type=${searchType}`;
     if (query) {
-      navigate(`${targetPath}?q=${encodeURIComponent(query)}`);
+      navigate(`${targetPath}&q=${encodeURIComponent(query)}`);
     } else {
       navigate(targetPath);
     }
   };
 
   const handleQuickTagClick = (tag: string) => {
-    const targetPath = searchType === "found" ? "/found-items" : "/lost-items";
-    navigate(`${targetPath}?q=${encodeURIComponent(tag)}`);
+    const targetPath = `/browse?type=${searchType}`;
+    navigate(`${targetPath}&q=${encodeURIComponent(tag)}`);
   };
 
   const popularTags = [

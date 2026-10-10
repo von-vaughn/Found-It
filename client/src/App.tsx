@@ -63,11 +63,11 @@ export function App() {
   };
 
   const handleBrowseLost = () => {
-    navigate("/lost-items");
+    navigate("/browse?type=lost");
   };
 
   const handleBrowseFound = () => {
-    navigate("/found-items");
+    navigate("/browse?type=found");
   };
 
   const isDashboard =
@@ -95,7 +95,9 @@ export function App() {
         {!isDashboard && (
           <Navbar
             onReportClick={(type) => {
-              navigate(type === "lost" ? "/lost-items" : "/found-items");
+              navigate(
+                type === "lost" ? "/browse?type=lost" : "/browse?type=found",
+              );
             }}
           />
         )}
@@ -120,7 +122,8 @@ export function App() {
           location.pathname !== "/signup" &&
           location.pathname !== "/verify-otp" &&
           location.pathname !== "/lost-items" &&
-          location.pathname !== "/found-items" && <Footer />}
+          location.pathname !== "/found-items" &&
+          location.pathname !== "/browse" && <Footer />}
       </div>
     </AuthProvider>
   );

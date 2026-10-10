@@ -245,11 +245,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     );
   }
 
-  const username =
-    item.username ||
-    item.contactName?.toLowerCase().replace(/\s+/g, "_") ||
-    "student_user";
-  const avatarUrl = item.userAvatar || `/images/avatars/${username}.svg`;
   const isLost = item.type === "lost";
   const eventDate =
     item.dateTime && !Number.isNaN(new Date(item.dateTime).getTime())
@@ -382,24 +377,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           <article className="min-w-0">
             {/* Reporter profile on top */}
             <div className="flex items-center gap-3 min-w-0">
-              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-neutral-100 border border-neutral-200">
-                <img
-                  src={avatarUrl}
-                  alt=""
-                  width={80}
-                  height={80}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "https://api.dicebear.com/7.x/adventurer/svg?seed=foundit";
-                  }}
-                />
-              </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-neutral-900">
-                  {item.contactName}
-                </p>
+                <h1 className="truncate text-xl font-extrabold tracking-tight text-neutral-900">
+                  {item.title}
+                </h1>
                 <p className="truncate text-xs text-neutral-400">
                   {item.timeAgo}
                 </p>
@@ -424,9 +405,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400">
               {isLost ? "Lost item report" : "Found item report"}
             </p>
-            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-neutral-900 text-balance break-words">
-              {item.title}
-            </h1>
             <p className="mt-3 text-sm leading-relaxed text-neutral-600 break-words">
               {item.description}
             </p>
