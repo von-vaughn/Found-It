@@ -316,7 +316,7 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
               <label htmlFor="claim-time-lost" className={labelClass}>
                 <span className="inline-flex items-center gap-1.5">
                   <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-                  Time lost <span aria-hidden="true">*</span>
+                  Approximate time lost <span aria-hidden="true">*</span>
                 </span>
               </label>
               <input

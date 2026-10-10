@@ -27,6 +27,16 @@ export function App() {
     setItems((prev) => [newItem, ...prev]);
   };
 
+  const handleUpdateItem = (updatedItem: Item) => {
+    setItems((prev) =>
+      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)),
+    );
+  };
+
+  const handleDeleteItem = (id: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
   const handleSubmitClaim = (claim: NewClaimRequest) => {
     const submittedAt = new Date();
     setSubmittedClaims((current) => [
@@ -41,6 +51,15 @@ export function App() {
       },
       ...current,
     ]);
+  };
+
+  const handleUpdateClaimStatus = (
+    claimId: string,
+    status: ClaimRequest["status"],
+  ) => {
+    setSubmittedClaims((current) =>
+      current.map((claim) => (claim.id === claimId ? { ...claim, status } : claim)),
+    );
   };
 
   const handleBrowseLost = () => {
@@ -86,7 +105,10 @@ export function App() {
             items={items}
             submittedClaims={submittedClaims}
             onAddItem={handleAddItem}
+            onUpdateItem={handleUpdateItem}
+            onDeleteItem={handleDeleteItem}
             onSubmitClaim={handleSubmitClaim}
+            onUpdateClaimStatus={handleUpdateClaimStatus}
             onBrowseLost={handleBrowseLost}
             onBrowseFound={handleBrowseFound}
           />

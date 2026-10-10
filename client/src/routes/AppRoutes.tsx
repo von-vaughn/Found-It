@@ -11,7 +11,10 @@ interface AppRoutesProps {
   items: Item[];
   submittedClaims: ClaimRequest[];
   onAddItem: (newItem: Item) => void;
+  onUpdateItem: (updatedItem: Item) => void;
+  onDeleteItem: (id: string) => void;
   onSubmitClaim: (claim: NewClaimRequest) => void;
+  onUpdateClaimStatus: (claimId: string, status: ClaimRequest["status"]) => void;
   onBrowseLost: () => void;
   onBrowseFound: () => void;
 }
@@ -20,13 +23,24 @@ export function AppRoutes({
   items,
   submittedClaims,
   onAddItem,
+  onUpdateItem,
+  onDeleteItem,
   onSubmitClaim,
+  onUpdateClaimStatus,
   onBrowseLost,
   onBrowseFound,
 }: AppRoutesProps) {
   return useRoutes([
     ...getPublicRoutes({ items, onAddItem, onBrowseLost, onBrowseFound }),
-    ...getDashboardRoutes({ items, submittedClaims, onAddItem, onSubmitClaim }),
+    ...getDashboardRoutes({
+      items,
+      submittedClaims,
+      onAddItem,
+      onUpdateItem,
+      onDeleteItem,
+      onSubmitClaim,
+      onUpdateClaimStatus,
+    }),
     ...getAdminRoutes({ submittedClaims }),
     ...getAuthRoutes(),
     {

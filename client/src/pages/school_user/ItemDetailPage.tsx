@@ -10,7 +10,9 @@ import {
   MapPin,
   Package,
   Palette,
+  Pencil,
   Share2,
+  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Sidebar } from "@/components/school_user/Sidebar";
@@ -31,7 +33,13 @@ interface ItemDetailPageProps {
   items?: Item[];
   submittedClaims?: ClaimRequest[];
   onAddItem?: (newItem: Item) => void;
+  onUpdateItem?: (updatedItem: Item) => void;
+  onDeleteItem?: (id: string) => void;
   onSubmitClaim?: (claim: NewClaimRequest) => void;
+  onUpdateClaimStatus?: (
+    claimId: string,
+    status: ClaimRequest["status"],
+  ) => void;
 }
 
 const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
@@ -49,7 +57,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   items: propItems,
   submittedClaims = [],
   onAddItem: propOnAddItem,
+  onUpdateItem: propOnUpdateItem,
+  onDeleteItem: propOnDeleteItem,
   onSubmitClaim,
+  onUpdateClaimStatus,
 }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -79,6 +90,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
   >("lost");
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [claimStatusOverrides, setClaimStatusOverrides] = useState<
+    Record<string, ClaimRequest["status"]>
+  >({});
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,6 +128,44 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     if (propOnAddItem) propOnAddItem(newItem);
     setCreateModalOpen(false);
     navigate("/dashboard");
+  };
+
+  const handleUpdateItem = (updatedItem: Item) => {
+    propOnUpdateItem?.(updatedItem);
+    setEditModalOpen(false);
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!item) return;
+    propOnDeleteItem?.(item.id);
+    setDeleteDialogOpen(false);
+    toast.success("Your report was deleted.");
+    navigate("/dashboard");
+  };
+
+  const handleResponseDecision = (
+    claimId: string,
+    decision: "mine" | "not-mine",
+  ) => {
+    if (decision === "mine") {
+      setClaimStatusOverrides((current) => ({
+        ...current,
+        [claimId]: "Pending",
+      }));
+      toast.success("Marked as yours. The response remains pending.");
+      return;
+    }
+
+    setClaimStatusOverrides((current) => ({
+      ...current,
+      [claimId]: "Rejected",
+    }));
+    onUpdateClaimStatus?.(claimId, "Rejected");
+    toast.success("Response marked as not yours.");
   };
 
   const similarItems = useMemo(() => {
@@ -269,6 +323,26 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             Go back
           </button>
           <div className="flex items-center gap-2">
+            {isOwnItem && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(true)}
+                  aria-label="Edit this report"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+                >
+                  <Pencil className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  aria-label="Delete this report"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-[#B42332] transition-colors hover:bg-red-50 hover:text-[#9F1424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={handleShare}
@@ -279,7 +353,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             </button>
           </div>
         </div>
-
         <main
           id="item-detail-main"
           className="min-w-0 w-full max-w-[1100px] mx-auto bg-white px-2 sm:px-3 lg:px-4 py-6 space-y-6"
@@ -474,31 +547,35 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               </h2>
               {finderReports.length > 0 ? (
                 <ul className="mt-4 space-y-3">
-                  {finderReports.map((claim) => (
-                    <li
-                      key={claim.id}
-                      className="rounded-2xl border border-neutral-200/80 bg-white p-4 sm:p-5"
-                    >
-                      <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                        <div className="min-w-0">
+                  {finderReports.map((claim) => {
+                    const claimStatus =
+                      claimStatusOverrides[claim.id] ?? claim.status;
+
+                    return (
+                      <li
+                        key={claim.id}
+                        className="rounded-2xl border border-neutral-200/80 bg-white p-4 sm:p-5"
+                      >
+                      <div className="grid items-stretch gap-8 md:grid-cols-2">
+                        <div className="flex min-h-48 min-w-0">
                           {claim.evidence && claim.evidence.length > 0 ? (
                             <div
                               className={`grid gap-2 ${
                                 claim.evidence.length > 1
                                   ? "grid-cols-2"
                                   : "grid-cols-1"
-                              }`}
+                              } h-full min-h-48 w-full auto-rows-fr`}
                             >
                               {claim.evidence.map((image, index) => (
                                 <div
                                   key={`${claim.id}-evidence-${index}`}
-                                  className="flex h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50"
+                                  className="flex min-h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50"
                                 >
                                   <img
                                     src={image}
                                     alt={`Photo evidence ${index + 1} from ${claim.claimant}`}
                                     loading="lazy"
-                                    className="h-full max-w-full object-contain"
+                                    className="h-full max-h-full max-w-full object-contain"
                                   />
                                 </div>
                               ))}
@@ -506,8 +583,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                           ) : (
                             <NoItemImage
                               title="No photo evidence provided"
-                              subtitle="The finder did not attach any photos."
-                              className="h-48"
+                              className="h-full min-h-48 w-full"
                             />
                           )}
                         </div>
@@ -517,9 +593,9 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               {claim.claimant}
                             </p>
                             <span
-                              className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold ${finderStatusStyles[claim.status] ?? "bg-neutral-100 text-neutral-600"}`}
+                              className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold ${finderStatusStyles[claimStatus] ?? "bg-neutral-100 text-neutral-600"}`}
                             >
-                              {claim.status}
+                              {claimStatus}
                             </span>
                           </div>
                           <p className="mt-0.5 truncate text-xs text-neutral-500">
@@ -564,10 +640,33 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </dd>
                             </div>
                           </dl>
+                          {claimStatus === "Pending" && (
+                            <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-neutral-100 pt-3">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleResponseDecision(claim.id, "not-mine")
+                                }
+                                className="min-h-10 rounded-full border border-neutral-300 px-4 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+                              >
+                                Not mine
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleResponseDecision(claim.id, "mine")
+                                }
+                                className="min-h-10 rounded-full bg-[#E5192D] px-4 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                              >
+                                This is mine
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="mt-3 text-xs leading-relaxed text-neutral-500">
@@ -611,6 +710,15 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         onAddItem={handleAddItem}
         initialType={createModalInitialType}
       />
+      {item && (
+        <CreatePostModal
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          onAddItem={handleAddItem}
+          onUpdateItem={handleUpdateItem}
+          initialItem={item}
+        />
+      )}
       {foundItemCameraOpen && (
         <FoundItemCameraModal onClose={() => setFoundItemCameraOpen(false)} />
       )}
@@ -622,6 +730,53 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           onClose={() => setOwnershipClaimOpen(false)}
           onSubmitClaim={(claim) => onSubmitClaim?.(claim)}
         />
+      )}
+      {deleteDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/40"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget)
+              setDeleteDialogOpen(false);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-report-title"
+            aria-describedby="delete-report-description"
+            className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl border border-neutral-100 p-6"
+          >
+            <h2
+              id="delete-report-title"
+              className="text-base font-extrabold tracking-tight text-neutral-900"
+            >
+              Delete this report?
+            </h2>
+            <p
+              id="delete-report-description"
+              className="mt-2 text-sm leading-relaxed text-neutral-600 break-words"
+            >
+              Are you sure you want to delete &ldquo;{item.title}&rdquo;? This
+              action cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteDialogOpen(false)}
+                className="h-10 px-4 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="h-10 px-4 rounded-xl bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
+              >
+                Confirm
+              </button>
+            </div>
+          </section>
+        </div>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ImagePlus, Lock, X } from "lucide-react";
+import { Camera, CameraOff, ImagePlus, RotateCcw, X } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { Item } from "@/data/mockItems";
@@ -10,7 +10,24 @@ interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddItem: (newItem: Item) => void;
+  onUpdateItem?: (updatedItem: Item) => void;
   initialType?: "lost" | "found";
+  initialItem?: Item | null;
+}
+
+const DEFAULT_DESCRIPTION_PLACEHOLDER = "No additional description provided.";
+
+function splitDateTime(item: Item): { date: string; time: string } {
+  if (item.dateTime) {
+    const parsed = new Date(item.dateTime);
+    if (!Number.isNaN(parsed.getTime())) {
+      return {
+        date: item.dateTime.slice(0, 10),
+        time: item.dateTime.slice(11, 16),
+      };
+    }
+  }
+  return { date: item.date, time: "" };
 }
 
 const localDateTime = (date = new Date()) => {
@@ -24,14 +41,36 @@ const inputClass =
 const labelClass =
   "block text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5";
 
+function stopCameraStream(stream: MediaStream | null): void {
+  stream?.getTracks().forEach((track) => track.stop());
+}
+
+function getCameraErrorMessage(error: unknown): string {
+  if (error instanceof DOMException) {
+    if (error.name === "NotAllowedError" || error.name === "SecurityError") {
+      return "Camera access was denied. Allow camera access in your browser settings, then try again.";
+    }
+    if (error.name === "NotFoundError" || error.name === "OverconstrainedError") {
+      return "No camera was found on this device.";
+    }
+    if (error.name === "NotReadableError") {
+      return "The camera is already in use by another app. Close it and try again.";
+    }
+  }
+  return "The camera could not be started. Check your camera connection and try again.";
+}
+
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   isOpen,
   onClose,
   onAddItem,
+  onUpdateItem,
   initialType = "lost",
+  initialItem = null,
 }) => {
   const { user } = useAuth();
-  const [type, setType] = useState<"lost" | "found">(initialType);
+  const isEditing = initialItem !== null;
+  const [type, setType] = useState<"lost" | "found">(initialItem?.type ?? initialType);
   const [title, setTitle] = useState("");
   const [color, setColor] = useState("");
   const [dateValue, setDateValue] = useState("");
@@ -39,22 +78,70 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [building, setBuilding] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
-  const [confidentialInfo, setConfidentialInfo] = useState("");
   const [category, setCategory] = useState<Item["category"]>("electronics");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [photoRequiredError, setPhotoRequiredError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [cameraState, setCameraState] = useState<
+    "idle" | "starting" | "ready" | "error"
+  >("idle");
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
-  // Sync type when opened from different entry points (derived state).
-  const [prevTypeSync, setPrevTypeSync] = useState({
+  // Sync all fields when opened: prefill from the item being edited,
+  // otherwise start blank (derived state).
+  const [prevFormSync, setPrevFormSync] = useState({
     isOpen: false,
+    itemId: null as string | null,
     initialType: initialType as "lost" | "found",
   });
   if (
-    isOpen !== prevTypeSync.isOpen ||
-    initialType !== prevTypeSync.initialType
+    isOpen !== prevFormSync.isOpen ||
+    (initialItem?.id ?? null) !== prevFormSync.itemId ||
+    (!initialItem && initialType !== prevFormSync.initialType)
   ) {
-    setPrevTypeSync({ isOpen, initialType });
-    if (isOpen) setType(initialType);
+    setPrevFormSync({
+      isOpen,
+      itemId: initialItem?.id ?? null,
+      initialType,
+    });
+    setPhotoRequiredError(false);
+    if (isOpen) {
+      // Reset the camera preview state for a fresh capture session.
+      setCameraState("starting");
+      setCameraError(null);
+    }
+    if (isOpen) {
+      if (initialItem) {
+        const { date, time } = splitDateTime(initialItem);
+        setType(initialItem.type);
+        setTitle(initialItem.title);
+        setColor(initialItem.color ?? "");
+        setDateValue(date);
+        setTimeValue(time);
+        setBuilding(initialItem.building ?? "");
+        setLocation(initialItem.location);
+        setDescription(
+          initialItem.description === DEFAULT_DESCRIPTION_PLACEHOLDER
+            ? ""
+            : initialItem.description,
+        );
+        setCategory(initialItem.category);
+        setUploadedImage(initialItem.image || null);
+      } else {
+        setType(initialType);
+        setTitle("");
+        setColor("");
+        setDateValue("");
+        setTimeValue("");
+        setBuilding("");
+        setLocation("");
+        setDescription("");
+        setCategory("electronics");
+        setUploadedImage(null);
+      }
+    }
   }
 
   // Close on Escape.
@@ -74,9 +161,109 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     };
   }, [uploadedImage]);
 
+  // Live camera for found-item photos: runs only while the modal is open
+  // on the Found tab without a photo yet.
+  useEffect(() => {
+    if (!isOpen || type !== "found" || uploadedImage) return;
+
+    let cancelled = false;
+    let stream: MediaStream | null = null;
+    const videoElement = videoRef.current;
+
+    const startCamera = async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        if (!cancelled) {
+          setCameraError(
+            "Camera access is unavailable. Use a secure connection and a browser that supports camera access.",
+          );
+          setCameraState("error");
+        }
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: "environment" } },
+        });
+        if (cancelled) {
+          stopCameraStream(stream);
+          return;
+        }
+
+        streamRef.current = stream;
+        if (!videoElement) {
+          throw new Error("Camera preview element is unavailable.");
+        }
+        videoElement.srcObject = stream;
+        await videoElement.play();
+        if (!cancelled) setCameraState("ready");
+      } catch (error) {
+        stopCameraStream(stream);
+        if (streamRef.current === stream) streamRef.current = null;
+        stream = null;
+        if (!cancelled) {
+          setCameraError(getCameraErrorMessage(error));
+          setCameraState("error");
+        }
+      }
+    };
+
+    void startCamera();
+    return () => {
+      cancelled = true;
+      const activeStream = streamRef.current;
+      streamRef.current = null;
+      stopCameraStream(activeStream);
+      if (stream !== activeStream) stopCameraStream(stream);
+      if (videoElement) videoElement.srcObject = null;
+    };
+  }, [isOpen, type, uploadedImage]);
+
   if (!isOpen) return null;
 
   const previewImage = uploadedImage;
+
+  const handleFoundTabSelect = () => {
+    setType("found");
+    setCameraState("starting");
+    setCameraError(null);
+  };
+
+  const handleTakePhoto = () => {
+    const video = videoRef.current;
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+      toast.error("The camera preview is not ready. Try again in a moment.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      toast.error("Could not capture the photo. Please try again.");
+      return;
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        toast.error("Could not capture the photo. Please try again.");
+        return;
+      }
+      if (uploadedImage) URL.revokeObjectURL(uploadedImage);
+      setUploadedImage(URL.createObjectURL(blob));
+      setPhotoRequiredError(false);
+    }, "image/jpeg", 0.92);
+  };
+
+  const handleRetakePhoto = () => {
+    if (uploadedImage) URL.revokeObjectURL(uploadedImage);
+    setUploadedImage(null);
+    setCameraState("starting");
+    setCameraError(null);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -87,6 +274,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
     if (uploadedImage) URL.revokeObjectURL(uploadedImage);
     setUploadedImage(URL.createObjectURL(file));
+    setPhotoRequiredError(false);
     // Reset so picking the same file twice still fires onChange.
     e.target.value = "";
   };
@@ -102,6 +290,39 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     e.preventDefault();
     if (!title.trim() || !location.trim()) {
       toast.error("Add a title and location first.");
+      return;
+    }
+    if (type === "found" && !previewImage) {
+      setPhotoRequiredError(true);
+      toast.error("Attach a photo of the found item first.");
+      return;
+    }
+    if (!dateValue || !timeValue) {
+      toast.error("Add the date and time first.");
+      return;
+    }
+
+    if (isEditing && initialItem) {
+      const updatedItem: Item = {
+        ...initialItem,
+        title: title.trim(),
+        type,
+        category,
+        building: building.trim() || undefined,
+        location: location.trim(),
+        date: dateValue,
+        dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
+        image: previewImage ?? "",
+        description: description.trim() || DEFAULT_DESCRIPTION_PLACEHOLDER,
+      };
+      if (color.trim()) {
+        updatedItem.color = color.trim();
+      } else {
+        delete updatedItem.color;
+      }
+      onUpdateItem?.(updatedItem);
+      toast.success("Your report was updated.");
+      onClose();
       return;
     }
 
@@ -130,9 +351,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       saved: false,
     };
     if (color.trim()) newItem.color = color.trim();
-    // Stored on the report but never rendered publicly.
-    if (confidentialInfo.trim())
-      newItem.confidentialInfo = confidentialInfo.trim();
 
     onAddItem(newItem);
     toast.success(
@@ -154,12 +372,12 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3
-              id="report-modal-title"
-              className="text-base font-extrabold text-neutral-900 tracking-tight text-balance"
-            >
-              Post an item lost or found
-            </h3>
+              <h3
+                id="report-modal-title"
+                className="text-base font-extrabold text-neutral-900 tracking-tight text-balance"
+              >
+                {isEditing ? "Edit your report" : "Post an item lost or found"}
+              </h3>
           </div>
           <button
             type="button"
@@ -188,7 +406,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               type="button"
               role="tab"
               aria-selected={type === tab.id}
-              onClick={() => setType(tab.id)}
+              onClick={() =>
+                tab.id === "found" ? handleFoundTabSelect() : setType(tab.id)
+              }
               className={`relative pb-2.5 text-sm font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded-sm ${
                 type === tab.id
                   ? "text-neutral-900"
@@ -208,9 +428,88 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
           onSubmit={handleSubmit}
           className="mt-5 grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6"
         >
-          {/* Left: photo upload */}
+          {/* Left: photo — live camera for found items, file upload for lost */}
           <div className="min-w-0">
-            <span className={labelClass}>Photo</span>
+            <span className={labelClass}>
+              Photo{type === "found" ? " *" : ""}
+            </span>
+            {type === "found" ? (
+              <>
+                <div
+                  className={`relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-neutral-950 ${
+                    photoRequiredError && !previewImage
+                      ? "outline-2 outline-[#E5192D]"
+                      : ""
+                  }`}
+                >
+                  {previewImage ? (
+                    <img
+                      src={previewImage}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      aria-label="Live camera preview"
+                      className={`h-full w-full object-cover ${
+                        cameraState === "error" ? "hidden" : ""
+                      }`}
+                    />
+                  )}
+                  {cameraState === "starting" && !previewImage && (
+                    <div
+                      role="status"
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center text-xs font-medium text-white"
+                    >
+                      <Camera
+                        className="h-6 w-6"
+                        aria-hidden="true"
+                      />
+                      Starting camera…
+                    </div>
+                  )}
+                  {cameraState === "error" && !previewImage && (
+                    <div
+                      role="alert"
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-white"
+                    >
+                      <CameraOff
+                        className="h-6 w-6 text-neutral-300"
+                        aria-hidden="true"
+                      />
+                      <p>{cameraError}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2 flex justify-end">
+                  {previewImage ? (
+                    <button
+                      type="button"
+                      onClick={handleRetakePhoto}
+                      className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-neutral-400 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                      Retake
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleTakePhoto}
+                      disabled={cameraState !== "ready"}
+                      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-neutral-900 px-3.5 text-xs font-bold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-neutral-300 cursor-pointer"
+                    >
+                      <Camera className="h-4 w-4" aria-hidden="true" />
+                      Take photo
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+            <>
             <input
               ref={fileInputRef}
               type="file"
@@ -246,7 +545,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 </>
               )}
             </button>
-            {previewImage && (
+            </>
+            )}
+            {previewImage && type === "lost" && (
               <div className="mt-2 flex justify-end">
                 <button
                   type="button"
@@ -282,7 +583,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div className="min-w-0">
                 <label htmlFor="report-color" className={labelClass}>
-                  Color
+                  Primary color
                 </label>
                 <div className="relative">
                   <input
@@ -325,7 +626,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div className="min-w-0">
                 <label htmlFor="report-time" className={labelClass}>
-                  {type === "lost" ? "Time lost *" : "Time found *"}
+                  {type === "lost" ? "Approximate time lost *" : "Time found *"}
                 </label>
                 <input
                   id="report-time"
@@ -364,7 +665,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div className="min-w-0">
                 <label htmlFor="report-location" className={labelClass}>
-                  Specific location
+                  Specific location *
                 </label>
                 <input
                   id="report-location"
@@ -403,15 +704,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <div>
               <label htmlFor="report-description" className={labelClass}>
-                Details{" "}
-                <span className="font-medium normal-case tracking-normal text-neutral-400">
-                  (optional)
-                </span>
+                Description *
               </label>
               <textarea
                 id="report-description"
                 name="description"
                 rows={3}
+                required
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Marks, where it was last seen…"
@@ -419,36 +718,12 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="report-confidential"
-                className={`${labelClass} flex items-center gap-1.5`}
-              >
-                <Lock className="h-3 w-3" aria-hidden="true" />
-                Confidential info
-              </label>
-              <input
-                id="report-confidential"
-                name="confidentialInfo"
-                type="text"
-                value={confidentialInfo}
-                onChange={(e) => setConfidentialInfo(e.target.value)}
-                placeholder="Serial number, ID number…"
-                autoComplete="off"
-                spellCheck={false}
-                className={inputClass}
-              />
-              <p className="mt-1.5 text-[11px] text-neutral-400">
-                Never shown publicly — only used to verify ownership.
-              </p>
-            </div>
-
             <div className="pt-1">
               <button
                 type="submit"
                 className="w-full h-11 rounded-xl bg-[#E5192D] text-white font-bold text-sm transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
               >
-                Publish report
+                {isEditing ? "Save changes" : "Publish report"}
               </button>
             </div>
           </div>

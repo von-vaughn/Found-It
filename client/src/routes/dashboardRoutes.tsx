@@ -10,14 +10,20 @@ interface DashboardRoutesOptions {
   items: Item[];
   submittedClaims: ClaimRequest[];
   onAddItem: (newItem: Item) => void;
+  onUpdateItem: (updatedItem: Item) => void;
+  onDeleteItem: (id: string) => void;
   onSubmitClaim: (claim: NewClaimRequest) => void;
+  onUpdateClaimStatus: (claimId: string, status: ClaimRequest["status"]) => void;
 }
 
 export function getDashboardRoutes({
   items,
   submittedClaims,
   onAddItem,
+  onUpdateItem,
+  onDeleteItem,
   onSubmitClaim,
+  onUpdateClaimStatus,
 }: DashboardRoutesOptions): RouteObject[] {
   return [
     {
@@ -36,7 +42,10 @@ export function getDashboardRoutes({
         <ItemDetailPage
           items={items}
           onAddItem={onAddItem}
+          onUpdateItem={onUpdateItem}
+          onDeleteItem={onDeleteItem}
           onSubmitClaim={onSubmitClaim}
+          onUpdateClaimStatus={onUpdateClaimStatus}
           submittedClaims={submittedClaims}
         />
       ),

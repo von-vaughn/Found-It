@@ -2,11 +2,16 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Building2,
+  CalendarDays,
   Camera,
   CameraOff,
   CheckCircle2,
+  Clock3,
+  Lock,
   MapPin,
+  Palette,
   RotateCcw,
+  Tag,
   X,
 } from "lucide-react";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
@@ -53,9 +58,14 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [step, setStep] = useState<ModalStep>("camera");
+  const [itemTitle, setItemTitle] = useState("");
+  const [color, setColor] = useState("");
+  const [dateFound, setDateFound] = useState("");
+  const [timeFound, setTimeFound] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [building, setBuilding] = useState("");
+  const [confidentialInfo, setConfidentialInfo] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -163,8 +173,16 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
 
   const handleDetailsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!description.trim() || !location.trim()) {
-      setFormError("Enter a description and specific location to continue.");
+    if (
+      !itemTitle.trim() ||
+      !description.trim() ||
+      !location.trim() ||
+      !dateFound ||
+      !timeFound
+    ) {
+      setFormError(
+        "Enter a title, description, specific location, date found, and time found to continue.",
+      );
       return;
     }
     setFormError(null);
@@ -321,50 +339,100 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
               />
             )}
             <div>
-              <label htmlFor="found-item-description" className={labelClass}>
-                Describe the item
+              <label htmlFor="found-item-title" className={labelClass}>
+                <span className="inline-flex items-center gap-1.5">
+                  <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                  What is it?
+                </span>
               </label>
-              <textarea
-                id="found-item-description"
-                name="description"
+              <input
+                id="found-item-title"
+                name="title"
+                type="text"
                 required
-                rows={3}
-                value={description}
+                value={itemTitle}
                 onChange={(event) => {
-                  setDescription(event.target.value);
+                  setItemTitle(event.target.value);
                   setFormError(null);
                 }}
-                placeholder="Add details that may help identify the item"
-                className={`${inputClass} min-h-24 resize-y`}
+                placeholder="Black backpack, iPhone 13…"
+                autoComplete="off"
+                spellCheck={false}
+                className={inputClass}
               />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="found-item-location" className={labelClass}>
+                <label htmlFor="found-item-color" className={labelClass}>
                   <span className="inline-flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                    Specific location
+                    <Palette className="h-3.5 w-3.5" aria-hidden="true" />
+                    Color
                   </span>
                 </label>
                 <input
-                  id="found-item-location"
-                  name="location"
+                  id="found-item-color"
+                  name="color"
                   type="text"
-                  required
-                  value={location}
+                  value={color}
                   onChange={(event) => {
-                    setLocation(event.target.value);
+                    setColor(event.target.value);
                     setFormError(null);
                   }}
-                  placeholder="Where did you find it?"
+                  placeholder="Black…"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="found-item-date" className={labelClass}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                    Date found *
+                  </span>
+                </label>
+                <input
+                  id="found-item-date"
+                  name="dateFound"
+                  type="date"
+                  required
+                  value={dateFound}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={(event) => {
+                    setDateFound(event.target.value);
+                    setFormError(null);
+                  }}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="found-item-time" className={labelClass}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+                    Time found *
+                  </span>
+                </label>
+                <input
+                  id="found-item-time"
+                  name="timeFound"
+                  type="time"
+                  required
+                  value={timeFound}
+                  onChange={(event) => {
+                    setTimeFound(event.target.value);
+                    setFormError(null);
+                  }}
                   className={inputClass}
                 />
               </div>
               <div>
                 <label htmlFor="found-item-building" className={labelClass}>
                   <span className="inline-flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <Building2 className="h-3 w-3" aria-hidden="true" />
                     Building
                   </span>
                 </label>
@@ -383,6 +451,73 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="found-item-description" className={labelClass}>
+                Description
+              </label>
+              <textarea
+                id="found-item-description"
+                name="description"
+                required
+                rows={3}
+                value={description}
+                onChange={(event) => {
+                  setDescription(event.target.value);
+                  setFormError(null);
+                }}
+                placeholder="Add details that may help identify the item"
+                className={`${inputClass} min-h-24 resize-y`}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="found-item-location" className={labelClass}>
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                  Specific location
+                </span>
+              </label>
+              <input
+                id="found-item-location"
+                name="location"
+                type="text"
+                required
+                value={location}
+                onChange={(event) => {
+                  setLocation(event.target.value);
+                  setFormError(null);
+                }}
+                placeholder="Where did you find it?"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="found-item-confidential" className={labelClass}>
+                <span className="inline-flex items-center gap-1.5">
+                  <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                  Confidential info
+                </span>
+              </label>
+              <input
+                id="found-item-confidential"
+                name="confidentialInfo"
+                type="text"
+                value={confidentialInfo}
+                onChange={(event) => {
+                  setConfidentialInfo(event.target.value);
+                  setFormError(null);
+                }}
+                placeholder="Serial number, ID number…"
+                autoComplete="off"
+                spellCheck={false}
+                className={inputClass}
+              />
+              <p className="mt-1.5 text-[11px] text-neutral-400">
+                Never shown publicly — only used to verify ownership.
+              </p>
             </div>
 
             <div className="flex flex-wrap justify-between gap-2 pt-1">

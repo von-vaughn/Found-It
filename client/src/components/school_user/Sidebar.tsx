@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Home,
   PlusCircle,
-  MessageSquare,
   Bell,
   X,
 } from "lucide-react";
@@ -163,14 +162,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: PlusCircle,
       onClick: () => {
         if (onOpenCreateModal) onOpenCreateModal();
-      },
-    },
-    {
-      id: "messages",
-      label: "Messages",
-      icon: MessageSquare,
-      onClick: () => {
-        if (onTabChange) onTabChange("messages");
       },
     },
     {
