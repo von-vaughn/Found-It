@@ -115,7 +115,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       type,
       category,
       username,
-      userAvatar: "/images/avatar-vaughn.jpg",
+      userAvatar: "/images/avatars/vaughn_evangelista.svg",
       building: building.trim() || undefined,
       location: location.trim(),
       date: dateValue,

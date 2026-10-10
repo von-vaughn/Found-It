@@ -3,17 +3,19 @@ import { DashboardPage } from "@/pages/school_user/DashboardPage";
 import { ItemDetailPage } from "@/pages/school_user/ItemDetailPage";
 import { ProfilePage } from "@/pages/school_user/ProfilePage";
 import type { Item } from "@/data/mockItems";
-import type { NewClaimRequest } from "@/types/claim";
+import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
 import { paths } from "./paths";
 
 interface DashboardRoutesOptions {
   items: Item[];
+  submittedClaims: ClaimRequest[];
   onAddItem: (newItem: Item) => void;
   onSubmitClaim: (claim: NewClaimRequest) => void;
 }
 
 export function getDashboardRoutes({
   items,
+  submittedClaims,
   onAddItem,
   onSubmitClaim,
 }: DashboardRoutesOptions): RouteObject[] {
@@ -29,6 +31,7 @@ export function getDashboardRoutes({
           items={items}
           onAddItem={onAddItem}
           onSubmitClaim={onSubmitClaim}
+          submittedClaims={submittedClaims}
         />
       ),
     },

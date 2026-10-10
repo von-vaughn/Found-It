@@ -17,3 +17,15 @@ export type NewClaimRequest = Omit<
   ClaimRequest,
   "id" | "status" | "submitted"
 >;
+
+export function getClaimantEmail(
+  claim: Pick<ClaimRequest, "claimant" | "email">,
+): string {
+  return (
+    claim.email ??
+    `${claim.claimant
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "")}@wmsu.edu.ph`
+  );
+}

@@ -30,6 +30,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [reportFilter, setReportFilter] = useState<"all" | "lost" | "found">(
+    "all",
+  );
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const name = user?.name || DEFAULT_PROFILE.name;
@@ -48,6 +51,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   );
   const lostItems = userItems.filter((item) => item.type === "lost").length;
   const foundItems = userItems.length - lostItems;
+  const filteredUserItems =
+    reportFilter === "all"
+      ? userItems
+      : userItems.filter((item) => item.type === reportFilter);
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -159,8 +166,40 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               </div>
 
               {userItems.length > 0 ? (
-                <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {userItems.map((item) => (
+                <>
+                  <nav
+                    aria-label="Filter your reports by type"
+                    className="mt-5 flex items-center gap-4"
+                  >
+                    {(
+                      [
+                        { id: "all", label: "All" },
+                        { id: "lost", label: "Lost Item" },
+                        { id: "found", label: "Found Item" },
+                      ] as const
+                    ).map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setReportFilter(tab.id)}
+                        aria-pressed={reportFilter === tab.id}
+                        className={`relative px-1 py-1 text-sm font-bold transition-colors ${
+                          reportFilter === tab.id
+                            ? "text-neutral-900"
+                            : "text-neutral-400 hover:text-neutral-700"
+                        }`}
+                      >
+                        {tab.label}
+                        {reportFilter === tab.id && (
+                          <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] rounded-full bg-neutral-900" />
+                        )}
+                      </button>
+                    ))}
+                  </nav>
+
+                  {filteredUserItems.length > 0 ? (
+                    <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredUserItems.map((item) => (
                     <ItemCard
                       key={item.id}
                       item={item}
@@ -169,7 +208,26 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                       }
                     />
                   ))}
-                </div>
+                    </div>
+                  ) : (
+                    <div className="py-10 text-center">
+                      <h3 className="text-sm font-semibold text-neutral-800">
+                        No {reportFilter === "lost" ? "lost" : "found"} reports
+                        yet
+                      </h3>
+                      <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
+                        You haven&apos;t reported any {reportFilter} items.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setReportFilter("all")}
+                        className="mt-4 text-xs font-bold text-[#E5192D] hover:underline"
+                      >
+                        Show all reports
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="py-10 text-center">
                   <h3 className="text-sm font-semibold text-neutral-800">

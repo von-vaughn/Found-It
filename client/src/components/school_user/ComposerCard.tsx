@@ -23,7 +23,7 @@ export const ComposerCard: React.FC<ComposerCardProps> = ({
             className="w-full h-full object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).src =
-                "/images/avatar-vaughn.jpg";
+                "/images/avatars/vaughn_evangelista.svg";
             }}
           />
         </div>

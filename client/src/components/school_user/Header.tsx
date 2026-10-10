@@ -212,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
-                    "/images/avatar-vaughn.jpg";
+                    "/images/avatars/vaughn_evangelista.svg";
                 }}
               />
             </div>

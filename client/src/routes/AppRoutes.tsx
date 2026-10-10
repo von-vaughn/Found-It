@@ -26,7 +26,7 @@ export function AppRoutes({
 }: AppRoutesProps) {
   return useRoutes([
     ...getPublicRoutes({ items, onAddItem, onBrowseLost, onBrowseFound }),
-    ...getDashboardRoutes({ items, onAddItem, onSubmitClaim }),
+    ...getDashboardRoutes({ items, submittedClaims, onAddItem, onSubmitClaim }),
     ...getAdminRoutes({ submittedClaims }),
     ...getAuthRoutes(),
     {

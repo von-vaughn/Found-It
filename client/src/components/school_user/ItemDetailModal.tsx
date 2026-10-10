@@ -11,6 +11,7 @@ import {
 import type { Item } from "@/data/mockItems";
 import toast from "react-hot-toast";
 import { formatItemDateTime } from "@/lib/dateTime";
+import { NoItemImage } from "@/components/NoItemImage";
 
 interface ItemDetailModalProps {
   item: Item | null;
@@ -141,9 +142,10 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
               />
             </div>
           ) : (
-            <div className="p-8 rounded-2xl bg-neutral-50 border border-dashed border-neutral-200 text-center text-neutral-400 text-xs font-medium">
-              No image attached to this report
-            </div>
+            <NoItemImage
+              title="No image attached to this report"
+              className="rounded-2xl p-8"
+            />
           )}
 
           {/* Details metadata */}

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Award,
@@ -20,17 +20,33 @@ import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModa
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems, type Item } from "@/data/mockItems";
 import { formatItemDateTime } from "@/lib/dateTime";
+import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
-import type { NewClaimRequest } from "@/types/claim";
+import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
+import { getClaimantEmail } from "@/types/claim";
+import { claims as demoClaims } from "@/components/admin/adminData";
 
 interface ItemDetailPageProps {
   items?: Item[];
+  submittedClaims?: ClaimRequest[];
   onAddItem?: (newItem: Item) => void;
   onSubmitClaim?: (claim: NewClaimRequest) => void;
 }
 
+const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
+
+const finderStatusStyles: Record<string, string> = {
+  Pending: "bg-amber-50 text-amber-700",
+  "Under review": "bg-blue-50 text-blue-800",
+  Approved: "bg-emerald-50 text-emerald-700",
+  Claimed: "bg-emerald-50 text-emerald-700",
+  Returned: "bg-neutral-100 text-neutral-600",
+  Rejected: "bg-neutral-100 text-neutral-500",
+};
+
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   items: propItems,
+  submittedClaims = [],
   onAddItem: propOnAddItem,
   onSubmitClaim,
 }) => {
@@ -38,6 +54,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const items = propItems ?? initialItems;
+
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/dashboard");
+    }
+  };
 
   const item = useMemo(() => items.find((entry) => entry.id === id), [items, id]);
 
@@ -92,6 +116,24 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       .slice(0, 4);
   }, [items, item]);
 
+  const profileName = user?.name || FALLBACK_PROFILE_NAME;
+  const isOwnItem = useMemo(() => {
+    if (!item) return false;
+    return (
+      item.username?.toLowerCase() ===
+        profileName.toLowerCase().replace(/\s+/g, "_") ||
+      item.contactName.trim().toLowerCase() ===
+        profileName.trim().toLowerCase()
+    );
+  }, [item, profileName]);
+
+  const finderReports = useMemo(() => {
+    if (!item) return [];
+    return [...submittedClaims, ...demoClaims].filter(
+      (claim) => claim.itemId === item.id,
+    );
+  }, [item, submittedClaims]);
+
   if (!item) {
     return (
       <div className="min-h-screen bg-white flex font-open-sans text-neutral-900">
@@ -126,13 +168,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   The item you are looking for may have been removed or the link
                   is incorrect.
                 </p>
-                <Link
-                  to="/dashboard"
+                <button
+                  type="button"
+                  onClick={handleGoBack}
                   className="mt-6 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                  Back to feed
-                </Link>
+                  Go back
+                </button>
               </main>
             </div>
           </div>
@@ -197,13 +240,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         >
         {/* Detail actions row */}
         <div className="px-2 sm:px-3 lg:px-4 pt-4 flex items-center justify-between max-w-[1100px] mx-auto w-full">
-          <Link
-            to="/dashboard"
+          <button
+            type="button"
+            onClick={handleGoBack}
             className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            Back to feed
-          </Link>
+            Go back
+          </button>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -222,22 +266,23 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         >
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
-          {/* Hero image */}
+          {/* Hero image — fixed frame so every item measures the same */}
           {item.image ? (
-            <div className="overflow-hidden rounded-3xl bg-neutral-100 border border-neutral-200/80">
+            <div className="aspect-[4/3] max-h-[560px] w-full overflow-hidden rounded-3xl bg-neutral-100 border border-neutral-200/80">
               <img
                 src={item.image}
                 alt={item.title}
                 width={1200}
                 height={900}
                 fetchPriority="high"
-                className="w-full max-h-[560px] object-cover"
+                className="h-full w-full object-cover"
               />
             </div>
           ) : (
-            <div className="rounded-3xl bg-neutral-100 border border-dashed border-neutral-200 p-10 text-center text-xs font-medium text-neutral-400">
-              No image attached to this report.
-            </div>
+            <NoItemImage
+              title="No image attached to this report."
+              className="aspect-[4/3] max-h-[560px] w-full rounded-3xl"
+            />
           )}
 
           {/* Details (not in a card) */}
@@ -266,19 +311,21 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   {item.timeAgo}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (isLost) {
-                    setFoundItemCameraOpen(true);
-                    return;
-                  }
-                  setOwnershipClaimOpen(true);
-                }}
-                className="shrink-0 h-10 px-5 rounded-full bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
-              >
-                {isLost ? "I Found This" : "This Is Mine"}
-              </button>
+              {!isOwnItem && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isLost) {
+                      setFoundItemCameraOpen(true);
+                      return;
+                    }
+                    setOwnershipClaimOpen(true);
+                  }}
+                  className="shrink-0 h-10 px-5 rounded-full bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
+                >
+                  {isLost ? "I Found This" : "This Is Mine"}
+                </button>
+              )}
             </div>
 
             <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400">
@@ -368,8 +415,123 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           </article>
           </div>
 
-          {/* Similar items */}
-          {similarItems.length > 0 && (
+          {/* People holding this item (own lost reports only) */}
+          {isOwnItem && isLost && (
+            <section aria-labelledby="finder-reports-heading">
+              <h2
+                id="finder-reports-heading"
+                className="text-sm font-extrabold text-neutral-900 text-balance"
+              >
+                Responses to Your Lost Items ({finderReports.length})
+              </h2>
+              {finderReports.length > 0 ? (
+                <ul className="mt-4 space-y-3">
+                  {finderReports.map((claim) => (
+                    <li
+                      key={claim.id}
+                      className="rounded-2xl border border-neutral-200/80 bg-white p-4 sm:p-5"
+                    >
+                      <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                        <div className="min-w-0">
+                          {claim.evidence && claim.evidence.length > 0 ? (
+                            <div
+                              className={`grid gap-2 ${
+                                claim.evidence.length > 1
+                                  ? "grid-cols-2"
+                                  : "grid-cols-1"
+                              }`}
+                            >
+                              {claim.evidence.map((image, index) => (
+                                <div
+                                  key={`${claim.id}-evidence-${index}`}
+                                  className="flex h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50"
+                                >
+                                  <img
+                                    src={image}
+                                    alt={`Photo evidence ${index + 1} from ${claim.claimant}`}
+                                    loading="lazy"
+                                    className="h-full max-w-full object-contain"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <NoItemImage
+                              title="No photo evidence provided"
+                              subtitle="The finder did not attach any photos."
+                              className="h-48"
+                            />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="min-w-0 truncate text-sm font-semibold text-neutral-800">
+                              {claim.claimant}
+                            </p>
+                            <span
+                              className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold ${finderStatusStyles[claim.status] ?? "bg-neutral-100 text-neutral-600"}`}
+                            >
+                              {claim.status}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 truncate text-xs text-neutral-500">
+                            {getClaimantEmail(claim)}
+                          </p>
+                          <div className="mt-3 border-b border-neutral-100 pb-3">
+                            <p className="text-xs leading-relaxed text-neutral-700 break-words">
+                              {claim.details}
+                            </p>
+                          </div>
+                          <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                            <div>
+                              <dt className="text-[10px] text-neutral-400">
+                                Submitted
+                              </dt>
+                              <dd className="mt-1 font-semibold text-neutral-800">
+                                {claim.submitted}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-[10px] text-neutral-400">
+                                Date found
+                              </dt>
+                              <dd className="mt-1 font-semibold text-neutral-800">
+                                {claim.dateLost}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-[10px] text-neutral-400">
+                                Time found
+                              </dt>
+                              <dd className="mt-1 font-semibold text-neutral-800">
+                                {claim.timeLost}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-[10px] text-neutral-400">
+                                Location found
+                              </dt>
+                              <dd className="mt-1 font-semibold text-neutral-800">
+                                {claim.location}
+                              </dd>
+                            </div>
+                          </dl>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-xs leading-relaxed text-neutral-500">
+                  No one has submitted a found report for this item yet. New
+                  submissions from people holding it will appear here.
+                </p>
+              )}
+            </section>
+          )}
+
+          {/* Similar items (hidden on your own reports) */}
+          {!isOwnItem && similarItems.length > 0 && (
             <section aria-labelledby="similar-heading">
               <h2
                 id="similar-heading"

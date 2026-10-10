@@ -199,6 +199,19 @@ export const claims: AdminClaim[] = [
       "WMSU student ID with a blue lanyard. The photo corner is slightly bent from daily use.",
     submitted: "October 4, 2026, 4:02 PM",
   },
+  {
+    id: "CL-2396",
+    status: "Pending" as const,
+    item: "Silver Watch",
+    itemId: "item-13",
+    claimant: "Joshua Ramos",
+    dateLost: "October 4, 2026",
+    timeLost: "1:45 PM",
+    location: "Cafeteria",
+    details:
+      "I picked up a silver wristwatch with a metal strap near the drinks counter. Keeping it safe until claimed.",
+    submitted: "Today, 11:20 AM",
+  },
 ];
 
 export const initialNotifications: AdminNotification[] = claims.map(

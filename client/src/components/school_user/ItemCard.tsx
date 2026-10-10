@@ -84,7 +84,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
           <div className="min-w-0">
             <div className="text-xs font-bold text-neutral-900 truncate hover:text-[#E5192D] transition-colors leading-tight">
-              {username}
+              {item.contactName || username}
             </div>
             <div className="text-[11px] text-neutral-400 font-normal truncate mt-0.5">
               {item.timeAgo}

@@ -21,6 +21,7 @@ import { StatusFilter } from "./StatusFilter";
 import { adminReports } from "./adminData";
 import type { RecordStatus } from "./types";
 import type { ClaimRequest } from "@/types/claim";
+import { getClaimantEmail } from "@/types/claim";
 
 function formatEventDate(value: string | undefined): string {
   if (!value) return "Not provided";
@@ -59,7 +60,6 @@ export function ClaimsView({
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
 }) {
-  const [submittedClaimsActive, setSubmittedClaimsActive] = useState(false);
   const [page, setPage] = useState(1);
   const [pendingStatusChange, setPendingStatusChange] = useState<{
     claimId: string;
@@ -220,38 +220,13 @@ export function ClaimsView({
           {filteredClaims.length} claims
         </p>
       </div>
-      <div
-        className={`grid min-w-0 gap-5 transition-[grid-template-columns] duration-300 ease-in-out ${
-          submittedClaimsActive
-            ? "xl:grid-cols-[minmax(0,0.7fr)_minmax(360px,1.3fr)]"
-            : "xl:grid-cols-[minmax(240px,0.35fr)_minmax(360px,1.65fr)]"
-        }`}
-      >
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.7fr)_minmax(360px,1.3fr)]">
         <Panel
           title="Submitted claims"
           stickyHeader
-          className={`group overflow-x-clip no-scrollbar xl:sticky xl:top-20 xl:flex xl:h-[min(53.5rem,calc(100dvh-6rem))] xl:flex-col xl:self-start ${
-            submittedClaimsActive ? "xl:overflow-y-auto" : "xl:overflow-hidden"
-          }`}
-          onMouseEnter={() => setSubmittedClaimsActive(true)}
-          onMouseLeave={(event) =>
-            setSubmittedClaimsActive(
-              event.currentTarget.contains(document.activeElement),
-            )
-          }
-          onFocusCapture={() => setSubmittedClaimsActive(true)}
-          onBlurCapture={(event) => {
-            const nextTarget = event.relatedTarget;
-            if (
-              (!(nextTarget instanceof Node) ||
-                !event.currentTarget.contains(nextTarget)) &&
-              !event.currentTarget.matches(":hover")
-            ) {
-              setSubmittedClaimsActive(false);
-            }
-          }}
+          className="overflow-x-clip no-scrollbar xl:sticky xl:top-20 xl:flex xl:h-[min(53.5rem,calc(100dvh-6rem))] xl:flex-col xl:self-start xl:overflow-y-auto"
           action={
-            <div className="flex xl:hidden xl:group-hover:flex xl:group-focus-within:flex">
+            <div className="flex">
               <StatusFilter
                 value={statusFilter}
                 onChange={onStatusFilterChange}
@@ -297,11 +272,11 @@ export function ClaimsView({
                       <span className="block break-normal text-sm font-bold leading-snug text-neutral-900">
                         {claim.item}
                       </span>
-                      <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 transition-[max-height,opacity] duration-200 xl:max-h-0 xl:overflow-hidden xl:opacity-0 xl:group-hover:max-h-8 xl:group-hover:opacity-100 xl:group-focus-within:max-h-8 xl:group-focus-within:opacity-100">
+                      <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500">
                         {claim.claimant} · {claim.id}
                       </span>
                     </span>
-                    <span className="hidden text-right transition-[max-height,opacity] duration-200 sm:block xl:max-h-0 xl:overflow-hidden xl:opacity-0 xl:group-hover:max-h-10 xl:group-hover:opacity-100 xl:group-focus-within:max-h-10 xl:group-focus-within:opacity-100">
+                    <span className="hidden text-right sm:block">
                       <span className="block text-[10px] text-neutral-500">
                         Submitted
                       </span>
@@ -313,7 +288,6 @@ export function ClaimsView({
                 );
               })}
             </div>
-            {submittedClaimsActive && (
             <div className="sticky bottom-0 z-10 mt-auto flex items-center justify-between gap-2 border-t border-neutral-100 bg-white px-4 py-3 sm:px-5">
               <p className="text-[11px] text-neutral-500">
                 Showing {rangeStart}–{rangeEnd} of {filteredClaims.length}
@@ -359,7 +333,6 @@ export function ClaimsView({
                 </div>
               )}
             </div>
-            )}
             </>
           )}
         </Panel>
@@ -618,11 +591,7 @@ export function ClaimsView({
                       {visibleSelectedClaim.claimant}
                     </p>
                     <p className="mt-0.5 truncate text-xs text-neutral-500">
-                      {visibleSelectedClaim.email ??
-                        `${visibleSelectedClaim.claimant
-                          .toLowerCase()
-                          .replace(/[^a-z0-9]+/g, "_")
-                          .replace(/^_|_$/g, "")}@wmsu.edu.ph`}
+                      {getClaimantEmail(visibleSelectedClaim)}
                     </p>
                     <div className="mt-3 border-b border-neutral-100 pb-3">
                       <p className="text-xs leading-relaxed text-neutral-700">
