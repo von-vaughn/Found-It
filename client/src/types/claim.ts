@@ -11,6 +11,9 @@ export interface ClaimRequest {
   details: string;
   submitted: string;
   evidence?: string[];
+  claimantTitle?: string;
+  color?: string;
+  building?: string;
 }
 
 export type NewClaimRequest = Omit<

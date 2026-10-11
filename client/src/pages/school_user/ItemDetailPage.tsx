@@ -529,6 +529,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                       setFoundItemCameraOpen(true);
                       return;
                     }
+                    // On mobile the claim flow is a full page, not a modal.
+                    if (window.matchMedia("(max-width: 767px)").matches) {
+                      navigate(`/dashboard/items/${item.id}/claim`);
+                      return;
+                    }
                     setOwnershipClaimOpen(true);
                   }}
                   className="shrink-0 h-10 px-5 rounded-full bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
@@ -552,7 +557,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                     aria-hidden="true"
                   />
                   <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900">Color</dt>
+                    <dt className="font-bold text-neutral-900">Primary color</dt>
                     <dd className="mt-1 capitalize text-neutral-500">
                       {item.color}
                     </dd>

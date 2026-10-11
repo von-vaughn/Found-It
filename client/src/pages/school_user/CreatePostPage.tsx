@@ -74,17 +74,19 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
           sidebarExpanded ? "md:ml-60" : "md:ml-20"
         }`}
       >
-        <Header
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-          searchInputRef={searchInputRef}
-          notificationsOpen={notificationsOpen}
-          activeFilterCount={countActiveFilters(filters)}
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          onClearFilters={() => onFiltersChange(defaultFilters)}
-          filterResultCount={applyAdvancedFilters(items, filters).length}
-        />
+        <div className="hidden md:block">
+          <Header
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
+            searchInputRef={searchInputRef}
+            notificationsOpen={notificationsOpen}
+            activeFilterCount={countActiveFilters(filters)}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            onClearFilters={() => onFiltersChange(defaultFilters)}
+            filterResultCount={applyAdvancedFilters(items, filters).length}
+          />
+        </div>
 
         <div
           className={`min-w-0 flex-1 transition-[margin,width] duration-300 ease-in-out ${
@@ -101,7 +103,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
                   ? navigate(-1)
                   : navigate("/dashboard")
               }
-              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              className="hidden md:inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Go back

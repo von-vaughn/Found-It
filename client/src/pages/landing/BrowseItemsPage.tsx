@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -152,46 +152,6 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-4 mb-8 w-full">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <nav
-              aria-label="Filter items by type"
-              className="flex shrink-0 items-center gap-4"
-            >
-              {(
-                [
-                  { id: "all", label: "All" },
-                  { id: "lost", label: "Lost Item" },
-                  { id: "found", label: "Found Item" },
-                ] as const
-              ).map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() =>
-                      updateParams({
-                        type: isActive && tab.id !== "all" ? "all" : tab.id,
-                      })
-                    }
-                    aria-pressed={isActive}
-                    className={`relative cursor-pointer whitespace-nowrap px-1 py-1 text-sm font-bold transition-colors ${
-                      isActive
-                        ? "text-neutral-900"
-                        : "text-neutral-400 hover:text-neutral-700"
-                    }`}
-                  >
-                    {tab.label}
-                    {isActive && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute -bottom-1 left-0 right-0 h-[2.5px] rounded-full bg-neutral-900"
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-
             <form onSubmit={handleSearchSubmit} className="min-w-0 flex-1">
               <div className="relative flex min-w-0 flex-1 items-center">
                 <Search
@@ -207,8 +167,27 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
                   placeholder={`Search ${activeTab} items by name…`}
                   aria-label={`Search ${activeTab} items by name`}
                   autoComplete="off"
-                  className="h-12 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-4 text-sm text-neutral-800 shadow-xs placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  className="h-12 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-12 text-sm text-neutral-800 shadow-xs placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 />
+                <button
+                  type="button"
+                  onClick={() => setFilterModalOpen(true)}
+                  title="Filters"
+                  aria-label="Open filters"
+                  aria-expanded={filterModalOpen}
+                  className={`absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 cursor-pointer ${
+                    filterModalOpen || activeFilterCount > 0
+                      ? "text-neutral-900 hover:bg-neutral-200/70"
+                      : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/70"
+                  }`}
+                >
+                  <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#E5192D] px-1 text-[10px] font-bold text-white tabular-nums">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
               </div>
             </form>
           </div>

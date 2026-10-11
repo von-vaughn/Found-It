@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { FoundReportFlow } from "./FoundReportFlow";
+import React, { useEffect, useState } from "react";
+import { FoundReportFlow, type FoundFlowStep } from "./FoundReportFlow";
 
 interface FoundItemCameraModalProps {
   onClose: () => void;
@@ -8,6 +8,8 @@ interface FoundItemCameraModalProps {
 export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
   onClose,
 }) => {
+  const [step, setStep] = useState<FoundFlowStep>("camera");
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -25,7 +27,7 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
         className="fixed inset-0 cursor-default"
       />
       <div className="relative z-10 my-6 w-full max-w-xl">
-        <FoundReportFlow active onExit={onClose} />
+        <FoundReportFlow active onExit={onClose} step={step} onStepChange={setStep} />
       </div>
     </div>
   );

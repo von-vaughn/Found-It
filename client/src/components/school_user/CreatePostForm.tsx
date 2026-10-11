@@ -708,23 +708,27 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="min-w-0">
-              <label htmlFor="report-location" className={labelClass}>
-                Specific location *
-              </label>
-              <input
-                id="report-location"
-                name="location"
-                type="text"
-                required
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Near the library entrance…"
-                autoComplete="off"
-                spellCheck={false}
-                className={inputClass}
-              />
-            </div>
+              <div className="min-w-0">
+                <label htmlFor="report-location" className={labelClass}>
+                  {type === "lost" ? "Location lost *" : "Location found *"}
+                </label>
+                <input
+                  id="report-location"
+                  name="location"
+                  type="text"
+                  required
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder={
+                    type === "lost"
+                      ? "Where do you think you lost it?"
+                      : "Where did you find it?"
+                  }
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={inputClass}
+                />
+              </div>
             <div className="min-w-0">
               <label htmlFor="report-category" className={labelClass}>
                 Category

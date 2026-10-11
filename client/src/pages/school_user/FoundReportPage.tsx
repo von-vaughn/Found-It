@@ -55,6 +55,7 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
         onNotificationsOpenChange={setNotificationsOpen}
+        hideMobileNav
         items={items}
         submittedClaims={submittedClaims}
         onTabChange={(tab) => {
@@ -64,7 +65,7 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
       />
 
       <div
-        className={`ml-0 flex min-h-screen min-w-0 flex-1 flex-col pb-20 md:pb-0 transition-[margin] duration-300 ${
+        className={`ml-0 flex min-h-screen min-w-0 flex-1 flex-col transition-[margin] duration-300 ${
           sidebarExpanded ? "md:ml-60" : "md:ml-20"
         }`}
       >
@@ -90,10 +91,21 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
           }`}
         >
           <main className="mx-auto w-full max-w-[640px] bg-white px-4 py-6 sm:px-6 lg:px-8">
-            {flowStep !== "confirmation" && (
+            {flowStep === "camera" ? (
               <button
                 type="button"
                 onClick={goBack}
+                className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Go back
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  setFlowStep(flowStep === "details" ? "camera" : "details")
+                }
                 className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -107,6 +119,7 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
                 active
                 framed={false}
                 onExit={goBack}
+                step={flowStep}
                 onStepChange={setFlowStep}
               />
             </div>

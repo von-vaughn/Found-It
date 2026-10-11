@@ -11,8 +11,6 @@ import {
   X,
   ShieldCheck,
   ArrowRight,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 
 interface GalleryItem {
@@ -139,13 +137,6 @@ export const HowItWorks: React.FC = () => {
   const activeItem = galleryItems[selectedIndex] || galleryItems[0];
   const currentSteps = activeTab === "claim" ? claimSteps : turnoverSteps;
 
-  /* ── Pagination helpers ── */
-  const totalPages = galleryItems.length;
-  const goNext = () =>
-    setSelectedIndex((prev) => (prev + 1) % totalPages);
-  const goPrev = () =>
-    setSelectedIndex((prev) => (prev - 1 + totalPages) % totalPages);
-
   return (
     <section
       id="how-it-works"
@@ -224,59 +215,11 @@ export const HowItWorks: React.FC = () => {
                 </h3>
 
                 {/* Description */}
-                <p className="text-neutral-500 text-sm sm:text-[15px] leading-relaxed mb-6 max-w-md">
+                <p className="text-neutral-500 text-sm sm:text-[15px] leading-relaxed max-w-md">
                   {activeItem.caption}. Where students come together to report,
                   recover, and return lost belongings through the Office of
                   Student Affairs.
                 </p>
-
-                {/* CTA row */}
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => setLightboxOpen(true)}
-                    className="inline-flex items-center gap-2.5 text-xs font-bold tracking-[0.16em] uppercase text-neutral-950 hover:text-[#E5192D] transition-colors group/cta cursor-pointer"
-                  >
-                    <span>View Location</span>
-                    <div className="w-8 h-8 rounded-full border-2 border-neutral-300 group-hover/cta:border-[#E5192D] flex items-center justify-center transition-colors">
-                      <ArrowRight className="w-3.5 h-3.5 group-hover/cta:translate-x-0.5 transition-transform" />
-                    </div>
-                  </button>
-
-                  {/* Pagination dots */}
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={goPrev}
-                      className="text-xs font-semibold text-neutral-400 hover:text-neutral-900 transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                      <span className="tracking-[0.12em] uppercase">Prev</span>
-                    </button>
-
-                    <div className="flex items-center gap-1.5">
-                      {galleryItems.map((_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setSelectedIndex(idx)}
-                          className={`transition-all duration-200 cursor-pointer ${
-                            selectedIndex === idx
-                              ? "w-7 h-7 rounded-full bg-neutral-950 text-white text-[11px] font-bold flex items-center justify-center"
-                              : "text-[12px] font-semibold text-neutral-400 hover:text-neutral-900 px-1"
-                          }`}
-                        >
-                          {String(idx + 1).padStart(2, "0")}
-                        </button>
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={goNext}
-                      className="text-xs font-semibold text-neutral-400 hover:text-neutral-900 transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <span className="tracking-[0.12em] uppercase">Next</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </motion.div>

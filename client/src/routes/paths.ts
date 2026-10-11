@@ -6,6 +6,7 @@ export const paths = {
   dashboardFilters: "/dashboard/filters",
   dashboardItem: "/dashboard/items/:id",
   dashboardFoundReport: "/dashboard/items/:id/found-report",
+  dashboardClaim: "/dashboard/items/:id/claim",
   dashboardProfile: "/dashboard/profile",
   admin: "/admin",
   adminItems: "/admin/items",

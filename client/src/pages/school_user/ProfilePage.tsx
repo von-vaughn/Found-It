@@ -132,17 +132,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           sidebarExpanded ? "md:ml-60" : "md:ml-20"
         }`}
       >
-        <Header
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-          searchInputRef={searchInputRef}
-          notificationsOpen={notificationsOpen}
-          activeFilterCount={countActiveFilters(filters)}
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          onClearFilters={() => onFiltersChange(defaultFilters)}
-          filterResultCount={applyAdvancedFilters(items, filters).length}
-        />
+        <div className="hidden md:block">
+          <Header
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
+            searchInputRef={searchInputRef}
+            notificationsOpen={notificationsOpen}
+            activeFilterCount={countActiveFilters(filters)}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            onClearFilters={() => onFiltersChange(defaultFilters)}
+            filterResultCount={applyAdvancedFilters(items, filters).length}
+          />
+        </div>
 
         <div
           className={`min-w-0 flex-1 transition-[margin,width] duration-300 ease-in-out ${

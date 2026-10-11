@@ -23,6 +23,7 @@ interface SidebarProps {
   onOpenCreateModal?: () => void;
   onExpandedChange?: (expanded: boolean) => void;
   onNotificationsOpenChange?: (open: boolean) => void;
+  hideMobileNav?: boolean;
   items?: Item[];
   submittedClaims?: ClaimRequest[];
 }
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenCreateModal,
   onExpandedChange,
   onNotificationsOpenChange,
+  hideMobileNav = false,
   items: propItems,
   submittedClaims = [],
 }) => {
@@ -268,6 +270,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
     </motion.aside>
     {/* Mobile bottom navigation — replaces the sidebar below md */}
+    {!hideMobileNav && (
     <nav
       aria-label="Primary"
       className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200 bg-white/95 backdrop-blur-sm md:hidden"
@@ -354,6 +357,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
     </nav>
+    )}
     <AnimatePresence>
       {notificationsOpen && (
         <motion.aside

@@ -18,7 +18,8 @@ interface FoundReportFlowProps {
   active: boolean;
   onExit: () => void;
   framed?: boolean;
-  onStepChange?: (step: FoundFlowStep) => void;
+  step: FoundFlowStep;
+  onStepChange: (step: FoundFlowStep) => void;
 }
 
 type CameraState = "starting" | "ready" | "error";
@@ -66,6 +67,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   active,
   onExit,
   framed = true,
+  step,
   onStepChange,
 }) => {
   const isMobileView = useIsMobileView();
@@ -76,7 +78,6 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [captureError, setCaptureError] = useState<string | null>(null);
-  const [step, setStep] = useState<FoundFlowStep>("camera");
   const [itemTitle, setItemTitle] = useState("");
   const [color, setColor] = useState("");
   const [dateFound, setDateFound] = useState("");
@@ -144,10 +145,6 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   }, [active, step, capturedPhoto, isMobileView]);
 
   useEffect(() => {
-    onStepChange?.(step);
-  }, [step, onStepChange]);
-
-  useEffect(() => {
     if (!capturedPhoto) return;
     return () => URL.revokeObjectURL(capturedPhoto);
   }, [capturedPhoto]);
@@ -200,7 +197,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
     setCameraError(null);
     setCapturedPhoto(null);
     setCaptureError(null);
-    setStep("camera");
+    onStepChange("camera");
   };
 
   const handleDetailsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -218,7 +215,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
       return;
     }
     setFormError(null);
-    setStep("confirmation");
+    onStepChange("confirmation");
   };
 
   const title =
@@ -317,7 +314,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setStep("details")}
+                      onClick={() => onStepChange("details")}
                       className="inline-flex h-10 items-center rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                     >
                       Continue
@@ -390,7 +387,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setStep("details")}
+                      onClick={() => onStepChange("details")}
                       className="inline-flex h-10 items-center rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                     >
                       Continue
@@ -459,7 +456,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               <label htmlFor="found-item-color" className={labelClass}>
                 <span className="inline-flex items-center gap-1.5">
                   <Palette className="h-3.5 w-3.5" aria-hidden="true" />
-                  Color
+                  Primary color
                 </span>
               </label>
               <input
@@ -589,7 +586,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           <div className="flex gap-2 pt-1">
             <button
               type="button"
-              onClick={() => setStep("camera")}
+              onClick={() => onStepChange("camera")}
               className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />

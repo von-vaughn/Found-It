@@ -185,10 +185,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }, [items, searchQuery, selectedCategory, filters]);
 
   const activeFilterCount = countActiveFilters(filters);
-  const showClearFilter =
-    searchQuery.trim() !== "" ||
-    selectedCategory !== "all" ||
-    activeFilterCount > 0;
 
   return (
     <div className="min-h-screen bg-white flex selection:bg-[#E5192D] selection:text-white font-open-sans text-neutral-900">
@@ -234,26 +230,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               ? "md:ml-80 md:w-[calc(100%-20rem)]"
               : "w-full"
           }`}>
-          {/* Clear-filter row (type tabs now live on the Filters page) */}
-          {showClearFilter && (
-          <div
-            className="items-center gap-3 pt-1 flex"
-          >
-            {/* Result count indicator if filtered or searched */}
-              <div className="ml-auto text-xs text-neutral-400 font-medium">
-                <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedCategory("all");
-                      setFilters(defaultFilters);
-                    }}
-                    className="ml-2 text-[#E5192D] hover:underline font-bold"
-                  >
-                    Clear filter
-                  </button>
-              </div>
-          </div>
-          )}
+           {/* Filter Pills and Tabs Bar */}
 
           <div
             ref={categoryRowRef}
