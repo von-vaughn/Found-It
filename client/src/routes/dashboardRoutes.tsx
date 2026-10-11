@@ -3,6 +3,7 @@ import { DashboardPage } from "@/pages/school_user/DashboardPage";
 import { CreatePostPage } from "@/pages/school_user/CreatePostPage";
 import { NotificationsPage } from "@/pages/school_user/NotificationsPage";
 import { ItemDetailPage } from "@/pages/school_user/ItemDetailPage";
+import { FoundReportPage } from "@/pages/school_user/FoundReportPage";
 import { FiltersPage } from "@/pages/school_user/FiltersPage";
 import { ProfilePage } from "@/pages/school_user/ProfilePage";
 import type { Item } from "@/data/mockItems";
@@ -101,6 +102,17 @@ export function getDashboardRoutes({
           submittedClaims={submittedClaims}
           returnRequests={returnRequests}
           onSubmitReturnRequest={onSubmitReturnRequest}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
+      ),
+    },
+    {
+      path: paths.dashboardFoundReport,
+      element: (
+        <FoundReportPage
+          items={items}
+          submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />

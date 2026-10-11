@@ -60,8 +60,7 @@ interface ItemDetailPageProps {
 
 const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
 
-const finderStatusStyles: Record<string, string> = {
-  Pending: "bg-amber-50 text-amber-700",
+const finderStatusStyles: Record<string, string> = {  Pending: "bg-amber-50 text-amber-700",
   "Pending admin approval": "bg-amber-50 text-amber-700",
   "Under review": "bg-blue-50 text-blue-800",
   Approved: "bg-emerald-50 text-emerald-700",
@@ -69,6 +68,32 @@ const finderStatusStyles: Record<string, string> = {
   Returned: "bg-neutral-100 text-neutral-600",
   Rejected: "bg-neutral-100 text-neutral-500",
 };
+
+function toTime(entry: Item): number | null {
+  const parsed = entry.dateTime
+    ? new Date(entry.dateTime)
+    : new Date(`${entry.date}T12:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.getTime();
+}
+
+function keywordSet(value: string): Set<string> {
+  const stopwords = new Set([
+    "with",
+    "from",
+    "that",
+    "this",
+    "have",
+    "your",
+    "near",
+    "around",
+  ]);
+  return new Set(
+    value
+      .toLowerCase()
+      .split(/[^a-z0-9]+/g)
+      .filter((word) => word.length >= 4 && !stopwords.has(word)),
+  );
+}
 
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   items: propItems,
@@ -214,6 +239,61 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     return items
       .filter((entry) => entry.id !== item.id && entry.category === item.category)
       .slice(0, 4);
+  }, [items, item]);
+  // Found reports that may match your own lost item, ranked by how closely
+  // category, color, place, timing, and title overlap.
+  const suggestedMatches = useMemo(() => {
+    if (!item || item.type !== "lost") return [];
+    const lostTime = toTime(item);
+    const lostKeywords = keywordSet(`${item.title} ${item.description}`);
+    const scored = items
+      .filter(
+        (entry) =>
+          entry.id !== item.id &&
+          entry.type === "found" &&
+          entry.status !== "reunited",
+      )
+      .map((entry) => {
+        let score = 0;
+        if (entry.category === item.category) score += 40;
+        if (
+          item.color?.trim() &&
+          entry.color?.trim() &&
+          entry.color.trim().toLowerCase() === item.color.trim().toLowerCase()
+        ) {
+          score += 25;
+        }
+        const place = `${entry.location} ${entry.building ?? ""}`.toLowerCase();
+        const lostPlace =
+          `${item.location} ${item.building ?? ""}`.toLowerCase();
+        if (
+          place &&
+          lostPlace &&
+          (place.includes(lostPlace) ||
+            lostPlace.includes(place) ||
+            entry.building?.trim().toLowerCase() ===
+              item.building?.trim().toLowerCase())
+        ) {
+          score += 20;
+        }
+        const foundTime = toTime(entry);
+        if (lostTime !== null && foundTime !== null) {
+          const daysAfter = (foundTime - lostTime) / 86_400_000;
+          if (daysAfter >= 0 && daysAfter <= 30) score += 15;
+        }
+        const foundKeywords = keywordSet(`${entry.title} ${entry.description}`);
+        let overlap = 0;
+        for (const word of lostKeywords) {
+          if (foundKeywords.has(word)) overlap += 1;
+        }
+        score += Math.min(overlap * 5, 20);
+        return { entry, score };
+      })
+      .filter(({ score }) => score >= 20)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4)
+      .map(({ entry }) => entry);
+    return scored;
   }, [items, item]);
 
   const profileName = user?.name || FALLBACK_PROFILE_NAME;
@@ -441,6 +521,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   type="button"
                   onClick={() => {
                     if (isLost) {
+                      // On mobile the found flow is a full page, not a modal.
+                      if (window.matchMedia("(max-width: 767px)").matches) {
+                        navigate(`/dashboard/items/${item.id}/found-report`);
+                        return;
+                      }
                       setFoundItemCameraOpen(true);
                       return;
                     }
@@ -564,6 +649,40 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
           </article>
           </div>
+
+          {/* Possible matches: found reports the system suggests for your lost item */}
+          {isOwnItem && isLost && (
+            <section aria-labelledby="suggested-matches-heading">
+              <h2
+                id="suggested-matches-heading"
+                className="text-sm font-extrabold text-neutral-900 text-balance"
+              >
+                Possible matches for you
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                Found reports that look related to your lost item, ranked by
+                category, color, place, timing, and title.
+              </p>
+              {suggestedMatches.length > 0 ? (
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {suggestedMatches.map((suggested) => (
+                    <ItemCard
+                      key={suggested.id}
+                      item={suggested}
+                      onItemClick={(selected) =>
+                        navigate(`/dashboard/items/${selected.id}`)
+                      }
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-xs leading-relaxed text-neutral-500">
+                  No potential matches right now. New found reports that look
+                  related will appear here.
+                </p>
+              )}
+            </section>
+          )}
 
           {/* People holding this item (own lost reports only) */}
           {isOwnItem && isLost && (

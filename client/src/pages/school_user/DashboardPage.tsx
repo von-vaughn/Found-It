@@ -48,12 +48,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   );
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
-  const [filterType, setFilterType] = useState<"all" | "lost" | "found">("all");
   const [selectedCategory, setSelectedCategory] = useState<
     "all" | ItemCategory
   >("all");
   const [visibleCategoryCount, setVisibleCategoryCount] = useState(0);
-  const typeTabsRef = useRef<HTMLElement>(null);
   const categoryRowRef = useRef<HTMLDivElement>(null);
   const categoryMeasureRef = useRef<HTMLDivElement>(null);
   const moreCategoryMeasureRef = useRef<HTMLButtonElement>(null);
@@ -62,7 +60,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     () => searchParams.get("q") ?? "",
   );
   const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [showHeaderTypeTabs, setShowHeaderTypeTabs] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalInitialType, setCreateModalInitialType] = useState<
     "lost" | "found"
@@ -81,22 +78,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  useEffect(() => {
-    const tabs = typeTabsRef.current;
-    if (!tabs) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowHeaderTypeTabs(
-          !entry.isIntersecting && entry.boundingClientRect.bottom <= 80,
-        );
-      },
-      { rootMargin: "-80px 0px 0px 0px", threshold: 0 },
-    );
-    observer.observe(tabs);
-    return () => observer.disconnect();
   }, []);
 
   // Keep the URL query in sync so feed search is deep-linkable
@@ -183,16 +164,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     return () => observer.disconnect();
   }, [categories.length]);
 
-  // Filter items: search matches item name only; type and category
-  // come from the quick pills; location/color/date-time from the palette.
+  // Filter items: search matches item name only; category comes from the
+  // quick pills; type/building/color/date-time from the filters page.
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const preFiltered = items.filter((item) => {
-      // Type filter (All vs Lost vs Found)
-      if (filterType !== "all" && item.type !== filterType) {
-        return false;
-      }
-
       // Category filter
       if (selectedCategory !== "all" && item.category !== selectedCategory) {
         return false;
@@ -206,9 +182,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       return true;
     });
     return applyAdvancedFilters(preFiltered, filters);
-  }, [items, filterType, searchQuery, selectedCategory, filters]);
+  }, [items, searchQuery, selectedCategory, filters]);
 
   const activeFilterCount = countActiveFilters(filters);
+  const showClearFilter =
+    searchQuery.trim() !== "" ||
+    selectedCategory !== "all" ||
+    activeFilterCount > 0;
 
   return (
     <div className="min-h-screen bg-white flex selection:bg-[#E5192D] selection:text-white font-open-sans text-neutral-900">
@@ -226,9 +206,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           // unrelated navigation (e.g. Dashboard -> Profile via header).
           discardSchoolSidebarExpanded();
           setActiveNavTab(tab);
-          if (tab === "discover") {
-            setFilterType("all");
-          }
         }}
         onOpenCreateModal={() => handleOpenCreateModal("lost")}
       />
@@ -248,86 +225,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           notificationsOpen={notificationsOpen}
           isFilterModalOpen={filterModalOpen}
           onFilterModalOpenChange={setFilterModalOpen}
-          dashboardTypeTabsVisible={showHeaderTypeTabs}
-          filterType={filterType}
-          onFilterTypeChange={setFilterType}
         />
 
         {/* Dashboard Main Container */}
-        <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto bg-white px-2 sm:px-3 lg:px-4 py-5 space-y-5">
+        <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto bg-white px-2 sm:px-3 lg:px-4 pt-2 pb-5 space-y-5">
           <div className={`@container min-w-0 space-y-5 transition-[margin,width] duration-300 ease-in-out ${
             notificationsOpen
               ? "md:ml-80 md:w-[calc(100%-20rem)]"
               : "w-full"
           }`}>
-          {/* Filter Pills and Tabs Bar */}
-          <div className="flex items-center gap-3 pt-1">
-            {/* "All" Tab with bottom underline */}
-            <nav
-              ref={typeTabsRef}
-              aria-label="Filter items by type"
-              className="flex items-center gap-4"
-            >
-            <button
-              onClick={() => setFilterType("all")}
-              aria-pressed={filterType === "all"}
-              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer ${
-                filterType === "all"
-                  ? "text-neutral-900"
-                  : "text-neutral-400 hover:text-neutral-700"
-              }`}
-            >
-              All
-              {filterType === "all" && (
-                <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-neutral-900 rounded-full" />
-              )}
-            </button>
-
-            {/* "Lost Item" Tab */}
-            <button
-              onClick={() =>
-                setFilterType(filterType === "lost" ? "all" : "lost")
-              }
-              aria-pressed={filterType === "lost"}
-              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer ${
-                filterType === "lost"
-                  ? "text-neutral-900"
-                  : "text-neutral-400 hover:text-neutral-700"
-              }`}
-            >
-              Lost Item
-              {filterType === "lost" && (
-                <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-neutral-900 rounded-full" />
-              )}
-            </button>
-
-            {/* "Found Item" Tab */}
-            <button
-              onClick={() =>
-                setFilterType(filterType === "found" ? "all" : "found")
-              }
-              aria-pressed={filterType === "found"}
-              className={`text-sm font-bold transition-all relative py-1 px-1 cursor-pointer ${
-                filterType === "found"
-                  ? "text-neutral-900"
-                  : "text-neutral-400 hover:text-neutral-700"
-              }`}
-            >
-              Found Item
-              {filterType === "found" && (
-                <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] bg-neutral-900 rounded-full" />
-              )}
-            </button>
-            </nav>
-
+          {/* Clear-filter row (type tabs now live on the Filters page) */}
+          {showClearFilter && (
+          <div
+            className="items-center gap-3 pt-1 flex"
+          >
             {/* Result count indicator if filtered or searched */}
-            {(searchQuery.trim() || filterType !== "all" || selectedCategory !== "all" || activeFilterCount > 0) && (
               <div className="ml-auto text-xs text-neutral-400 font-medium">
-                {(searchQuery || filterType !== "all" || selectedCategory !== "all" || activeFilterCount > 0) && (
-                  <button
+                <button
                     onClick={() => {
                       setSearchQuery("");
-                      setFilterType("all");
                       setSelectedCategory("all");
                       setFilters(defaultFilters);
                     }}
@@ -335,10 +251,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   >
                     Clear filter
                   </button>
-                )}
               </div>
-            )}
           </div>
+          )}
 
           <div
             ref={categoryRowRef}
@@ -354,7 +269,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   onClick={() => {
                     if (category.id === "all") {
                       setSearchQuery("");
-                      setFilterType("all");
                       setSelectedCategory("all");
                       setFilters(defaultFilters);
                       return;
@@ -445,7 +359,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 onClick={() => {
                   setSearchQuery("");
-                  setFilterType("all");
                   setSelectedCategory("all");
                   setFilters(defaultFilters);
                 }}
