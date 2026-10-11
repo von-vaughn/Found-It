@@ -14,6 +14,7 @@ export { ItemDetailsDialog } from "./ItemDetailsDialog";
 export {
   adminReports,
   claims,
+  adminUsers,
   initialNotifications,
   activityHistory,
   navigation,
@@ -23,5 +24,7 @@ export type {
   AdminSection,
   AdminReport,
   AdminClaim,
+  AdminUser,
+  AdminUserRole,
   RecordStatus,
 } from "./types";

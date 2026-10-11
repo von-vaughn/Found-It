@@ -8,11 +8,17 @@ import {
   PackageCheck,
   PackageSearch,
   RotateCcw,
+  Users,
 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { initialItems } from "@/data/mockItems";
 import type { AdminNotification, AdminSidebarItem } from "./AdminSidebar";
-import type { AdminReport, AdminSection, AdminClaim } from "./types";
+import type {
+  AdminReport,
+  AdminSection,
+  AdminClaim,
+  AdminUser,
+} from "./types";
 import type { ReturnItemRequest } from "@/types/claim";
 
 export const itemToAdminReport = (item: (typeof initialItems)[number]): AdminReport => ({
@@ -48,6 +54,32 @@ export const itemToAdminReport = (item: (typeof initialItems)[number]): AdminRep
 export const adminReports: AdminReport[] = initialItems.map(itemToAdminReport);
 
 export const claims: AdminClaim[] = [
+  {
+    id: "CL-2410",
+    status: "Pending" as const,
+    item: "Wallet",
+    itemId: "item-4",
+    claimant: "Paolo Gutierrez",
+    dateLost: "September 30, 2026",
+    timeLost: "7:45 PM",
+    location: "Main Gate",
+    details:
+      "Dark brown bifold wallet with a faded photo booth strip in the bill section. My initials are embossed on the corner.",
+    submitted: "Today, 10:15 AM",
+  },
+  {
+    id: "CL-2409",
+    status: "Pending" as const,
+    item: "iPhone 13",
+    itemId: "item-2",
+    claimant: "Daniel Cruz",
+    dateLost: "October 2, 2026",
+    timeLost: "4:10 PM",
+    location: "Library Building",
+    details:
+      "Blue iPhone 13 with a cracked screen protector. The wallpaper is a beach photo and Find My shows it near the library.",
+    submitted: "Today, 8:30 AM",
+  },
   {
     id: "CL-2408",
     status: "Pending" as const,
@@ -312,11 +344,17 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
     compactLabel: "Returns",
     icon: RotateCcw,
   },
+  {
+    id: "users",
+    label: "Users",
+    compactLabel: "Users",
+    icon: Users,
+  },
 ];
 
 export const pageCopy: Record<AdminSection, { title: string; description: string }> = {
   overview: {
-    title: "Operations overview",
+    title: "Admin dashboard",
     description: "A current view of campus lost and found activity.",
   },
   items: {
@@ -331,4 +369,173 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
     title: "Return item requests",
     description: "Review ownership confirmations submitted by school users.",
   },
+  users: {
+    title: "User management",
+    description: "Search, filter, and manage campus account access.",
+  },
 };
+
+export const adminUsers: AdminUser[] = [
+  {
+    id: "USR-1042",
+    name: "Vaughn Evangelista",
+    email: "vaughn@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Aug 12, 2026",
+    reportCount: 4,
+  },
+  {
+    id: "USR-1038",
+    name: "Mika Ross",
+    email: "mika.ross@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Aug 28, 2026",
+    reportCount: 2,
+  },
+  {
+    id: "USR-1031",
+    name: "Janelle Cruz",
+    email: "janelle.cruz@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Sep 2, 2026",
+    reportCount: 1,
+  },
+  {
+    id: "USR-1027",
+    name: "Alyssa Moore",
+    email: "alyssa.moore@wmsu.edu.ph",
+    role: "school_user",
+    isActive: false,
+    joined: "Sep 9, 2026",
+    reportCount: 3,
+  },
+  {
+    id: "USR-1022",
+    name: "Rohan Patel",
+    email: "rohan.patel@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Sep 15, 2026",
+    reportCount: 0,
+  },
+  {
+    id: "USR-1019",
+    name: "Sofia Reyes",
+    email: "sofia.reyes@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Sep 21, 2026",
+    reportCount: 5,
+  },
+  {
+    id: "USR-1014",
+    name: "Gabriel Santos",
+    email: "gabriel.santos@wmsu.edu.ph",
+    role: "school_user",
+    isActive: false,
+    joined: "Sep 30, 2026",
+    reportCount: 1,
+  },
+  {
+    id: "USR-1011",
+    name: "Denise Ocampo",
+    email: "denise.ocampo@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Oct 1, 2026",
+    reportCount: 2,
+  },
+  {
+    id: "USR-1009",
+    name: "Marco Villanueva",
+    email: "marco.villanueva@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Oct 2, 2026",
+    reportCount: 0,
+  },
+  {
+    id: "USR-1006",
+    name: "Lena Torres",
+    email: "lena.torres@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Oct 3, 2026",
+    reportCount: 3,
+  },
+  {
+    id: "USR-1004",
+    name: "Paolo Gutierrez",
+    email: "paolo.gutierrez@wmsu.edu.ph",
+    role: "school_user",
+    isActive: false,
+    joined: "Oct 4, 2026",
+    reportCount: 1,
+  },
+  {
+    id: "USR-0998",
+    name: "Katrina Lim",
+    email: "katrina.lim@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Oct 5, 2026",
+    reportCount: 2,
+  },
+  {
+    id: "USR-0995",
+    name: "Diego Ramos",
+    email: "diego.ramos@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Oct 6, 2026",
+    reportCount: 0,
+  },
+  {
+    id: "USR-0991",
+    name: "Bianca Aquino",
+    email: "bianca.aquino@wmsu.edu.ph",
+    role: "school_user",
+    isActive: true,
+    joined: "Oct 7, 2026",
+    reportCount: 4,
+  },
+  {
+    id: "USR-0988",
+    name: "Rafael Mendoza",
+    email: "rafael.mendoza@wmsu.edu.ph",
+    role: "school_user",
+    isActive: false,
+    joined: "Oct 8, 2026",
+    reportCount: 1,
+  },
+  {
+    id: "USR-1007",
+    name: "OSA Staff",
+    email: "osa@wmsu.edu.ph",
+    role: "admin",
+    isActive: true,
+    joined: "Jul 1, 2026",
+    reportCount: 6,
+  },
+  {
+    id: "USR-1003",
+    name: "Campus Admin",
+    email: "admin@wmsu.edu.ph",
+    role: "admin",
+    isActive: true,
+    joined: "Jul 1, 2026",
+    reportCount: 0,
+  },
+  {
+    id: "USR-1001",
+    name: "System Owner",
+    email: "owner@wmsu.edu.ph",
+    role: "super_admin",
+    isActive: true,
+    joined: "Jun 20, 2026",
+    reportCount: 0,
+  },
+];

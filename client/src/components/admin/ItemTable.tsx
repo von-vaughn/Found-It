@@ -15,14 +15,16 @@ export function ItemTable({
 }) {
   if (rows.length === 0) {
     return (
-      <p className="px-5 py-10 text-center text-sm text-neutral-500">
-        No reports match these filters.
-      </p>
+      <div className="flex min-h-[800px] items-center justify-center px-5 py-10">
+        <p className="text-center text-sm text-neutral-500">
+          No reports match these filters.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="min-h-[800px] overflow-x-auto">
       <table className="w-full min-w-[1120px] text-left text-xs">
         <thead
           className={

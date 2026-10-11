@@ -5,6 +5,7 @@ import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
+import { takeSchoolSidebarExpanded } from "@/components/school_user/sidebarExpandedState";
 import { useAuth } from "@/context/useAuth";
 import { initialItems, type Item } from "@/data/mockItems";
 import type { ClaimRequest } from "@/types/claim";
@@ -30,7 +31,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const navigate = useNavigate();
   const items = propItems ?? initialItems;
   const [searchQuery, setSearchQuery] = useState("");
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
+    takeSchoolSidebarExpanded(),
+  );
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [reportFilter, setReportFilter] = useState<"all" | "lost" | "found">(

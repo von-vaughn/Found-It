@@ -17,13 +17,10 @@ export function OverviewPage() {
 
   return (
     <AdminLayout activeSection="overview">
-      <Overview
-        onNavigate={handleNavigate}
-        onViewReport={setSelectedReport}
-        onSelectClaim={(id) => navigate(`/admin/claims?claimId=${id}`)}
-      />
+      <Overview onNavigate={handleNavigate} />
       {selectedReport && (
         <ItemDetailsDialog
+          key={selectedReport.id}
           report={selectedReport}
           dialogRef={dialogRef}
           onClose={() => setSelectedReport(null)}

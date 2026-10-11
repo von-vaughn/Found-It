@@ -7,6 +7,10 @@ import React, {
 } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/school_user/Sidebar";
+import {
+  discardSchoolSidebarExpanded,
+  takeSchoolSidebarExpanded,
+} from "@/components/school_user/sidebarExpandedState";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
@@ -35,7 +39,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [internalItems, setInternalItems] = useState<Item[]>(initialItems);
   const items = propItems ?? internalItems;
 
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
+    takeSchoolSidebarExpanded(),
+  );
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
   const [filterType, setFilterType] = useState<"all" | "lost" | "found">("all");
@@ -212,6 +218,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         items={items}
         submittedClaims={submittedClaims}
         onTabChange={(tab) => {
+          // No route change happens here, so discard the hover flag the
+          // sidebar just set — otherwise it would leak into a later
+          // unrelated navigation (e.g. Dashboard -> Profile via header).
+          discardSchoolSidebarExpanded();
           setActiveNavTab(tab);
           if (tab === "discover") {
             setFilterType("all");

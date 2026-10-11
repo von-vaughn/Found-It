@@ -1,4 +1,5 @@
-import type { RefObject } from "react";
+import { useState } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { NoItemImage } from "./NoItemImage";
@@ -26,6 +27,15 @@ function formatEventTime(report: AdminReport): string {
   }).format(eventDate);
 }
 
+const DELETE_REASON_PRESETS = [
+  "Spam",
+  "Duplicate report",
+  "Inappropriate content",
+  "False information",
+];
+
+const DELETE_REASON_MAX_LENGTH = 500;
+
 export function ItemDetailsDialog({
   report,
   dialogRef,
@@ -35,16 +45,40 @@ export function ItemDetailsDialog({
   report: AdminReport | null;
   dialogRef: RefObject<HTMLDialogElement | null>;
   onClose: () => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string, reason?: string) => void;
 }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const deleteDialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = deleteDialogRef.current;
+    if (!dialog) return;
+    if (confirmingDelete && !dialog.open) dialog.showModal();
+    if (!confirmingDelete && dialog.open) dialog.close();
+  }, [confirmingDelete]);
+
   if (!report) return null;
 
-  const handleDelete = () => {
+  const handleDeleteClick = () => {
+    setDeleteError("");
+    setConfirmingDelete(true);
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmingDelete(false);
+    setDeleteError("");
+  };
+
+  const handleConfirmDelete = () => {
     if (!onDelete) return;
-    if (!window.confirm(`Delete the report for "${report.title}"? This cannot be undone.`)) {
+    const reason = deleteReason.trim();
+    if (!reason) {
+      setDeleteError("Please provide a reason for deleting this report.");
       return;
     }
-    onDelete(report.id);
+    onDelete(report.id, reason);
     toast.success("Item report deleted.");
   };
 
@@ -53,7 +87,9 @@ export function ItemDetailsDialog({
       ref={dialogRef}
       aria-labelledby="item-details-title"
       onClose={onClose}
-      className="m-auto max-h-[min(90dvh,800px)] w-[min(640px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-neutral-200 bg-white p-0 text-neutral-900 shadow-xl backdrop:bg-neutral-950/50"
+      className={`relative m-auto max-h-[min(90dvh,800px)] w-[min(640px,calc(100vw-2rem))] overflow-y-auto rounded-xl border bg-white p-0 text-neutral-900 shadow-xl backdrop:bg-neutral-950/50 ${
+        confirmingDelete ? "border-transparent" : "border-neutral-200"
+      }`}
     >
       <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4">
         <div className="min-w-0">
@@ -156,7 +192,7 @@ export function ItemDetailsDialog({
           <div className="flex justify-end border-t border-neutral-100 pt-4">
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 px-3 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -165,6 +201,108 @@ export function ItemDetailsDialog({
           </div>
         )}
       </div>
+      {onDelete && confirmingDelete && (
+        <dialog
+          ref={deleteDialogRef}
+          role="alertdialog"
+          aria-labelledby="delete-report-title"
+          aria-describedby="delete-report-description"
+          onCancel={(event) => {
+            event.preventDefault();
+            handleCancelDelete();
+          }}
+          onClose={handleCancelDelete}
+          className="m-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-neutral-200 bg-white p-5 text-neutral-900 shadow-xl backdrop:bg-neutral-950/50"
+        >
+            <h3
+              id="delete-report-title"
+              className="text-base font-bold text-neutral-900"
+            >
+              Delete this report?
+            </h3>
+            <p
+              id="delete-report-description"
+              className="mt-1 line-clamp-2 text-xs leading-relaxed text-neutral-500"
+            >
+              &ldquo;{report.title}&rdquo; will be permanently removed. This
+              cannot be undone.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {DELETE_REASON_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    setDeleteReason(preset);
+                    setDeleteError("");
+                  }}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 ${
+                    deleteReason === preset
+                      ? "border-[#E5192D] bg-red-50 text-red-700"
+                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+            <label
+              htmlFor="delete-report-reason"
+              className="mt-3 block text-xs font-semibold text-neutral-800"
+            >
+              Reason for deletion{" "}
+              <span className="font-normal text-neutral-400">(required)</span>
+            </label>
+            <textarea
+              id="delete-report-reason"
+              autoFocus
+              rows={4}
+              value={deleteReason}
+              maxLength={DELETE_REASON_MAX_LENGTH}
+              onChange={(event) => {
+                setDeleteReason(event.target.value);
+                if (deleteError) setDeleteError("");
+              }}
+              placeholder="e.g. Duplicate of an existing report…"
+              aria-invalid={deleteError ? true : undefined}
+              aria-describedby={deleteError ? "delete-reason-error" : undefined}
+              className="mt-1.5 w-full resize-none rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs leading-relaxed text-neutral-800 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+            />
+            <div className="mt-1 flex items-center justify-between gap-2">
+              {deleteError ? (
+                <p
+                  id="delete-reason-error"
+                  role="alert"
+                  className="text-[11px] font-medium text-red-600"
+                >
+                  {deleteError}
+                </p>
+              ) : (
+                <span />
+              )}
+              <span className="shrink-0 text-[10px] tabular-nums text-neutral-400">
+                {deleteReason.length}/{DELETE_REASON_MAX_LENGTH}
+              </span>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCancelDelete}
+                className="h-9 rounded-lg border border-neutral-200 px-3.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Delete report
+              </button>
+            </div>
+        </dialog>
+      )}
     </dialog>
   );
 }

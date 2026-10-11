@@ -18,7 +18,7 @@ interface AppRoutesProps {
   returnRequests: ReturnItemRequest[];
   onAddItem: (newItem: Item) => void;
   onUpdateItem: (updatedItem: Item) => void;
-  onDeleteItem: (id: string) => void;
+  onDeleteItem: (id: string, reason?: string) => void;
   onSubmitClaim: (claim: NewClaimRequest) => void;
   onUpdateClaimStatus: (claimId: string, status: ClaimRequest["status"]) => void;
   onSubmitReturnRequest: (request: NewReturnItemRequest) => void;

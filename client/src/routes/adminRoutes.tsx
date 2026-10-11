@@ -5,13 +5,14 @@ import { ReportsPage } from "@/pages/admin/ReportsPage";
 import { ClaimsPage } from "@/pages/admin/ClaimsPage";
 import type { Item } from "@/data/mockItems";
 import { ReturnItemsPage } from "@/pages/admin/ReturnItemsPage";
+import { UsersPage } from "@/pages/admin/UsersPage";
 import type { ClaimRequest, ReturnItemRequest } from "@/types/claim";
 import { paths } from "./paths";
 
 interface AdminRoutesOptions {
   items: Item[];
   onAddItem: (newItem: Item) => void;
-  onDeleteItem: (id: string) => void;
+  onDeleteItem: (id: string, reason?: string) => void;
   submittedClaims: ClaimRequest[];
   returnRequests: ReturnItemRequest[];
   onUpdateReturnRequestStatus: (
@@ -55,6 +56,10 @@ export function getAdminRoutes({
           onStatusChange={onUpdateReturnRequestStatus}
         />
       ),
+    },
+    {
+      path: paths.adminUsers,
+      element: <UsersPage />,
     },
   ];
 }

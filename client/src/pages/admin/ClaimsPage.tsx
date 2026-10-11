@@ -16,7 +16,7 @@ export function ClaimsPage({
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All statuses");
+  const [statusFilter, setStatusFilter] = useState("Pending");
   const [manualClaimId, setManualClaimId] = useState<string | null>(null);
   const [claimStatuses, setClaimStatuses] = useState<
     Record<string, ClaimRequest["status"]>
@@ -125,6 +125,7 @@ export function ClaimsPage({
         onSelectClaim={handleSelectClaim}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        statusOptions={["Pending", "Approved", "Claimed", "Rejected"]}
         onClaimStatusChange={handleClaimStatusChange}
         onItemStatusChange={handleItemStatusChange}
         itemStatusOverrides={itemStatuses}

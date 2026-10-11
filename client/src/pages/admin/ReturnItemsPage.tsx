@@ -41,7 +41,7 @@ export function ReturnItemsPage({
   onStatusChange: (requestId: string, status: ReturnStatus) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All statuses");
+  const [statusFilter, setStatusFilter] = useState("Pending");
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -49,7 +49,7 @@ export function ReturnItemsPage({
     const normalizedQuery = query.trim().toLowerCase();
     return requests.filter(
       (request) =>
-        (statusFilter === "All statuses" || request.status === statusFilter) &&
+        request.status === statusFilter &&
         [
           request.lostItemTitle,
           request.item,
@@ -128,6 +128,7 @@ export function ReturnItemsPage({
               <StatusFilter
                 value={statusFilter}
                 onChange={updateStatusFilter}
+                options={["Pending", "Approved", "Returned", "Rejected"]}
               />
             </div>
           }
@@ -251,9 +252,7 @@ export function ReturnItemsPage({
                     Lost item
                   </h2>
                   {selectedLostReport && (
-                    <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold text-neutral-600">
-                      {selectedLostReport.type}
-                    </span>
+                    <StatusBadge status={selectedLostReport.type} />
                   )}
                 </div>
                 <div className="grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
@@ -398,6 +397,26 @@ export function ReturnItemsPage({
                         className="h-72 w-full"
                       />
                     )}
+                    {selectedRequest.status === "Pending" && (
+                      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-4">
+                        <button
+                          type="button"
+                          onClick={() => changeStatus("Approved")}
+                          className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                        >
+                          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                          Approve return
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => changeStatus("Rejected")}
+                          className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                        >
+                          <X className="h-3.5 w-3.5" aria-hidden="true" />
+                          Reject
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-neutral-800">
@@ -449,26 +468,6 @@ export function ReturnItemsPage({
                     </dl>
                   </div>
                 </div>
-                {selectedRequest.status === "Pending" && (
-                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => changeStatus("Approved")}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-                    >
-                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                      Approve return
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => changeStatus("Rejected")}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                    >
-                      <X className="h-3.5 w-3.5" aria-hidden="true" />
-                      Reject
-                    </button>
-                  </div>
-                )}
               </section>
             </div>
           ) : (

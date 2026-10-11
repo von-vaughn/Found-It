@@ -1,8 +1,20 @@
 import type { ClaimRequest } from "@/types/claim";
 
-export type AdminSection = "overview" | "items" | "claims" | "returns";
+export type AdminSection = "overview" | "items" | "claims" | "returns" | "users";
 
 export type RecordStatus = "Lost" | "Found" | "Returned" | "Claimed";
+
+export type AdminUserRole = "school_user" | "admin" | "super_admin";
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: AdminUserRole;
+  isActive: boolean;
+  joined: string;
+  reportCount: number;
+}
 
 export interface AdminReport {
   id: string;

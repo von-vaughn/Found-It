@@ -7,8 +7,16 @@ export function StatusBadge({ status }: { status: string }) {
     Approved: "bg-blue-50 text-blue-800",
     "Under review": "bg-amber-50 text-amber-800",
     Returned: "bg-emerald-50 text-emerald-800",
-    Pending: "bg-red-50 text-red-700",
+    Pending: "bg-amber-50 text-amber-800",
     Rejected: "bg-neutral-100 text-neutral-500",
+    Active: "bg-emerald-50 text-emerald-800",
+    Inactive: "bg-neutral-100 text-neutral-500",
+    school_user: "bg-neutral-100 text-neutral-700",
+    admin: "bg-blue-50 text-blue-800",
+    super_admin: "bg-neutral-900 text-white",
+    "School user": "bg-neutral-100 text-neutral-700",
+    Admin: "bg-blue-50 text-blue-800",
+    "Super admin": "bg-neutral-900 text-white",
   };
 
   return (

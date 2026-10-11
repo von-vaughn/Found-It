@@ -20,7 +20,7 @@ export function ReportsPage({
 }: {
   items: Item[];
   onAddItem: (newItem: Item) => void;
-  onDeleteItem: (id: string) => void;
+  onDeleteItem: (id: string, reason?: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
@@ -237,11 +237,12 @@ export function ReportsPage({
 
       {selectedReport && (
         <ItemDetailsDialog
+          key={selectedReport.id}
           report={selectedReport}
           dialogRef={dialogRef}
           onClose={() => setSelectedReport(null)}
-          onDelete={(id) => {
-            onDeleteItem(id);
+          onDelete={(id, reason) => {
+            onDeleteItem(id, reason);
             setSelectedReport(null);
           }}
         />

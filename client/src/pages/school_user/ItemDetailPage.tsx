@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Sidebar } from "@/components/school_user/Sidebar";
+import { takeSchoolSidebarExpanded } from "@/components/school_user/sidebarExpandedState";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
@@ -92,7 +93,9 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const item = useMemo(() => items.find((entry) => entry.id === id), [items, id]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
+    takeSchoolSidebarExpanded(),
+  );
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [foundItemCameraOpen, setFoundItemCameraOpen] = useState(false);

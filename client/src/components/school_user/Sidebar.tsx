@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import { initialItems, type Item } from "@/data/mockItems";
 import { claims as demoClaims } from "@/components/admin/adminData";
+import { rememberSchoolSidebarExpanded } from "./sidebarExpandedState";
 import type { ClaimRequest } from "@/types/claim";
 
 interface SidebarProps {
@@ -56,6 +57,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const items = propItems ?? initialItems;
   const profileName = user?.name || FALLBACK_PROFILE_NAME;
   const profileUsername = profileName.toLowerCase().replace(/\s+/g, "_");
+
+  // When navigation remounts the sidebar (e.g. Profile -> Dashboard via the
+  // home icon) while the pointer stays still over it, no new `mouseenter`
+  // fires so the fresh mount would start collapsed. The primary handoff is
+  // the click-time flag set below; this mount check is a fallback for
+  // remounts without a sidebar click (e.g. browser back/forward).
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      if (asideRef.current?.matches(":hover")) {
+        onExpandedChange?.(true);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+    // Only run on mount; hover is re-checked via mouseenter afterwards.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const myLostItemIds = useMemo(
     () =>
@@ -252,7 +269,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ? notificationsButtonRef
                     : undefined
                 }
-                onClick={item.onClick}
+                onClick={() => {
+                  if (item.id === "home") {
+                    // Capture hover synchronously: the click target is inside
+                    // the aside, so a mouse click guarantees :hover here. The
+                    // next page mount consumes this to stay expanded.
+                    // Keyboard activation (no hover) correctly starts the next
+                    // page collapsed.
+                    rememberSchoolSidebarExpanded(
+                      asideRef.current?.matches(":hover") ?? false,
+                    );
+                  }
+                  item.onClick();
+                }}
                 title={item.label}
                 aria-label={item.label}
                 aria-expanded={

@@ -80,30 +80,30 @@ export function AdminLayout({
           sidebarExpanded ? "md:ml-60" : "md:ml-20"
         }`}
       >
+      {showSearch && onQueryChange && (
         <header
           className={`sticky top-0 z-20 flex h-16 items-center justify-between gap-3 bg-white/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8 ${
             notificationsOpen ? "md:ml-80 md:w-[calc(100%-20rem)]" : "w-full"
           }`}
         >
-          {showSearch && onQueryChange && (
-            <div className="relative hidden min-w-0 flex-1 sm:block">
-              <Search
-                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
-                aria-hidden="true"
-              />
-              <input
-                aria-label="Search OSA records"
-                name="admin-search"
-                type="search"
-                value={query}
-                onChange={(event) => onQueryChange(event.target.value)}
-                placeholder={searchPlaceholder}
-                autoComplete="off"
-                className="h-10 w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-xs text-neutral-800 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-              />
-            </div>
-          )}
+          <div className="relative hidden min-w-0 flex-1 sm:block">
+            <Search
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+              aria-hidden="true"
+            />
+            <input
+              aria-label="Search OSA records"
+              name="admin-search"
+              type="search"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder={searchPlaceholder}
+              autoComplete="off"
+              className="h-10 w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-xs text-neutral-800 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+            />
+          </div>
         </header>
+      )}
 
         <main
           id="admin-main"
