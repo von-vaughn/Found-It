@@ -1,28 +1,41 @@
 import { useMemo, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { Panel } from "./Panel";
-import { adminReports } from "./adminData";
-import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import { StatusBadge } from "./StatusBadge";
+import { adminReports, claims, initialReturnRequests } from "./adminData";
+import type { AdminSection } from "./types";
 
-type RangeKey = "7D" | "14D" | "ALL";
+type RangeKey = "7D" | "14D" | "ALL" | "MONTH";
 
 const RANGE_OPTIONS: { id: RangeKey; label: string; days: number | null }[] = [
   { id: "7D", label: "7 days", days: 7 },
   { id: "14D", label: "14 days", days: 14 },
   { id: "ALL", label: "All time", days: null },
+  { id: "MONTH", label: "Month", days: null },
+];
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const LOST_COLOR = "#E5192D";
@@ -88,48 +101,53 @@ function ChartTooltip({
 
 const axisTick = { fontSize: 10, fill: "#737373" };
 
-function DonutSegmentLabel({
-  cx,
-  cy,
-  midAngle,
-  innerRadius,
-  outerRadius,
-  value,
-  fill = "#ffffff",
-}: {
-  cx?: number;
-  cy?: number;
-  midAngle?: number;
-  innerRadius?: number;
-  outerRadius?: number;
-  value?: number | string;
-  fill?: string;
-}) {
-  if (value === undefined || value === 0) return null;
-  const RADIAN = Math.PI / 180;
-  const radius = ((innerRadius ?? 0) + (outerRadius ?? 0)) / 2;
-  const x = (cx ?? 0) + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
-  const y = (cy ?? 0) + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
-  return (
-    <text
-      x={x}
-      y={y}
-      textAnchor="middle"
-      dominantBaseline="central"
-      fill={fill}
-      fontSize={13}
-      fontWeight={800}
-    >
-      {value}
-    </text>
-  );
-}
+const DATA_ANCHOR = Math.max(
+  ...adminReports.map((r) => parseDate(r.date)),
+);
+const DATA_YEARS = [
+  ...new Set(
+    adminReports.map((r) => new Date(parseDate(r.date)).getFullYear()),
+  ),
+].sort((a, b) => b - a);
 
-export function AnalyticsSection() {
+export function AnalyticsSection({
+  onNavigate,
+}: {
+  onNavigate: (section: AdminSection) => void;
+}) {
   const [range, setRange] = useState<RangeKey>("14D");
+  const [customMonth, setCustomMonth] = useState(
+    () => new Date(DATA_ANCHOR).getMonth(),
+  );
+  const [customYear, setCustomYear] = useState(() =>
+    new Date(DATA_ANCHOR).getFullYear(),
+  );
 
   const model = useMemo(() => {
-    const anchor = Math.max(...adminReports.map((r) => parseDate(r.date)));
+    if (range === "MONTH") {
+      const daysInMonth = new Date(customYear, customMonth + 1, 0).getDate();
+      const inWindow = adminReports.filter((r) => {
+        const d = new Date(parseDate(r.date));
+        return (
+          d.getFullYear() === customYear && d.getMonth() === customMonth
+        );
+      });
+      const series = Array.from({ length: daysInMonth }, (_, index) => {
+        const day = index + 1;
+        const lost = inWindow.filter(
+          (r) =>
+            r.type === "Lost" && new Date(parseDate(r.date)).getDate() === day,
+        ).length;
+        const found = inWindow.filter(
+          (r) =>
+            r.type === "Found" && new Date(parseDate(r.date)).getDate() === day,
+        ).length;
+        return { day: `${MONTH_NAMES[customMonth].slice(0, 3)} ${day}`, lost, found };
+      });
+      return { series, inWindow };
+    }
+
+    const anchor = DATA_ANCHOR;
     const activeRange = RANGE_OPTIONS.find((r) => r.id === range);
     const windowDays = activeRange?.days ?? null;
 
@@ -165,128 +183,108 @@ export function AnalyticsSection() {
       return { day: shortDayLabel(dayStart), lost, found };
     });
 
-    const reunited = adminReports.filter(
-      (r) => r.status === "Returned" || r.status === "Claimed",
-    ).length;
-    const recoveryRate =
-      adminReports.length === 0
-        ? 0
-        : Math.round((reunited / adminReports.length) * 100);
-
-    const openLostCount = adminReports.filter(
-      (r) => r.status === "Lost",
-    ).length;
-    const openFoundCount = adminReports.filter(
-      (r) => r.status === "Found",
-    ).length;
-
-    const donut = [
-      {
-        name: "Returned",
-        value: adminReports.filter((r) => r.status === "Returned").length,
-        color: "#059669",
-      },
-      {
-        name: "Claimed",
-        value: adminReports.filter((r) => r.status === "Claimed").length,
-        color: FOUND_COLOR,
-      },
-    ];
-
-    const openDonut = [
-      {
-        name: "Item lost",
-        value: openLostCount,
-        color: "#f87171",
-      },
-      {
-        name: "Item found",
-        value: openFoundCount,
-        color: "#a3a3a3",
-      },
-    ];
-
-    // Same category list as the school_user dashboard (eyewear excluded),
-    // so both surfaces speak the same language — including zeros.
-    const schoolCategories = ITEM_CATEGORIES.filter(
-      (category) => category.id !== "eyewear",
-    );
-    const countsByLabel = new Map<string, { lost: number; found: number }>();
-    for (const r of adminReports) {
-      const entry = countsByLabel.get(r.category) ?? { lost: 0, found: 0 };
-      if (r.type === "Lost") entry.lost += 1;
-      else entry.found += 1;
-      countsByLabel.set(r.category, entry);
-    }
-    const categories = schoolCategories
-      .map((category) => ({
-        category: category.label,
-        lost: countsByLabel.get(category.label)?.lost ?? 0,
-        found: countsByLabel.get(category.label)?.found ?? 0,
-      }))
-      .sort(
-        (a, b) =>
-          b.lost + b.found - (a.lost + a.found) ||
-          a.category.localeCompare(b.category),
-      );
-
     return {
       series,
       inWindow,
-      recoveryRate,
-      donut,
-      openDonut,
-      categories,
     };
-  }, [range]);
+  }, [range, customMonth, customYear]);
+
+  const rangeLabel =
+    range === "MONTH"
+      ? `${MONTH_NAMES[customMonth]} ${customYear}`
+      : (RANGE_OPTIONS.find((r) => r.id === range)?.label ?? "");
 
   return (
     <section aria-labelledby="analytics-heading" className="mt-5">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2
-            id="analytics-heading"
-            className="text-sm font-extrabold tracking-tight text-neutral-900"
-          >
-            Analytics and insights
-          </h2>
-          <p className="mt-0.5 text-xs text-neutral-500">
-            Recovery performance and report trends across campus.
-          </p>
-        </div>
-        <div
-          role="group"
-          aria-label="Select time range"
-          className="flex rounded-lg border border-neutral-200 bg-white p-0.5"
+      <div className="mb-3">
+        <h2
+          id="analytics-heading"
+          className="text-sm font-extrabold tracking-tight text-neutral-900"
         >
-          {RANGE_OPTIONS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => setRange(option.id)}
-              aria-pressed={range === option.id}
-              className={`h-8 rounded-md px-3 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
-                range === option.id
-                  ? "bg-neutral-900 text-white"
-                  : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+          Analytics and insights
+        </h2>
+        <p className="mt-0.5 text-xs text-neutral-500">
+          Recovery performance and report trends across campus.
+        </p>
       </div>
 
-      <div className="mt-3">
-        <Panel title="Reports over time">
+      <div className="mt-3 grid min-w-0 items-stretch gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.9fr)]">
+        <Panel
+          title="Reports over time"
+          className="flex min-w-0 flex-col xl:row-span-2"
+          action={
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+              <div
+                role="group"
+                aria-label="Select time range"
+                className="flex rounded-lg border border-neutral-200 bg-white p-0.5"
+              >
+                {RANGE_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setRange(option.id)}
+                    aria-pressed={range === option.id}
+                    className={`h-8 rounded-md px-2.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                      range === option.id
+                        ? "bg-neutral-900 text-white"
+                        : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {range === "MONTH" && (
+                <span className="flex items-center gap-1.5 animate-in fade-in slide-in-from-right-2 duration-200">
+                  <label className="sr-only" htmlFor="analytics-month">
+                    Select month
+                  </label>
+                  <select
+                    id="analytics-month"
+                    value={customMonth}
+                    onChange={(event) =>
+                      setCustomMonth(Number(event.target.value))
+                    }
+                    className="h-8 rounded-md border border-neutral-200 bg-white px-2 text-[11px] font-semibold text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  >
+                    {MONTH_NAMES.map((month, index) => (
+                      <option key={month} value={index}>
+                        {month}
+                      </option>
+                    ))}
+                  </select>
+                  <label className="sr-only" htmlFor="analytics-year">
+                    Select year
+                  </label>
+                  <select
+                    id="analytics-year"
+                    value={customYear}
+                    onChange={(event) =>
+                      setCustomYear(Number(event.target.value))
+                    }
+                    className="h-8 rounded-md border border-neutral-200 bg-white px-2 text-[11px] font-semibold text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  >
+                    {DATA_YEARS.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              )}
+            </div>
+          }
+        >
           <div
-            className="px-2 pb-2 pt-4"
+            className="flex flex-1 flex-col px-2 pb-2 pt-4"
             role="img"
-            aria-label={`Daily lost and found reports. ${model.inWindow.length} reports in the selected range.`}
+            aria-label={`Daily lost and found reports for ${rangeLabel}. ${model.inWindow.length} reports in the selected range.`}
           >
-            <div className="h-64">
+            <div className="min-h-96 flex-1">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
+                  key={`${range}-${customMonth}-${customYear}`}
                   data={model.series}
                   margin={{ top: 8, right: 12, bottom: 0, left: -12 }}
                 >
@@ -348,137 +346,73 @@ export function AnalyticsSection() {
             </div>
           </div>
         </Panel>
-      </div>
 
-      <div className="mt-3 grid min-w-0 gap-3 xl:grid-cols-2">
-        <Panel title="Reports by category">
-          <div
-            className="px-2 pb-4 pt-4"
-            role="img"
-            aria-label="Lost and found reports grouped by item category."
-          >
-            <div className="h-96">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={model.categories}
-                  layout="vertical"
-                  margin={{ top: 0, right: 16, bottom: 0, left: 8 }}
-                >
-                  <CartesianGrid stroke="#e5e5e5" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    tick={axisTick}
-                    tickLine={false}
-                    axisLine={false}
-                    allowDecimals={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="category"
-                    tick={{ ...axisTick, fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={132}
-                  />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill: "#f5f5f5" }} />
-                  <Bar dataKey="lost" name="Lost" stackId="total" fill={LOST_COLOR} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="found" name="Found" stackId="total" fill={FOUND_COLOR} radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+        <Panel
+          title="Recent submitted claims"
+          className="flex h-full flex-col"
+          action={
+            <button
+              type="button"
+              onClick={() => onNavigate("claims")}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+            >
+              View claims
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          }
+        >
+          <ul className="flex flex-1 flex-col justify-center divide-y divide-neutral-100">
+            {claims.slice(0, 4).map((claim) => (
+              <li
+                key={claim.id}
+                className="flex items-center gap-3 px-4 py-3 sm:px-5"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-semibold text-neutral-800">
+                    {claim.item}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[10px] text-neutral-500">
+                    {claim.claimant} · {claim.submitted}
+                  </span>
+                </span>
+                <StatusBadge status={claim.status} />
+              </li>
+            ))}
+          </ul>
         </Panel>
 
-        <Panel title="Recovery mix" borderless>
-          <div
-            className="px-4 pb-4 pt-2"
-            role="img"
-            aria-label={`Recovery mix. ${model.recoveryRate} percent of reports reunited. Closed versus currently open reports shown side by side.`}
-          >
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <div className="relative mx-auto h-36 max-w-40">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Tooltip content={<ChartTooltip />} />
-                      <Pie
-                        data={model.donut}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius="68%"
-                        outerRadius="100%"
-                        paddingAngle={2}
-                        strokeWidth={0}
-                        labelLine={false}
-                        label={DonutSegmentLabel}
-                      >
-                        {model.donut.map((entry) => (
-                          <Cell key={entry.name} fill={entry.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-lg font-extrabold tabular-nums tracking-tight text-neutral-900">
-                      {model.donut.reduce((sum, entry) => sum + entry.value, 0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className="relative mx-auto h-36 max-w-40">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Tooltip content={<ChartTooltip />} />
-                      <Pie
-                        data={model.openDonut}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius="68%"
-                        outerRadius="100%"
-                        paddingAngle={2}
-                        strokeWidth={0}
-                        labelLine={false}
-                        label={(props) => (
-                          <DonutSegmentLabel {...props} fill="#171717" />
-                        )}
-                      >
-                        {model.openDonut.map((entry) => (
-                          <Cell key={entry.name} fill={entry.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-lg font-extrabold tabular-nums tracking-tight text-neutral-900">
-                      {model.openDonut.reduce(
-                        (sum, entry) => sum + entry.value,
-                        0,
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <ul className="mt-2 space-y-1.5">
-              {[...model.donut, ...model.openDonut].map((entry) => (
-                <li
-                  key={entry.name}
-                  className="flex items-center gap-2 text-[11px] text-neutral-600"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="font-medium">{entry.name}</span>
-                  <span className="ml-auto font-bold tabular-nums text-neutral-900">
-                    {entry.value}
+        <Panel
+          title="Recent return items"
+          className="flex h-full flex-col"
+          action={
+            <button
+              type="button"
+              onClick={() => onNavigate("returns")}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+            >
+              View returns
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          }
+        >
+          <ul className="flex flex-1 flex-col justify-center divide-y divide-neutral-100">
+            {initialReturnRequests.slice(0, 4).map((request) => (
+              <li
+                key={request.id}
+                className="flex items-center gap-3 px-4 py-3 sm:px-5"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-semibold text-neutral-800">
+                    {request.lostItemTitle}
                   </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  <span className="mt-0.5 block truncate text-[10px] text-neutral-500">
+                    {request.claimant} · {request.submitted}
+                  </span>
+                </span>
+                <StatusBadge status={request.status} />
+              </li>
+            ))}
+          </ul>
         </Panel>
       </div>
     </section>

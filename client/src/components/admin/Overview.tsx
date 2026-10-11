@@ -82,7 +82,7 @@ export function Overview({
         ))}
       </section>
 
-      <AnalyticsSection />
+      <AnalyticsSection onNavigate={onNavigate} />
     </>
   );
 }
