@@ -8,6 +8,10 @@ import { AuthProvider } from "@/context/AuthContext";
 import { AppRoutes } from "@/routes";
 import { initialItems, type Item } from "@/data/mockItems";
 import { initialReturnRequests } from "@/components/admin/adminData";
+import {
+  defaultFilters,
+  type ItemFilters,
+} from "@/components/school_user/itemFilters";
 import type {
   ClaimRequest,
   NewClaimRequest,
@@ -29,6 +33,7 @@ export function App() {
   const [returnRequests, setReturnRequests] = useState<ReturnItemRequest[]>(
     initialReturnRequests,
   );
+  const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -156,14 +161,13 @@ export function App() {
             onUpdateReturnRequestStatus={handleUpdateReturnRequestStatus}
             onBrowseLost={handleBrowseLost}
             onBrowseFound={handleBrowseFound}
+            filters={filters}
+            onFiltersChange={setFilters}
           />
         </div>
 
         {location.pathname === "/" && <CommunityReunions />}
         {!isDashboard &&
-          location.pathname !== "/login" &&
-          location.pathname !== "/signup" &&
-          location.pathname !== "/verify-otp" &&
           location.pathname !== "/lost-items" &&
           location.pathname !== "/found-items" &&
           location.pathname !== "/browse" && <Footer />}

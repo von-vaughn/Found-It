@@ -34,6 +34,12 @@ import type {
 } from "@/types/claim";
 import { getClaimantEmail } from "@/types/claim";
 import { claims as demoClaims } from "@/components/admin/adminData";
+import {
+  applyAdvancedFilters,
+  countActiveFilters,
+  defaultFilters,
+  type ItemFilters,
+} from "@/components/school_user/itemFilters";
 
 interface ItemDetailPageProps {
   items?: Item[];
@@ -48,6 +54,8 @@ interface ItemDetailPageProps {
     claimId: string,
     status: ClaimRequest["status"],
   ) => void;
+  filters: ItemFilters;
+  onFiltersChange: (filters: ItemFilters) => void;
 }
 
 const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
@@ -72,6 +80,8 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   onSubmitClaim,
   onSubmitReturnRequest,
   onUpdateClaimStatus,
+  filters,
+  onFiltersChange,
 }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -237,12 +247,17 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           items={items}
           submittedClaims={submittedClaims}
         />
-        <div className={`flex-1 min-w-0 ml-16 flex flex-col min-h-screen transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
+        <div className={`flex-1 min-w-0 ml-0 md:ml-16 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
           <Header
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             searchInputRef={searchInputRef}
             notificationsOpen={notificationsOpen}
+            activeFilterCount={countActiveFilters(filters)}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            onClearFilters={() => onFiltersChange(defaultFilters)}
+            filterResultCount={applyAdvancedFilters(items, filters).length}
           />
           <div
             className={`min-w-0 flex-1 transition-[margin,width] duration-300 ease-in-out ${
@@ -322,13 +337,18 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         submittedClaims={submittedClaims}
       />
 
-      <div className={`flex-1 min-w-0 ml-16 flex flex-col min-h-screen transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
+      <div className={`flex-1 min-w-0 ml-0 md:ml-16 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
         {/* Same search header as the dashboard */}
         <Header
           searchQuery={searchQuery}
           onSearchChange={handleSearchChange}
           searchInputRef={searchInputRef}
           notificationsOpen={notificationsOpen}
+          activeFilterCount={countActiveFilters(filters)}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          onClearFilters={() => onFiltersChange(defaultFilters)}
+          filterResultCount={applyAdvancedFilters(items, filters).length}
         />
 
         <div

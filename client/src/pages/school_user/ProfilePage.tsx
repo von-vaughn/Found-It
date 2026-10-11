@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PlusCircle } from "lucide-react";
+import { ChevronDown, LogOut, PlusCircle } from "lucide-react";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
@@ -8,12 +8,20 @@ import { Sidebar } from "@/components/school_user/Sidebar";
 import { takeSchoolSidebarExpanded } from "@/components/school_user/sidebarExpandedState";
 import { useAuth } from "@/context/useAuth";
 import { initialItems, type Item } from "@/data/mockItems";
+import {
+  applyAdvancedFilters,
+  countActiveFilters,
+  defaultFilters,
+  type ItemFilters,
+} from "@/components/school_user/itemFilters";
 import type { ClaimRequest } from "@/types/claim";
 
 interface ProfilePageProps {
   items?: Item[];
   submittedClaims?: ClaimRequest[];
   onAddItem?: (newItem: Item) => void;
+  filters: ItemFilters;
+  onFiltersChange: (filters: ItemFilters) => void;
 }
 
 const DEFAULT_PROFILE = {
@@ -26,8 +34,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   items: propItems,
   submittedClaims = [],
   onAddItem,
+  filters,
+  onFiltersChange,
 }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const items = propItems ?? initialItems;
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,6 +50,30 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     "all",
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
+  // Close the mobile account menu on outside click or Escape.
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setProfileMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setProfileMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [profileMenuOpen]);
 
   const name = user?.name || DEFAULT_PROFILE.name;
   const email = user?.email || DEFAULT_PROFILE.email;
@@ -94,7 +128,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       />
 
       <div
-        className={`ml-16 flex min-h-screen min-w-0 flex-1 flex-col transition-[margin] duration-300 ${
+        className={`ml-0 flex min-h-screen min-w-0 flex-1 flex-col pb-20 md:pb-0 transition-[margin] duration-300 ${
           sidebarExpanded ? "md:ml-60" : "md:ml-20"
         }`}
       >
@@ -103,6 +137,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           onSearchChange={handleSearchChange}
           searchInputRef={searchInputRef}
           notificationsOpen={notificationsOpen}
+          activeFilterCount={countActiveFilters(filters)}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          onClearFilters={() => onFiltersChange(defaultFilters)}
+          filterResultCount={applyAdvancedFilters(items, filters).length}
         />
 
         <div
@@ -113,18 +152,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           }`}
         >
           <main className="mx-auto w-full max-w-[1100px] bg-white px-4 py-8 sm:px-6 lg:px-8">
-            <header className="mb-8">
-              <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">
-                Your profile
-              </h1>
-              <p className="mt-2 text-sm text-neutral-600">
-                View your campus account details and item reports.
-              </p>
-            </header>
-
             <section
               aria-labelledby="profile-identity-heading"
-              className="flex flex-col gap-5 pb-7 sm:flex-row sm:items-center"
+              className="flex flex-row items-center gap-5 pb-7"
             >
               <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-neutral-200 bg-white">
                 <img
@@ -136,13 +166,45 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   }}
                 />
               </div>
-              <div className="min-w-0">
-                <h2
-                  id="profile-identity-heading"
-                  className="break-words text-xl font-bold text-neutral-900"
-                >
-                  {name}
-                </h2>
+              <div className="relative min-w-0 flex-1" ref={profileMenuRef}>
+                <span className="flex items-center gap-1.5">
+                  <h2
+                    id="profile-identity-heading"
+                    className="break-words text-xl font-bold text-neutral-900"
+                  >
+                    {name}
+                  </h2>
+                  <span className="shrink-0 md:hidden">
+                    <button
+                      type="button"
+                      onClick={() => setProfileMenuOpen((open) => !open)}
+                      aria-label="Open account menu"
+                      aria-expanded={profileMenuOpen}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                    >
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform duration-150 ${profileMenuOpen ? "rotate-180" : ""}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </span>
+                </span>
+                {profileMenuOpen && (
+                  <span className="absolute right-0 top-full z-30 mt-2 block w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden">
+                    <button
+                      type="button"
+                      onClick={() => {
+                            setProfileMenuOpen(false);
+                            logout();
+                            navigate("/");
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    >
+                      <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                      Sign out
+                    </button>
+                  </span>
+                )}
                 <p className="mt-1 break-all text-sm text-neutral-600">
                   {email}
                 </p>
@@ -165,7 +227,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setCreateModalOpen(true)}
+                  onClick={() => {
+                    // On mobile the post form is a full page, not a modal.
+                    if (window.matchMedia("(max-width: 767px)").matches) {
+                      navigate("/dashboard/create");
+                      return;
+                    }
+                    setCreateModalOpen(true);
+                  }}
                   className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                 >
                   <PlusCircle className="h-4 w-4" aria-hidden="true" />

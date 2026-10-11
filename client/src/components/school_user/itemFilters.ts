@@ -6,6 +6,7 @@ export interface ItemFilters {
   dateTimeFrom: string;
   categories: string[];
   buildings: string[];
+  types: ("lost" | "found")[];
 }
 
 export const defaultFilters: ItemFilters = {
@@ -13,6 +14,7 @@ export const defaultFilters: ItemFilters = {
   dateTimeFrom: "",
   categories: [],
   buildings: [],
+  types: [],
 };
 
 export function countActiveFilters(filters: ItemFilters): number {
@@ -21,6 +23,7 @@ export function countActiveFilters(filters: ItemFilters): number {
   if (filters.dateTimeFrom) count++;
   if (filters.categories.length > 0) count++;
   if (filters.buildings.length > 0) count++;
+  if (filters.types.length > 0) count++;
   return count;
 }
 
@@ -33,6 +36,9 @@ export function applyAdvancedFilters(
     ? new Date(filters.dateTimeFrom).getTime()
     : undefined;
   return items.filter((item) => {
+    if (filters.types.length > 0 && !filters.types.includes(item.type)) {
+      return false;
+    }
     const itemTimeFrom = item.dateTime
       ? new Date(item.dateTime).getTime()
       : new Date(`${item.date}T00:00:00`).getTime();

@@ -122,7 +122,7 @@ export function AdminSidebar<TSection extends string>({
   const handleSignOut = () => {
     setProfileOpen(false);
     logout();
-    navigate("/login");
+    navigate("/");
   };
 
   const labelsVisible = expanded && !notificationsOpen;

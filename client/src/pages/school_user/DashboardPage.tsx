@@ -29,12 +29,16 @@ interface DashboardPageProps {
   items?: Item[];
   submittedClaims?: ClaimRequest[];
   onAddItem?: (newItem: Item) => void;
+  filters: ItemFilters;
+  onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   items: propItems,
   submittedClaims = [],
   onAddItem: propOnAddItem,
+  filters,
+  onFiltersChange: setFilters,
 }) => {
   const [internalItems, setInternalItems] = useState<Item[]>(initialItems);
   const items = propItems ?? internalItems;
@@ -57,7 +61,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("q") ?? "",
   );
-  const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [showHeaderTypeTabs, setShowHeaderTypeTabs] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -231,7 +234,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       />
 
       {/* Main Content Area */}
-      <div className={`flex-1 min-w-0 ml-16 flex flex-col min-h-screen transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
+      <div className={`flex-1 min-w-0 ml-0 md:ml-16 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
         {/* Top Header */}
         <Header
           searchQuery={searchQuery}

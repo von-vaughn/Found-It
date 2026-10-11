@@ -1,6 +1,9 @@
 export const paths = {
   home: "/",
   dashboard: "/dashboard",
+  dashboardCreate: "/dashboard/create",
+  dashboardNotifications: "/dashboard/notifications",
+  dashboardFilters: "/dashboard/filters",
   dashboardItem: "/dashboard/items/:id",
   dashboardProfile: "/dashboard/profile",
   admin: "/admin",
@@ -13,11 +16,6 @@ export const paths = {
   lostItems: "/lost-items",
   foundItems: "/found-items",
   browse: "/browse",
-  login: "/login",
-  signin: "/signin",
-  signup: "/signup",
-  verifyOtp: "/verify-otp",
-  verify: "/verify",
   fallback: "*",
 } as const;
 

@@ -84,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
           : "w-full"
       }`}>
       {/* Search Input Bar */}
-        <div className="flex-1 pr-4">
+        <div className="flex-1 pr-0 md:pr-4">
           <div
             className={`relative flex items-center gap-2 transition-[margin] duration-200 ease-out ${
               notificationPanelOpen ? "md:ml-80" : ""
@@ -108,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
                       ease: [0.16, 1, 0.3, 1],
                     },
                   }}
-                  className="shrink-0 overflow-hidden"
+                  className="shrink-0 overflow-hidden hidden md:block"
                 >
                   <nav
                     aria-label="Filter items by type"
@@ -168,19 +168,25 @@ export const Header: React.FC<HeaderProps> = ({
               placeholder="Search items by name…"
               aria-label="Search items by name"
               autoComplete="off"
-              className="h-10 w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-xs text-neutral-800 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-10 w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-10 text-xs text-neutral-800 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             />
-            </div>
             <button
               type="button"
-              onClick={() => setIsPaletteOpen(true)}
+              onClick={() => {
+                // On mobile filters live on their own page, not in a modal.
+                if (window.matchMedia("(max-width: 767px)").matches) {
+                  navigate("/dashboard/filters");
+                  return;
+                }
+                setIsPaletteOpen(true);
+              }}
               title="Filters"
               aria-label="Open filters"
               aria-expanded={isPaletteOpen}
-              className={`relative h-10 w-10 shrink-0 flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer ${
+              className={`absolute right-1.5 h-7 w-7 shrink-0 flex items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 cursor-pointer ${
                 isPaletteOpen || activeFilterCount > 0
-                  ? "text-neutral-900 hover:text-neutral-700"
-                  : "text-neutral-500 hover:text-neutral-900"
+                  ? "text-neutral-900 hover:bg-neutral-200/70"
+                  : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/70"
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
@@ -190,11 +196,12 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </button>
+            </div>
           </div>
         </div>
 
-      {/* Right User Actions */}
-      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+      {/* Right User Actions (desktop only — profile lives in the mobile bottom bar) */}
+      <div className="hidden md:flex items-center gap-3 sm:gap-4 shrink-0">
         {/* User Profile Bar */}
         <div className="relative" ref={dropdownRef}>
           <button
@@ -247,7 +254,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => {
                   setProfileDropdownOpen(false);
                   logout();
-                  navigate("/login");
+                  navigate("/");
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors text-left"
               >

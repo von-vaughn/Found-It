@@ -1,6 +1,9 @@
 import type { RouteObject } from "react-router-dom";
 import { DashboardPage } from "@/pages/school_user/DashboardPage";
+import { CreatePostPage } from "@/pages/school_user/CreatePostPage";
+import { NotificationsPage } from "@/pages/school_user/NotificationsPage";
 import { ItemDetailPage } from "@/pages/school_user/ItemDetailPage";
+import { FiltersPage } from "@/pages/school_user/FiltersPage";
 import { ProfilePage } from "@/pages/school_user/ProfilePage";
 import type { Item } from "@/data/mockItems";
 import type {
@@ -9,6 +12,7 @@ import type {
   NewReturnItemRequest,
   ReturnItemRequest,
 } from "@/types/claim";
+import type { ItemFilters } from "@/components/school_user/itemFilters";
 import { paths } from "./paths";
 
 interface DashboardRoutesOptions {
@@ -21,6 +25,8 @@ interface DashboardRoutesOptions {
   onSubmitClaim: (claim: NewClaimRequest) => void;
   onUpdateClaimStatus: (claimId: string, status: ClaimRequest["status"]) => void;
   onSubmitReturnRequest: (request: NewReturnItemRequest) => void;
+  filters: ItemFilters;
+  onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export function getDashboardRoutes({
@@ -33,6 +39,8 @@ export function getDashboardRoutes({
   onSubmitClaim,
   onUpdateClaimStatus,
   onSubmitReturnRequest,
+  filters,
+  onFiltersChange,
 }: DashboardRoutesOptions): RouteObject[] {
   return [
     {
@@ -42,6 +50,41 @@ export function getDashboardRoutes({
           items={items}
           submittedClaims={submittedClaims}
           onAddItem={onAddItem}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
+      ),
+    },
+    {
+      path: paths.dashboardFilters,
+      element: (
+        <FiltersPage
+          items={items}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
+      ),
+    },
+    {
+      path: paths.dashboardCreate,
+      element: (
+        <CreatePostPage
+          items={items}
+          submittedClaims={submittedClaims}
+          onAddItem={onAddItem}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
+      ),
+    },
+    {
+      path: paths.dashboardNotifications,
+      element: (
+        <NotificationsPage
+          items={items}
+          submittedClaims={submittedClaims}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
         />
       ),
     },
@@ -58,6 +101,8 @@ export function getDashboardRoutes({
           submittedClaims={submittedClaims}
           returnRequests={returnRequests}
           onSubmitReturnRequest={onSubmitReturnRequest}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
         />
       ),
     },
@@ -68,6 +113,8 @@ export function getDashboardRoutes({
           items={items}
           submittedClaims={submittedClaims}
           onAddItem={onAddItem}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
         />
       ),
     },

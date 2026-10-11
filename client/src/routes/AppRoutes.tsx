@@ -10,7 +10,7 @@ import { paths } from "./paths";
 import { getPublicRoutes } from "./publicRoutes";
 import { getDashboardRoutes } from "./dashboardRoutes";
 import { getAdminRoutes } from "./adminRoutes";
-import { getAuthRoutes } from "./authRoutes";
+import type { ItemFilters } from "@/components/school_user/itemFilters";
 
 interface AppRoutesProps {
   items: Item[];
@@ -28,6 +28,8 @@ interface AppRoutesProps {
   ) => void;
   onBrowseLost: () => void;
   onBrowseFound: () => void;
+  filters: ItemFilters;
+  onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export function AppRoutes({
@@ -43,6 +45,8 @@ export function AppRoutes({
   onUpdateReturnRequestStatus,
   onBrowseLost,
   onBrowseFound,
+  filters,
+  onFiltersChange,
 }: AppRoutesProps) {
   return useRoutes([
     ...getPublicRoutes({ items, onAddItem, onBrowseLost, onBrowseFound }),
@@ -56,6 +60,8 @@ export function AppRoutes({
       onSubmitClaim,
       onUpdateClaimStatus,
       onSubmitReturnRequest,
+      filters,
+      onFiltersChange,
     }),
     ...getAdminRoutes({
       items,
@@ -65,7 +71,6 @@ export function AppRoutes({
       returnRequests,
       onUpdateReturnRequestStatus,
     }),
-    ...getAuthRoutes(),
     {
       path: paths.fallback,
       element: <Navigate to={paths.home} replace />,

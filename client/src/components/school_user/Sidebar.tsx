@@ -8,9 +8,12 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
-import { initialItems, type Item } from "@/data/mockItems";
-import { claims as demoClaims } from "@/components/admin/adminData";
+import { type Item } from "@/data/mockItems";
 import { rememberSchoolSidebarExpanded } from "./sidebarExpandedState";
+import {
+  FALLBACK_PROFILE_NAME,
+  buildNotifications,
+} from "./notifications";
 import type { ClaimRequest } from "@/types/claim";
 
 interface SidebarProps {
@@ -22,16 +25,6 @@ interface SidebarProps {
   onNotificationsOpenChange?: (open: boolean) => void;
   items?: Item[];
   submittedClaims?: ClaimRequest[];
-}
-
-const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
-
-interface SidebarNotification {
-  id: string;
-  title: string;
-  desc: string;
-  time: string;
-  itemId?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -49,14 +42,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const asideRef = useRef<HTMLElement>(null);
   const notificationsPanelRef = useRef<HTMLElement>(null);
   const notificationsButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileNotificationsButtonRef = useRef<HTMLButtonElement>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [collapsedWidth, setCollapsedWidth] = useState(() =>
     window.matchMedia("(min-width: 768px)").matches ? 80 : 64,
   );
+  const [isDesktop, setIsDesktop] = useState(() =>
+    window.matchMedia("(min-width: 768px)").matches,
+  );
 
-  const items = propItems ?? initialItems;
   const profileName = user?.name || FALLBACK_PROFILE_NAME;
-  const profileUsername = profileName.toLowerCase().replace(/\s+/g, "_");
+
+  const notifications = useMemo(
+    () => buildNotifications(propItems, submittedClaims, profileName),
+    [propItems, submittedClaims, profileName],
+  );
 
   // When navigation remounts the sidebar (e.g. Profile -> Dashboard via the
   // home icon) while the pointer stays still over it, no new `mouseenter`
@@ -74,66 +74,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const myLostItemIds = useMemo(
-    () =>
-      new Set(
-        items
-          .filter(
-            (item) =>
-              item.type === "lost" &&
-              (item.username?.toLowerCase() === profileUsername ||
-                item.contactName.trim().toLowerCase() ===
-                  profileName.trim().toLowerCase()),
-          )
-          .map((item) => item.id),
-      ),
-    [items, profileName, profileUsername],
-  );
-
-  const responseNotifications: SidebarNotification[] = useMemo(
-    () =>
-      [...submittedClaims, ...demoClaims]
-        .filter((claim) => myLostItemIds.has(claim.itemId))
-        .map((claim) => ({
-          id: `response-${claim.id}`,
-          title: "Someone responded to your lost item",
-          desc: `${claim.claimant} submitted a found report for your ${claim.item}.`,
-          time: claim.submitted,
-          itemId: claim.itemId,
-        })),
-    [submittedClaims, myLostItemIds],
-  );
-
-  const staticNotifications: SidebarNotification[] = [
-    {
-      id: "demo-1",
-      title: "New match found!",
-      desc: "Someone reported finding keys near the Parking Lot.",
-      time: "10m ago",
-    },
-    {
-      id: "demo-2",
-      title: "Item claimed",
-      desc: "Black Herschel backpack inquiry was answered.",
-      time: "1h ago",
-    },
-    {
-      id: "demo-3",
-      title: "Community update",
-      desc: "WMSU Student Affairs posted campus verification guidelines.",
-      time: "2h ago",
-    },
-  ];
-
-  const notifications = [...responseNotifications, ...staticNotifications];
-
   useEffect(() => {
     if (!notificationsOpen) return;
 
     const handlePointerDown = (event: MouseEvent) => {
       if (
         notificationsPanelRef.current?.contains(event.target as Node) ||
-        notificationsButtonRef.current?.contains(event.target as Node)
+        notificationsButtonRef.current?.contains(event.target as Node) ||
+        mobileNotificationsButtonRef.current?.contains(event.target as Node)
       ) {
         return;
       }
@@ -157,8 +105,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   useEffect(() => {
     const breakpoint = window.matchMedia("(min-width: 768px)");
-    const updateCollapsedWidth = () =>
+    const updateCollapsedWidth = () => {
       setCollapsedWidth(breakpoint.matches ? 80 : 64);
+      setIsDesktop(breakpoint.matches);
+    };
 
     breakpoint.addEventListener("change", updateCollapsedWidth);
     return () => breakpoint.removeEventListener("change", updateCollapsedWidth);
@@ -234,7 +184,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       initial={false}
       animate={{ width: expanded && !notificationsOpen ? 240 : collapsedWidth }}
       transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
-      className={`shrink-0 bg-white border-r border-neutral-200 flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
+      className={`shrink-0 bg-white border-r border-neutral-200 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
     >
       {/* Top Logo */}
       <button
@@ -317,6 +267,93 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
     </motion.aside>
+    {/* Mobile bottom navigation — replaces the sidebar below md */}
+    <nav
+      aria-label="Primary"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200 bg-white/95 backdrop-blur-sm md:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="grid grid-cols-4">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            activeTab === item.id ||
+            (item.id === "notifications" && notificationsOpen);
+          return (
+            <button
+              key={item.id}
+              ref={
+                item.id === "notifications"
+                  ? mobileNotificationsButtonRef
+                  : undefined
+              }
+              onClick={() => {
+                // On mobile the post form and notifications are full pages.
+                if (
+                  window.matchMedia("(max-width: 767px)").matches &&
+                  (item.id === "create" || item.id === "notifications")
+                ) {
+                  navigate(
+                    item.id === "create"
+                      ? "/dashboard/create"
+                      : "/dashboard/notifications",
+                  );
+                  return;
+                }
+                item.onClick();
+              }}
+              aria-label={item.label}
+              aria-expanded={
+                item.id === "notifications" ? notificationsOpen : undefined
+              }
+              className={`relative flex flex-col items-center gap-1 py-2.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
+                isActive
+                  ? "text-[#E5192D]"
+                  : "text-neutral-500 hover:text-neutral-900"
+              }`}
+            >
+              <span className="relative flex h-6 items-center justify-center">
+                <Icon
+                  className={`w-5 h-5 ${
+                    isActive ? "stroke-[2.3]" : "stroke-[1.8]"
+                  }`}
+                />
+                {item.id === "notifications" && (
+                  <span className="absolute -top-1.5 -right-2.5 min-w-4 h-4 bg-[#E5192D] text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white px-0.5">
+                    {notifications.length > 9 ? "9+" : notifications.length}
+                  </span>
+                )}
+              </span>
+              <span className="text-[10px] font-semibold">{item.label}</span>
+            </button>
+          );
+        })}
+        <button
+          onClick={() => navigate("/dashboard/profile")}
+          aria-label="Profile"
+          className={`relative flex flex-col items-center gap-1 py-2.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
+            activeTab === "profile"
+              ? "text-[#E5192D]"
+              : "text-neutral-500 hover:text-neutral-900"
+          }`}
+        >
+          <span className="flex h-6 items-center justify-center">
+            <span className="h-5 w-5 overflow-hidden rounded-full border border-neutral-200 bg-neutral-100">
+              <img
+                src={user?.avatar || "/images/avatars/vaughn_evangelista.svg"}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.src =
+                    "/images/avatars/vaughn_evangelista.svg";
+                }}
+              />
+            </span>
+          </span>
+          <span className="text-[10px] font-semibold">Profile</span>
+        </button>
+      </div>
+    </nav>
     <AnimatePresence>
       {notificationsOpen && (
         <motion.aside
@@ -326,8 +363,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -16 }}
           transition={{ type: "spring", stiffness: 360, damping: 34 }}
-          style={{ left: collapsedWidth }}
-          className="fixed top-0 bottom-0 z-40 w-80 bg-white border-r border-neutral-200 shadow-xl"
+          style={isDesktop ? { left: collapsedWidth } : undefined}
+          className="fixed z-40 bg-white border-neutral-200 shadow-xl max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:overflow-y-auto max-md:rounded-t-2xl max-md:border max-md:border-b-0 md:top-0 md:bottom-0 md:w-80 md:border-r"
         >
           <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100">
             <div>
