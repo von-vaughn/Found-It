@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { AppRoutes } from "@/routes";
 import type { Item } from "@/data/mockItems";
 import {
@@ -154,6 +155,7 @@ export function App() {
 
   return (
     <AuthProvider>
+      <ThemeProvider>
       <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white flex flex-col justify-between">
         <ScrollToTop />
 
@@ -223,6 +225,7 @@ export function App() {
           location.pathname !== "/found-items" &&
           !location.pathname.startsWith("/browse") && <Footer />}
       </div>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

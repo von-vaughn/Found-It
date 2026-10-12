@@ -40,13 +40,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   );
 
   const footerRow = (
-    <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between">
-      <div className="flex min-w-0 items-center gap-1.5 text-xs text-neutral-500">
-        <CategoryIcon className="h-3.5 w-3.5 shrink-0 text-neutral-400" aria-hidden="true" />
+    <div className="pt-3 mt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+      <div className="flex min-w-0 items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+        <CategoryIcon className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
         <span className="truncate">{category?.label ?? "Other"}</span>
       </div>
 
-      <span className="text-xs font-semibold text-neutral-900">
+      <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
         {isLost ? "I Found This" : "This Is Mine"}
       </span>
     </div>
@@ -55,16 +55,16 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   return (
     <div
       onClick={() => onItemClick && onItemClick(item)}
-      className="bg-white rounded-lg border border-neutral-200/80 overflow-hidden shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
+      className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800 overflow-hidden shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
     >
       {/* Top Author Row — kept in same position */}
       <div className="flex items-center justify-between gap-3 p-4 pb-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="min-w-0">
-            <div className="text-lg font-bold text-neutral-900 truncate hover:text-[#E5192D] transition-colors leading-tight">
+            <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100 truncate hover:text-[#E5192D] transition-colors leading-tight">
               {item.title}
             </div>
-            <div className="text-[11px] text-neutral-400 font-normal truncate mt-0.5">
+            <div className="text-[11px] text-neutral-400 dark:text-neutral-500 font-normal truncate mt-0.5">
               {isLost ? "Lost" : "Found"} • {item.timeAgo}
             </div>
           </div>
@@ -77,7 +77,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               e.stopPropagation();
               setMenuOpen(!menuOpen);
             }}
-            className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             aria-label="More options"
           >
             <MoreHorizontal className="w-4 h-4" />
@@ -86,14 +86,14 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           {menuOpen && (
             <div
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 mt-1 w-36 bg-white rounded-xl shadow-lg border border-neutral-100 py-1.5 z-20 text-xs font-medium text-neutral-700 animate-in fade-in zoom-in-95 duration-100"
+              className="absolute right-0 mt-1 w-36 bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-neutral-100 dark:border-neutral-800 py-1.5 z-20 text-xs font-medium text-neutral-700 dark:text-neutral-300 animate-in fade-in zoom-in-95 duration-100"
             >
               <button
                 onClick={() => {
                   setMenuOpen(false);
                   onItemClick?.(item);
                 }}
-                className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 transition-colors"
+                className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
               >
                 View Details
               </button>
@@ -102,7 +102,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                   setMenuOpen(false);
                   handleShare(e);
                 }}
-                className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 transition-colors"
+                className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
               >
                 Share Link
               </button>
@@ -111,7 +111,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                   setMenuOpen(false);
                   toast.success("Post reported to admin");
                 }}
-                className="w-full px-3 py-1.5 text-left text-red-600 hover:bg-red-50 transition-colors"
+                className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
               >
                 Report Post
               </button>
@@ -123,7 +123,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       {item.image ? (
         <>
           {/* Photo block */}
-          <div className="relative aspect-[4/3] bg-neutral-100 overflow-hidden mx-3 rounded-lg">
+          <div className="relative aspect-[4/3] bg-neutral-100 dark:bg-neutral-800 overflow-hidden mx-3 rounded-lg">
             <img
               src={item.image}
               alt={item.title}
@@ -147,7 +147,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           <div className="p-4 flex-1 flex flex-col justify-between">
             <div>
               {titleBlock}
-              <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed break-words line-clamp-2">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5 leading-relaxed break-words line-clamp-2">
                 {item.description}
               </p>
             </div>
@@ -164,7 +164,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               card keeps the same height. */}
           <div className="aspect-[4/3] mx-3 mt-3 overflow-hidden rounded-xl">
             <div className="h-full overflow-y-auto px-2">
-              <p className="text-xs text-neutral-500 leading-relaxed break-words">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed break-words">
                 {item.description}
               </p>
             </div>

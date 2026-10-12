@@ -36,10 +36,10 @@ const localDateTime = (date = new Date()) => {
 };
 
 const inputClass =
-  "w-full h-11 px-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors";
+  "w-full h-11 px-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors";
 
 const labelClass =
-  "block text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5";
+  "block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1.5";
 
 function stopCameraStream(stream: MediaStream | null): void {
   stream?.getTracks().forEach((track) => track.stop());
@@ -369,7 +369,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       <div
         role="tablist"
         aria-label="Post type"
-        className="mt-5 flex items-center gap-5 border-b border-neutral-100"
+        className="mt-5 flex items-center gap-5 border-b border-neutral-100 dark:border-neutral-800"
       >
         {(
           [
@@ -387,8 +387,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             }
             className={`relative pb-2.5 text-sm font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded-sm ${
               type === tab.id
-                ? "text-neutral-900"
-                : "text-neutral-400 hover:text-neutral-700"
+                ? "text-neutral-900 dark:text-neutral-100"
+                : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
             }`}
           >
             {tab.label}
@@ -440,20 +440,20 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   <button
                     type="button"
                     onClick={() => mobileCameraInputRef.current?.click()}
-                    className={`w-full aspect-[4/5] rounded-xl overflow-hidden bg-neutral-50 border border-dashed flex flex-col items-center justify-center gap-2 p-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer ${
+                    className={`w-full aspect-[4/5] rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-900 border border-dashed flex flex-col items-center justify-center gap-2 p-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer ${
                       photoRequiredError
                         ? "border-[#E5192D]"
-                        : "border-neutral-200 hover:border-neutral-400 hover:bg-neutral-100/60"
+                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 hover:bg-neutral-100/60 dark:hover:bg-neutral-800"
                     }`}
                   >
                     <Camera
                       className="h-6 w-6 text-neutral-300"
                       aria-hidden="true"
                     />
-                    <span className="text-xs font-semibold text-neutral-500">
+                    <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
                       Take a photo
                     </span>
-                    <span className="text-[11px] text-neutral-400">
+                    <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
                       Opens your camera
                     </span>
                   </button>
@@ -463,7 +463,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                     <button
                       type="button"
                       onClick={handleRetakePhoto}
-                      className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-neutral-400 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
+                      className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
                     >
                       <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                       Retake
@@ -528,7 +528,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   <button
                     type="button"
                     onClick={handleRetakePhoto}
-                    className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-neutral-400 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
+                    className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
                   >
                     <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                     Retake
@@ -561,7 +561,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full aspect-[4/5] rounded-xl overflow-hidden bg-neutral-50 border border-dashed border-neutral-200 flex flex-col items-center justify-center gap-2 p-3 text-center transition-colors hover:border-neutral-400 hover:bg-neutral-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+            className="w-full aspect-[4/5] rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-900 border border-dashed border-neutral-200 dark:border-neutral-800 flex flex-col items-center justify-center gap-2 p-3 text-center transition-colors hover:border-neutral-400 hover:bg-neutral-100/60 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
           >
             {previewImage ? (
               <img
@@ -575,10 +575,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   className="h-6 w-6 text-neutral-300"
                   aria-hidden="true"
                 />
-                <span className="text-xs font-semibold text-neutral-500">
+                <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
                   Upload photo
                 </span>
-                <span className="text-[11px] text-neutral-400">
+                <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
                   Click to choose a file
                 </span>
               </>
@@ -591,7 +591,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               <button
                 type="button"
                 onClick={handleRemovePhoto}
-                className="shrink-0 text-xs font-semibold text-neutral-400 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
+                className="shrink-0 text-xs font-semibold text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
               >
                 Remove
               </button>
@@ -641,7 +641,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   style={{
                     backgroundColor: color.trim() || "transparent",
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-neutral-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-neutral-200 dark:border-neutral-800"
                 />
               </div>
             </div>
@@ -680,7 +680,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             <div className="min-w-0">
                 <label htmlFor="report-building" className={labelClass}>
                   Building{" "}
-                  <span className="font-medium normal-case tracking-normal text-neutral-400">
+                  <span className="font-medium normal-case tracking-normal text-neutral-400 dark:text-neutral-500">
                     (optional)
                   </span>
                 </label>
@@ -701,7 +701,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   </select>
                   <ChevronDown
                     aria-hidden="true"
-                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
                   />
                 </div>
             </div>
@@ -763,7 +763,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Marks, where it was last seen…"
-              className="w-full p-3.5 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none"
+              className="w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none"
             />
           </div>
 

@@ -7,6 +7,8 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import { type Item } from "@/data/mockItems";
@@ -197,20 +199,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
       initial={false}
       animate={{ width: expanded && !notificationsOpen ? 240 : collapsedWidth }}
       transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
-      className={`shrink-0 bg-white border-r border-neutral-200 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
+      className={`shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
     >
       {/* Top Logo */}
       <button
         onClick={() => navigate("/")}
         title="FoundIt Home"
-        className="group absolute left-2.5 md:left-4.5 top-5 w-11 h-11 shrink-0 flex items-center justify-center rounded-2xl hover:bg-neutral-50 cursor-pointer"
+        className="group absolute left-2.5 md:left-4.5 top-5 w-11 h-11 shrink-0 flex items-center justify-center rounded-2xl hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer"
       >
         <img
           src="/logo.jpeg"
           alt="FoundIt Logo"
           className="w-10 h-10 object-contain rounded-xl group-hover:scale-105 transition-transform"
         />
-        <span className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 transition-opacity duration-200 pointer-events-none ${labelsVisible ? "opacity-100" : "opacity-0"}`}>
+        <span className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 transition-opacity duration-200 pointer-events-none ${labelsVisible ? "opacity-100" : "opacity-0"}`}>
           Found<span className="text-[#E5192D]">It</span>
         </span>
       </button>
@@ -226,7 +228,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={item.id}
               className="relative"
             >
-              <button
+              <Button
+                variant="ghost"
                 ref={
                   item.id === "notifications"
                     ? notificationsButtonRef
@@ -250,30 +253,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 aria-expanded={
                   item.id === "notifications" ? notificationsOpen : undefined
                 }
-                className={`relative w-11 h-11 flex items-center justify-center rounded-xl cursor-pointer group ${
+                className={`relative w-11 h-11 flex items-center justify-center rounded-xl cursor-pointer group border-0 p-0 ${
                   isActive || (item.id === "notifications" && notificationsOpen)
                     ? "text-[#E5192D]"
-                    : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100/80"
+                    : "text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/80 dark:hover:bg-neutral-800"
                 }`}
               >
                 <span className="w-11 h-11 shrink-0 flex items-center justify-center">
                   <Icon
-                    className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${
+                    className={`size-5 transition-transform duration-200 group-hover:scale-110 ${
                       isActive ? "stroke-[2.3]" : "stroke-[1.8]"
                     }`}
                   />
                 </span>
 
                 {item.id === "notifications" && (
-                  <span className="absolute top-1 right-1 min-w-3.5 h-3.5 bg-[#E5192D] text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white px-0.5">
+                  <Badge variant="notification" className="absolute top-1 right-1 min-w-4 h-4 rounded-md px-0.5 text-[9px] leading-none border-2 border-white dark:border-neutral-900">
                     {notifications.length > 9 ? "9+" : notifications.length}
-                  </span>
+                  </Badge>
                 )}
 
                 <span className={`absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold transition-opacity duration-200 ${labelsVisible ? "opacity-100" : "opacity-0"}`}>
                   {item.label}
                 </span>
-              </button>
+              </Button>
 
             </div>
           );
@@ -284,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {!hideMobileNav && (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200 bg-white/95 backdrop-blur-sm md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="grid grid-cols-5">
@@ -294,7 +297,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             activeTab === item.id ||
             (item.id === "notifications" && notificationsOpen);
           return (
-            <button
+            <Button
+              variant="ghost"
               key={item.id}
               ref={
                 item.id === "notifications"
@@ -320,10 +324,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               aria-expanded={
                 item.id === "notifications" ? notificationsOpen : undefined
               }
-              className={`relative flex flex-col items-center gap-1 py-2.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
+              className={`relative flex flex-col items-center gap-1 py-2.5 h-auto border-0 px-0 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
                 isActive
                   ? "text-[#E5192D]"
-                  : "text-neutral-500 hover:text-neutral-900"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100"
               }`}
             >
               <span className="relative flex h-6 items-center justify-center">
@@ -333,13 +337,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }`}
                 />
                 {item.id === "notifications" && (
-                  <span className="absolute -top-1.5 -right-2.5 min-w-4 h-4 bg-[#E5192D] text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white px-0.5">
-                    {notifications.length > 9 ? "9+" : notifications.length}
-                  </span>
+                  <Badge variant="notification" className="absolute -top-1.5 -right-2.5 min-w-5 h-5 rounded-md px-1 text-[10px] leading-none border-2 border-white dark:border-neutral-900">
+                    <span className="translate-y-[0.5px]">{notifications.length > 9 ? "9+" : notifications.length}</span>
+                  </Badge>
                 )}
               </span>
               <span className="text-[10px] font-semibold">{item.label}</span>
-            </button>
+            </Button>
           );
         })}
         <button
@@ -348,11 +352,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={`relative flex flex-col items-center gap-1 py-2.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
             activeTab === "profile"
               ? "text-[#E5192D]"
-              : "text-neutral-500 hover:text-neutral-900"
+              : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100"
           }`}
         >
           <span className="flex h-6 items-center justify-center">
-            <span className="h-5 w-5 overflow-hidden rounded-full border border-neutral-200 bg-neutral-100">
+            <span className="h-5 w-5 overflow-hidden rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800">
               <img
                 src={user?.avatar || "/images/avatars/vaughn_evangelista.svg"}
                 alt=""
@@ -379,11 +383,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           exit={{ opacity: 0, x: -16 }}
           transition={{ type: "spring", stiffness: 360, damping: 34 }}
           style={isDesktop ? { left: collapsedWidth } : undefined}
-          className="fixed z-40 bg-white border-neutral-200 shadow-xl max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:overflow-y-auto max-md:rounded-t-2xl max-md:border max-md:border-b-0 md:top-0 md:bottom-0 md:w-80 md:border-r"
+          className="fixed z-40 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-xl max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:overflow-y-auto max-md:rounded-t-2xl max-md:border max-md:border-b-0 md:top-0 md:bottom-0 md:w-80 md:border-r"
         >
-          <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100">
+          <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100 dark:border-neutral-800">
             <div>
-              <h2 className="font-bold text-base text-neutral-900">
+              <h2 className="font-bold text-base text-neutral-900 dark:text-neutral-100">
                 Notifications
               </h2>
             </div>
@@ -391,7 +395,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={() => setNotificationsOpen(false)}
               aria-label="Close notifications"
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
             >
               <X className="w-4 h-4" />
             </button>
@@ -406,30 +410,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     setNotificationsOpen(false);
                     navigate(`/dashboard/items/${notification.itemId}`);
                   }}
-                  className="block w-full p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
+                  className="block w-full p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
                 >
-                  <p className="text-xs font-bold text-neutral-900">
+                  <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                     {notification.title}
                   </p>
-                  <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
                     {notification.desc}
                   </p>
-                  <span className="text-[10px] text-neutral-400 mt-1.5 block">
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1.5 block">
                     {notification.time}
                   </span>
                 </button>
               ) : (
                 <div
                   key={notification.id}
-                  className="p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors"
+                  className="p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
                 >
-                  <p className="text-xs font-bold text-neutral-900">
+                  <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                     {notification.title}
                   </p>
-                  <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
                     {notification.desc}
                   </p>
-                  <span className="text-[10px] text-neutral-400 mt-1.5 block">
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1.5 block">
                     {notification.time}
                   </span>
                 </div>

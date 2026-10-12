@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, ClipboardList, LogOut, User as UserIcon, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, ClipboardList, LogOut, Moon, Sun, User as UserIcon, Search, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/context/useAuth";
+import { useTheme } from "@/context/useTheme";
 import { useNavigate } from "react-router-dom";
 import { SearchPaletteModal } from "@/components/SearchPaletteModal";
 import type { ItemFilters } from "@/components/school_user/itemFilters";
@@ -35,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   onFilterModalOpenChange,
 }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [localPaletteOpen, setLocalPaletteOpen] = useState(false);
@@ -68,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-    <header className="h-20 bg-white sticky top-0 z-30">
+    <header className="h-20 bg-white dark:bg-neutral-950 sticky top-0 z-30">
       <div className="h-full w-full max-w-[1600px] mx-auto px-2 sm:px-3 lg:px-4">
       <div className={`h-full flex items-center justify-between transition-[margin,width] duration-300 ease-in-out ${
         notificationsOpen
@@ -84,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <div className="relative flex-1 min-w-0 flex items-center">
             <Search
-              className="absolute left-3 h-4 w-4 text-neutral-400 pointer-events-none"
+              className="absolute left-3 h-4 w-4 text-neutral-400 dark:text-neutral-500 pointer-events-none"
               aria-hidden="true"
             />
             <input
@@ -95,7 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
               placeholder="Search items by name…"
               aria-label="Search items by name"
               autoComplete="off"
-              className="h-10 w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-10 text-xs text-neutral-800 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-10 w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-10 text-xs text-neutral-800 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-400"
             />
             <button
               type="button"
@@ -112,13 +114,13 @@ export const Header: React.FC<HeaderProps> = ({
               aria-expanded={isPaletteOpen}
               className={`absolute right-1.5 h-7 w-7 shrink-0 flex items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 cursor-pointer ${
                 isPaletteOpen || activeFilterCount > 0
-                  ? "text-neutral-900 hover:bg-neutral-200/70"
-                  : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/70"
+                  ? "text-neutral-900 dark:text-neutral-100 hover:bg-neutral-200/70"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200/70"
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
               {activeFilterCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 bg-[#E5192D] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white tabular-nums">
+                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 rounded-md px-1 bg-[#E5192D] text-white text-[10px] leading-none font-bold flex items-center justify-center border-2 border-white dark:border-neutral-950 tabular-nums">
                   {activeFilterCount}
                 </span>
               )}
@@ -129,6 +131,20 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right User Actions (desktop only — profile lives in the mobile bottom bar) */}
       <div className="hidden md:flex items-center gap-3 sm:gap-4 shrink-0">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-pressed={theme === "dark"}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+        >
+          {theme === "dark" ? (
+            <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
+          ) : (
+            <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
+          )}
+        </button>
         {/* User Profile Bar */}
         <div className="relative" ref={dropdownRef}>
           <button
@@ -137,9 +153,9 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Open profile menu"
             aria-expanded={profileDropdownOpen}
             aria-controls="account-profile-dropdown"
-            className="flex items-center gap-2.5 rounded-full p-1 text-left transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 active:scale-[0.97] cursor-pointer group"
+            className="flex items-center gap-2.5 rounded-full p-1 text-left transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 active:scale-[0.97] cursor-pointer group"
           >
-            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
+            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800 shrink-0">
               <img
                 src={user?.avatar || "/images/avatars/vaughn_evangelista.svg"}
                 alt="User avatar"
@@ -151,17 +167,17 @@ export const Header: React.FC<HeaderProps> = ({
               />
             </div>
 
-            <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform duration-150 group-hover:text-neutral-600 ${profileDropdownOpen ? "rotate-180" : ""}`} />
+            <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500 transition-transform duration-150 group-hover:text-neutral-600 dark:group-hover:text-neutral-400 ${profileDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 
           {/* Profile Dropdown */}
           {profileDropdownOpen && (
-            <div id="account-profile-dropdown" className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-3 py-2 border-b border-neutral-100 mb-1">
-                <p className="text-xs font-bold text-neutral-900">
+            <div id="account-profile-dropdown" className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-100 dark:border-neutral-800 p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-800 mb-1">
+                <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                   {user?.name || "Vaughn Evangelista"}
                 </p>
-                <p className="text-[11px] text-neutral-400 truncate">
+                <p className="text-[11px] text-neutral-400 dark:text-neutral-500 truncate">
                   {user?.email || "vaughn@wmsu.edu.ph"}
                 </p>
               </div>
@@ -171,9 +187,9 @@ export const Header: React.FC<HeaderProps> = ({
                   setProfileDropdownOpen(false);
                   navigate("/dashboard/profile");
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-colors text-left"
               >
-                <UserIcon className="w-3.5 h-3.5 text-neutral-500" />
+                <UserIcon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                 Profile
               </button>
 
@@ -182,9 +198,9 @@ export const Header: React.FC<HeaderProps> = ({
                   setProfileDropdownOpen(false);
                   navigate("/dashboard/claims");
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-colors text-left"
               >
-                <ClipboardList className="w-3.5 h-3.5 text-neutral-500" />
+                <ClipboardList className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                 My claims
               </button>
 
@@ -194,7 +210,7 @@ export const Header: React.FC<HeaderProps> = ({
                   logout();
                   navigate("/");
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors text-left"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 Sign out

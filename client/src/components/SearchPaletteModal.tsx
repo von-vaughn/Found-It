@@ -63,7 +63,7 @@ export const SearchPaletteModal: React.FC<SearchPaletteModalProps> = ({
             role="dialog"
             aria-modal="true"
             aria-label="Browse categories, buildings, and filters"
-            className="relative w-full max-w-2xl bg-white border border-neutral-200/90 rounded-3xl shadow-2xl shadow-neutral-950/15 flex flex-col overflow-hidden text-neutral-900 z-10 h-[490px] max-h-[85vh]"
+            className="relative w-full max-w-2xl bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-3xl shadow-2xl shadow-neutral-950/15 flex flex-col overflow-hidden text-neutral-900 dark:text-neutral-100 z-10 h-[490px] max-h-[85vh]"
           >
             <FilterPaletteBody
               variant="modal"

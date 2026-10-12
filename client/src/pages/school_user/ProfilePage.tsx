@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ClipboardList, LogOut, PlusCircle } from "lucide-react";
+import { ChevronDown, ClipboardList, LogOut, Moon, PlusCircle, Sun } from "lucide-react";
+import { useTheme } from "@/context/useTheme";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
@@ -42,6 +43,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   onFiltersChange,
 }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
@@ -123,7 +125,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="profile"
         expanded={sidebarExpanded}
@@ -164,12 +166,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               : "w-full"
           }`}
         >
-          <main className="mx-auto w-full max-w-[1100px] bg-white px-4 py-8 sm:px-6 lg:px-8">
+          <main className="mx-auto w-full max-w-[1100px] bg-white px-4 py-8 sm:px-6 lg:px-8 dark:bg-neutral-950">
             <section
               aria-labelledby="profile-identity-heading"
               className="flex flex-row items-center gap-5 pb-7"
             >
-              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-neutral-200 bg-white">
+              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <img
                   src={avatar}
                   alt={`${name}'s profile`}
@@ -183,7 +185,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 <span className="flex items-center gap-1.5">
                   <h2
                     id="profile-identity-heading"
-                    className="break-words text-xl font-bold text-neutral-900"
+                    className="break-words text-xl font-bold text-neutral-900 dark:text-neutral-100"
                   >
                     {name}
                   </h2>
@@ -193,7 +195,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                       onClick={() => setProfileMenuOpen((open) => !open)}
                       aria-label="Open account menu"
                       aria-expanded={profileMenuOpen}
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
                     >
                       <ChevronDown
                         className={`h-4 w-4 transition-transform duration-150 ${profileMenuOpen ? "rotate-180" : ""}`}
@@ -203,7 +205,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   </span>
                 </span>
                 {profileMenuOpen && (
-                  <span className="absolute right-0 top-full z-30 mt-2 block w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden">
+                  <span className="absolute right-0 top-full z-30 mt-2 block w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden dark:border-neutral-800 dark:bg-neutral-900">
                     <button
                       type="button"
                       onClick={() => {
@@ -211,29 +213,77 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                             logout();
                             navigate("/");
                       }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-red-400 dark:hover:bg-red-500/10"
                     >
                       <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                       Sign out
                     </button>
                   </span>
                 )}
-                <p className="mt-1 break-all text-sm text-neutral-600">
+                <p className="mt-1 break-all text-sm text-neutral-600 dark:text-neutral-400">
                   {email}
                 </p>
               </div>
             </section>
 
-            <section aria-labelledby="profile-reports-heading" className="pb-10">
+            <section aria-labelledby="profile-appearance-heading" className="pb-10">
               <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-4">
                 <div>
                   <h2
-                    id="profile-reports-heading"
+                    id="profile-appearance-heading"
                     className="text-base font-bold text-neutral-900"
+                  >
+                    Appearance
+                  </h2>
+                  <p className="mt-0.5 text-xs text-neutral-500">
+                    Light or dark — saved on this device.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-pressed={theme === "dark"}
+                className="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-neutral-200/80 px-4 py-3 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 cursor-pointer dark:border-neutral-800 dark:hover:bg-neutral-900"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                    {theme === "dark" ? (
+                      <Moon className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Sun className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </span>
+                  <span>
+                    <span className="block text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                      Dark mode
+                    </span>
+                    <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+                      {theme === "dark" ? "On" : "Off"}
+                    </span>
+                  </span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${theme === "dark" ? "bg-[#E5192D]" : "bg-neutral-200"}`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-[left] ${theme === "dark" ? "left-[22px]" : "left-0.5"}`}
+                  />
+                </span>
+              </button>
+            </section>
+
+            <section aria-labelledby="profile-reports-heading" className="pb-10">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-4 dark:border-neutral-800">
+                <div>
+                  <h2
+                    id="profile-reports-heading"
+                    className="text-base font-bold text-neutral-900 dark:text-neutral-100"
                   >
                     Your item reports
                   </h2>
-                  <p className="mt-1 text-xs text-neutral-500">
+                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                     {userItems.length} total · {lostItems} lost · {foundItems}{" "}
                     found
                   </p>
@@ -275,13 +325,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         aria-pressed={reportFilter === tab.id}
                         className={`relative px-1 py-1 text-sm font-bold transition-colors ${
                           reportFilter === tab.id
-                            ? "text-neutral-900"
-                            : "text-neutral-400 hover:text-neutral-700"
+                            ? "text-neutral-900 dark:text-neutral-100"
+                            : "text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300"
                         }`}
                       >
                         {tab.label}
                         {reportFilter === tab.id && (
-                          <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] rounded-full bg-neutral-900" />
+                          <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] rounded-full bg-neutral-900 dark:bg-neutral-100" />
                         )}
                       </button>
                     ))}
@@ -303,11 +353,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     </div>
                   ) : (
                     <div className="py-10 text-center">
-                      <h3 className="text-sm font-semibold text-neutral-800">
+                      <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                         No {reportFilter === "lost" ? "lost" : "found"} reports
                         yet
                       </h3>
-                      <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
+                      <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
                         You haven&apos;t reported any {reportFilter} items.
                       </p>
                       <button
@@ -322,10 +372,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </>
               ) : (
                 <div className="py-10 text-center">
-                  <h3 className="text-sm font-semibold text-neutral-800">
+                  <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                     No item reports yet
                   </h3>
-                  <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
+                  <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
                     Items you report will appear here so you can quickly find
                     them again.
                   </p>
@@ -334,15 +384,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </section>
 
             <section aria-labelledby="profile-claims-heading" className="pb-10">
-              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-4">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-4 dark:border-neutral-800">
                 <div>
                   <h2
                     id="profile-claims-heading"
-                    className="text-base font-bold text-neutral-900"
+                    className="text-base font-bold text-neutral-900 dark:text-neutral-100"
                   >
                     Your claim requests
                   </h2>
-                  <p className="mt-1 text-xs text-neutral-500">
+                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                     {myClaims.length}{" "}
                     {myClaims.length === 1 ? "request" : "requests"} filed on
                     found posts
@@ -352,7 +402,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   <button
                     type="button"
                     onClick={() => navigate("/dashboard/claims")}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                   >
                     <ClipboardList className="h-4 w-4" aria-hidden="true" />
                     View all requests
@@ -373,10 +423,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                               state: { from: "/dashboard/profile" },
                             })
                           }
-                          className="block w-full rounded-2xl border border-neutral-200/80 p-4 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                          className="block w-full rounded-2xl border border-neutral-200/80 p-4 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:hover:bg-neutral-800"
                         >
                           <span className="flex items-center justify-between gap-3">
-                            <span className="min-w-0 truncate text-sm font-bold text-neutral-900">
+                            <span className="min-w-0 truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
                               {claim.item}
                             </span>
                             <span
@@ -385,7 +435,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                               {simple}
                             </span>
                           </span>
-                          <span className="mt-1 block truncate text-xs text-neutral-500">
+                          <span className="mt-1 block truncate text-xs text-neutral-500 dark:text-neutral-400">
                             Request {claim.id} · Submitted {claim.submitted}
                           </span>
                         </button>
@@ -395,10 +445,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </ul>
               ) : (
                 <div className="py-10 text-center">
-                  <h3 className="text-sm font-semibold text-neutral-800">
+                  <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                     No claim requests yet
                   </h3>
-                  <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
+                  <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
                     Requests you file on found posts will appear here with
                     their approval status.
                   </p>

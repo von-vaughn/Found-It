@@ -85,7 +85,7 @@ function ClaimPhotosCarousel({
 
   return (
     <div className="min-w-0">
-      <div className="relative overflow-hidden rounded-xl border border-neutral-200/80">
+      <div className="relative overflow-hidden rounded-xl border border-neutral-200/80 dark:border-neutral-800">
         <img
           key={current.src}
           src={current.src}
@@ -229,7 +229,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="flex min-h-screen bg-white dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <Sidebar
         activeTab="claims"
         expanded={sidebarExpanded}
@@ -249,7 +249,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
           sidebarExpanded ? "md:ml-60" : "md:ml-20"
         }`}
       >
-        <div className="hidden md:block">
+        <div className="hidden md:block sticky top-0 z-30">
           <Header
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -270,16 +270,16 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               : "w-full"
           }`}
         >
-          <main className="mx-auto w-full max-w-[1100px] bg-white px-4 py-8 sm:px-6 lg:px-8">
+          <main className="mx-auto w-full max-w-[1100px] bg-white dark:bg-neutral-950 px-4 py-8 sm:px-6 lg:px-8">
             <header>
-              <h1 className="text-xl font-extrabold tracking-tight text-neutral-900">
+              <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 My claim requests
               </h1>
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                 {counts.total} total · {counts.pending} pending ·{" "}
                 {counts.approved} approved · {counts.rejected} rejected
               </p>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600">
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                 Requests you filed on found posts. Select a post to see the
                 original report.
               </p>
@@ -287,7 +287,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
 
             <nav
               aria-label="Filter claim requests by status"
-              className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-neutral-200 pb-3"
+              className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-neutral-200 dark:border-neutral-800 pb-3"
             >
               {FILTER_TABS.map((tab) => {
                 const count =
@@ -307,8 +307,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     aria-pressed={isActive}
                     className={`relative px-1 py-1 text-sm font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
                       isActive
-                        ? "text-neutral-900"
-                        : "text-neutral-400 hover:text-neutral-700"
+                        ? "text-neutral-900 dark:text-neutral-100"
+                        : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
                     }`}
                   >
                     {tab.label} ({count})
@@ -328,14 +328,14 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     <StaggerItem key={itemId}>
                     <section
                       aria-label={`Requests for ${claims[0]?.item ?? "post"}`}
-                      className="overflow-hidden rounded-2xl border border-neutral-200/80"
+                      className="overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800"
                     >
-                      <div className="flex items-center gap-3 border-b border-neutral-100 bg-neutral-50/70 p-4 sm:px-5">
+                      <div className="flex items-center gap-3 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900 p-4 sm:px-5">
                         <div className="min-w-0 flex-1">
-                          <h2 className="truncate text-sm font-extrabold text-neutral-900">
+                          <h2 className="truncate text-sm font-extrabold text-neutral-900 dark:text-neutral-100">
                             {item?.title ?? claims[0]?.item ?? "Post"}
                           </h2>
-                          <p className="mt-0.5 truncate text-xs text-neutral-500">
+                          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                             {claims.length}{" "}
                             {claims.length === 1 ? "request" : "requests"} ·{" "}
                             {item?.location ?? claims[0]?.location ?? ""}
@@ -348,7 +348,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                               state: { from: "/dashboard/claims" },
                             })
                           }
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
                         >
                           View post
                           <ArrowRight
@@ -358,7 +358,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                         </button>
                       </div>
 
-                      <ul className="divide-y divide-neutral-100">
+                      <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
                         {claims.map((claim) => {
                           const simple = simplifyClaimStatus(claim.status);
                           const detailImages = (claim.evidence ?? []).filter(
@@ -375,7 +375,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                 />
                                 <div className="flex min-w-0 flex-col justify-center">
                                   <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <p className="text-xs font-bold text-neutral-500">
+                                    <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
                                       Request {claim.id} · Submitted{" "}
                                       {claim.submitted}
                                     </p>
@@ -385,79 +385,79 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       {simple}
                                     </span>
                                   </div>
-                                  <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+                                  <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
                                     {claim.details}
                                   </p>
                                   <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:grid-cols-3">
                                 <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400">
+                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
                                     <Tag
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
                                     What is it?
                                   </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800">
+                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                     {claim.claimantTitle?.trim() || claim.item}
                                   </dd>
                                 </div>
                                 <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400">
+                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
                                     <Palette
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
                                     Primary color
                                   </dt>
-                                  <dd className="mt-1 font-semibold capitalize text-neutral-800">
+                                  <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
                                     {claim.color?.trim() || "Not provided"}
                                   </dd>
                                 </div>
                                 <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400">
+                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
                                     <CalendarDays
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
                                     Date lost
                                   </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800">
+                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                     {claim.dateLost}
                                   </dd>
                                 </div>
                                 <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400">
+                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
                                     <Clock3
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
                                     Time lost
                                   </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800">
+                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                     {claim.timeLost}
                                   </dd>
                                 </div>
                                 <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400">
+                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
                                     <MapPin
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
                                     Location lost
                                   </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800">
+                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                     {claim.location}
                                   </dd>
                                 </div>
                                 <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400">
+                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
                                     <Building2
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
                                     Building
                                   </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800">
+                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                     {claim.building?.trim() || "Not provided"}
                                   </dd>
                                 </div>
@@ -475,7 +475,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               </StaggerGrid>
             ) : (
               <div className="py-16 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500">
                   {searchQuery || statusFilter !== "all" ? (
                     <SearchX
                       className="h-8 w-8 stroke-[1.5]"
@@ -488,12 +488,12 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     />
                   )}
                 </div>
-                <h2 className="text-base font-bold text-neutral-900">
+                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   {searchQuery || statusFilter !== "all"
                     ? "No matching requests"
                     : "No claim requests yet"}
                 </h2>
-                <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
+                <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
                   {searchQuery || statusFilter !== "all"
                     ? "Try a different search term or status filter."
                     : "Requests you file on found posts will appear here with their approval status."}

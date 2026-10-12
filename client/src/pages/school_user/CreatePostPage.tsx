@@ -55,7 +55,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="create"
         expanded={sidebarExpanded}
@@ -96,7 +96,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
               : "w-full"
           }`}
         >
-          <main className="mx-auto w-full max-w-[720px] bg-white px-4 py-6 sm:px-6 lg:px-8">
+          <main className="mx-auto w-full max-w-[720px] bg-white px-4 py-6 sm:px-6 lg:px-8 dark:bg-neutral-950">
             <button
               type="button"
               onClick={() =>
@@ -104,17 +104,17 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
                   ? navigate(-1)
                   : navigate("/dashboard")
               }
-              className="hidden md:inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              className="hidden md:inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Go back
             </button>
 
             <header className="mt-2 mb-1">
-              <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">
+              <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 Post an item
               </h1>
-              <p className="mt-2 text-sm text-neutral-600">
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
                 Report something you lost or found on campus.
               </p>
             </header>

@@ -66,13 +66,13 @@ interface ItemDetailPageProps {
 
 const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
 
-const finderStatusStyles: Record<string, string> = {  Pending: "bg-amber-50 text-amber-700",
-  "Pending admin approval": "bg-amber-50 text-amber-700",
+const finderStatusStyles: Record<string, string> = {  Pending: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  "Pending admin approval": "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
   "Under review": "bg-blue-50 text-blue-800",
   Approved: "bg-emerald-50 text-emerald-700",
   Claimed: "bg-emerald-50 text-emerald-700",
-  Returned: "bg-neutral-100 text-neutral-600",
-  Rejected: "bg-neutral-100 text-neutral-500",
+  Returned: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400",
+  Rejected: "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
 };
 
 function toTime(entry: Item): number | null {
@@ -336,7 +336,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-white flex font-open-sans text-neutral-900">
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
         <Sidebar
           activeTab={sidebarActiveTab}
           expanded={sidebarExpanded}
@@ -371,10 +371,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           >
             <div className="flex h-full items-center justify-center px-8 py-16">
               <main className="max-w-sm text-center">
-                <h1 className="text-lg font-extrabold text-neutral-900 text-balance">
+                <h1 className="text-lg font-extrabold text-neutral-900 dark:text-neutral-100 text-balance">
                   Item not found
                 </h1>
-                <p className="mt-2 break-words text-sm text-neutral-500">
+                <p className="mt-2 break-words text-sm text-neutral-500 dark:text-neutral-400">
                   The item you are looking for may have been removed or the link
                   is incorrect.
                 </p>
@@ -422,7 +422,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-white flex font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <a
         href="#item-detail-main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-20 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-neutral-900 focus:px-3 focus:py-2 focus:text-xs focus:font-bold focus:text-white"
@@ -469,7 +469,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           <button
             type="button"
             onClick={handleGoBack}
-            className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Go back
@@ -481,7 +481,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   type="button"
                   onClick={() => setEditModalOpen(true)}
                   aria-label="Edit this report"
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
                 >
                   <Pencil className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -489,7 +489,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   type="button"
                   onClick={handleDeleteClick}
                   aria-label="Delete this report"
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-[#B42332] transition-colors hover:bg-red-50 hover:text-[#9F1424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-[#B42332] transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-[#9F1424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -499,7 +499,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               type="button"
               onClick={handleShare}
               aria-label="Copy link to this item"
-              className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
             >
               <Share2 className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -507,13 +507,13 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         </div>
         <main
           id="item-detail-main"
-          className="min-w-0 w-full max-w-[1100px] mx-auto bg-white px-2 sm:px-3 lg:px-4 py-6 space-y-6"
+          className="min-w-0 w-full max-w-[1100px] mx-auto bg-white dark:bg-neutral-950 px-2 sm:px-3 lg:px-4 py-6 space-y-6"
         >
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
           {/* Hero image — fixed frame so every item measures the same */}
           {item.image ? (
-            <div className="aspect-[4/3] max-h-[560px] w-full overflow-hidden rounded-3xl bg-neutral-100 border border-neutral-200/80">
+            <div className="aspect-[4/3] max-h-[560px] w-full overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-800">
               <img
                 src={item.image}
                 alt={item.title}
@@ -535,10 +535,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             {/* Reporter profile on top */}
             <div className="flex items-center gap-3 min-w-0">
               <div className="min-w-0 flex-1">
-                <h1 className="truncate text-xl font-extrabold tracking-tight text-neutral-900">
+                <h1 className="truncate text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                   {item.title}
                 </h1>
-                <p className="truncate text-xs text-neutral-400">
+                <p className="truncate text-xs text-neutral-400 dark:text-neutral-500">
                   {item.timeAgo}
                 </p>
               </div>
@@ -569,22 +569,22 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               )}
             </div>
 
-            <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400">
+            <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
               {isLost ? "Lost item report" : "Found item report"}
             </p>
-            <p className="mt-3 text-sm leading-relaxed text-neutral-600 break-words">
+            <p className="mt-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400 break-words">
               {item.description}
             </p>
-            <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 text-xs sm:grid-cols-2">
+            <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 dark:border-neutral-800 text-xs sm:grid-cols-2">
               {item.color && (
                 <div className="flex items-start gap-2.5 py-3">
                   <Palette
-                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                     aria-hidden="true"
                   />
                   <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900">Primary color</dt>
-                    <dd className="mt-1 capitalize text-neutral-500">
+                    <dt className="font-bold text-neutral-900 dark:text-neutral-100">Primary color</dt>
+                    <dd className="mt-1 capitalize text-neutral-500 dark:text-neutral-400">
                       {item.color}
                     </dd>
                   </div>
@@ -592,64 +592,64 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               )}
               <div className="flex items-start gap-2.5 py-3">
                 <MapPin
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">Specific location</dt>
-                  <dd className="mt-1 break-words text-neutral-500">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Specific location</dt>
+                  <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
                     {item.location}
                   </dd>
                 </div>
               </div>
               <div className="flex items-start gap-2.5 py-3">
                 <Building2
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">Building</dt>
-                  <dd className="mt-1 break-words text-neutral-500">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Building</dt>
+                  <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
                     {item.building?.trim() || "Not provided"}
                   </dd>
                 </div>
               </div>
               <div className="flex items-start gap-2.5 py-3">
                 <CalendarDays
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
                     {isLost ? "Date lost" : "Date found"}
                   </dt>
-                  <dd className="mt-1 text-neutral-500">
+                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
                     {itemDate ?? "Not provided"}
                   </dd>
                 </div>
               </div>
               <div className="flex items-start gap-2.5 py-3">
                 <Clock3
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
                     {isLost ? "Time lost" : "Time found"}
                   </dt>
-                  <dd className="mt-1 text-neutral-500">
+                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
                     {itemTime ?? "Not provided"}
                   </dd>
                 </div>
               </div>
               <div className="flex items-start gap-2.5 py-3">
                 <CategoryIcon
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">Category</dt>
-                  <dd className="mt-1 text-neutral-500">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Category</dt>
+                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
                     {category?.label ?? "Other"}
                   </dd>
                 </div>
@@ -657,14 +657,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               {isOwnItem && item.confidentialInfo?.trim() && (
                 <div className="flex items-start gap-2.5 py-3">
                   <Lock
-                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                     aria-hidden="true"
                   />
                   <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900">
+                    <dt className="font-bold text-neutral-900 dark:text-neutral-100">
                       Confidential info
                     </dt>
-                    <dd className="mt-1 break-words text-neutral-500">
+                    <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
                       {item.confidentialInfo}
                     </dd>
                   </div>
@@ -672,7 +672,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               )}
             </dl>
             {item.reward && (
-              <p className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 border border-amber-200/70">
+              <p className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-500/25">
                 <Award className="h-3.5 w-3.5" aria-hidden="true" />
                 Reward: {item.reward}
               </p>
@@ -688,11 +688,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 <div>
                   <h2
                     id="my-claims-heading"
-                    className="text-sm font-extrabold text-neutral-900 text-balance"
+                    className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
                   >
                     Your claim requests for this post ({myItemClaims.length})
                   </h2>
-                  <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                  <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
                     Track what you filed here. Statuses are simplified to
                     Pending, Approved, or Rejected.
                   </p>
@@ -711,10 +711,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   return (
                     <li
                       key={claim.id}
-                      className="rounded-2xl border border-neutral-200/80 bg-white p-4 sm:p-5"
+                      className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-xs font-bold text-neutral-500">
+                        <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
                           Request {claim.id} · Submitted {claim.submitted}
                         </p>
                         <span
@@ -723,7 +723,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                           {simple}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+                      <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
                         {claim.details}
                       </p>
                       {claim.evidence && claim.evidence.length > 0 && (
@@ -733,7 +733,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                           className="mt-3"
                         />
                       )}
-                      <p className="mt-3 text-xs leading-relaxed text-neutral-500">
+                      <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
                         {simplifiedStatusHint(simple)}
                       </p>
                     </li>
@@ -748,11 +748,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             <section aria-labelledby="suggested-matches-heading">
               <h2
                 id="suggested-matches-heading"
-                className="text-sm font-extrabold text-neutral-900 text-balance"
+                className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
               >
                 Possible matches for you
               </h2>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
                 Found reports that look related to your lost item, ranked by
                 category, color, place, timing, and title.
               </p>
@@ -769,7 +769,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 text-xs leading-relaxed text-neutral-500">
+                <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
                   No potential matches right now. New found reports that look
                   related will appear here.
                 </p>
@@ -782,7 +782,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             <section aria-labelledby="finder-reports-heading">
               <h2
                 id="finder-reports-heading"
-                className="text-sm font-extrabold text-neutral-900 text-balance"
+                className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
               >
                 Responses to Your Lost Items ({finderReports.length})
               </h2>
@@ -801,7 +801,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                     return (
                       <li
                         key={claim.id}
-                        className="rounded-2xl border border-neutral-200/80 bg-white p-4 sm:p-5"
+                        className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5"
                       >
                       <div className="grid items-stretch gap-8 md:grid-cols-2">
                         <div className="min-w-0">
@@ -819,65 +819,65 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center justify-between gap-3">
-                            <p className="min-w-0 truncate text-sm font-semibold text-neutral-800">
+                            <p className="min-w-0 truncate text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                               {claim.claimant}
                             </p>
                             <span
-                              className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold ${finderStatusStyles[claimStatus] ?? "bg-neutral-100 text-neutral-600"}`}
+                              className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold ${finderStatusStyles[claimStatus] ?? "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"}`}
                             >
                               {claimStatus}
                             </span>
                           </div>
-                          <p className="mt-0.5 truncate text-xs text-neutral-500">
+                          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                             {getClaimantEmail(claim)}
                           </p>
-                          <div className="mt-3 border-b border-neutral-100 pb-3">
-                            <p className="text-xs leading-relaxed text-neutral-700 break-words">
+                          <div className="mt-3 border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                            <p className="text-xs leading-relaxed text-neutral-700 dark:text-neutral-300 break-words">
                               {claim.details}
                             </p>
                           </div>
                           <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
                             <div>
-                              <dt className="text-[10px] text-neutral-400">
+                              <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
                                 Submitted
                               </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800">
+                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                 {claim.submitted}
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-[10px] text-neutral-400">
+                              <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
                                 Date found
                               </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800">
+                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                 {claim.dateLost}
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-[10px] text-neutral-400">
+                              <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
                                 Time found
                               </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800">
+                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                 {claim.timeLost}
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-[10px] text-neutral-400">
+                              <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
                                 Location found
                               </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800">
+                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                 {claim.location}
                               </dd>
                             </div>
                           </dl>
                           {claimStatus === "Pending" && !returnRequest && (
-                            <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-neutral-100 pt-3">
+                            <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-3">
                               <button
                                 type="button"
                                 onClick={() =>
                                   handleResponseDecision(claim, "not-mine", item.title)
                                 }
-                                className="min-h-10 rounded-full border border-neutral-300 px-4 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+                                className="min-h-10 rounded-full border border-neutral-300 px-4 text-xs font-bold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
                               >
                                 Not mine
                               </button>
@@ -899,7 +899,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   })}
                 </ul>
               ) : (
-                <p className="mt-3 text-xs leading-relaxed text-neutral-500">
+                <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
                   No one has submitted a found report for this item yet. New
                   submissions from people holding it will appear here.
                 </p>
@@ -912,7 +912,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             <section aria-labelledby="similar-heading">
               <h2
                 id="similar-heading"
-                className="text-sm font-extrabold text-neutral-900 text-balance"
+                className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
               >
                 Similar {category?.label.toLowerCase() ?? "item"} reports
               </h2>
@@ -974,17 +974,17 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             aria-modal="true"
             aria-labelledby="delete-report-title"
             aria-describedby="delete-report-description"
-            className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl border border-neutral-100 p-6"
+            className="relative w-full max-w-sm bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-100 dark:border-neutral-800 p-6"
           >
             <h2
               id="delete-report-title"
-              className="text-base font-extrabold tracking-tight text-neutral-900"
+              className="text-base font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
             >
               Delete this report?
             </h2>
             <p
               id="delete-report-description"
-              className="mt-2 text-sm leading-relaxed text-neutral-600 break-words"
+              className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400 break-words"
             >
               Are you sure you want to delete &ldquo;{item.title}&rdquo;? This
               action cannot be undone.
@@ -993,7 +993,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               <button
                 type="button"
                 onClick={() => setDeleteDialogOpen(false)}
-                className="h-10 px-4 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+                className="h-10 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 text-xs font-bold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
               >
                 Cancel
               </button>

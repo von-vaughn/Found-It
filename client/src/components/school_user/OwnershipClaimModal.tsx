@@ -50,17 +50,17 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
         aria-modal="true"
         aria-labelledby="ownership-claim-title"
         aria-describedby="ownership-claim-description"
-        className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-neutral-100 bg-white p-5 shadow-xl sm:max-h-[calc(100dvh-2.5rem)] sm:p-7"
+        className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl sm:max-h-[calc(100dvh-2.5rem)] sm:p-7"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2
               id="ownership-claim-title"
-              className="text-lg font-extrabold tracking-tight text-neutral-900"
+              className="text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
             >
               Claim request
             </h2>
-            <p className="mt-1 truncate text-sm text-neutral-500">
+            <p className="mt-1 truncate text-sm text-neutral-500 dark:text-neutral-400">
               {itemTitle}
             </p>
           </div>
@@ -69,7 +69,7 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close ownership claim form"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 dark:text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>

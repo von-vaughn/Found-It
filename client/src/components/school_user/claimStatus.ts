@@ -15,9 +15,9 @@ export function simplifyClaimStatus(
 }
 
 export const simplifiedClaimStatusStyles: Record<SimplifiedClaimStatus, string> = {
-  Pending: "bg-amber-50 text-amber-700 border border-amber-200/70",
-  Approved: "bg-emerald-50 text-emerald-700 border border-emerald-200/70",
-  Rejected: "bg-neutral-100 text-neutral-500 border border-neutral-200/70",
+  Pending: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-500/25",
+  Approved: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-500/25",
+  Rejected: "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border border-neutral-200/70 dark:border-neutral-800",
 };
 
 export function simplifiedStatusHint(status: SimplifiedClaimStatus): string {

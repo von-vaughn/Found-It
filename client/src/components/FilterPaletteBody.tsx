@@ -121,8 +121,8 @@ function FilterOptionRow({
       onMouseEnter={onHighlight}
       className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors cursor-pointer group ${
         highlighted
-          ? "bg-neutral-100 text-neutral-900"
-          : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
+          ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+          : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
       }`}
     >
       <span className="flex items-center gap-3 min-w-0">
@@ -137,14 +137,14 @@ function FilterOptionRow({
         <Icon
           className={`w-4 h-4 shrink-0 transition-colors ${
             highlighted
-              ? "text-neutral-900"
-              : "text-neutral-400 group-hover:text-neutral-700"
+              ? "text-neutral-900 dark:text-neutral-100"
+              : "text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-700 dark:group-hover:text-neutral-300"
           }`}
         />
         <span className="text-sm truncate">{name}</span>
       </span>
 
-      <span className="text-xs font-mono text-neutral-400 group-hover:text-neutral-600 shrink-0 ml-2">
+      <span className="text-xs font-mono text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-600 dark:group-hover:text-neutral-400 shrink-0 ml-2">
         {count}
       </span>
     </label>
@@ -164,7 +164,7 @@ function ColorDateFields({
       <div className="min-w-0">
         <label
           htmlFor="palette-filter-datetime-from"
-          className="block text-xs font-semibold text-neutral-700 mb-1.5"
+          className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5"
         >
           Date
         </label>
@@ -179,7 +179,7 @@ function ColorDateFields({
               dateTimeFrom: e.target.value,
             })
           }
-          className="w-full h-9 px-2 text-[11px] bg-white rounded-lg border border-neutral-200 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-300"
+          className="w-full h-9 px-2 text-[11px] bg-white dark:bg-neutral-900 dark:text-neutral-100 rounded-lg border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-300"
         />
       </div>
     </>
@@ -202,15 +202,15 @@ function MobileFilterDropdown({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-neutral-100 last:border-b-0">
+    <div className="border-b border-neutral-100 dark:border-neutral-800 last:border-b-0">
       <button
         type="button"
         onClick={onToggleOpen}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
       >
-        <Icon className="h-4 w-4 shrink-0 text-neutral-500" aria-hidden="true" />
-        <span className="flex-1 text-sm font-bold text-neutral-900">
+        <Icon className="h-4 w-4 shrink-0 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+        <span className="flex-1 text-sm font-bold text-neutral-900 dark:text-neutral-100">
           {title}
         </span>
         {selectedCount > 0 && (
@@ -220,7 +220,7 @@ function MobileFilterDropdown({
         )}
         <ChevronDown
           aria-hidden="true"
-          className={`h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200 ${
+          className={`h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500 transition-transform duration-200 ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -434,8 +434,8 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
     <div className="contents">
       {/* Top Search Bar (modal only — the page lists are short enough to scroll) */}
       {variant === "modal" && (
-      <div className="px-5 py-3.5 flex items-center gap-3 border-b border-neutral-150 bg-white shrink-0">
-        <Search className="w-5 h-5 text-neutral-400 shrink-0" />
+      <div className="px-5 py-3.5 flex items-center gap-3 border-b border-neutral-150 bg-white dark:bg-neutral-900 shrink-0">
+        <Search className="w-5 h-5 text-neutral-400 dark:text-neutral-500 shrink-0" />
         <input
           ref={inputRef}
           type="text"
@@ -444,7 +444,7 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
           onKeyDown={handleKeyDown}
           placeholder="Search categories or buildings..."
           aria-label="Search categories or buildings"
-          className="flex-1 bg-transparent text-neutral-900 placeholder-neutral-400 text-base sm:text-lg focus:outline-none font-normal"
+          className="flex-1 bg-transparent text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 text-base sm:text-lg focus:outline-none font-normal"
         />
 
         {query && (
@@ -454,7 +454,7 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
               handleQueryChange("");
               inputRef.current?.focus();
             }}
-            className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors cursor-pointer"
+            className="p-1 rounded-full text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             title="Clear input"
           >
             <X className="w-4 h-4" />
@@ -465,7 +465,7 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
         {variant === "modal" && (
           <kbd
             onClick={onClose}
-            className="hidden sm:inline-flex items-center px-2 py-0.5 text-[11px] font-mono text-neutral-500 bg-neutral-100 border border-neutral-200 rounded-md cursor-pointer hover:bg-neutral-200 hover:text-neutral-800 transition-colors"
+            className="hidden sm:inline-flex items-center px-2 py-0.5 text-[11px] font-mono text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-md cursor-pointer hover:bg-neutral-200 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors"
             title="Press ESC to close"
           >
             ESC
@@ -477,7 +477,7 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
       {/* Main Content Area (2 columns: Sidebar & List) */}
       {variant === "modal" ? (
       <div className="flex flex-1 min-h-0 divide-x divide-neutral-150">
-        <aside className="w-48 sm:w-60 shrink-0 p-3 sm:p-4 flex flex-col gap-3 bg-neutral-50/80 overflow-y-auto">
+        <aside className="w-48 sm:w-60 shrink-0 p-3 sm:p-4 flex flex-col gap-3 bg-neutral-50/80 dark:bg-neutral-900/80 overflow-y-auto">
           <nav aria-label="Filter groups" className="flex flex-col gap-1.5">
             <button
               type="button"
@@ -485,11 +485,11 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
               aria-pressed={activeTab === "type"}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer text-left ${
                 activeTab === "type"
-                  ? "bg-white text-neutral-900 font-semibold shadow-xs border border-neutral-200/80"
-                  : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/70 font-medium"
+                  ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-semibold shadow-xs border border-neutral-200/80 dark:border-neutral-800"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 font-medium"
               }`}
             >
-              <Tags className={`w-4 h-4 shrink-0 ${activeTab === "type" ? "text-neutral-900" : "text-neutral-400"}`} />
+              <Tags className={`w-4 h-4 shrink-0 ${activeTab === "type" ? "text-neutral-900 dark:text-neutral-100" : "text-neutral-400 dark:text-neutral-500"}`} />
               <span>Type</span>
             </button>
 
@@ -499,11 +499,11 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
               aria-pressed={activeTab === "categories"}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer text-left ${
                 activeTab === "categories"
-                  ? "bg-white text-neutral-900 font-semibold shadow-xs border border-neutral-200/80"
-                  : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/70 font-medium"
+                  ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-semibold shadow-xs border border-neutral-200/80 dark:border-neutral-800"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 font-medium"
               }`}
             >
-              <Layers className={`w-4 h-4 shrink-0 ${activeTab === "categories" ? "text-neutral-900" : "text-neutral-400"}`} />
+              <Layers className={`w-4 h-4 shrink-0 ${activeTab === "categories" ? "text-neutral-900 dark:text-neutral-100" : "text-neutral-400 dark:text-neutral-500"}`} />
               <span>Categories</span>
             </button>
 
@@ -513,17 +513,17 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
               aria-pressed={activeTab === "building"}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer text-left ${
                 activeTab === "building"
-                  ? "bg-white text-neutral-900 font-semibold shadow-xs border border-neutral-200/80"
-                  : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/70 font-medium"
+                  ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-semibold shadow-xs border border-neutral-200/80 dark:border-neutral-800"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 font-medium"
               }`}
             >
-              <Building2 className={`w-4 h-4 shrink-0 ${activeTab === "building" ? "text-neutral-900" : "text-neutral-400"}`} />
+              <Building2 className={`w-4 h-4 shrink-0 ${activeTab === "building" ? "text-neutral-900 dark:text-neutral-100" : "text-neutral-400 dark:text-neutral-500"}`} />
               <span>Buildings</span>
             </button>
           </nav>
 
           {filters && onFiltersChange && (
-            <div className="border-t border-neutral-200 pt-3 space-y-3">
+            <div className="border-t border-neutral-200 dark:border-neutral-800 pt-3 space-y-3">
               <ColorDateFields
                 filters={filters}
                 onFiltersChange={onFiltersChange}
@@ -534,10 +534,10 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
 
         <div
           ref={listRef}
-          className="flex-1 p-3 sm:p-4 overflow-y-auto flex flex-col bg-white scrollbar-thin scrollbar-thumb-neutral-200"
+          className="flex-1 p-3 sm:p-4 overflow-y-auto flex flex-col bg-white dark:bg-neutral-900 scrollbar-thin scrollbar-thumb-neutral-200"
         >
           <div className="px-3 py-1 mb-1">
-            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
               {activeTab === "categories"
                 ? "Categories"
                 : activeTab === "building"
@@ -586,7 +586,7 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
             })}
 
             {currentItems.length === 0 && (
-              <div className="py-8 text-center text-neutral-400 text-sm">
+              <div className="py-8 text-center text-neutral-400 dark:text-neutral-500 text-sm">
                 <p>No {activeTab === "categories" ? "categories" : activeTab === "building" ? "buildings" : "types"} found matching "{query}"</p>
                 {query.trim() && (
                   <button
@@ -703,7 +703,7 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
           type="button"
           onClick={() => onClearFilters?.()}
           disabled={!onClearFilters || filterCount === 0}
-          className="text-xs font-semibold text-neutral-500 hover:text-[#E5192D] cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:text-neutral-500"
+          className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 hover:text-[#E5192D] cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:text-neutral-500"
         >
           Clear all
         </button>

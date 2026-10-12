@@ -20,10 +20,10 @@ const localDate = () => {
 };
 
 const labelClass =
-  "mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-neutral-500";
+  "mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400";
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200";
+  "h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 px-3.5 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200";
 
 const MAX_EVIDENCE_IMAGES = 4;
 
@@ -160,7 +160,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
     <>
       <p
         id="ownership-claim-description"
-        className="mt-4 text-sm leading-relaxed text-neutral-600"
+        className="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
       >
         Share details that can help verify this item belongs to you. Your
         additional information, lost date, time, and location are required;
@@ -173,7 +173,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             <label htmlFor="claim-evidence" className={labelClass}>
               Picture evidence
             </label>
-            <span className="text-[11px] font-medium text-neutral-400">
+            <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
               Optional
             </span>
           </div>
@@ -188,12 +188,12 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             className="sr-only"
             tabIndex={-1}
           />
-          <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 p-3">
+          <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {evidenceFiles.map(({ preview }, index) => (
                 <div
                   key={preview}
-                  className="relative aspect-square overflow-hidden rounded-lg bg-white"
+                  className="relative aspect-square overflow-hidden rounded-lg bg-white dark:bg-neutral-900"
                 >
                   <img
                     src={preview}
@@ -204,7 +204,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
                     type="button"
                     onClick={() => handleRemoveEvidence(preview)}
                     aria-label={`Remove picture ${index + 1}`}
-                    className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-neutral-600 shadow-sm transition-colors hover:bg-white hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                    className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 dark:bg-neutral-900/95 text-neutral-600 dark:text-neutral-400 shadow-sm transition-colors hover:bg-white hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
                   >
                     <X className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
@@ -217,16 +217,16 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
                   className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-300 px-2 text-center transition-colors hover:border-neutral-400 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-neutral-400"
                 >
                   <ImagePlus
-                    className="h-5 w-5 text-neutral-400"
+                    className="h-5 w-5 text-neutral-400 dark:text-neutral-500"
                     aria-hidden="true"
                   />
-                  <span className="text-xs font-semibold text-neutral-700">
+                  <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Add photo
                   </span>
                 </button>
               )}
             </div>
-            <p className="mt-2 text-center text-[11px] text-neutral-500">
+            <p className="mt-2 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
               {evidenceFiles.length} of {MAX_EVIDENCE_IMAGES} pictures
               selected. You can add up to 4.
             </p>
@@ -273,7 +273,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
                 style={{
                   backgroundColor: color.trim() || "transparent",
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-neutral-200"
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-neutral-200 dark:border-neutral-800"
               />
             </div>
           </div>
@@ -339,7 +339,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         <div>
           <label htmlFor="claim-building" className={labelClass}>
             Building{" "}
-            <span className="font-medium normal-case tracking-normal text-neutral-400">
+            <span className="font-medium normal-case tracking-normal text-neutral-400 dark:text-neutral-500">
               (optional)
             </span>
           </label>
@@ -371,22 +371,22 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             value={additionalInfo}
             onChange={(event) => setAdditionalInfo(event.target.value)}
             placeholder="Describe marks, contents, or other details not shown in the post."
-            className="w-full resize-y rounded-xl border border-neutral-200 bg-neutral-50 p-3.5 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200"
+            className="w-full resize-y rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 p-3.5 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200"
           />
         </div>
 
         {formError && (
-          <p role="alert" className="text-sm font-medium text-red-700">
+          <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
             {formError}
           </p>
         )}
 
-        <div className="flex flex-col-reverse gap-2 border-t border-neutral-100 pt-4 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="h-11 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+            className="h-11 rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
           >
             Cancel
           </button>

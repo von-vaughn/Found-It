@@ -54,7 +54,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="notifications"
         expanded={sidebarExpanded}
@@ -95,12 +95,12 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
               : "w-full"
           }`}
         >
-          <main className="mx-auto w-full max-w-[720px] bg-white px-4 py-6 sm:px-6 lg:px-8">
+          <main className="mx-auto w-full max-w-[720px] bg-white px-4 py-6 sm:px-6 lg:px-8 dark:bg-neutral-950">
             <header className="mt-2 mb-4">
-              <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">
+              <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 Notifications
               </h1>
-              <p className="mt-0.5 text-sm text-neutral-600">
+              <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
                 {notifications.length} updates
               </p>
             </header>
@@ -114,15 +114,15 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
                       onClick={() =>
                         navigate(`/dashboard/items/${notification.itemId}`)
                       }
-                      className="block w-full rounded-2xl border border-neutral-200/80 p-4 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                      className="block w-full rounded-2xl border border-neutral-200/80 p-4 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:hover:bg-neutral-800"
                     >
-                      <p className="text-sm font-bold text-neutral-900">
+                      <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                         {notification.title}
                       </p>
-                      <p className="mt-1 text-sm leading-relaxed text-neutral-500">
+                      <p className="mt-1 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
                         {notification.desc}
                       </p>
-                      <span className="mt-1.5 block text-[11px] text-neutral-400">
+                      <span className="mt-1.5 block text-[11px] text-neutral-400 dark:text-neutral-500">
                         {notification.time}
                       </span>
                     </button>
@@ -130,15 +130,15 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
                 ) : (
                   <li
                     key={notification.id}
-                    className="rounded-2xl border border-neutral-200/80 p-4"
+                    className="rounded-2xl border border-neutral-200/80 p-4 dark:border-neutral-800"
                   >
-                    <p className="text-sm font-bold text-neutral-900">
+                    <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                       {notification.title}
                     </p>
-                    <p className="mt-1 text-sm leading-relaxed text-neutral-500">
+                    <p className="mt-1 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
                       {notification.desc}
                     </p>
-                    <span className="mt-1.5 block text-[11px] text-neutral-400">
+                    <span className="mt-1.5 block text-[11px] text-neutral-400 dark:text-neutral-500">
                       {notification.time}
                     </span>
                   </li>

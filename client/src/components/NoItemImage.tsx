@@ -19,7 +19,7 @@ export function NoItemImage({
       <span
         aria-hidden="true"
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-lg border border-dashed border-neutral-200 bg-neutral-50 text-neutral-400",
+          "flex shrink-0 items-center justify-center rounded-lg border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-400 dark:text-neutral-500",
           className,
         )}
       >
@@ -31,18 +31,18 @@ export function NoItemImage({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-200 bg-neutral-50 px-4 text-center",
+        "flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 px-4 text-center",
         className,
       )}
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500">
         <ImageOff className={iconClassName} aria-hidden="true" />
       </span>
       {title ? (
-        <p className="text-xs font-medium text-neutral-500">{title}</p>
+        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{title}</p>
       ) : null}
       {subtitle ? (
-        <p className="text-[10px] text-neutral-400">{subtitle}</p>
+        <p className="text-[10px] text-neutral-400 dark:text-neutral-500">{subtitle}</p>
       ) : null}
     </div>
   );

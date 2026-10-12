@@ -26,10 +26,10 @@ type CameraState = "starting" | "ready" | "error";
 export type FoundFlowStep = "camera" | "details" | "confirmation";
 
 const inputClass =
-  "w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-3 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200";
+  "w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 px-3.5 py-3 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200";
 
 const labelClass =
-  "mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-neutral-500";
+  "mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400";
 
 function useIsMobileView(): boolean {
   const [isMobile, setIsMobile] = useState(() =>
@@ -230,20 +230,20 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
       aria-labelledby="found-report-title"
       className={
         framed
-          ? "w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl"
+          ? "w-full overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-2xl"
           : "w-full"
       }
     >
-      <header className="border-b border-neutral-200 px-5 py-4 sm:px-6">
+      <header className="border-b border-neutral-200 dark:border-neutral-800 px-5 py-4 sm:px-6">
         <div>
           <h2
             id="found-report-title"
-            className="text-base font-bold text-neutral-900"
+            className="text-base font-bold text-neutral-900 dark:text-neutral-100"
           >
             {title}
           </h2>
           {step !== "confirmation" && (
-            <p className="mt-1 text-sm text-neutral-600">
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
               {step === "camera" ? (
                 <>Capture a photo to review. It won&apos;t be sent or submitted.</>
               ) : (
@@ -280,23 +280,23 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-200 bg-neutral-50 p-3 text-center transition-colors hover:border-neutral-400 hover:bg-neutral-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+                  className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3 text-center transition-colors hover:border-neutral-400 hover:bg-neutral-100/60 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
                 >
                   <Camera
                     className="h-6 w-6 text-neutral-300"
                     aria-hidden="true"
                   />
-                  <span className="text-xs font-semibold text-neutral-500">
+                  <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
                     Take a photo
                   </span>
-                  <span className="text-[11px] text-neutral-400">
+                  <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
                     Opens your camera
                   </span>
                 </button>
               )}
 
               {captureError && (
-                <p role="alert" className="text-sm font-medium text-red-700">
+                <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
                   {captureError}
                 </p>
               )}
@@ -307,7 +307,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                     <button
                       type="button"
                       onClick={handleRetake}
-                      className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                      className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
                     >
                       <RotateCcw className="h-4 w-4" aria-hidden="true" />
                       Retake
@@ -369,7 +369,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               </div>
 
               {captureError && (
-                <p role="alert" className="text-sm font-medium text-red-700">
+                <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
                   {captureError}
                 </p>
               )}
@@ -380,7 +380,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                     <button
                       type="button"
                       onClick={handleRetake}
-                      className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                      className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
                     >
                       <RotateCcw className="h-4 w-4" aria-hidden="true" />
                       Retake
@@ -416,7 +416,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           className="space-y-5 p-5 sm:p-6"
         >
           {formError && (
-            <p role="alert" className="text-sm font-medium text-red-700">
+            <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
               {formError}
             </p>
           )}
@@ -424,7 +424,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             <img
               src={capturedPhoto}
               alt="Captured found-item photo"
-              className="h-36 w-full rounded-xl bg-neutral-100 object-contain"
+              className="h-36 w-full rounded-xl bg-neutral-100 dark:bg-neutral-800 object-contain"
             />
           )}
           <div>
@@ -587,7 +587,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             <button
               type="button"
               onClick={() => onStepChange("camera")}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Back
@@ -610,17 +610,17 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               aria-hidden="true"
             />
             <div className="space-y-3">
-              <p className="text-sm leading-relaxed text-neutral-600">
+              <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                 Please bring the found item to the Office of Student Affairs
                 (OSA) for safekeeping and verification.
               </p>
-              <p className="text-sm leading-relaxed text-neutral-600">
+              <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                 Your report will first be sent to the user who posted the
                 lost-item report. If they confirm that the item could be
                 theirs, the OSA will verify the item's ownership after
                 you turn it over to their office.
               </p>
-              <p className="text-sm leading-relaxed text-neutral-600">
+              <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                 If the user confirms that the item is not theirs, your
                 found-item report will be published publicly so the rightful
                 owner can identify and claim it.
@@ -628,7 +628,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-neutral-200 pt-4">
+          <div className="flex justify-end gap-2 border-t border-neutral-200 dark:border-neutral-800 pt-4">
             <button
               type="button"
               onClick={onExit}

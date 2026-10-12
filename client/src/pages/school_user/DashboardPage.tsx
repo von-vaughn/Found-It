@@ -188,7 +188,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const activeFilterCount = countActiveFilters(filters);
 
   return (
-    <div className="min-h-screen bg-white flex selection:bg-[#E5192D] selection:text-white font-open-sans text-neutral-900">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 flex selection:bg-[#E5192D] selection:text-white font-open-sans text-neutral-900 dark:text-neutral-100">
       {/* Left Sidebar */}
       <Sidebar
         activeTab={activeNavTab}
@@ -229,7 +229,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
 
         {/* Dashboard Main Container */}
-        <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto bg-white px-2 sm:px-3 lg:px-4 pt-2 pb-5 space-y-5">
+        <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto bg-white dark:bg-neutral-950 px-2 sm:px-3 lg:px-4 pt-2 pb-5 space-y-5">
           <div className={`@container min-w-0 space-y-5 transition-[margin,width] duration-300 ease-in-out ${
             notificationsOpen
               ? "md:ml-80 md:w-[calc(100%-20rem)]"
@@ -261,7 +261,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
                     isActive
                       ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
-                      : "bg-white text-neutral-600 border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50"
+                      : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   }`}
                 >
                   {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
@@ -278,7 +278,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
                   activeCategoryId === "more"
                     ? "bg-[#E5192D] text-white border-[#E5192D]"
-                    : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
+                    : "border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                 }`}
               >
                 <span>More</span>
@@ -334,13 +334,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </StaggerGrid>
           ) : (
             <div className="min-h-[60dvh] text-center flex flex-col items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
+              <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 dark:text-neutral-500 mb-4">
                 <SearchX className="w-8 h-8 stroke-[1.5]" />
               </div>
-              <h3 className="text-base font-bold text-neutral-900 mb-1">
+              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100 mb-1">
                 No matching items found
               </h3>
-              <p className="text-xs text-neutral-500 max-w-sm mb-4">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mb-4">
                 We couldn&apos;t find any items matching &ldquo;{searchQuery}
                 &rdquo;. Try searching for another term or change your filters.
               </p>
