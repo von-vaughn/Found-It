@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
+import { motion } from "motion/react";
 import {
   ArrowRight,
   PlusCircle,
-  Backpack,
-  Smartphone,
-  KeyRound,
-  Wallet,
-  Headphones,
-  Glasses,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import {
   ItemSearchBar,
   type ItemSearchType,
@@ -41,16 +37,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
       tl.fromTo(
-        ".hero-tag",
-        { opacity: 0, y: -15 },
-        { opacity: 1, y: 0, duration: 0.6, delay: 0.1 },
+        titleRef.current,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.8, delay: 0.1 },
       )
-        .fromTo(
-          titleRef.current,
-          { opacity: 0, y: 30 },
-          { opacity: 1, y: 0, duration: 0.8 },
-          "-=0.3",
-        )
         .fromTo(
           subtitleRef.current,
           { opacity: 0, y: 20 },
@@ -90,14 +80,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     navigate(`${targetPath}&q=${encodeURIComponent(tag)}`);
   };
 
-  const popularTags = [
-    { label: "Backpack", icon: Backpack },
-    { label: "iPhone", icon: Smartphone },
-    { label: "Keys", icon: KeyRound },
-    { label: "Wallet", icon: Wallet },
-    { label: "AirPods", icon: Headphones },
-    { label: "Glasses", icon: Glasses },
-  ];
+  const categories = ITEM_CATEGORIES;
 
   return (
     <section
@@ -119,13 +102,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl pointer-events-none z-10" />
 
       <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-        <div className="hero-tag inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/10 border border-white/15 shadow-sm backdrop-blur-md mb-5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#E5192D] animate-pulse" />
-          <span className="text-xs sm:text-sm md:text-base font-bold tracking-[0.18em] text-neutral-200 uppercase">
-            Office of Student Affairs
-          </span>
-        </div>
-
         <h1
           ref={titleRef}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.04] mb-5 md:mb-6"
@@ -167,21 +143,45 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             onSubmit={handleSearchSubmit}
           />
 
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-neutral-400">
-            {popularTags.map((tag) => {
-              const Icon = tag.icon;
-              return (
-                <button
-                  key={tag.label}
-                  type="button"
-                  onClick={() => handleQuickTagClick(tag.label)}
-                  className="px-3.5 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700/60 transition-all cursor-pointer flex items-center gap-1.5 font-medium hover:scale-105 hover:border-red-500/40"
+          <div
+            aria-label="Browse items by category"
+            className="relative mt-4 overflow-hidden text-xs sm:text-sm text-neutral-400"
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-neutral-950 to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-neutral-950 to-transparent z-10 pointer-events-none" />
+            <motion.div
+              animate={{ x: ["-50%", "0%"] }}
+              transition={{
+                duration: 55,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              className="flex w-fit items-center gap-2"
+            >
+              {[0, 1].map((copy) => (
+                <div
+                  key={`category-copy-${copy}`}
+                  aria-hidden={copy === 1}
+                  className="flex items-center gap-2"
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tag.label}</span>
-                </button>
-              );
-            })}
+                  {categories.map((category) => {
+                    const Icon = category.icon;
+                    return (
+                      <button
+                        key={`${category.id}-${copy}`}
+                        type="button"
+                        tabIndex={copy === 1 ? -1 : undefined}
+                        onClick={() => handleQuickTagClick(category.label)}
+                        className="shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700/60 transition-colors cursor-pointer flex items-center gap-1.5 font-medium hover:border-red-500/40"
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{category.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </motion.div>
           </div>
         </div>
 
