@@ -26,7 +26,12 @@ export const initialSubmittedClaims: ClaimRequest[] = [
     details:
       "White iPhone 13 with a clear case and a small chip on the bottom-left corner. My lock screen is a photo of my dog wearing a red bandana.",
     submitted: "Today, 9:12 AM",
-    evidence: [],
+    evidence: [
+      "/images/iphone-white.jpg",
+      "/images/iphone.jpg",
+      "/images/2.jpg",
+      "/images/10.jpeg",
+    ],
     claimantTitle: "iPhone 13",
     color: "White",
     building: "Library",
@@ -44,7 +49,11 @@ export const initialSubmittedClaims: ClaimRequest[] = [
     details:
       "Dark brown bifold wallet with my initials embossed on the corner and a faded photo booth strip in the bill section.",
     submitted: "October 8, 2026, 2:05 PM",
-    evidence: [],
+    evidence: [
+      "/images/wallet.jpg",
+      "/images/notebook.jpg",
+      "/images/13.jpeg",
+    ],
     claimantTitle: "Wallet",
     color: "Brown",
     building: "WMSU Administration Building",
@@ -62,7 +71,7 @@ export const initialSubmittedClaims: ClaimRequest[] = [
     details:
       "Blue bottle with two stickers near the base. My name is written in marker underneath the bottle.",
     submitted: "October 9, 2026, 4:48 PM",
-    evidence: [],
+    evidence: ["/images/water-bottle.jpg", "/images/blue-bottle.jpg"],
     claimantTitle: "Water Bottle",
     color: "Blue",
     building: "Cafeteria B - Beside CCS",
@@ -80,7 +89,7 @@ export const initialSubmittedClaims: ClaimRequest[] = [
     details:
       "Blue spiral notebook. I thought it was mine, but the initials inside the front cover did not match.",
     submitted: "October 6, 2026, 10:26 AM",
-    evidence: [],
+    evidence: ["/images/blue-notebook.jpg"],
     claimantTitle: "Notebook",
     color: "Blue",
     building: "WMSU Administration Building",
@@ -98,7 +107,12 @@ export const initialSubmittedClaims: ClaimRequest[] = [
     details:
       "Gray jacket with a small department logo on the left sleeve. Left it on my seat after the afternoon program.",
     submitted: "Today, 8:02 AM",
-    evidence: [],
+    evidence: [
+      "/images/gray-jacket.jpg",
+      "/images/jacket.jpg",
+      "/images/14.jpeg",
+      "/images/16.jpeg",
+    ],
     claimantTitle: "Jacket",
     color: "Gray",
     building: "Open Stage",
@@ -116,7 +130,7 @@ export const initialSubmittedClaims: ClaimRequest[] = [
     details:
       "Toyota car keys with a black fob and a small red tag on the key ring. Already verified at the OSA office.",
     submitted: "October 7, 2026, 1:15 PM",
-    evidence: [],
+    evidence: ["/images/keys.jpg", "/images/toyota-keys.jpg"],
     claimantTitle: "Keys",
     color: "Silver",
     building: "",

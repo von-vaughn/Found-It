@@ -4,6 +4,8 @@ import {
   ArrowRight,
   Building2,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   Clock3,
   MapPin,
@@ -16,7 +18,6 @@ import { Sidebar } from "@/components/school_user/Sidebar";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import {
   simplifiedClaimStatusStyles,
-  simplifiedStatusHint,
   simplifyClaimStatus,
   type SimplifiedClaimStatus,
 } from "@/components/school_user/claimStatus";
@@ -49,6 +50,92 @@ const FILTER_TABS: { id: StatusFilter; label: string }[] = [
   { id: "Approved", label: "Approved" },
   { id: "Rejected", label: "Rejected" },
 ];
+
+function ClaimPhotosCarousel({
+  claimId,
+  itemTitle,
+  postImage,
+  detailImages,
+}: {
+  claimId: string;
+  itemTitle: string;
+  postImage?: string;
+  detailImages: string[];
+}) {
+  const photos = [
+    ...(postImage ? [{ src: postImage, alt: itemTitle }] : []),
+    ...detailImages.map((src, index) => ({
+      src,
+      alt: `Evidence ${index + 1} for request ${claimId}`,
+    })),
+  ];
+  const [index, setIndex] = useState(0);
+  const total = photos.length;
+  if (total === 0) {
+    return (
+      <NoItemImage
+        title="No photo on this post"
+        className="aspect-[16/10] w-full rounded-xl"
+      />
+    );
+  }
+  const safeIndex = index % total;
+  const current = photos[safeIndex];
+
+  return (
+    <div className="min-w-0">
+      <div className="relative overflow-hidden rounded-xl border border-neutral-200/80">
+        <img
+          key={current.src}
+          src={current.src}
+          alt={current.alt}
+          loading="lazy"
+          className="aspect-[16/10] w-full object-cover"
+        />
+        {total > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setIndex((i) => (i - 1 + total) % total)}
+              aria-label="Previous photo"
+              className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-transparent text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)] transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIndex((i) => (i + 1) % total)}
+              aria-label="Next photo"
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-transparent text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)] transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-bold tabular-nums text-white">
+              {safeIndex + 1} / {total}
+            </span>
+          </>
+        )}
+      </div>
+      {total > 1 && (
+        <div className="mt-2 flex items-center justify-center gap-1.5">
+          {photos.map((_, dotIndex) => (
+            <button
+              key={`${claimId}-photo-dot-${dotIndex}`}
+              type="button"
+              onClick={() => setIndex(dotIndex)}
+              aria-label={`Go to photo ${dotIndex + 1}`}
+              className={`h-1.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+                dotIndex === safeIndex
+                  ? "w-5 bg-neutral-900"
+                  : "w-1.5 bg-neutral-300 hover:bg-neutral-400"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   items: propItems,
@@ -243,16 +330,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                       className="overflow-hidden rounded-2xl border border-neutral-200/80"
                     >
                       <div className="flex items-center gap-3 border-b border-neutral-100 bg-neutral-50/70 p-4 sm:px-5">
-                        {item?.image ? (
-                          <img
-                            src={item.image}
-                            alt=""
-                            aria-hidden="true"
-                            className="h-12 w-12 shrink-0 rounded-xl object-cover"
-                          />
-                        ) : (
-                          <NoItemImage compact className="h-12 w-12 shrink-0" />
-                        )}
                         <div className="min-w-0 flex-1">
                           <h2 className="truncate text-sm font-extrabold text-neutral-900">
                             {item?.title ?? claims[0]?.item ?? "Post"}
@@ -283,23 +360,34 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                       <ul className="divide-y divide-neutral-100">
                         {claims.map((claim) => {
                           const simple = simplifyClaimStatus(claim.status);
+                          const detailImages = (claim.evidence ?? []).filter(
+                            (src) => src !== item?.image,
+                          );
                           return (
                             <li key={claim.id} className="p-4 sm:p-5">
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <p className="text-xs font-bold text-neutral-500">
-                                  Request {claim.id} · Submitted{" "}
-                                  {claim.submitted}
-                                </p>
-                                <span
-                                  className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simple]}`}
-                                >
-                                  {simple}
-                                </span>
-                              </div>
-                              <p className="mt-2 text-sm leading-relaxed text-neutral-700">
-                                {claim.details}
-                              </p>
-                              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:grid-cols-3">
+                              <div className="grid gap-5 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+                                <ClaimPhotosCarousel
+                                  claimId={claim.id}
+                                  itemTitle={item?.title ?? claim.item}
+                                  postImage={item?.image}
+                                  detailImages={detailImages}
+                                />
+                                <div className="flex min-w-0 flex-col justify-center">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="text-xs font-bold text-neutral-500">
+                                      Request {claim.id} · Submitted{" "}
+                                      {claim.submitted}
+                                    </p>
+                                    <span
+                                      className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simple]}`}
+                                    >
+                                      {simple}
+                                    </span>
+                                  </div>
+                                  <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+                                    {claim.details}
+                                  </p>
+                                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:grid-cols-3">
                                 <div>
                                   <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400">
                                     <Tag
@@ -373,23 +461,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   </dd>
                                 </div>
                               </dl>
-                              {claim.evidence &&
-                                claim.evidence.length > 0 && (
-                                  <div className="mt-3 flex flex-wrap gap-2">
-                                    {claim.evidence.map((image, index) => (
-                                      <img
-                                        key={`${claim.id}-evidence-${index}`}
-                                        src={image}
-                                        alt={`Evidence ${index + 1} for request ${claim.id}`}
-                                        loading="lazy"
-                                        className="h-16 w-16 rounded-lg border border-neutral-200/80 object-cover"
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-                              <p className="mt-3 text-xs leading-relaxed text-neutral-500">
-                                {simplifiedStatusHint(simple)}
-                              </p>
+                                </div>
+                              </div>
                             </li>
                           );
                         })}

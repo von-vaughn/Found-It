@@ -38,6 +38,7 @@ import {
   simplifiedStatusHint,
   simplifyClaimStatus,
 } from "@/components/school_user/claimStatus";
+import { ClaimEvidenceGallery } from "@/components/school_user/ClaimEvidenceGallery";
 import { claims as demoClaims } from "@/components/admin/adminData";
 import {
   applyAdvancedFilters,
@@ -726,17 +727,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                         {claim.details}
                       </p>
                       {claim.evidence && claim.evidence.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {claim.evidence.map((image, index) => (
-                            <img
-                              key={`${claim.id}-evidence-${index}`}
-                              src={image}
-                              alt={`Evidence ${index + 1} for request ${claim.id}`}
-                              loading="lazy"
-                              className="h-16 w-16 rounded-lg border border-neutral-200/80 object-cover"
-                            />
-                          ))}
-                        </div>
+                        <ClaimEvidenceGallery
+                          images={claim.evidence}
+                          altPrefix={`Request ${claim.id}`}
+                          className="mt-3"
+                        />
                       )}
                       <p className="mt-3 text-xs leading-relaxed text-neutral-500">
                         {simplifiedStatusHint(simple)}
@@ -809,29 +804,12 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                         className="rounded-2xl border border-neutral-200/80 bg-white p-4 sm:p-5"
                       >
                       <div className="grid items-stretch gap-8 md:grid-cols-2">
-                        <div className="flex min-h-48 min-w-0">
+                        <div className="min-w-0">
                           {claim.evidence && claim.evidence.length > 0 ? (
-                            <div
-                              className={`grid gap-2 ${
-                                claim.evidence.length > 1
-                                  ? "grid-cols-2"
-                                  : "grid-cols-1"
-                              } h-full min-h-48 w-full auto-rows-fr`}
-                            >
-                              {claim.evidence.map((image, index) => (
-                                <div
-                                  key={`${claim.id}-evidence-${index}`}
-                                  className="flex min-h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50"
-                                >
-                                  <img
-                                    src={image}
-                                    alt={`Photo evidence ${index + 1} from ${claim.claimant}`}
-                                    loading="lazy"
-                                    className="h-full max-h-full max-w-full object-contain"
-                                  />
-                                </div>
-                              ))}
-                            </div>
+                            <ClaimEvidenceGallery
+                              images={claim.evidence}
+                              altPrefix={`Photo evidence from ${claim.claimant}`}
+                            />
                           ) : (
                             <NoItemImage
                               title="No photo evidence provided"
