@@ -5,20 +5,26 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { AnalyticsSection } from "./AnalyticsSection";
-import { adminReports, claims, initialReturnRequests } from "./adminData";
+import { claims, itemToAdminReport } from "./adminData";
 import type { AdminSection } from "./types";
+import type { Item } from "@/data/mockItems";
+import type { ReturnItemRequest } from "@/types/claim";
+import { useMemo } from "react";
 
 export function Overview({
+  items,
+  returnRequests,
   onNavigate,
 }: {
+  items: Item[];
+  returnRequests: ReturnItemRequest[];
   onNavigate: (section: AdminSection) => void;
 }) {
-  const lostCount = adminReports.filter((item) => item.type === "Lost").length;
-  const foundCount = adminReports.filter(
-    (item) => item.type === "Found",
-  ).length;
+  const reports = useMemo(() => items.map(itemToAdminReport), [items]);
+  const lostCount = reports.filter((item) => item.type === "Lost").length;
+  const foundCount = reports.filter((item) => item.type === "Found").length;
   const pendingCount = claims.length;
-  const returnCount = initialReturnRequests.length;
+  const returnCount = returnRequests.length;
   const metrics = [
     {
       label: "Lost reports",
@@ -82,7 +88,11 @@ export function Overview({
         ))}
       </section>
 
-      <AnalyticsSection onNavigate={onNavigate} />
+      <AnalyticsSection
+        items={items}
+        returnRequests={returnRequests}
+        onNavigate={onNavigate}
+      />
     </>
   );
 }

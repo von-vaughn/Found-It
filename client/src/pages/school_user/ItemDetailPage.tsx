@@ -23,7 +23,7 @@ import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
-import { initialItems, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
 import type {
@@ -125,7 +125,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         ? "claims"
         : "home";
   const { user } = useAuth();
-  const items = propItems ?? initialItems;
+  const items = propItems ?? EMPTY_ITEMS;
 
   const handleGoBack = () => {
     if (window.history.length > 1) {

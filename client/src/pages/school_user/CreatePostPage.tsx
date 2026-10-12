@@ -10,7 +10,7 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import { initialItems, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import type { ClaimRequest } from "@/types/claim";
 
 interface CreatePostPageProps {
@@ -30,7 +30,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
 }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const items = propItems ?? initialItems;
+  const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);

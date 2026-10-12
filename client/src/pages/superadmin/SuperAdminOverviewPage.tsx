@@ -9,8 +9,16 @@ import { SuperAdminLayout } from "./SuperAdminLayout";
 import { superAdminSectionPaths } from "./superAdminRoutes";
 import { useSelectedReport } from "./useSelectedReport";
 import { actionLabel, loadAuditLogs } from "@/lib/auditLog";
+import type { Item } from "@/data/mockItems";
+import type { ReturnItemRequest } from "@/types/claim";
 
-export function SuperAdminOverviewPage() {
+export function SuperAdminOverviewPage({
+  items,
+  returnRequests,
+}: {
+  items: Item[];
+  returnRequests: ReturnItemRequest[];
+}) {
   const navigate = useNavigate();
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
@@ -24,7 +32,11 @@ export function SuperAdminOverviewPage() {
 
   return (
     <SuperAdminLayout activeSection="overview">
-      <Overview onNavigate={handleNavigate} />
+      <Overview
+        items={items}
+        returnRequests={returnRequests}
+        onNavigate={handleNavigate}
+      />
 
       <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-2">
         <Panel

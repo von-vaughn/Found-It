@@ -22,7 +22,7 @@ import {
 } from "@/components/school_user/itemFilters";
 import { SearchX } from "lucide-react";
 import { ITEM_CATEGORIES, type ItemCategory } from "@/data/itemCategories";
-import { initialItems, type Item } from "@/data/mockItems";
+import type { Item } from "@/data/mockItems";
 import type { ClaimRequest } from "@/types/claim";
 
 interface DashboardPageProps {
@@ -40,7 +40,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   filters,
   onFiltersChange: setFilters,
 }) => {
-  const [internalItems, setInternalItems] = useState<Item[]>(initialItems);
+  const [internalItems, setInternalItems] = useState<Item[]>([]);
   const items = propItems ?? internalItems;
 
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>

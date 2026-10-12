@@ -10,7 +10,7 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import { initialItems, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import type { ClaimRequest } from "@/types/claim";
 
 interface FoundReportPageProps {
@@ -28,7 +28,7 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
 }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const items = propItems ?? initialItems;
+  const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const [flowStep, setFlowStep] = useState<FoundFlowStep>("camera");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);

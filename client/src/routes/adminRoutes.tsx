@@ -30,7 +30,7 @@ export function getAdminRoutes({
   onUpdateReturnRequestStatus,
 }: AdminRoutesOptions): RouteObject[] {
   return [
-    { path: paths.admin, element: <OverviewPage /> },
+    { path: paths.admin, element: <OverviewPage items={items} returnRequests={returnRequests} /> },
     {
       path: paths.adminItems,
       element: (

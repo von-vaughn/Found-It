@@ -7,7 +7,7 @@ import {
   buildNotifications,
 } from "@/components/school_user/notifications";
 import { useAuth } from "@/context/useAuth";
-import { initialItems, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -31,7 +31,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const items = propItems ?? initialItems;
+  const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);

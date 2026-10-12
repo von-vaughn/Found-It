@@ -11,7 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
-import { initialItems } from "@/data/mockItems";
+import type { Item } from "@/data/mockItems";
 import type { AdminNotification, AdminSidebarItem } from "./AdminSidebar";
 import type {
   AdminReport,
@@ -19,9 +19,8 @@ import type {
   AdminClaim,
   AdminUser,
 } from "./types";
-import type { ReturnItemRequest } from "@/types/claim";
 
-export const itemToAdminReport = (item: (typeof initialItems)[number]): AdminReport => ({
+export const itemToAdminReport = (item: Item): AdminReport => ({
   id: item.id,
   title: item.title,
   type: item.type === "lost" ? "Lost" : "Found",
@@ -50,8 +49,6 @@ export const itemToAdminReport = (item: (typeof initialItems)[number]): AdminRep
   date: item.date,
   eventDateTime: item.dateTime,
 });
-
-export const adminReports: AdminReport[] = initialItems.map(itemToAdminReport);
 
 export const claims: AdminClaim[] = [
   {
@@ -247,77 +244,6 @@ export const claims: AdminClaim[] = [
     details:
       "I picked up a silver wristwatch with a metal strap near the drinks counter. Keeping it safe until claimed.",
     submitted: "Today, 11:20 AM",
-  },
-];
-
-export const initialReturnRequests: ReturnItemRequest[] = [
-  {
-    id: "RT-EXAMPLE-1",
-    sourceClaimId: "CL-2408",
-    lostItemTitle: "Black Backpack",
-    status: "Pending",
-    item: "Black Backpack",
-    itemId: "item-1",
-    claimant: "Mika Ross",
-    email: "mika.ross@wmsu.edu.ph",
-    dateLost: "October 10, 2026",
-    timeLost: "9:15 AM",
-    location: "Library Building",
-    details:
-      "I found this black backpack near the library. It has a small blue star keychain on the front pocket.",
-    submitted: "Today, 9:30 AM",
-    evidence: [],
-  },
-  {
-    id: "RT-EXAMPLE-2",
-    sourceClaimId: "CL-2407",
-    lostItemTitle: "Wallet",
-    status: "Pending",
-    item: "Wallet",
-    itemId: "item-4",
-    claimant: "Janelle Cruz",
-    email: "janelle.cruz@wmsu.edu.ph",
-    dateLost: "October 1, 2026",
-    timeLost: "11:00 AM",
-    location: "Main Gate",
-    details:
-      "Brown leather wallet with a folded library receipt behind the student ID.",
-    submitted: "Today, 8:05 AM",
-    evidence: [],
-  },
-  {
-    id: "RT-EXAMPLE-3",
-    sourceClaimId: "CL-2406",
-    lostItemTitle: "iPhone 13",
-    status: "Approved",
-    item: "iPhone 13",
-    itemId: "item-2",
-    claimant: "Alyssa Moore",
-    email: "alyssa.moore@wmsu.edu.ph",
-    dateLost: "October 3, 2026",
-    timeLost: "10:15 AM",
-    location: "Library Building",
-    details:
-      "White iPhone 13 with a clear case. The lock screen has a photo of my dog.",
-    submitted: "Yesterday, 3:40 PM",
-    evidence: [],
-  },
-  {
-    id: "RT-EXAMPLE-4",
-    sourceClaimId: "CL-2402",
-    lostItemTitle: "Water Bottle",
-    status: "Returned",
-    item: "Water Bottle",
-    itemId: "item-6",
-    claimant: "Noah Ibrahim",
-    email: "noah.ibrahim@wmsu.edu.ph",
-    dateLost: "September 30, 2026",
-    timeLost: "After lunch",
-    location: "Cafeteria B",
-    details:
-      "Blue bottle with two stickers near the base and a name written underneath.",
-    submitted: "October 7, 2026, 1:12 PM",
-    evidence: [],
   },
 ];
 

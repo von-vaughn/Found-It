@@ -31,7 +31,12 @@ export function getSuperAdminRoutes({
   onUpdateReturnRequestStatus,
 }: SuperAdminRoutesOptions): RouteObject[] {
   return [
-    { path: paths.superadmin, element: <SuperAdminOverviewPage /> },
+    {
+      path: paths.superadmin,
+      element: (
+        <SuperAdminOverviewPage items={items} returnRequests={returnRequests} />
+      ),
+    },
     {
       path: paths.superadminItems,
       element: (

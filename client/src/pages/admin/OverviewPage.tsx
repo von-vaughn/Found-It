@@ -5,8 +5,16 @@ import type { AdminSection } from "@/components/admin/types";
 import { AdminLayout } from "./AdminLayout";
 import { adminSectionPaths } from "./adminRoutes";
 import { useSelectedReport } from "./useSelectedReport";
+import type { Item } from "@/data/mockItems";
+import type { ReturnItemRequest } from "@/types/claim";
 
-export function OverviewPage() {
+export function OverviewPage({
+  items,
+  returnRequests,
+}: {
+  items: Item[];
+  returnRequests: ReturnItemRequest[];
+}) {
   const navigate = useNavigate();
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
@@ -17,7 +25,11 @@ export function OverviewPage() {
 
   return (
     <AdminLayout activeSection="overview">
-      <Overview onNavigate={handleNavigate} />
+      <Overview
+        items={items}
+        returnRequests={returnRequests}
+        onNavigate={handleNavigate}
+      />
       {selectedReport && (
         <ItemDetailsDialog
           key={selectedReport.id}

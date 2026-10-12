@@ -11,7 +11,7 @@ import {
 } from "@/components/school_user/claimStatus";
 import { takeSchoolSidebarExpanded } from "@/components/school_user/sidebarExpandedState";
 import { useAuth } from "@/context/useAuth";
-import { initialItems, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -43,7 +43,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const items = propItems ?? initialItems;
+  const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
     takeSchoolSidebarExpanded(),

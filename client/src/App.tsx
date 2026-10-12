@@ -6,9 +6,7 @@ import { Footer } from "@/components/Footer";
 import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppRoutes } from "@/routes";
-import { initialItems, type Item } from "@/data/mockItems";
-import { initialSubmittedClaims } from "@/data/mockClaims";
-import { initialReturnRequests } from "@/components/admin/adminData";
+import type { Item } from "@/data/mockItems";
 import {
   defaultFilters,
   type ItemFilters,
@@ -29,15 +27,47 @@ function ScrollToTop() {
 }
 
 export function App() {
-  const [items, setItems] = useState<Item[]>(initialItems);
-  const [submittedClaims, setSubmittedClaims] =
-    useState<ClaimRequest[]>(initialSubmittedClaims);
+  // Example content (items, claim requests, return requests) lives in a
+  // single JSON file and is fetched dynamically at startup instead of being
+  // hardcoded: `public/data/examples.json`.
+  const [items, setItems] = useState<Item[]>([]);
+  const [submittedClaims, setSubmittedClaims] = useState<ClaimRequest[]>([]);
   const [returnRequests, setReturnRequests] = useState<ReturnItemRequest[]>(
-    initialReturnRequests,
+    [],
   );
+  const [examplesLoaded, setExamplesLoaded] = useState(false);
   const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${import.meta.env.BASE_URL}data/examples.json`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            `Failed to load example data: ${response.status} ${response.statusText}`,
+          );
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data?.items)) setItems(data.items);
+        if (Array.isArray(data?.submittedClaims))
+          setSubmittedClaims(data.submittedClaims);
+        if (Array.isArray(data?.returnRequests))
+          setReturnRequests(data.returnRequests);
+        setExamplesLoaded(true);
+      })
+      .catch((error) => {
+        console.error("Failed to load example data.", error);
+        if (!cancelled) setExamplesLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleAddItem = (newItem: Item) => {
     setItems((prev) => [newItem, ...prev]);
@@ -151,25 +181,43 @@ export function App() {
         )}
 
         <div className="flex-1">
-          <AppRoutes
-            items={items}
-            submittedClaims={submittedClaims}
-            onAddItem={handleAddItem}
-            onUpdateItem={handleUpdateItem}
-            onDeleteItem={handleDeleteItem}
-            onSubmitClaim={handleSubmitClaim}
-            onUpdateClaimStatus={handleUpdateClaimStatus}
-            returnRequests={returnRequests}
-            onSubmitReturnRequest={handleSubmitReturnRequest}
-            onUpdateReturnRequestStatus={handleUpdateReturnRequestStatus}
-            onBrowseLost={handleBrowseLost}
-            onBrowseFound={handleBrowseFound}
-            filters={filters}
-            onFiltersChange={setFilters}
-          />
+          {examplesLoaded ? (
+            <AppRoutes
+              items={items}
+              submittedClaims={submittedClaims}
+              onAddItem={handleAddItem}
+              onUpdateItem={handleUpdateItem}
+              onDeleteItem={handleDeleteItem}
+              onSubmitClaim={handleSubmitClaim}
+              onUpdateClaimStatus={handleUpdateClaimStatus}
+              returnRequests={returnRequests}
+              onSubmitReturnRequest={handleSubmitReturnRequest}
+              onUpdateReturnRequestStatus={handleUpdateReturnRequestStatus}
+              onBrowseLost={handleBrowseLost}
+              onBrowseFound={handleBrowseFound}
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          ) : (
+            <div
+              role="status"
+              aria-label="Loading example content"
+              className="flex min-h-[60dvh] flex-col items-center justify-center gap-3"
+            >
+              <img
+                src="/logo.jpeg"
+                alt=""
+                aria-hidden="true"
+                className="h-12 w-12 animate-pulse rounded-xl object-contain"
+              />
+              <p className="text-xs font-semibold text-neutral-500">
+                Loading FoundIt…
+              </p>
+            </div>
+          )}
         </div>
 
-        {location.pathname === "/" && <CommunityReunions />}
+        {examplesLoaded && location.pathname === "/" && <CommunityReunions />}
         {!isDashboard &&
           location.pathname !== "/lost-items" &&
           location.pathname !== "/found-items" &&

@@ -10,7 +10,7 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import { initialItems, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { useAuth } from "@/context/useAuth";
 import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
 
@@ -32,7 +32,7 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const items = propItems ?? initialItems;
+  const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);

@@ -10,7 +10,7 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import { initialItems, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 
 interface FiltersPageProps {
   items?: Item[];
@@ -24,7 +24,7 @@ export const FiltersPage: React.FC<FiltersPageProps> = ({
   onFiltersChange,
 }) => {
   const navigate = useNavigate();
-  const items = propItems ?? initialItems;
+  const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);

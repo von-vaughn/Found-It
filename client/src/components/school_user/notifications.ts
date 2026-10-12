@@ -1,4 +1,4 @@
-import { initialItems, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { claims as demoClaims } from "@/components/admin/adminData";
 import type { ClaimRequest } from "@/types/claim";
 
@@ -38,7 +38,7 @@ export function buildNotifications(
   submittedClaims: ClaimRequest[],
   profileName: string,
 ): SchoolUserNotification[] {
-  const items = propItems ?? initialItems;
+  const items = propItems ?? EMPTY_ITEMS;
   const profileUsername = profileName.toLowerCase().replace(/\s+/g, "_");
 
   const myLostItemIds = new Set(

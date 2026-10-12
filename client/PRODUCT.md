@@ -22,7 +22,7 @@ Campus-scoped verification: claims carry lost date/time/location + photo evidenc
 
 ## Operating Context
 
-Web dashboard at /dashboard. Flows: Dashboard feed → ItemDetail (/dashboard/items/:id) → Claim form (/dashboard/items/:id/claim) → success notice. State lives in App.tsx (items, submittedClaims, returnRequests). ClaimRequest has id, itemId, item title, claimant, dates, location, details, evidence, status, submitted.
+Web dashboard at /dashboard. Flows: Dashboard feed → ItemDetail (/dashboard/items/:id) → Claim form (/dashboard/items/:id/claim) → success notice. Example content (items, submitted claims, return requests) lives in a single JSON file, `client/public/data/examples.json`, fetched dynamically by App on startup; no example arrays are hardcoded in TS. ClaimRequest has id, itemId, item title, claimant, dates, location, details, evidence, status, submitted.
 
 ## Capabilities and Constraints
 

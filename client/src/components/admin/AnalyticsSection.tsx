@@ -11,8 +11,10 @@ import {
 } from "recharts";
 import { Panel } from "./Panel";
 import { StatusBadge } from "./StatusBadge";
-import { adminReports, claims, initialReturnRequests } from "./adminData";
+import { claims, itemToAdminReport } from "./adminData";
 import type { AdminSection } from "./types";
+import type { Item } from "@/data/mockItems";
+import type { ReturnItemRequest } from "@/types/claim";
 
 type RangeKey = "7D" | "14D" | "ALL" | "MONTH";
 
@@ -101,32 +103,53 @@ function ChartTooltip({
 
 const axisTick = { fontSize: 10, fill: "#737373" };
 
-const DATA_ANCHOR = Math.max(
-  ...adminReports.map((r) => parseDate(r.date)),
-);
-const DATA_YEARS = [
-  ...new Set(
-    adminReports.map((r) => new Date(parseDate(r.date)).getFullYear()),
-  ),
-].sort((a, b) => b - a);
+// Fallback anchor for the (unreachable in practice) empty-data case: the
+// App gates all routes until the examples file has loaded, so reports is
+// never empty on first render. Kept at module scope so render stays pure.
+const FALLBACK_ANCHOR = Date.now();
 
 export function AnalyticsSection({
+  items,
+  returnRequests,
   onNavigate,
 }: {
+  items: Item[];
+  returnRequests: ReturnItemRequest[];
   onNavigate: (section: AdminSection) => void;
 }) {
+  const reports = useMemo(() => items.map(itemToAdminReport), [items]);
+  const dataTimestamps = useMemo(
+    () => reports.map((r) => parseDate(r.date)),
+    [reports],
+  );
+  const dataAnchor = useMemo(
+    () =>
+      dataTimestamps.length > 0
+        ? Math.max(...dataTimestamps)
+        : FALLBACK_ANCHOR,
+    [dataTimestamps],
+  );
+  const dataYears = useMemo(
+    () =>
+      [
+        ...new Set(
+          dataTimestamps.map((time) => new Date(time).getFullYear()),
+        ),
+      ].sort((a, b) => b - a),
+    [dataTimestamps],
+  );
   const [range, setRange] = useState<RangeKey>("14D");
   const [customMonth, setCustomMonth] = useState(
-    () => new Date(DATA_ANCHOR).getMonth(),
+    () => new Date(dataAnchor).getMonth(),
   );
   const [customYear, setCustomYear] = useState(() =>
-    new Date(DATA_ANCHOR).getFullYear(),
+    new Date(dataAnchor).getFullYear(),
   );
 
   const model = useMemo(() => {
     if (range === "MONTH") {
       const daysInMonth = new Date(customYear, customMonth + 1, 0).getDate();
-      const inWindow = adminReports.filter((r) => {
+      const inWindow = reports.filter((r) => {
         const d = new Date(parseDate(r.date));
         return (
           d.getFullYear() === customYear && d.getMonth() === customMonth
@@ -147,14 +170,14 @@ export function AnalyticsSection({
       return { series, inWindow };
     }
 
-    const anchor = DATA_ANCHOR;
+    const anchor = dataAnchor;
     const activeRange = RANGE_OPTIONS.find((r) => r.id === range);
     const windowDays = activeRange?.days ?? null;
 
     const windowStart =
       windowDays === null ? -Infinity : anchor - (windowDays - 1) * DAY_MS;
 
-    const inWindow = adminReports.filter(
+    const inWindow = reports.filter(
       (r) => parseDate(r.date) >= windowStart,
     );
 
@@ -163,18 +186,18 @@ export function AnalyticsSection({
       windowDays ??
       Math.min(
         30,
-        Math.round((anchor - Math.min(...adminReports.map((r) => parseDate(r.date)))) / DAY_MS) + 1,
+        Math.round((anchor - Math.min(...dataTimestamps)) / DAY_MS) + 1,
       );
     const series = Array.from({ length: bucketDays }, (_, index) => {
       const dayStart = anchor - (bucketDays - 1 - index) * DAY_MS;
       const dayEnd = dayStart + DAY_MS;
-      const lost = adminReports.filter(
+      const lost = reports.filter(
         (r) =>
           r.type === "Lost" &&
           parseDate(r.date) >= dayStart &&
           parseDate(r.date) < dayEnd,
       ).length;
-      const found = adminReports.filter(
+      const found = reports.filter(
         (r) =>
           r.type === "Found" &&
           parseDate(r.date) >= dayStart &&
@@ -187,7 +210,7 @@ export function AnalyticsSection({
       series,
       inWindow,
     };
-  }, [range, customMonth, customYear]);
+  }, [reports, dataTimestamps, dataAnchor, range, customMonth, customYear]);
 
   const rangeLabel =
     range === "MONTH"
@@ -265,7 +288,7 @@ export function AnalyticsSection({
                     }
                     className="h-8 rounded-md border border-neutral-200 bg-white px-2 text-[11px] font-semibold text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
-                    {DATA_YEARS.map((year) => (
+                    {dataYears.map((year) => (
                       <option key={year} value={year}>
                         {year}
                       </option>
@@ -396,7 +419,7 @@ export function AnalyticsSection({
           }
         >
           <ul className="flex flex-1 flex-col justify-center divide-y divide-neutral-100">
-            {initialReturnRequests.slice(0, 4).map((request) => (
+            {returnRequests.slice(0, 4).map((request) => (
               <li
                 key={request.id}
                 className="flex items-center gap-3 px-4 py-3 sm:px-5"
