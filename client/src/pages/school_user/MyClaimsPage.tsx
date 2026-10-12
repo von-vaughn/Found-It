@@ -22,6 +22,7 @@ import {
   type SimplifiedClaimStatus,
 } from "@/components/school_user/claimStatus";
 import { NoItemImage } from "@/components/NoItemImage";
+import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { useAuth } from "@/context/useAuth";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import {
@@ -320,12 +321,12 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
             </nav>
 
             {groupedByPost.length > 0 ? (
-              <div className="mt-6 space-y-6">
+              <StaggerGrid key={statusFilter} className="mt-6 space-y-6">
                 {groupedByPost.map(([itemId, claims]) => {
                   const item = itemById.get(itemId);
                   return (
+                    <StaggerItem key={itemId}>
                     <section
-                      key={itemId}
                       aria-label={`Requests for ${claims[0]?.item ?? "post"}`}
                       className="overflow-hidden rounded-2xl border border-neutral-200/80"
                     >
@@ -468,9 +469,10 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                         })}
                       </ul>
                     </section>
+                    </StaggerItem>
                   );
                 })}
-              </div>
+              </StaggerGrid>
             ) : (
               <div className="py-16 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">

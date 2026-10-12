@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -12,7 +12,6 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<"signin" | "signup" | null>(
     null,
   );
@@ -34,14 +33,6 @@ export const Navbar: React.FC<NavbarProps> = () => {
     indicator.style.left = `${linkElement.offsetLeft}px`;
     indicator.style.width = `${linkElement.offsetWidth}px`;
   };
-
-  useEffect(() => {
-    const updateScrollState = () => setIsScrolled(window.scrollY > 40);
-    updateScrollState();
-    window.addEventListener("scroll", updateScrollState, { passive: true });
-
-    return () => window.removeEventListener("scroll", updateScrollState);
-  }, []);
 
   useLayoutEffect(() => {
     const updateIndicatorPosition = () => {
@@ -106,7 +97,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
     <>
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-neutral-100 transition-all shadow-xs">
       <div
-        className={`${isScrolled ? "md:w-[calc(100%-15rem)]" : ""} w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between transition-[width] duration-300 ease-out`}
+        className="w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between"
       >
         <button
           onClick={() => {

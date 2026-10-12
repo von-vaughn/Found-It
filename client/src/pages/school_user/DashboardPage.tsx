@@ -13,6 +13,7 @@ import {
 } from "@/components/school_user/sidebarExpandedState";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
+import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import {
   applyAdvancedFilters,
@@ -313,18 +314,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           {/* Masonry Items Grid */}
           {filteredItems.length > 0 ? (
-            <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 gap-6 pb-12">
+            <StaggerGrid
+              key={`${activeNavTab}-${selectedCategory}-${JSON.stringify(filters)}`}
+              className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 gap-6 pb-12"
+            >
               {filteredItems.map((item) => (
-                <div key={item.id} className="w-full">
+                <StaggerItem
+                  key={item.id}
+                  className="w-full min-w-0 [&>div]:h-full"
+                >
                   <ItemCard
                     item={item}
                     onItemClick={(selected) =>
                       navigate(`/dashboard/items/${selected.id}`)
                     }
                   />
-                </div>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerGrid>
           ) : (
             <div className="min-h-[60dvh] text-center flex flex-col items-center justify-center">
               <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">

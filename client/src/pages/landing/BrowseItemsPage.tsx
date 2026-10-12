@@ -4,6 +4,7 @@ import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Item } from "@/data/mockItems";
 import { ItemCard } from "@/components/school_user/ItemCard";
+import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { ItemModal } from "@/components/ItemModal";
 import { SearchPaletteModal } from "@/components/SearchPaletteModal";
 import {
@@ -284,15 +285,22 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
         </div>
 
         {filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <StaggerGrid
+            key={`${activeTab}-${selectedCategory}-${JSON.stringify(filters)}`}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
             {filteredItems.map((item) => (
-              <ItemCard
+              <StaggerItem
                 key={item.id}
-                item={item}
-                onItemClick={(selected) => setSelectedItem(selected)}
-              />
+                className="min-w-0 [&>div]:h-full"
+              >
+                <ItemCard
+                  item={item}
+                  onItemClick={(selected) => setSelectedItem(selected)}
+                />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGrid>
         ) : (
           <div className="min-h-[60dvh] text-center flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
