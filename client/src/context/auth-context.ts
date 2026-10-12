@@ -1,5 +1,14 @@
 import { createContext } from "react";
 
+// Only students with a valid school email may register or sign in. Single source
+// of truth so the signup form and the auth provider cannot drift apart.
+export const SCHOOL_EMAIL_DOMAINS = ["@wmsu.edu.ph"] as const;
+
+export const isSchoolEmail = (email: string): boolean => {
+  const normalized = email.trim().toLowerCase();
+  return SCHOOL_EMAIL_DOMAINS.some((domain) => normalized.endsWith(domain));
+};
+
 export interface User {
   id: string;
   name: string;

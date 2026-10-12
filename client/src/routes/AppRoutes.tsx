@@ -10,6 +10,7 @@ import { paths } from "./paths";
 import { getPublicRoutes } from "./publicRoutes";
 import { getDashboardRoutes } from "./dashboardRoutes";
 import { getAdminRoutes } from "./adminRoutes";
+import { getSuperAdminRoutes } from "./superAdminRoutes";
 import type { ItemFilters } from "@/components/school_user/itemFilters";
 
 interface AppRoutesProps {
@@ -64,6 +65,14 @@ export function AppRoutes({
       onFiltersChange,
     }),
     ...getAdminRoutes({
+      items,
+      onAddItem,
+      onDeleteItem,
+      submittedClaims,
+      returnRequests,
+      onUpdateReturnRequestStatus,
+    }),
+    ...getSuperAdminRoutes({
       items,
       onAddItem,
       onDeleteItem,

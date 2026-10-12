@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { AuthContext, type User } from "@/context/auth-context";
+import { AuthContext, isSchoolEmail, type User } from "@/context/auth-context";
 
 const LOCAL_STORAGE_USER_KEY = "foundit_auth_user";
 const LOCAL_STORAGE_PENDING_KEY = "foundit_auth_pending_email";
@@ -34,14 +34,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return saved
         ? JSON.parse(saved)
         : {
-            "student@campus.edu": {
+            "student@wmsu.edu.ph": {
               name: "Alex Rivera",
               studentId: "STU-2026-9041",
             },
           };
     } catch {
       return {
-        "student@campus.edu": {
+        "student@wmsu.edu.ph": {
           name: "Alex Rivera",
           studentId: "STU-2026-9041",
         },
@@ -95,12 +95,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string): Promise<boolean> => {
     const trimmedEmail = email.trim().toLowerCase();
-    const allowedDomains = ["@wmsu.edu.ph", "@campus.edu"];
-    const isKnownUser =
-      trimmedEmail in registeredUsers ||
-      allowedDomains.some((domain) => trimmedEmail.endsWith(domain));
 
-    if (!isKnownUser) {
+    if (!isSchoolEmail(trimmedEmail)) {
+      toast.error("Use your school email to sign in.");
+      return false;
+    }
+
+    if (!(trimmedEmail in registeredUsers)) {
       toast.error(
         "Account not found. Please sign up or use a valid school email.",
       );
@@ -137,6 +138,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     studentId?: string;
   }): Promise<boolean> => {
     const trimmedEmail = userData.email.trim().toLowerCase();
+
+    if (!isSchoolEmail(trimmedEmail)) {
+      toast.error("Use your school email to create an account.");
+      return false;
+    }
+
     setPendingEmailState(trimmedEmail);
 
     const updated = {
@@ -160,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Accept both dynamic generated code and universal demo code '123456'
     if (cleanCode === currentOtp || cleanCode === "123456") {
-      const email = pendingEmail || "student@campus.edu";
+      const email = pendingEmail || "student@wmsu.edu.ph";
       const profile = registeredUsers[email] || {
         name: email.split("@")[0].replace(/[._-]/g, " "),
         studentId: "STU-2026-9041",

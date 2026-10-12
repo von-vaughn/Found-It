@@ -117,7 +117,8 @@ export function App() {
 
   const isDashboard =
     location.pathname.startsWith("/dashboard") ||
-    location.pathname.startsWith("/admin");
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/superadmin");
 
   return (
     <AuthProvider>
