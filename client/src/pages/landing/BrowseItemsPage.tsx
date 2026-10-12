@@ -1,19 +1,17 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search, SearchX, SlidersHorizontal } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Item } from "@/data/mockItems";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { ItemModal } from "@/components/ItemModal";
-import { ReportModal } from "@/components/ReportModal";
 import { SearchPaletteModal } from "@/components/SearchPaletteModal";
 import {
   applyAdvancedFilters,
   countActiveFilters,
   defaultFilters,
-  type ItemFilters,
 } from "@/components/school_user/itemFilters";
+import { useBrowseFilters } from "./useBrowseFilters";
 
 interface BrowseItemsPageProps {
   items: Item[];
@@ -24,14 +22,18 @@ type BrowseTab = "all" | "lost" | "found";
 
 export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
   items,
-  onAddItem,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [visibleCategoryCount, setVisibleCategoryCount] = useState(0);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
+  const {
+    filters,
+    setFilters,
+    selectedCategory,
+    setSelectedCategory,
+  } = useBrowseFilters();
   const categoryRowRef = useRef<HTMLDivElement>(null);
   const categoryMeasureRef = useRef<HTMLDivElement>(null);
   const moreCategoryMeasureRef = useRef<HTMLButtonElement>(null);
@@ -41,8 +43,6 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
     requestedType === "all" || requestedType === "found"
       ? requestedType
       : "lost";
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const updateParams = (patch: { type?: BrowseTab; q?: string }) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -68,16 +68,33 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
     );
   };
 
+  const openFilters = () => {
+    // Same as the school_user header: full filters page on mobile, modal on desktop.
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      const query = searchQuery.trim();
+      navigate(
+        query
+          ? `/browse/filters?type=${activeTab}&q=${encodeURIComponent(query)}`
+          : `/browse/filters?type=${activeTab}`,
+      );
+      return;
+    }
+    setFilterModalOpen(true);
+  };
+
   const categories = [
     { id: "all", label: "All" },
     ...ITEM_CATEGORIES,
   ];
   const visibleCategories = categories.slice(0, visibleCategoryCount);
-  const activeCategoryId = visibleCategories.some(
-    (category) => category.id === selectedCategory,
-  )
-    ? selectedCategory
-    : "more";
+  // A multi-category filter selection can't be shown on one pill,
+  // so the More button carries the highlight instead.
+  const hasMultipleCategoryFilters = filters.categories.length > 1;
+  const activeCategoryId =
+    hasMultipleCategoryFilters ||
+    !visibleCategories.some((category) => category.id === selectedCategory)
+      ? "more"
+      : selectedCategory;
 
   useLayoutEffect(() => {
     const row = categoryRowRef.current;
@@ -171,7 +188,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
                 />
                 <button
                   type="button"
-                  onClick={() => setFilterModalOpen(true)}
+                  onClick={openFilters}
                   title="Filters"
                   aria-label="Open filters"
                   aria-expanded={filterModalOpen}
@@ -203,7 +220,11 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
               return (
                 <button
                   key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
+                  onClick={() => {
+                    setSelectedCategory(cat.id);
+                    // "All" clears every filter, not just the category row.
+                    if (cat.id === "all") setFilters(defaultFilters);
+                  }}
                   aria-pressed={isActive}
                   className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
                     isActive
@@ -220,24 +241,16 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
               <div className="relative shrink-0">
                 <button
                   type="button"
-                  onClick={() => setFilterModalOpen(true)}
+                  onClick={openFilters}
                   aria-label="More category filters"
                   aria-pressed={activeCategoryId === "more"}
                   className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
-                    activeCategoryId === "more" || activeFilterCount > 0
+                    activeCategoryId === "more"
                       ? "bg-[#E5192D] text-white border-[#E5192D]"
                       : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
                   }`}
                 >
                   <span>More</span>
-                  {activeFilterCount > 0 && (
-                    <span
-                      aria-hidden="true"
-                      className="flex h-4 min-w-4 items-center justify-center rounded-full bg-white/25 px-1 text-[10px] font-bold text-white"
-                    >
-                      {activeFilterCount}
-                    </span>
-                  )}
                 </button>
               </div>
             )}
@@ -281,53 +294,34 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 px-4 bg-white rounded-3xl border border-dashed border-neutral-200 mt-6 shadow-xs">
-            <div className="w-14 h-14 bg-red-100/60 rounded-full flex items-center justify-center mx-auto mb-4 text-[#E5192D]">
-              <Search className="w-7 h-7" />
+          <div className="min-h-[60dvh] text-center flex flex-col items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
+              <SearchX className="w-8 h-8 stroke-[1.5]" />
             </div>
-            <h3 className="text-lg font-bold text-neutral-800">
-              No {activeTabLabel} items match your search
+            <h3 className="text-base font-bold text-neutral-900 mb-1">
+              No matching {activeTabLabel} items found
             </h3>
-            <p className="text-sm text-neutral-500 mt-1 max-w-md mx-auto">
-              We couldn&apos;t find any {activeTabLabel} items matching &ldquo;
-              {searchQuery}
-              &rdquo;. Try clearing your filters
-              {activeTab === "lost" ? " or report a new lost item." : "."}
+            <p className="text-xs text-neutral-500 max-w-sm mb-4">
+              We couldn&apos;t find any {activeTabLabel} items matching
+              &ldquo;{searchQuery}&rdquo;. Try searching for another term or
+              change your filters.
             </p>
-            <div className="mt-6 flex justify-center gap-3">
-              {activeTab === "lost" && (
-                <Button
-                  onClick={() => setIsReportModalOpen(true)}
-                  className="rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold text-xs px-5 shadow-sm"
-                >
-                  Report Lost Item
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  handleSearchQueryChange("");
-                  setSelectedCategory("all");
-                  setFilters(defaultFilters);
-                }}
-                className="rounded-full text-xs"
-              >
-                Reset Filters
-              </Button>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                handleSearchQueryChange("");
+                setSelectedCategory("all");
+                setFilters(defaultFilters);
+              }}
+              className="px-4 py-2 bg-neutral-900 text-white rounded-xl text-xs font-semibold hover:bg-neutral-800 transition-colors"
+            >
+              Reset Filters
+            </button>
           </div>
         )}
       </div>
 
       <ItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />
-
-      <ReportModal
-        key={activeTab}
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        defaultType={activeTab === "found" ? "found" : "lost"}
-        onAddItem={onAddItem}
-      />
 
       <SearchPaletteModal
         isOpen={filterModalOpen}

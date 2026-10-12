@@ -5,6 +5,7 @@ import { NotificationsPage } from "@/pages/school_user/NotificationsPage";
 import { ItemDetailPage } from "@/pages/school_user/ItemDetailPage";
 import { FoundReportPage } from "@/pages/school_user/FoundReportPage";
 import { ClaimPage } from "@/pages/school_user/ClaimPage";
+import { MyClaimsPage } from "@/pages/school_user/MyClaimsPage";
 import { FiltersPage } from "@/pages/school_user/FiltersPage";
 import { ProfilePage } from "@/pages/school_user/ProfilePage";
 import type { Item } from "@/data/mockItems";
@@ -135,6 +136,18 @@ export function getDashboardRoutes({
       path: paths.dashboardProfile,
       element: (
         <ProfilePage
+          items={items}
+          submittedClaims={submittedClaims}
+          onAddItem={onAddItem}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
+      ),
+    },
+    {
+      path: paths.dashboardClaims,
+      element: (
+        <MyClaimsPage
           items={items}
           submittedClaims={submittedClaims}
           onAddItem={onAddItem}

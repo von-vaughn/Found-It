@@ -7,6 +7,7 @@ import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppRoutes } from "@/routes";
 import { initialItems, type Item } from "@/data/mockItems";
+import { initialSubmittedClaims } from "@/data/mockClaims";
 import { initialReturnRequests } from "@/components/admin/adminData";
 import {
   defaultFilters,
@@ -29,7 +30,8 @@ function ScrollToTop() {
 
 export function App() {
   const [items, setItems] = useState<Item[]>(initialItems);
-  const [submittedClaims, setSubmittedClaims] = useState<ClaimRequest[]>([]);
+  const [submittedClaims, setSubmittedClaims] =
+    useState<ClaimRequest[]>(initialSubmittedClaims);
   const [returnRequests, setReturnRequests] = useState<ReturnItemRequest[]>(
     initialReturnRequests,
   );
@@ -171,7 +173,7 @@ export function App() {
         {!isDashboard &&
           location.pathname !== "/lost-items" &&
           location.pathname !== "/found-items" &&
-          location.pathname !== "/browse" && <Footer />}
+          !location.pathname.startsWith("/browse") && <Footer />}
       </div>
     </AuthProvider>
   );

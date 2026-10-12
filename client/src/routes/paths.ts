@@ -5,6 +5,7 @@ export const paths = {
   dashboardNotifications: "/dashboard/notifications",
   dashboardFilters: "/dashboard/filters",
   dashboardItem: "/dashboard/items/:id",
+  dashboardClaims: "/dashboard/claims",
   dashboardFoundReport: "/dashboard/items/:id/found-report",
   dashboardClaim: "/dashboard/items/:id/claim",
   dashboardProfile: "/dashboard/profile",
@@ -27,6 +28,7 @@ export const paths = {
   lostItems: "/lost-items",
   foundItems: "/found-items",
   browse: "/browse",
+  browseFilters: "/browse/filters",
   fallback: "*",
 } as const;
 

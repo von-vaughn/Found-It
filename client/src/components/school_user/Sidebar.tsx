@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ClipboardList,
   Home,
   PlusCircle,
   Bell,
@@ -123,6 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Home,
       onClick: () => {
         if (onTabChange) onTabChange("home");
+        else navigate("/dashboard");
       },
     },
     {
@@ -131,6 +133,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: PlusCircle,
       onClick: () => {
         if (onOpenCreateModal) onOpenCreateModal();
+      },
+    },
+    {
+      id: "claims",
+      label: "My Claims",
+      icon: ClipboardList,
+      onClick: () => {
+        if (onTabChange) onTabChange("claims");
+        else navigate("/dashboard/claims");
       },
     },
     {
@@ -222,7 +233,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     : undefined
                 }
                 onClick={() => {
-                  if (item.id === "home") {
+                  if (item.id === "home" || item.id === "claims") {
                     // Capture hover synchronously: the click target is inside
                     // the aside, so a mouse click guarantees :hover here. The
                     // next page mount consumes this to stay expanded.
@@ -241,7 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }
                 className={`relative w-11 h-11 flex items-center justify-center rounded-xl cursor-pointer group ${
                   isActive || (item.id === "notifications" && notificationsOpen)
-                    ? "bg-rose-50 text-[#E5192D] shadow-xs"
+                    ? "text-[#E5192D]"
                     : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100/80"
                 }`}
               >
@@ -276,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200 bg-white/95 backdrop-blur-sm md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =

@@ -64,6 +64,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
         submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
+          if (tab === "claims") navigate("/dashboard/claims");
         }}
         onOpenCreateModal={() => navigate("/dashboard/create")}
       />

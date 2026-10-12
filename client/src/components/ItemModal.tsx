@@ -3,17 +3,17 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   X,
   MapPin,
-  Clock,
-  Calendar,
+  Clock3,
+  CalendarDays,
   Award,
   User,
-  ShieldCheck,
-  CheckCircle2,
+  Palette,
+  Building2,
+  Package,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { Item } from "@/data/mockItems";
-import toast from "react-hot-toast";
-import { formatItemDateTime } from "@/lib/dateTime";
+import { NoItemImage } from "@/components/NoItemImage";
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
 
 interface ItemModalProps {
   item: Item | null;
@@ -24,24 +24,23 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
   if (!item) return null;
 
   const isLost = item.type === "lost";
-  const itemDateTime = item.dateTime
-    ? formatItemDateTime(item.dateTime)
+  const eventDate =
+    item.dateTime && !Number.isNaN(new Date(item.dateTime).getTime())
+      ? new Date(item.dateTime)
+      : null;
+  const itemDate = eventDate
+    ? new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(
+        eventDate,
+      )
     : null;
-
-  const handleAction = () => {
-    if (isLost) {
-      toast.success(
-        `Alert sent to ${item.contactName}! They have been notified with your contact details.`,
-        { duration: 4000 },
-      );
-    } else {
-      toast.success(
-        `Claim submitted for verification! Bring your ID to ${item.location} to collect.`,
-        { duration: 4000 },
-      );
-    }
-    onClose();
-  };
+  const itemTime = eventDate
+    ? new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(
+        eventDate,
+      )
+    : null;
+  const category =
+    ITEM_CATEGORIES.find(({ id }) => id === item.category) ?? null;
+  const CategoryIcon = category?.icon ?? Package;
 
   return (
     <AnimatePresence>
@@ -59,7 +58,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
-          className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden z-10 border border-neutral-100 my-8"
+          className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden z-10 border border-neutral-100 my-8"
         >
           <button
             onClick={onClose}
@@ -69,134 +68,162 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
             <X className="w-5 h-5" />
           </button>
 
-          <div className="relative aspect-[16/10] w-full bg-neutral-100 overflow-hidden">
-            <img
-              src={item.image}
-              alt={item.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-
-            <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
-              <span
-                className={`text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5 ${
-                  isLost
-                    ? "bg-[#E5192D] text-white"
-                    : "bg-emerald-600 text-white"
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full bg-white ${isLost ? "animate-pulse" : ""}`}
+          <div className="grid md:grid-cols-2">
+            {item.image ? (
+              <div className="relative aspect-[16/10] w-full bg-neutral-100 overflow-hidden md:aspect-auto">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
-                {isLost ? "LOST ITEM" : "FOUND ITEM"}
-              </span>
 
-              {item.reward && (
-                <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
-                  <Award className="w-3.5 h-3.5" />
-                  {item.reward}
-                </span>
-              )}
-            </div>
+                {item.reward && (
+                  <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
+                    <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+                      <Award className="w-3.5 h-3.5" />
+                      {item.reward}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="relative aspect-[16/10] w-full md:aspect-auto">
+                <NoItemImage
+                  title="No image attached to this report."
+                  className="absolute inset-0 h-full w-full"
+                />
+                {item.reward && (
+                  <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
+                    <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+                      <Award className="w-3.5 h-3.5" />
+                      {item.reward}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div className="absolute bottom-4 left-4 right-4 text-white">
-              <div className="flex items-center gap-2 text-xs font-medium text-white/90 mb-1">
-                <Clock className="w-3.5 h-3.5" />
-                <span>
+            <div className="min-w-0 p-6 sm:p-7 space-y-6">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-900">
+                  {item.title}
+                </h2>
+                <p className="mt-1 text-xs text-neutral-400">
                   Reported {item.timeAgo} ({item.date})
-                </span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight drop-shadow-sm text-white">
-                {item.title}
-              </h2>
-            </div>
-          </div>
-
-          <div className="p-6 sm:p-7 space-y-6">
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                Item Description
-              </h4>
-              <p className="text-neutral-700 text-sm sm:text-base leading-relaxed">
-                {item.description}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-red-50 text-[#E5192D] shrink-0 mt-0.5">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-medium text-neutral-400">
-                    {isLost ? "Last Seen Location" : "Found / Pick-up Location"}
-                  </div>
-                  <div className="text-sm font-semibold text-neutral-800">
-                    {item.location}
-                  </div>
-                </div>
+                </p>
               </div>
 
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 shrink-0 mt-0.5">
-                  <User className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-medium text-neutral-400">
-                    {isLost ? "Reported By" : "Custodian / Finder"}
-                  </div>
-                  <div className="text-sm font-semibold text-neutral-800">
-                    {item.contactName}
-                  </div>
-                </div>
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                  Item Description
+                </h4>
+                <p className="text-neutral-700 text-sm sm:text-base leading-relaxed">
+                  {item.description}
+                </p>
               </div>
-              {item.type === "lost" && (
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-red-50 text-[#E5192D] shrink-0 mt-0.5">
-                    <Calendar className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-neutral-400">
-                      Date and time lost
-                    </div>
-                    <div className="text-sm font-semibold text-neutral-800">
-                      {itemDateTime ?? "Not provided"}
-                    </div>
+
+            <dl className="grid grid-cols-1 gap-x-6 border-t border-neutral-200/80 text-xs sm:grid-cols-2">
+              {item.color && (
+                <div className="flex items-start gap-2.5 py-3">
+                  <Palette
+                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <dt className="font-bold text-neutral-900">Primary color</dt>
+                    <dd className="mt-1 capitalize text-neutral-500">
+                      {item.color}
+                    </dd>
                   </div>
                 </div>
               )}
-            </div>
 
-            <div className="flex items-center gap-2.5 text-xs text-neutral-500 bg-amber-50/70 border border-amber-200/50 p-3 rounded-xl">
-              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                Safety protocol: Verify item serial numbers or physical details
-                at a campus security desk.
-              </span>
-            </div>
+              <div className="flex items-start gap-2.5 py-3">
+                <MapPin
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">
+                    Specific location
+                  </dt>
+                  <dd className="mt-1 break-words text-neutral-500">
+                    {item.location}
+                  </dd>
+                </div>
+              </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-              <Button
-                onClick={handleAction}
-                className={`w-full sm:flex-1 h-12 rounded-full font-semibold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                  isLost
-                    ? "bg-[#E5192D] hover:bg-[#c91424] text-white shadow-red-500/20"
-                    : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                }`}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                {isLost
-                  ? "I Found This Item / Notify Owner"
-                  : "Claim This Item / Verification"}
-              </Button>
+              <div className="flex items-start gap-2.5 py-3">
+                <Building2
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">Building</dt>
+                  <dd className="mt-1 break-words text-neutral-500">
+                    {item.building?.trim() || "Not provided"}
+                  </dd>
+                </div>
+              </div>
 
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="w-full sm:w-auto h-12 px-6 rounded-full border-neutral-300 font-semibold text-sm hover:bg-neutral-50"
-              >
-                Close
-              </Button>
+              <div className="flex items-start gap-2.5 py-3">
+                <User
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">
+                    {isLost ? "Reported By" : "Custodian / Finder"}
+                  </dt>
+                  <dd className="mt-1 break-words text-neutral-500">
+                    {item.contactName}
+                  </dd>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 py-3">
+                <CalendarDays
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">
+                    {isLost ? "Date lost" : "Date found"}
+                  </dt>
+                  <dd className="mt-1 text-neutral-500">
+                    {itemDate ?? "Not provided"}
+                  </dd>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 py-3">
+                <Clock3
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">
+                    {isLost ? "Time lost" : "Time found"}
+                  </dt>
+                  <dd className="mt-1 text-neutral-500">
+                    {itemTime ?? "Not provided"}
+                  </dd>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 py-3">
+                <CategoryIcon
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <dt className="font-bold text-neutral-900">Category</dt>
+                  <dd className="mt-1 text-neutral-500">
+                    {category?.label ?? "Other"}
+                  </dd>
+                </div>
+              </div>
+            </dl>
             </div>
           </div>
         </motion.div>

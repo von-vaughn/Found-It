@@ -60,6 +60,7 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
         submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
+          if (tab === "claims") navigate("/dashboard/claims");
         }}
         onOpenCreateModal={() => navigate("/dashboard/create")}
       />

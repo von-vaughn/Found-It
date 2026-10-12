@@ -1,6 +1,7 @@
 import type { RouteObject } from "react-router-dom";
 import { HomePage } from "@/pages/landing/HomePage";
 import { BrowseItemsPage } from "@/pages/landing/BrowseItemsPage";
+import { BrowseFiltersPage } from "@/pages/landing/BrowseFiltersPage";
 import { LegacyItemsRedirect } from "./LegacyItemsRedirect";
 import type { Item } from "@/data/mockItems";
 import { paths } from "./paths";
@@ -28,6 +29,10 @@ export function getPublicRoutes({
     {
       path: paths.browse,
       element: <BrowseItemsPage items={items} onAddItem={onAddItem} />,
+    },
+    {
+      path: paths.browseFilters,
+      element: <BrowseFiltersPage items={items} />,
     },
     {
       path: paths.lostItems,

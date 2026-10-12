@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, LogOut, User as UserIcon, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, ClipboardList, LogOut, User as UserIcon, Search, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/context/useAuth";
 import { useNavigate } from "react-router-dom";
 import { SearchPaletteModal } from "@/components/SearchPaletteModal";
@@ -175,6 +175,17 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <UserIcon className="w-3.5 h-3.5 text-neutral-500" />
                 Profile
+              </button>
+
+              <button
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  navigate("/dashboard/claims");
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl transition-colors text-left"
+              >
+                <ClipboardList className="w-3.5 h-3.5 text-neutral-500" />
+                My claims
               </button>
 
               <button

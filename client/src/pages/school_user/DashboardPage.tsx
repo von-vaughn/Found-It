@@ -197,6 +197,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         items={items}
         submittedClaims={submittedClaims}
         onTabChange={(tab) => {
+          if (tab === "claims") {
+            navigate("/dashboard/claims");
+            return;
+          }
           // No route change happens here, so discard the hover flag the
           // sidebar just set — otherwise it would leak into a later
           // unrelated navigation (e.g. Dashboard -> Profile via header).
@@ -322,7 +326,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               ))}
             </div>
           ) : (
-            <div className="py-16 text-center flex flex-col items-center justify-center">
+            <div className="min-h-[60dvh] text-center flex flex-col items-center justify-center">
               <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
                 <SearchX className="w-8 h-8 stroke-[1.5]" />
               </div>

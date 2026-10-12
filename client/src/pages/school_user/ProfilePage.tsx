@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, LogOut, PlusCircle } from "lucide-react";
+import { ChevronDown, ClipboardList, LogOut, PlusCircle } from "lucide-react";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
+import {
+  simplifiedClaimStatusStyles,
+  simplifyClaimStatus,
+} from "@/components/school_user/claimStatus";
 import { takeSchoolSidebarExpanded } from "@/components/school_user/sidebarExpandedState";
 import { useAuth } from "@/context/useAuth";
 import { initialItems, type Item } from "@/data/mockItems";
@@ -91,6 +95,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   );
   const lostItems = userItems.filter((item) => item.type === "lost").length;
   const foundItems = userItems.length - lostItems;
+  const myClaims = useMemo(() => {
+    return submittedClaims.filter(
+      (claim) =>
+        claim.claimant.trim().toLowerCase() === name.trim().toLowerCase(),
+    );
+  }, [submittedClaims, name]);
   const filteredUserItems =
     reportFilter === "all"
       ? userItems
@@ -123,6 +133,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
+          if (tab === "claims") navigate("/dashboard/claims");
         }}
         onOpenCreateModal={() => setCreateModalOpen(true)}
       />
@@ -318,6 +329,86 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     Items you report will appear here so you can quickly find
                     them again.
                   </p>
+                </div>
+              )}
+            </section>
+
+            <section aria-labelledby="profile-claims-heading" className="pb-10">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-4">
+                <div>
+                  <h2
+                    id="profile-claims-heading"
+                    className="text-base font-bold text-neutral-900"
+                  >
+                    Your claim requests
+                  </h2>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    {myClaims.length}{" "}
+                    {myClaims.length === 1 ? "request" : "requests"} filed on
+                    found posts
+                  </p>
+                </div>
+                {myClaims.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/claims")}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+                  >
+                    <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                    View all requests
+                  </button>
+                )}
+              </div>
+
+              {myClaims.length > 0 ? (
+                <ul className="mt-5 space-y-3">
+                  {myClaims.slice(0, 3).map((claim) => {
+                    const simple = simplifyClaimStatus(claim.status);
+                    return (
+                      <li key={claim.id}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(`/dashboard/items/${claim.itemId}`, {
+                              state: { from: "/dashboard/profile" },
+                            })
+                          }
+                          className="block w-full rounded-2xl border border-neutral-200/80 p-4 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                        >
+                          <span className="flex items-center justify-between gap-3">
+                            <span className="min-w-0 truncate text-sm font-bold text-neutral-900">
+                              {claim.item}
+                            </span>
+                            <span
+                              className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simple]}`}
+                            >
+                              {simple}
+                            </span>
+                          </span>
+                          <span className="mt-1 block truncate text-xs text-neutral-500">
+                            Request {claim.id} · Submitted {claim.submitted}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="py-10 text-center">
+                  <h3 className="text-sm font-semibold text-neutral-800">
+                    No claim requests yet
+                  </h3>
+                  <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
+                    Requests you file on found posts will appear here with
+                    their approval status.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard")}
+                    className="mt-4 text-xs font-bold text-[#E5192D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                  >
+                    Browse found items
+                  </button>
                 </div>
               )}
             </section>

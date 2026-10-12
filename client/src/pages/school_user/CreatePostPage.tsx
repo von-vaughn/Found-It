@@ -65,6 +65,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
         submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
+          if (tab === "claims") navigate("/dashboard/claims");
         }}
         onOpenCreateModal={() => navigate("/dashboard/create")}
       />

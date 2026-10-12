@@ -33,6 +33,11 @@ import type {
   ReturnItemRequest,
 } from "@/types/claim";
 import { getClaimantEmail } from "@/types/claim";
+import {
+  simplifiedClaimStatusStyles,
+  simplifiedStatusHint,
+  simplifyClaimStatus,
+} from "@/components/school_user/claimStatus";
 import { claims as demoClaims } from "@/components/admin/adminData";
 import {
   applyAdvancedFilters,
@@ -113,7 +118,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const location = useLocation();
   const locationState = location.state as { from?: string } | null;
   const sidebarActiveTab =
-    locationState?.from === "/dashboard/profile" ? "profile" : "home";
+    locationState?.from === "/dashboard/profile"
+      ? "profile"
+      : locationState?.from === "/dashboard/claims"
+        ? "claims"
+        : "home";
   const { user } = useAuth();
   const items = propItems ?? initialItems;
 
@@ -314,6 +323,16 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     );
   }, [item, submittedClaims]);
 
+  const myItemClaims = useMemo(() => {
+    if (!item) return [];
+    return submittedClaims.filter(
+      (claim) =>
+        claim.itemId === item.id &&
+        claim.claimant.trim().toLowerCase() ===
+          profileName.trim().toLowerCase(),
+    );
+  }, [item, submittedClaims, profileName]);
+
   if (!item) {
     return (
       <div className="min-h-screen bg-white flex font-open-sans text-neutral-900">
@@ -322,7 +341,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           expanded={sidebarExpanded}
           onExpandedChange={setSidebarExpanded}
           onNotificationsOpenChange={setNotificationsOpen}
-          onTabChange={() => navigate("/dashboard")}
+          onTabChange={(tab) => {
+            if (tab === "claims") navigate("/dashboard/claims");
+            else navigate("/dashboard");
+          }}
           onOpenCreateModal={() => handleOpenCreateModal("lost")}
           items={items}
           submittedClaims={submittedClaims}
@@ -411,7 +433,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
         onNotificationsOpenChange={setNotificationsOpen}
-        onTabChange={() => navigate("/dashboard")}
+        onTabChange={(tab) => {
+            if (tab === "claims") navigate("/dashboard/claims");
+            else navigate("/dashboard");
+          }}
         onOpenCreateModal={() => handleOpenCreateModal("lost")}
         items={items}
         submittedClaims={submittedClaims}
@@ -654,6 +679,74 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
           </article>
           </div>
+
+          {/* Your requests for this post (claimant view with simplified statuses) */}
+          {!isOwnItem && myItemClaims.length > 0 && (
+            <section aria-labelledby="my-claims-heading">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2
+                    id="my-claims-heading"
+                    className="text-sm font-extrabold text-neutral-900 text-balance"
+                  >
+                    Your claim requests for this post ({myItemClaims.length})
+                  </h2>
+                  <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                    Track what you filed here. Statuses are simplified to
+                    Pending, Approved, or Rejected.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("/dashboard/claims")}
+                  className="text-xs font-bold text-[#E5192D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                >
+                  View all requests
+                </button>
+              </div>
+              <ul className="mt-4 space-y-3">
+                {myItemClaims.map((claim) => {
+                  const simple = simplifyClaimStatus(claim.status);
+                  return (
+                    <li
+                      key={claim.id}
+                      className="rounded-2xl border border-neutral-200/80 bg-white p-4 sm:p-5"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs font-bold text-neutral-500">
+                          Request {claim.id} · Submitted {claim.submitted}
+                        </p>
+                        <span
+                          className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simple]}`}
+                        >
+                          {simple}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+                        {claim.details}
+                      </p>
+                      {claim.evidence && claim.evidence.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {claim.evidence.map((image, index) => (
+                            <img
+                              key={`${claim.id}-evidence-${index}`}
+                              src={image}
+                              alt={`Evidence ${index + 1} for request ${claim.id}`}
+                              loading="lazy"
+                              className="h-16 w-16 rounded-lg border border-neutral-200/80 object-cover"
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <p className="mt-3 text-xs leading-relaxed text-neutral-500">
+                        {simplifiedStatusHint(simple)}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
 
           {/* Possible matches: found reports the system suggests for your lost item */}
           {isOwnItem && isLost && (

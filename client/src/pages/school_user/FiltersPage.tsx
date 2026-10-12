@@ -56,6 +56,7 @@ export const FiltersPage: React.FC<FiltersPageProps> = ({
         items={items}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
+          if (tab === "claims") navigate("/dashboard/claims");
         }}
         onOpenCreateModal={() => navigate("/dashboard/create")}
       />

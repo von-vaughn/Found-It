@@ -221,7 +221,7 @@ export function AdminSidebar<TSection extends string>({
                 }}
                 className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl ${
                   active
-                    ? "bg-rose-50 text-[#E5192D] shadow-xs"
+                    ? "text-[#E5192D]"
                     : "text-neutral-700 hover:bg-neutral-100/80 hover:text-neutral-900"
                 }`}
               >
@@ -253,7 +253,7 @@ export function AdminSidebar<TSection extends string>({
             onClick={() => setPanelOpen(!notificationsOpen)}
             className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl ${
               notificationsOpen
-                ? "bg-rose-50 text-[#E5192D] shadow-xs"
+                ? "text-[#E5192D]"
                 : "text-neutral-700 hover:bg-neutral-100/80 hover:text-neutral-900"
             }`}
           >
