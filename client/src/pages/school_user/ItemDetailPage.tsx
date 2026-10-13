@@ -33,11 +33,6 @@ import type {
   ReturnItemRequest,
 } from "@/types/claim";
 import { getClaimantEmail } from "@/types/claim";
-import {
-  simplifiedClaimStatusStyles,
-  simplifiedStatusHint,
-  simplifyClaimStatus,
-} from "@/components/school_user/claimStatus";
 import { ClaimEvidenceGallery } from "@/components/school_user/ClaimEvidenceGallery";
 import { claims as demoClaims } from "@/components/admin/adminData";
 import {
@@ -323,16 +318,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       (claim) => claim.itemId === item.id,
     );
   }, [item, submittedClaims]);
-
-  const myItemClaims = useMemo(() => {
-    if (!item) return [];
-    return submittedClaims.filter(
-      (claim) =>
-        claim.itemId === item.id &&
-        claim.claimant.trim().toLowerCase() ===
-          profileName.trim().toLowerCase(),
-    );
-  }, [item, submittedClaims, profileName]);
 
   if (!item) {
     return (
@@ -680,68 +665,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
           </article>
           </div>
-
-          {/* Your requests for this post (claimant view with simplified statuses) */}
-          {!isOwnItem && myItemClaims.length > 0 && (
-            <section aria-labelledby="my-claims-heading">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <h2
-                    id="my-claims-heading"
-                    className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
-                  >
-                    Your claim requests for this post ({myItemClaims.length})
-                  </h2>
-                  <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-                    Track what you filed here. Statuses are simplified to
-                    Pending, Approved, or Rejected.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate("/dashboard/claims")}
-                  className="text-xs font-bold text-[#E5192D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-                >
-                  View all requests
-                </button>
-              </div>
-              <ul className="mt-4 space-y-3">
-                {myItemClaims.map((claim) => {
-                  const simple = simplifyClaimStatus(claim.status);
-                  return (
-                    <li
-                      key={claim.id}
-                      className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
-                          Request {claim.id} · Submitted {claim.submitted}
-                        </p>
-                        <span
-                          className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simple]}`}
-                        >
-                          {simple}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
-                        {claim.details}
-                      </p>
-                      {claim.evidence && claim.evidence.length > 0 && (
-                        <ClaimEvidenceGallery
-                          images={claim.evidence}
-                          altPrefix={`Request ${claim.id}`}
-                          className="mt-3"
-                        />
-                      )}
-                      <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-                        {simplifiedStatusHint(simple)}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
 
           {/* Possible matches: found reports the system suggests for your lost item */}
           {isOwnItem && isLost && (

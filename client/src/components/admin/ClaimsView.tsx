@@ -82,7 +82,9 @@ function ClaimRequestSection({
               {claim.evidence.map((image, index) => (
                 <div
                   key={`${claim.id}-evidence-${index}`}
-                  className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50"
+                  className={`flex ${
+                    (claim.evidence?.length ?? 0) > 1 ? "h-48" : "h-72"
+                  } w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50`}
                 >
                   <img
                     src={image}
@@ -347,7 +349,7 @@ export function ClaimsView({
           aria-labelledby="claim-status-title"
           aria-describedby="claim-status-description"
           onClose={() => setPendingStatusChange(null)}
-          className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-xl border border-neutral-200 bg-white p-0 text-neutral-900 shadow-xl backdrop:bg-neutral-950/50"
+          className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-xl border border-neutral-200 bg-white p-0 text-neutral-900 shadow-xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
         >
           <div className="p-5 sm:p-6">
             <h2

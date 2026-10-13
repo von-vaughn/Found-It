@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
   CalendarClock,
   CalendarDays,
   Check,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -11,6 +12,7 @@ import {
   Palette,
   Tag,
   X,
+  XCircle,
 } from "lucide-react";
 import { itemToAdminReport } from "@/components/admin/adminData";
 import { NoItemImage } from "@/components/admin/NoItemImage";
@@ -44,6 +46,9 @@ export function ReturnItemsPage({
   const [statusFilter, setStatusFilter] = useState("Pending");
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<
+    "Approved" | "Rejected" | null
+  >(null);
 
   const filteredRequests = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -92,18 +97,25 @@ export function ReturnItemsPage({
     setPage(1);
   };
 
-  const changeStatus = (status: "Approved" | "Rejected") => {
+  const requestStatusChange = (status: "Approved" | "Rejected") => {
     if (!selectedRequest || selectedRequest.status !== "Pending") return;
-    const action = status === "Approved" ? "approve" : "reject";
-    if (
-      !window.confirm(
-        `Are you sure you want to ${action} the return request for "${selectedRequest.lostItemTitle}"?`,
-      )
-    ) {
-      return;
-    }
-    onStatusChange(selectedRequest.id, status);
+    setConfirmAction(status);
   };
+
+  const confirmStatusChange = () => {
+    if (!selectedRequest || !confirmAction) return;
+    onStatusChange(selectedRequest.id, confirmAction);
+    setConfirmAction(null);
+  };
+
+  useEffect(() => {
+    if (!confirmAction) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setConfirmAction(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [confirmAction]);
 
   return (
     <AdminLayout
@@ -401,7 +413,7 @@ export function ReturnItemsPage({
                       <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-4">
                         <button
                           type="button"
-                          onClick={() => changeStatus("Approved")}
+                          onClick={() => requestStatusChange("Approved")}
                           className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                         >
                           <Check className="h-3.5 w-3.5" aria-hidden="true" />
@@ -409,7 +421,7 @@ export function ReturnItemsPage({
                         </button>
                         <button
                           type="button"
-                          onClick={() => changeStatus("Rejected")}
+                          onClick={() => requestStatusChange("Rejected")}
                           className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                         >
                           <X className="h-3.5 w-3.5" aria-hidden="true" />
@@ -477,6 +489,104 @@ export function ReturnItemsPage({
           )}
         </Panel>
       </div>
+
+      {confirmAction && selectedRequest && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="return-confirm-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          <div
+            aria-hidden="true"
+            onClick={() => setConfirmAction(null)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setConfirmAction(null)}
+              aria-label="Close confirmation"
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+                confirmAction === "Approved"
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-red-50 text-[#E5192D]"
+              }`}
+            >
+              {confirmAction === "Approved" ? (
+                <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+              ) : (
+                <XCircle className="h-6 w-6" aria-hidden="true" />
+              )}
+            </div>
+
+            <h2
+              id="return-confirm-title"
+              className="mt-4 text-lg font-extrabold tracking-tight text-neutral-900"
+            >
+              {confirmAction === "Approved"
+                ? "Approve this return?"
+                : "Reject this return?"}
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-neutral-600">
+              {confirmAction === "Approved"
+                ? `"${selectedRequest.lostItemTitle}" will be marked as approved for ${selectedRequest.claimant}, and they will be notified to proceed with the return.`
+                : `The return request for "${selectedRequest.lostItemTitle}" by ${selectedRequest.claimant} will be marked as rejected.`}
+            </p>
+
+            <dl className="mt-4 space-y-2 rounded-xl bg-neutral-50 p-4 text-xs">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-neutral-500">Item</dt>
+                <dd className="truncate font-semibold text-neutral-900">
+                  {selectedRequest.lostItemTitle}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-neutral-500">Request</dt>
+                <dd className="font-semibold tabular-nums text-neutral-900">
+                  {selectedRequest.id}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-neutral-500">Claimant</dt>
+                <dd className="truncate font-semibold text-neutral-900">
+                  {selectedRequest.claimant}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setConfirmAction(null)}
+                className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmStatusChange}
+                className={`h-10 rounded-xl px-5 text-sm font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                  confirmAction === "Approved"
+                    ? "bg-[#E5192D] hover:bg-[#c91424] focus-visible:ring-[#E5192D]"
+                    : "bg-neutral-900 hover:bg-neutral-700 focus-visible:ring-neutral-900"
+                }`}
+              >
+                {confirmAction === "Approved"
+                  ? "Approve return"
+                  : "Reject request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
