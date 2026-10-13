@@ -628,7 +628,7 @@ export function ReturnItemsPage({
                       <div>
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <MapPin className="h-3 w-3" aria-hidden="true" />
-                          Specific location
+                          Location lost
                         </dt>
                         <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedLostReport?.specificLocation || "None"}

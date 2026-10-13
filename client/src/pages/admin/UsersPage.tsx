@@ -185,7 +185,7 @@ export function UsersPage() {
                             type="button"
                             onClick={() => setPendingUser(user)}
                             aria-label={`Deactivate ${user.name}`}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 px-3 text-[11px] font-semibold text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                           >
                             <Power
                               className="h-3 w-3"
