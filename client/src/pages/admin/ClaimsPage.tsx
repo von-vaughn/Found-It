@@ -48,10 +48,25 @@ export function ClaimsPage({
       ),
     [reports],
   );
-  const foundItemClaims = useMemo(
-    () => allClaims.filter((claim) => foundItemIds.has(claim.itemId)),
-    [allClaims, foundItemIds],
+  const RESOLVED_CLAIM_STATUSES = useMemo(
+    () => new Set(["Approved", "Claimed", "Returned"]),
+    [],
   );
+  const foundItemClaims = useMemo(() => {
+    const resolvedItemIds = new Set(
+      allClaims
+        .filter((claim) => RESOLVED_CLAIM_STATUSES.has(claim.status))
+        .map((claim) => claim.itemId),
+    );
+    // Once one request is approved for an item, the other requests for
+    // that item are resolved away — only show the approved one.
+    return allClaims.filter(
+      (claim) =>
+        foundItemIds.has(claim.itemId) &&
+        (!resolvedItemIds.has(claim.itemId) ||
+          RESOLVED_CLAIM_STATUSES.has(claim.status)),
+    );
+  }, [allClaims, foundItemIds, RESOLVED_CLAIM_STATUSES]);
 
   const claimIdFromUrl = searchParams.get("claimId");
   const urlClaimValid =

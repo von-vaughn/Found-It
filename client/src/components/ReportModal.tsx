@@ -264,7 +264,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Mention specific stickers, scratches, colors, case design, or security markings..."
+                placeholder="Describe the item's appearance"
                 className="w-full p-3 text-sm bg-neutral-50 rounded-xl border border-neutral-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20 focus:border-[#E5192D] transition-all resize-none"
               />
             </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CalendarDays, Clock3, ImagePlus, MapPin, X } from "lucide-react";
+import { CalendarDays, Clock3, ImagePlus, Lock, MapPin, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { NewClaimRequest } from "@/types/claim";
@@ -36,6 +36,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
   onCancel,
 }) => {
   const [additionalInfo, setAdditionalInfo] = useState("");
+  const [importantDetails, setImportantDetails] = useState("");
   const [claimTitle, setClaimTitle] = useState("");
   const [color, setColor] = useState("");
   const [building, setBuilding] = useState("");
@@ -119,6 +120,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
     if (
       !claimTitle.trim() ||
       !additionalInfo.trim() ||
+      !importantDetails.trim() ||
       !dateLost ||
       !timeLost ||
       !locationLost.trim()
@@ -141,6 +143,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         timeLost,
         location: locationLost.trim(),
         details: additionalInfo.trim(),
+        importantDetails: importantDetails.trim(),
         evidence,
         claimantTitle: claimTitle.trim(),
         color: color.trim() || undefined,
@@ -163,19 +166,18 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         className="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
       >
         Share details that can help verify this item belongs to you. Your
-        additional information, lost date, time, and location are required;
-        picture evidence is optional.
+        additional information, important details, lost date, time, and
+        location are required. You may also attach picture evidence.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-        <div>
+      <form onSubmit={handleSubmit} className="mt-5">
+        <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6">
+        {/* Left: photo */}
+        <div className="min-w-0">
           <div className="mb-1.5 flex items-center justify-between gap-3">
             <label htmlFor="claim-evidence" className={labelClass}>
               Picture evidence
             </label>
-            <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
-              Optional
-            </span>
           </div>
           <input
             ref={fileInputRef}
@@ -189,7 +191,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             tabIndex={-1}
           />
           <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2">
               {evidenceFiles.map(({ preview }, index) => (
                 <div
                   key={preview}
@@ -233,6 +235,8 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
           </div>
         </div>
 
+        {/* Right: details */}
+        <div className="min-w-0 space-y-4">
         <div>
           <label htmlFor="claim-title" className={labelClass}>
             What is it? <span aria-hidden="true">*</span>
@@ -338,10 +342,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
 
         <div>
           <label htmlFor="claim-building" className={labelClass}>
-            Building{" "}
-            <span className="font-medium normal-case tracking-normal text-neutral-400 dark:text-neutral-500">
-              (optional)
-            </span>
+            Building
           </label>
           <select
             id="claim-building"
@@ -375,13 +376,35 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
           />
         </div>
 
+        <div>
+          <label htmlFor="claim-important-details" className={labelClass}>
+            Important details <span aria-hidden="true">*</span>
+          </label>
+          <textarea
+            id="claim-important-details"
+            name="importantDetails"
+            required
+            rows={3}
+            value={importantDetails}
+            onChange={(event) => setImportantDetails(event.target.value)}
+            placeholder="Enter the unique mark only the owner would know…"
+            className="w-full resize-y rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 p-3.5 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200"
+          />
+          <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+            <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            Used to verify ownership against the poster&apos;s private details.
+          </p>
+        </div>
+        </div>
+        </div>
+
         {formError && (
           <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
             {formError}
           </p>
         )}
 
-        <div className="flex flex-col-reverse gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onCancel}

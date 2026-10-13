@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -25,6 +25,19 @@ export const Navbar: React.FC<NavbarProps> = () => {
     setMobileMenuOpen(false);
     setAuthModalMode(mode);
   };
+
+  useEffect(() => {
+    const handleOpenAuth = (event: Event) => {
+      const mode =
+        event instanceof CustomEvent &&
+        (event.detail === "signin" || event.detail === "signup")
+          ? event.detail
+          : "signin";
+      openAuthModal(mode);
+    };
+    window.addEventListener("foundit:open-auth", handleOpenAuth);
+    return () => window.removeEventListener("foundit:open-auth", handleOpenAuth);
+  }, []);
 
   const moveIndicator = (linkElement: HTMLButtonElement) => {
     const indicator = indicatorRef.current;

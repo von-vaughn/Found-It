@@ -293,17 +293,15 @@ export function AdminSidebar<TSection extends string>({
             className="flex w-full items-center gap-3 rounded-xl text-left transition-colors hover:bg-neutral-100/80 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center">
-              {user?.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt=""
-                  className="h-9 w-9 rounded-full border border-neutral-200 dark:border-neutral-700 object-cover"
-                />
-              ) : (
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900 dark:bg-neutral-100 dark:bg-neutral-800 text-[11px] font-bold text-white dark:text-neutral-900 dark:text-neutral-100">
-                  OSA
-                </span>
-              )}
+              <img
+                src={user?.avatar || "/images/avatars/vaughn_evangelista.svg"}
+                alt=""
+                className="h-9 w-9 rounded-full border border-neutral-200 dark:border-neutral-700 object-cover"
+                onError={(event) => {
+                  event.currentTarget.src =
+                    "/images/avatars/vaughn_evangelista.svg";
+                }}
+              />
             </span>
             <span
               aria-hidden={!labelsVisible}
@@ -312,10 +310,10 @@ export function AdminSidebar<TSection extends string>({
               }`}
             >
               <span className="block truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                {user?.name || "OSA staff"}
+                {user?.name || "Admin"}
               </span>
               <span className="block truncate text-[10px] text-neutral-500 dark:text-neutral-400">
-                {user?.email || "Demo workspace"}
+                {user?.email || ""}
               </span>
             </span>
             <ChevronDown
@@ -334,7 +332,7 @@ export function AdminSidebar<TSection extends string>({
             >
               <div className="mb-1 border-b border-neutral-100 dark:border-neutral-800 px-3 py-2">
                 <p className="truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                  {user?.name || "OSA staff"}
+                  {user?.name || "Admin"}
                 </p>
                 <p className="truncate text-[11px] text-neutral-400 dark:text-neutral-500">
                   {user?.email || "osa@wmsu.edu.ph"}

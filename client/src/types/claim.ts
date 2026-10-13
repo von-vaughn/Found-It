@@ -9,6 +9,7 @@ export interface ClaimRequest {
   timeLost: string;
   location: string;
   details: string;
+  importantDetails?: string;
   submitted: string;
   evidence?: string[];
   claimantTitle?: string;

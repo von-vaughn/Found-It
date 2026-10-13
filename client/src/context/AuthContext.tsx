@@ -83,13 +83,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const code = generateOtp();
     setCurrentOtp(code);
     setPendingEmailState(email);
-    toast.success(
-      `Your 6-digit authentication code is: ${code} (Demo test code: 123456 also accepted)`,
-      {
-        duration: 9000,
-        icon: "🔐",
-      },
-    );
     return code;
   };
 
@@ -115,12 +108,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const newUser: User = {
       id: `usr_${Date.now()}`,
-      name: profile.name,
-      email: trimmedEmail,
+      name: "Vaughn Evangelista",
+      email: "vaughn@wmsu.edu.ph",
       studentId: profile.studentId,
-      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-        profile.name,
-      )}`,
+      avatar: "/images/avatars/vaughn_evangelista.svg",
       createdAt: new Date().toISOString(),
     };
 
@@ -175,12 +166,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const newUser: User = {
         id: `usr_${Date.now()}`,
-        name: profile.name,
-        email: email,
+        name: "Vaughn Evangelista",
+        email: "vaughn@wmsu.edu.ph",
         studentId: profile.studentId,
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-          profile.name,
-        )}`,
+        avatar: "/images/avatars/vaughn_evangelista.svg",
         createdAt: new Date().toISOString(),
       };
 

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/useAuth";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import {
   ItemSearchBar,
@@ -25,6 +26,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<ItemSearchType>("lost");
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleReportLostClick = () => {
+    if (isAuthenticated) {
+      onBrowseLost();
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent<"signin" | "signup">("foundit:open-auth", {
+        detail: "signin",
+      }),
+    );
+  };
 
   const heroRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -190,7 +204,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1"
         >
           <Button
-            onClick={onBrowseLost}
+            onClick={handleReportLostClick}
             className="w-full sm:w-auto h-12 sm:h-13 px-7 rounded-full bg-[#E5192D] hover:bg-[#c91424] text-white text-sm sm:text-base font-bold shadow-xl shadow-red-600/30 hover:shadow-red-600/50 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2.5"
           >
             <PlusCircle className="w-5 h-5 stroke-[2.5]" />
@@ -202,7 +216,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             onClick={onBrowseFound}
             className="w-full sm:w-auto h-12 sm:h-13 px-7 rounded-full border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-white hover:text-white text-sm sm:text-base font-bold shadow-lg hover:border-neutral-500 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer group"
           >
-            Browse Found Item
+            Browse Items
             <ArrowRight className="w-5 h-5 text-neutral-400 group-hover:translate-x-1 group-hover:text-white transition-all" />
           </Button>
         </div>

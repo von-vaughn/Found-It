@@ -49,6 +49,7 @@ const FILTER_TABS: { id: StatusFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "Pending", label: "Pending" },
   { id: "Approved", label: "Approved" },
+  { id: "Claimed", label: "Claimed" },
   { id: "Rejected", label: "Rejected" },
 ];
 
@@ -170,14 +171,16 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   const counts = useMemo(() => {
     let pending = 0;
     let approved = 0;
+    let claimed = 0;
     let rejected = 0;
     for (const claim of myClaims) {
       const simple = simplifyClaimStatus(claim.status);
       if (simple === "Pending") pending += 1;
       else if (simple === "Approved") approved += 1;
+      else if (simple === "Claimed") claimed += 1;
       else rejected += 1;
     }
-    return { total: myClaims.length, pending, approved, rejected };
+    return { total: myClaims.length, pending, approved, claimed, rejected };
   }, [myClaims]);
 
   const filteredClaims = useMemo(() => {
@@ -277,7 +280,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               </h1>
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                 {counts.total} total · {counts.pending} pending ·{" "}
-                {counts.approved} approved · {counts.rejected} rejected
+                {counts.approved} approved · {counts.claimed} claimed ·{" "}
+                {counts.rejected} rejected
               </p>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                 Requests you filed on found posts. Select a post to see the
@@ -297,7 +301,9 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                       ? counts.pending
                       : tab.id === "Approved"
                         ? counts.approved
-                        : counts.rejected;
+                        : tab.id === "Claimed"
+                          ? counts.claimed
+                          : counts.rejected;
                 const isActive = statusFilter === tab.id;
                 return (
                   <button
@@ -381,9 +387,14 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       {simple}
                                     </span>
                                   </div>
-                                  <p className="mt-1.5 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
-                                    {claim.details}
-                                  </p>
+                                  <div className="mt-1.5">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                                      Description
+                                    </h4>
+                                    <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+                                      {claim.details}
+                                    </p>
+                                  </div>
                                   <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:grid-cols-3">
                                 <div>
                                   <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
@@ -458,6 +469,16 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   </dd>
                                 </div>
                               </dl>
+                              {claim.importantDetails?.trim() && (
+                                <div className="mt-3">
+                                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                                    Important details
+                                  </h4>
+                                  <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+                                    {claim.importantDetails}
+                                  </p>
+                                </div>
+                              )}
                                 </div>
                               </div>
                             </li>

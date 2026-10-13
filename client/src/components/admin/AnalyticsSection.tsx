@@ -419,7 +419,10 @@ export function AnalyticsSection({
           }
         >
           <ul className="flex flex-1 flex-col justify-center divide-y divide-neutral-100 dark:divide-neutral-800">
-            {returnRequests.slice(0, 4).map((request) => (
+            {returnRequests
+              .filter((request) => request.status === "Pending")
+              .slice(0, 4)
+              .map((request) => (
               <li
                 key={request.id}
                 className="flex items-center gap-3 px-4 py-3 sm:px-5"
@@ -435,6 +438,13 @@ export function AnalyticsSection({
                 <StatusBadge status={request.status} />
               </li>
             ))}
+            {returnRequests.every(
+              (request) => request.status !== "Pending",
+            ) && (
+              <li className="px-4 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400 sm:px-5">
+                No pending return items.
+              </li>
+            )}
           </ul>
         </Panel>
       </div>

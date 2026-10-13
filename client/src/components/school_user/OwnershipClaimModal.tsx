@@ -50,7 +50,7 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
         aria-modal="true"
         aria-labelledby="ownership-claim-title"
         aria-describedby="ownership-claim-description"
-        className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl sm:max-h-[calc(100dvh-2.5rem)] sm:p-7"
+        className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl sm:max-h-[calc(100dvh-2.5rem)] sm:p-7"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -58,7 +58,7 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
               id="ownership-claim-title"
               className="text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
             >
-              Claim request
+              Submit Claim Request
             </h2>
             <p className="mt-1 truncate text-sm text-neutral-500 dark:text-neutral-400">
               {itemTitle}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Eye, EyeOff, KeyRound, Mail, RotateCcw, Sparkles, X } from "lucide-react";
+import { Eye, EyeOff, KeyRound, RotateCcw, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import { isSchoolEmail, SCHOOL_EMAIL_DOMAINS } from "@/context/auth-context";
@@ -42,7 +42,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
-  const { login, signup, currentOtp, verifyOtp, sendOtp } = useAuth();
+  const { login, signup, verifyOtp, sendOtp } = useAuth();
 
   const screenKey =
     mode === "signin" ? "signin" : `signup-${signupScreen}`;
@@ -274,11 +274,6 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     sendOtp(email);
     setVerificationCode("");
     setVerificationCountdown(30);
-    setError("");
-  };
-
-  const fillDemoCode = () => {
-    setVerificationCode(currentOtp || "123456");
     setError("");
   };
 
@@ -666,12 +661,6 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 exit="exit"
                 transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
               >
-                <div className="flex items-start gap-3 rounded-xl bg-neutral-50 px-4 py-3">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#B42332]" aria-hidden="true" />
-                  <p className="min-w-0 break-all text-sm font-semibold text-neutral-800">
-                    {email}
-                  </p>
-                </div>
                 <div>
                   <label
                     htmlFor="modal-verification-code"
@@ -695,13 +684,10 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       setError("");
                     }}
                     aria-invalid={Boolean(error)}
-                    aria-describedby={error ? "verification-code-error" : "verification-code-hint"}
+                    aria-describedby={error ? "verification-code-error" : undefined}
                     className="h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-center font-mono text-2xl font-bold tracking-[0.4em] text-neutral-900 outline-none transition placeholder:tracking-normal focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
                     placeholder="000000"
                   />
-                  <p id="verification-code-hint" className="mt-2 text-xs text-neutral-600">
-                    In this demo, the code is also shown in the notification.
-                  </p>
                   {error && (
                     <p id="verification-code-error" role="alert" className="mt-2 text-sm font-medium text-red-700">
                       {error}
@@ -738,14 +724,6 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       : "Resend code"}
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={fillDemoCode}
-                  className="mx-auto inline-flex min-h-10 items-center gap-1.5 rounded-sm text-xs font-semibold text-neutral-600 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" />
-                  Fill demo code
-                </button>
               </motion.form>
             )}
           </AnimatePresence>

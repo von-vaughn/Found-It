@@ -48,6 +48,7 @@ export const itemToAdminReport = (item: Item): AdminReport => ({
         : "Found",
   date: item.date,
   eventDateTime: item.dateTime,
+  confidentialInfo: item.confidentialInfo,
 });
 
 export const claims: AdminClaim[] = [
@@ -62,7 +63,10 @@ export const claims: AdminClaim[] = [
     location: "Main Gate",
     details:
       "Dark brown bifold wallet with a faded photo booth strip in the bill section. My initials are embossed on the corner.",
-    submitted: "Today, 10:15 AM",
+    submitted: "October 10, 2026, 10:15 AM",
+    claimantTitle: "Wallet",
+    color: "Brown",
+    building: "WMSU Administration Building",
   },
   {
     id: "CL-2409",
@@ -75,7 +79,10 @@ export const claims: AdminClaim[] = [
     location: "Library Building",
     details:
       "Blue iPhone 13 with a cracked screen protector. The wallpaper is a beach photo and Find My shows it near the library.",
-    submitted: "Today, 8:30 AM",
+    submitted: "October 10, 2026, 8:30 AM",
+    claimantTitle: "iPhone 13",
+    color: "Blue",
+    building: "Library",
   },
   {
     id: "CL-2408",
@@ -88,7 +95,10 @@ export const claims: AdminClaim[] = [
     location: "Library Building",
     details:
       "The front pocket has a small keychain shaped like a blue star. A physics notebook is inside.",
-    submitted: "Today, 9:42 AM",
+    submitted: "October 10, 2026, 9:42 AM",
+    claimantTitle: "Black Backpack",
+    color: "Black",
+    building: "Library",
   },
   {
     id: "CL-2407",
@@ -101,7 +111,7 @@ export const claims: AdminClaim[] = [
     location: "Main Gate",
     details:
       "Brown leather wallet with a folded library receipt behind the student ID.",
-    submitted: "Today, 8:15 AM",
+    submitted: "October 10, 2026, 8:15 AM",
   },
   {
     id: "CL-2406",
@@ -114,7 +124,7 @@ export const claims: AdminClaim[] = [
     location: "Library Building",
     details:
       "White iPhone 13 with a clear case. The lock screen has a photo of my dog.",
-    submitted: "Today, 7:54 AM",
+    submitted: "October 10, 2026, 7:54 AM",
   },
   {
     id: "CL-2405",
@@ -243,7 +253,7 @@ export const claims: AdminClaim[] = [
     location: "Cafeteria",
     details:
       "I picked up a silver wristwatch with a metal strap near the drinks counter. Keeping it safe until claimed.",
-    submitted: "Today, 11:20 AM",
+    submitted: "October 10, 2026, 11:20 AM",
   },
 ];
 

@@ -32,6 +32,7 @@ export interface AdminReport {
   status: RecordStatus;
   date: string;
   eventDateTime?: string;
+  confidentialInfo?: string;
 }
 
 export type AdminClaim = ClaimRequest;

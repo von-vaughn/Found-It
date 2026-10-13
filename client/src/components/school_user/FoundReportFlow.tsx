@@ -7,6 +7,7 @@ import {
   CameraOff,
   CheckCircle2,
   Clock3,
+  Lock,
   MapPin,
   Palette,
   RotateCcw,
@@ -83,6 +84,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   const [dateFound, setDateFound] = useState("");
   const [timeFound, setTimeFound] = useState("");
   const [description, setDescription] = useState("");
+  const [importantDetails, setImportantDetails] = useState("");
   const [location, setLocation] = useState("");
   const [building, setBuilding] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -205,12 +207,13 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
     if (
       !itemTitle.trim() ||
       !description.trim() ||
+      !importantDetails.trim() ||
       !location.trim() ||
       !dateFound ||
       !timeFound
     ) {
       setFormError(
-        "Enter a title, description, specific location, date found, and time found to continue.",
+        "Enter a title, description, important details, specific location, date found, and time found to continue.",
       );
       return;
     }
@@ -420,18 +423,22 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               {formError}
             </p>
           )}
+          <div className={capturedPhoto ? "grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]" : ""}>
           {capturedPhoto && (
+            <div className="min-w-0">
             <img
               src={capturedPhoto}
               alt="Captured found-item photo"
-              className="h-36 w-full rounded-xl bg-neutral-100 dark:bg-neutral-800 object-contain"
+              className="h-36 md:h-64 w-full rounded-xl bg-neutral-100 dark:bg-neutral-800 object-contain"
             />
+            </div>
           )}
+          <div className="min-w-0 space-y-5">
           <div>
             <label htmlFor="found-item-title" className={labelClass}>
               <span className="inline-flex items-center gap-1.5">
                 <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-                What is it?
+                What is it? *
               </span>
             </label>
             <input
@@ -522,7 +529,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               <label htmlFor="found-item-location" className={labelClass}>
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                  Specific location
+                  Specific location *
                 </span>
               </label>
               <input
@@ -578,23 +585,49 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                 setDescription(event.target.value);
                 setFormError(null);
               }}
-              placeholder="Add details that may help identify the item"
+              placeholder="Describe the item's appearance"
               className={`${inputClass} min-h-24 resize-y`}
             />
           </div>
 
-          <div className="flex gap-2 pt-1">
+          <div>
+            <label htmlFor="found-item-important-details" className={labelClass}>
+              Important details *
+            </label>
+            <textarea
+              id="found-item-important-details"
+              name="importantDetails"
+              required
+              rows={3}
+              value={importantDetails}
+              onChange={(event) => {
+                setImportantDetails(event.target.value);
+                setFormError(null);
+              }}
+              placeholder="Unique mark only the owner would know…"
+              className={`${inputClass} min-h-24 resize-y`}
+            />
+            <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+              <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              Not included in the public post. Only used to verify ownership.
+            </p>
+          </div>
+
+          </div>
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={() => onStepChange("camera")}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Back
             </button>
             <button
               type="submit"
-              className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
             >
               Submit details
             </button>

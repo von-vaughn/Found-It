@@ -225,6 +225,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         timeLost: claim.timeLost,
         location: claim.location,
         details: claim.details,
+        importantDetails: claim.importantDetails,
         evidence: claim.evidence,
       });
       toast.success("Sent to the admin for return approval.");

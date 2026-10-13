@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
 
 const PAGE_SIZE = 10;
 import {
@@ -9,13 +10,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Lock,
   MapPin,
+  Package,
   Palette,
   Tag,
   X,
 } from "lucide-react";
 import { Panel } from "./Panel";
 import { NoItemImage } from "./NoItemImage";
+import {
+  AdminPasswordModal,
+  LockedValue,
+} from "./SensitiveDetails";
+import { useSensitiveUnlock } from "./useSensitiveUnlock";
 import { StatusBadge } from "./StatusBadge";
 import { StatusFilter } from "./StatusFilter";
 import type { AdminReport, RecordStatus } from "./types";
@@ -45,6 +53,8 @@ function ClaimRequestSection({
   itemType,
   itemClaimed,
   onRequestStatus,
+  unlocked,
+  onRequestUnlock,
 }: {
   claim: ClaimRequest;
   headingId: string;
@@ -52,6 +62,8 @@ function ClaimRequestSection({
   itemType: "Lost" | "Found" | undefined;
   itemClaimed: boolean;
   onRequestStatus: (claimId: string, status: StatusDecision) => void;
+  unlocked: boolean;
+  onRequestUnlock: () => void;
 }) {
   const isLostItem = itemType === "Lost";
   return (
@@ -121,12 +133,7 @@ function ClaimRequestSection({
                       : "Approved",
                 )
               }
-              className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-default ${
-                claim.status === "Approved" ||
-                (isLostItem && claim.status !== "Returned")
-                  ? "bg-emerald-700 hover:bg-emerald-800 focus-visible:ring-emerald-700 disabled:bg-emerald-700"
-                  : "bg-[#E5192D] hover:bg-red-700 focus-visible:ring-[#E5192D] disabled:bg-emerald-700"
-              }`}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-default disabled:bg-[#E5192D]"
             >
               <Check className="h-3.5 w-3.5" aria-hidden="true" />
               {claim.status === "Returned"
@@ -170,11 +177,38 @@ function ClaimRequestSection({
           <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
           <div>
             <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+              <Package className="h-3 w-3" aria-hidden="true" />
+              Item name
+            </dt>
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+              {claim.item}
+            </dd>
+          </div>
+          <div>
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <CalendarDays className="h-3 w-3" aria-hidden="true" />
               Submitted
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
               {claim.submitted}
+            </dd>
+          </div>
+          <div>
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+              <Tag className="h-3 w-3" aria-hidden="true" />
+              What is it?
+            </dt>
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+              {claim.claimantTitle?.trim() || claim.item}
+            </dd>
+          </div>
+          <div>
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+              <Palette className="h-3 w-3" aria-hidden="true" />
+              Primary color
+            </dt>
+            <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
+              {claim.color?.trim() || "None"}
             </dd>
           </div>
           <div>
@@ -198,10 +232,32 @@ function ClaimRequestSection({
           <div>
             <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <MapPin className="h-3 w-3" aria-hidden="true" />
-              Location lost
+              {itemType === "Lost" ? "Location found" : "Location lost"}
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
               {claim.location}
+            </dd>
+          </div>
+          <div className="col-span-2">
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+              <Building2 className="h-3 w-3" aria-hidden="true" />
+              Building
+            </dt>
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+              {claim.building?.trim() || "None"}
+            </dd>
+          </div>
+          <div className="col-span-2">
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+              <Lock className="h-3 w-3" aria-hidden="true" />
+              Important details
+            </dt>
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+              <LockedValue
+                value={claim.importantDetails}
+                unlocked={unlocked}
+                onUnlock={onRequestUnlock}
+              />
             </dd>
           </div>
         </dl>
@@ -324,21 +380,67 @@ export function ClaimsView({
       : baseItemPost;
   const selectedItemImage = selectedItemPost?.image ?? "";
 
+  const { unlocked, promptOpen, requestUnlock, submitPassword, setPromptOpen } =
+    useSensitiveUnlock();
+
   const closeApprovalDialog = () => {
     setPendingStatusChange(null);
     if (approvalDialogRef.current?.open) approvalDialogRef.current.close();
   };
+
+  const FINAL_CLAIM_STATUSES = new Set([
+    "Approved",
+    "Claimed",
+    "Returned",
+    "Rejected",
+  ]);
+
+  // Other open requests for the same item: accepting one resolves the item,
+  // so the rest are rejected automatically on confirm.
+  const claimsToAutoReject = claimForStatusChange
+    ? claimRequests.filter(
+        (claim) =>
+          claim.id !== claimForStatusChange.id &&
+          claim.itemId === claimForStatusChange.itemId &&
+          !FINAL_CLAIM_STATUSES.has(claim.status),
+      )
+    : [];
+  const isAcceptDecision =
+    pendingStatusChange?.status === "Approved" ||
+    pendingStatusChange?.status === "ItemClaimed" ||
+    pendingStatusChange?.status === "Returned";
 
   const confirmStatusChange = () => {
     if (!pendingStatusChange || !claimForStatusChange) return;
     if (pendingStatusChange.status === "ItemClaimed") {
       onItemStatusChange(claimForStatusChange.itemId, "Claimed");
       onClaimStatusChange(pendingStatusChange.claimId, "Claimed");
+      toast.success(
+        `Marked "${claimForStatusChange.item}" as claimed for ${claimForStatusChange.claimant}.`,
+      );
     } else {
       onClaimStatusChange(
         pendingStatusChange.claimId,
         pendingStatusChange.status,
       );
+      if (pendingStatusChange.status === "Approved") {
+        toast.success(
+          `Approved ${claimForStatusChange.claimant}'s claim for "${claimForStatusChange.item}".`,
+        );
+      } else if (pendingStatusChange.status === "Rejected") {
+        toast.success(
+          `Rejected ${claimForStatusChange.claimant}'s claim for "${claimForStatusChange.item}".`,
+        );
+      } else {
+        toast.success(
+          `Marked "${claimForStatusChange.item}" as returned for ${claimForStatusChange.claimant}.`,
+        );
+      }
+    }
+    if (isAcceptDecision) {
+      for (const sibling of claimsToAutoReject) {
+        onClaimStatusChange(sibling.id, "Rejected");
+      }
     }
     closeApprovalDialog();
   };
@@ -383,6 +485,13 @@ export function ClaimsView({
                 Once approved, the system will notify{" "}
                 {claimForStatusChange.claimant} to proceed to the OSA office
                 to claim the item.
+              </p>
+            )}
+            {isAcceptDecision && claimsToAutoReject.length > 0 && (
+              <p className="mt-3 rounded-lg border border-amber-200 dark:border-amber-500/25 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+                {claimsToAutoReject.length === 1
+                  ? "1 other open request for this item will be automatically rejected."
+                  : `${claimsToAutoReject.length} other open requests for this item will be automatically rejected.`}
               </p>
             )}
             <div className="mt-6 flex justify-end gap-2">
@@ -594,7 +703,7 @@ export function ClaimsView({
                         <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                           {selectedItemPost.description}
                         </p>
-                        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-neutral-100 dark:border-neutral-800 py-3 text-xs">
+                        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 py-3 text-xs">
                       <div>
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Tag className="h-3 w-3" aria-hidden="true" />
@@ -663,6 +772,19 @@ export function ClaimsView({
                           {selectedItemPost.color?.trim() || "None"}
                         </dd>
                       </div>
+                      <div className="col-span-2">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                          <Lock className="h-3 w-3" aria-hidden="true" />
+                          Important details
+                        </dt>
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                          <LockedValue
+                            value={selectedItemPost.confidentialInfo}
+                            unlocked={unlocked}
+                            onUnlock={requestUnlock}
+                          />
+                        </dd>
+                      </div>
                     </dl>
                       </>
                     ) : (
@@ -686,6 +808,8 @@ export function ClaimsView({
                 onRequestStatus={(claimId, status) =>
                   setPendingStatusChange({ claimId, status })
                 }
+                unlocked={unlocked}
+                onRequestUnlock={requestUnlock}
               />
               {siblingClaims.length > 0 && (
                 <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
@@ -700,6 +824,8 @@ export function ClaimsView({
                         onRequestStatus={(claimId, status) =>
                           setPendingStatusChange({ claimId, status })
                         }
+                        unlocked={unlocked}
+                        onRequestUnlock={requestUnlock}
                       />
                     ))}
                   </div>
@@ -719,6 +845,11 @@ export function ClaimsView({
           )}
         </Panel>
       </div>
+      <AdminPasswordModal
+        open={promptOpen}
+        onClose={() => setPromptOpen(false)}
+        onSubmit={submitPassword}
+      />
     </div>
   );
 }
