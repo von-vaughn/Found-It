@@ -8,6 +8,7 @@ export function Panel({
   borderless = false,
   stickyHeader = false,
   titleSize = "default",
+  plain = false,
   onMouseEnter,
   onMouseLeave,
   onFocusCapture,
@@ -20,11 +21,31 @@ export function Panel({
   borderless?: boolean;
   stickyHeader?: boolean;
   titleSize?: "default" | "large";
+  plain?: boolean;
   onMouseEnter?: React.MouseEventHandler<HTMLElement>;
   onMouseLeave?: React.MouseEventHandler<HTMLElement>;
   onFocusCapture?: React.FocusEventHandler<HTMLElement>;
   onBlurCapture?: React.FocusEventHandler<HTMLElement>;
 }) {
+  // Container-free rendering: plain title + content, no card box.
+  if (plain) {
+    return (
+      <section
+        aria-label={title}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onFocusCapture={onFocusCapture}
+        onBlurCapture={onBlurCapture}
+        className={`min-w-0 ${className}`}
+      >
+        <h2 className="truncate text-lg font-bold text-neutral-900 dark:text-neutral-100">
+          {title}
+        </h2>
+        {action ? <div className="mt-3 shrink-0">{action}</div> : null}
+        <div className="mt-4 min-w-0">{children}</div>
+      </section>
+    );
+  }
   return (
     <section
       aria-label={title}

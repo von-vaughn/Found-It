@@ -224,6 +224,7 @@ export function ClaimsView({
   statusFilter,
   onStatusFilterChange,
   statusOptions,
+  plainDetails = false,
 }: {
   claims: ClaimRequest[];
   reports: AdminReport[];
@@ -237,6 +238,7 @@ export function ClaimsView({
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
   statusOptions?: string[];
+  plainDetails?: boolean;
 }) {
   const [page, setPage] = useState(1);
   const [pendingStatusChange, setPendingStatusChange] = useState<{
@@ -467,7 +469,7 @@ export function ClaimsView({
                         {claim.item}
                       </span>
                     <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {claim.claimant} · {claim.id}
+                      {claim.claimant}
                       {(claimCounts.get(claim.itemId) ?? 1) > 1 && (
                         <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
                           {claimCounts.get(claim.itemId)} requests
@@ -540,9 +542,14 @@ export function ClaimsView({
           title={visibleSelectedClaim?.item ?? "Claim details"}
           titleSize="large"
           borderless
+          plain={plainDetails}
         >
           {visibleSelectedClaim ? (
-            <div className="space-y-4 p-4 sm:p-5">
+            <div
+              className={
+                plainDetails ? "space-y-4" : "space-y-4 p-4 sm:p-5"
+              }
+            >
               <section aria-labelledby="claim-item-post-heading">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2
@@ -700,7 +707,13 @@ export function ClaimsView({
               )}
             </div>
           ) : (
-            <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            <p
+              className={
+                plainDetails
+                  ? "py-10 text-center text-sm text-neutral-500 dark:text-neutral-400"
+                  : "px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400"
+              }
+            >
               No selected claim matches this search.
             </p>
           )}

@@ -184,7 +184,7 @@ export function ReturnItemsPage({
                           {request.lostItemTitle}
                         </span>
                         <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
-                          {request.claimant} · {request.id}
+                          {request.claimant}
                         </span>
                       </span>
                       <span className="hidden text-right sm:block">
@@ -250,11 +250,10 @@ export function ReturnItemsPage({
 
         <Panel
           title={selectedRequest?.lostItemTitle ?? "Return request details"}
-          titleSize="large"
-          borderless
+          plain
         >
           {selectedRequest ? (
-            <div className="space-y-4 p-4 sm:p-5">
+            <div className="space-y-4">
               <section aria-labelledby="return-item-heading">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2
@@ -483,7 +482,7 @@ export function ReturnItemsPage({
               </section>
             </div>
           ) : (
-            <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
               No selected return request matches this search.
             </p>
           )}
@@ -548,9 +547,9 @@ export function ReturnItemsPage({
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-neutral-500 dark:text-neutral-400">Request</dt>
+                <dt className="text-neutral-500 dark:text-neutral-400">Submitted</dt>
                 <dd className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
-                  {selectedRequest.id}
+                  {selectedRequest.submitted || "None"}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3">

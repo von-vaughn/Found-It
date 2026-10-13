@@ -407,7 +407,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           >
             {tab.label}
             {type === tab.id && (
-              <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-neutral-900 rounded-full" />
+              <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-neutral-900 rounded-full dark:hidden" />
             )}
           </button>
         ))}

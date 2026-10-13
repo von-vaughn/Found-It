@@ -129,6 +129,7 @@ export function ClaimsPage({
         onClaimStatusChange={handleClaimStatusChange}
         onItemStatusChange={handleItemStatusChange}
         itemStatusOverrides={itemStatuses}
+        plainDetails
       />
     </AdminLayout>
   );

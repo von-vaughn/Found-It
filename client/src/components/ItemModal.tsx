@@ -6,7 +6,6 @@ import {
   Clock3,
   CalendarDays,
   Award,
-  User,
   Palette,
   Building2,
   Package,
@@ -109,14 +108,11 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
                   {item.title}
                 </h2>
                 <p className="mt-1 text-xs text-neutral-400">
-                  Reported {item.timeAgo} ({item.date})
+                  {item.date}
                 </p>
               </div>
 
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                  Item Description
-                </h4>
                 <p className="text-neutral-700 text-sm sm:text-base leading-relaxed">
                   {item.description}
                 </p>
@@ -162,21 +158,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
                   <dt className="font-bold text-neutral-900">Building</dt>
                   <dd className="mt-1 break-words text-neutral-500">
                     {item.building?.trim() || "Not provided"}
-                  </dd>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5 py-3">
-                <User
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">
-                    {isLost ? "Reported By" : "Custodian / Finder"}
-                  </dt>
-                  <dd className="mt-1 break-words text-neutral-500">
-                    {item.contactName}
                   </dd>
                 </div>
               </div>

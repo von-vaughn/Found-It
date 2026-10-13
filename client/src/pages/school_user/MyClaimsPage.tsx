@@ -312,9 +312,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     }`}
                   >
                     {tab.label} ({count})
-                    {isActive && (
-                      <span className="absolute -bottom-[13px] left-0 right-0 h-[2.5px] rounded-full bg-neutral-900" />
-                    )}
                   </button>
                 );
               })}
@@ -373,7 +370,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   postImage={item?.image}
                                   detailImages={detailImages}
                                 />
-                                <div className="flex min-w-0 flex-col justify-between gap-3">
+                                <div className="flex min-w-0 flex-col">
                                   <div className="flex flex-wrap items-center justify-between gap-2">
                                     <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
                                       Submitted {claim.submitted}
@@ -384,7 +381,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       {simple}
                                     </span>
                                   </div>
-                                  <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+                                  <p className="mt-1.5 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
                                     {claim.details}
                                   </p>
                                   <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:grid-cols-3">
