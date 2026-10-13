@@ -88,12 +88,12 @@ export function UsersPage() {
       <Panel
         title="Campus users"
         action={
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
             {filteredUsers.length} users
           </span>
         }
       >
-        <div className="flex flex-col gap-3 border-b border-neutral-100 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
+        <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
           <div className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="user-status-filter">
               Filter by status
@@ -106,7 +106,7 @@ export function UsersPage() {
                 setStatusFilter(event.target.value);
                 setCurrentPage(1);
               }}
-              className="h-9 rounded-md border border-neutral-200 bg-white px-2.5 text-xs text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option>All statuses</option>
               <option>Active</option>
@@ -117,14 +117,14 @@ export function UsersPage() {
 
         {pageUsers.length === 0 ? (
           <div className="flex min-h-[680px] items-center justify-center px-5 py-10">
-            <p className="text-center text-sm text-neutral-500">
+            <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
               No users match these filters.
             </p>
           </div>
         ) : (
           <div className="min-h-[680px] overflow-x-auto">
             <table className="w-full min-w-[960px] text-left text-xs">
-              <thead className="bg-neutral-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <tr>
                   <th scope="col" className="px-5 py-3">
                     User
@@ -146,9 +146,9 @@ export function UsersPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {pageUsers.map((user) => (
-                  <tr key={user.id} className="text-neutral-700">
+                  <tr key={user.id} className="text-neutral-700 dark:text-neutral-300">
                     <td className="px-5 py-3.5">
                       <div className="flex min-w-0 items-center gap-3">
                         <span
@@ -158,7 +158,7 @@ export function UsersPage() {
                           {initials(user.name)}
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate font-semibold text-neutral-900">
+                          <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">
                             {user.name}
                           </span>
                         </span>
@@ -198,7 +198,7 @@ export function UsersPage() {
                             type="button"
                             onClick={() => setPendingUser(user)}
                             aria-label={`Activate ${user.name}`}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 px-3 text-[11px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 dark:border-neutral-800 px-3 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                           >
                             <Check
                               className="h-3 w-3"
@@ -216,8 +216,8 @@ export function UsersPage() {
           </div>
         )}
 
-        <div className="flex flex-col gap-3 border-t border-neutral-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="text-xs text-neutral-500" aria-live="polite">
+        <div className="flex flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">
             Showing {rangeStart}–{rangeEnd} of {filteredUsers.length}
           </p>
           {pageCount > 1 && (
@@ -227,7 +227,7 @@ export function UsersPage() {
                 aria-label="Previous page"
                 disabled={page <= 1}
                 onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+ className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -240,8 +240,8 @@ export function UsersPage() {
                   aria-current={page === index + 1 ? "page" : undefined}
                   className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                     page === index + 1
-                      ? "bg-neutral-900 text-white"
-                      : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                      ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                      : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                   }`}
                 >
                   {index + 1}
@@ -254,7 +254,7 @@ export function UsersPage() {
                 onClick={() =>
                   setCurrentPage((value) => Math.min(pageCount, value + 1))
                 }
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+ className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
               >
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -275,21 +275,21 @@ export function UsersPage() {
             aria-modal="true"
             aria-labelledby="user-status-title"
             aria-describedby="user-status-description"
-            className="w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-5 shadow-xl"
+            className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
             <h2
               id="user-status-title"
-              className="text-base font-bold text-neutral-900"
+              className="text-base font-bold text-neutral-900 dark:text-neutral-100"
             >
               {pendingUser.isActive ? "Deactivate user?" : "Activate user?"}
             </h2>
             <p
               id="user-status-description"
-              className="mt-2 text-sm leading-relaxed text-neutral-600"
+              className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
             >
               {pendingUser.isActive ? (
                 <>
-                  <span className="font-semibold text-neutral-900">
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                     {pendingUser.name}
                   </span>{" "}
                   will lose access to FoundIt immediately and be signed out of
@@ -297,7 +297,7 @@ export function UsersPage() {
                 </>
               ) : (
                 <>
-                  <span className="font-semibold text-neutral-900">
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                     {pendingUser.name}
                   </span>{" "}
                   will regain access to FoundIt.
@@ -308,7 +308,7 @@ export function UsersPage() {
               <button
                 type="button"
                 onClick={() => setPendingUser(null)}
-                className="h-9 rounded-lg border border-neutral-200 px-3.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
               >
                 Cancel
               </button>

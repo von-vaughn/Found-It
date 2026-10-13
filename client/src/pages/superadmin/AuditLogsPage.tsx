@@ -101,11 +101,11 @@ export function AuditLogsPage() {
         title="Who approved or rejected what"
         action={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-neutral-500">{filtered.length} events</span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">{filtered.length} events</span>
             <button
               type="button"
               onClick={exportCsv}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <Download className="h-3.5 w-3.5" aria-hidden="true" />
               Export CSV
@@ -113,7 +113,7 @@ export function AuditLogsPage() {
           </div>
         }
       >
-        <div className="flex flex-col gap-3 border-b border-neutral-100 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
+        <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
           <div className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="audit-action-filter">
               Filter by decision
@@ -125,7 +125,7 @@ export function AuditLogsPage() {
                 setActionFilter(event.target.value);
                 setCurrentPage(1);
               }}
-              className="h-9 rounded-md border border-neutral-200 bg-white px-2.5 text-xs text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option>All actions</option>
               <option value="approved">Approved</option>
@@ -143,7 +143,7 @@ export function AuditLogsPage() {
                 setEntityFilter(event.target.value);
                 setCurrentPage(1);
               }}
-              className="h-9 rounded-md border border-neutral-200 bg-white px-2.5 text-xs text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option>All reports</option>
               <option>Claim</option>
@@ -155,14 +155,14 @@ export function AuditLogsPage() {
 
         {pageLogs.length === 0 ? (
           <div className="flex min-h-[400px] items-center justify-center px-5 py-10">
-            <p className="text-center text-sm text-neutral-500">
+            <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
               No audit events match these filters.
             </p>
           </div>
         ) : (
           <div className="min-h-[400px] overflow-x-auto">
             <table className="w-full min-w-[1020px] text-left text-xs">
-              <thead className="bg-neutral-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <tr>
                   <th scope="col" className="px-5 py-3">Admin</th>
                   <th scope="col" className="px-4 py-3">Decision</th>
@@ -171,9 +171,9 @@ export function AuditLogsPage() {
                   <th scope="col" className="px-5 py-3">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {pageLogs.map((log) => (
-                  <tr key={log.id} className="text-neutral-700">
+                  <tr key={log.id} className="text-neutral-700 dark:text-neutral-300">
                     <td className="px-5 py-3.5">
                       <div className="flex min-w-0 items-center gap-3">
                         <span
@@ -183,10 +183,10 @@ export function AuditLogsPage() {
                           {initials(log.adminName)}
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate font-semibold text-neutral-900">
+                          <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">
                             {log.adminName}
                           </span>
-                          <span className="block truncate text-[11px] text-neutral-500">
+                          <span className="block truncate text-[11px] text-neutral-500 dark:text-neutral-400">
                             {log.adminEmail} · {log.adminRole}
                           </span>
                         </span>
@@ -196,10 +196,10 @@ export function AuditLogsPage() {
                       <StatusBadge status={actionLabel(log.action)} />
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className="block font-semibold text-neutral-900">
+                      <span className="block font-semibold text-neutral-900 dark:text-neutral-100">
                         {log.itemTitle}
                       </span>
-                      <span className="mt-0.5 block text-[11px] text-neutral-500">
+                      <span className="mt-0.5 block text-[11px] text-neutral-500 dark:text-neutral-400">
                         {entityTypeLabel(log.entityType)} · {log.entityId}
                       </span>
                     </td>
@@ -218,8 +218,8 @@ export function AuditLogsPage() {
           </div>
         )}
 
-        <div className="flex flex-col gap-3 border-t border-neutral-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="text-xs text-neutral-500" aria-live="polite">
+        <div className="flex flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">
             Showing {rangeStart}–{rangeEnd} of {filtered.length}
           </p>
           {pageCount > 1 && (
@@ -229,7 +229,7 @@ export function AuditLogsPage() {
                 aria-label="Previous page"
                 disabled={page <= 1}
                 onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -242,8 +242,8 @@ export function AuditLogsPage() {
                   aria-current={page === index + 1 ? "page" : undefined}
                   className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                     page === index + 1
-                      ? "bg-neutral-900 text-white"
-                      : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                      ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                      : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                   }`}
                 >
                   {index + 1}
@@ -254,7 +254,7 @@ export function AuditLogsPage() {
                 aria-label="Next page"
                 disabled={page >= pageCount}
                 onClick={() => setCurrentPage((value) => Math.min(pageCount, value + 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
               >
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>

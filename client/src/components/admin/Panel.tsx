@@ -32,13 +32,13 @@ export function Panel({
       onMouseLeave={onMouseLeave}
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
-      className={`min-w-0 bg-white ${borderless ? "" : "rounded-xl border border-neutral-200"} ${className}`}
+      className={`min-w-0 bg-white dark:bg-neutral-900 ${borderless ? "" : "rounded-xl border border-neutral-200 dark:border-neutral-800"} ${className}`}
     >
       <div
-        className={`flex min-h-14 items-center justify-between gap-3 px-4 sm:px-5 ${borderless ? "" : "border-b border-neutral-100"} ${stickyHeader ? "sticky top-0 z-10 bg-white" : ""}`}
+        className={`flex min-h-14 items-center justify-between gap-3 px-4 sm:px-5 ${borderless ? "" : "border-b border-neutral-100 dark:border-neutral-800"} ${stickyHeader ? "sticky top-0 z-10 bg-white dark:bg-neutral-900" : ""}`}
       >
         <h2
-          className={`min-w-0 truncate whitespace-nowrap font-bold text-neutral-900 ${
+          className={`min-w-0 truncate whitespace-nowrap font-bold text-neutral-900 dark:text-neutral-100 ${
             titleSize === "large" ? "text-lg" : "text-sm"
           }`}
         >

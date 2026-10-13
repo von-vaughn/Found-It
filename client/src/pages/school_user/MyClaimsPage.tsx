@@ -373,11 +373,10 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   postImage={item?.image}
                                   detailImages={detailImages}
                                 />
-                                <div className="flex min-w-0 flex-col justify-center">
+                                <div className="flex min-w-0 flex-col justify-between gap-3">
                                   <div className="flex flex-wrap items-center justify-between gap-2">
                                     <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
-                                      Request {claim.id} · Submitted{" "}
-                                      {claim.submitted}
+                                      Submitted {claim.submitted}
                                     </p>
                                     <span
                                       className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simple]}`}

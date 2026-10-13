@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Camera, CameraOff, ChevronDown, ImagePlus, RotateCcw } from "lucide-react";
+import { Camera, CameraOff, ChevronDown, ImagePlus, Lock, RotateCcw } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { Item } from "@/data/mockItems";
@@ -92,6 +92,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [building, setBuilding] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [importantDetails, setImportantDetails] = useState("");
   const [category, setCategory] = useState<Item["category"]>("electronics");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [photoRequiredError, setPhotoRequiredError] = useState(false);
@@ -142,6 +143,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             ? ""
             : initialItem.description,
         );
+        setImportantDetails(initialItem.confidentialInfo ?? "");
         setCategory(initialItem.category);
         setUploadedImage(initialItem.image || null);
       } else {
@@ -153,6 +155,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setBuilding("");
         setLocation("");
         setDescription("");
+        setImportantDetails("");
         setCategory("electronics");
         setUploadedImage(null);
       }
@@ -305,6 +308,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       toast.error("Add the date and time first.");
       return;
     }
+    if (!importantDetails.trim()) {
+      toast.error("Add important details for ownership verification.");
+      return;
+    }
 
     if (isEditing && initialItem) {
       const updatedItem: Item = {
@@ -323,6 +330,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         updatedItem.color = color.trim();
       } else {
         delete updatedItem.color;
+      }
+      if (importantDetails.trim()) {
+        updatedItem.confidentialInfo = importantDetails.trim();
+      } else {
+        delete updatedItem.confidentialInfo;
       }
       onUpdateItem?.(updatedItem);
       toast.success("Your report was updated.");
@@ -355,6 +367,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       saved: false,
     };
     if (color.trim()) newItem.color = color.trim();
+    if (importantDetails.trim())
+      newItem.confidentialInfo = importantDetails.trim();
 
     onAddItem(newItem);
     toast.success(
@@ -679,10 +693,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             </div>
             <div className="min-w-0">
                 <label htmlFor="report-building" className={labelClass}>
-                  Building{" "}
-                  <span className="font-medium normal-case tracking-normal text-neutral-400 dark:text-neutral-500">
-                    (optional)
-                  </span>
+                  Building
                 </label>
                 <div className="relative">
                   <select
@@ -753,18 +764,37 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
           <div>
             <label htmlFor="report-description" className={labelClass}>
-              Description *
+              Description
             </label>
             <textarea
               id="report-description"
               name="description"
               rows={3}
-              required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Marks, where it was last seen…"
               className="w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none"
             />
+          </div>
+
+          <div>
+            <label htmlFor="report-important-details" className={labelClass}>
+              Important details *
+            </label>
+            <textarea
+              id="report-important-details"
+              name="importantDetails"
+              rows={3}
+              required
+              value={importantDetails}
+              onChange={(e) => setImportantDetails(e.target.value)}
+              placeholder="Unique mark only the owner would know…"
+              className="w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none"
+            />
+            <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+              <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              Not included in the public post. Only used to verify ownership.
+            </p>
           </div>
 
           <div className="pt-1">

@@ -32,11 +32,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, []);
 
-  // Dark mode is a school_user feature: the `.dark` class only applies
-  // inside /dashboard so landing, browse, and admin stay light.
+  // Dark mode is shared by school_user and admin workspaces: the `.dark`
+  // class only applies inside /dashboard, /admin, and /superadmin so
+  // landing and browse stay light.
   useEffect(() => {
     const dark =
-      theme === "dark" && location.pathname.startsWith("/dashboard");
+      theme === "dark" &&
+      (location.pathname.startsWith("/dashboard") ||
+        location.pathname.startsWith("/admin") ||
+        location.pathname.startsWith("/superadmin"));
     document.documentElement.classList.toggle("dark", dark);
   }, [theme, location.pathname]);
 

@@ -128,7 +128,7 @@ export function SuperAdminReturnsPage({
       searchPlaceholder="Search return requests…"
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           {filteredRequests.length} return requests
         </p>
       </div>
@@ -148,12 +148,12 @@ export function SuperAdminReturnsPage({
           }
         >
           {filteredRequests.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-neutral-500">
+            <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
               No return requests match this search.
             </p>
           ) : (
             <>
-              <div className="divide-y divide-neutral-100">
+              <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {pageRequests.map((request) => {
                   const lostItem = items.find(
                     (item) => item.id === request.itemId,
@@ -167,8 +167,8 @@ export function SuperAdminReturnsPage({
                       onClick={() => setSelectedId(request.id)}
                       className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5 ${
                         selectedRequest?.id === request.id
-                          ? "bg-neutral-50"
-                          : "hover:bg-neutral-50/70"
+                          ? "bg-neutral-50 dark:bg-neutral-800"
+                          : "hover:bg-neutral-50 dark:bg-neutral-800/70 dark:hover:bg-neutral-800"
                       }`}
                     >
                       {preview ? (
@@ -182,18 +182,18 @@ export function SuperAdminReturnsPage({
                         <NoItemImage compact className="h-12 w-12" />
                       )}
                       <span className="min-w-0 flex-1">
-                        <span className="block break-normal text-sm font-bold leading-snug text-neutral-900">
+                        <span className="block break-normal text-sm font-bold leading-snug text-neutral-900 dark:text-neutral-100">
                           {request.lostItemTitle}
                         </span>
-                        <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500">
+                        <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
                           {request.claimant} · {request.id}
                         </span>
                       </span>
                       <span className="hidden text-right sm:block">
-                        <span className="block text-[10px] text-neutral-500">
+                        <span className="block text-[10px] text-neutral-500 dark:text-neutral-400">
                           Submitted
                         </span>
-                        <span className="mt-1 block text-[10px] font-medium text-neutral-700">
+                        <span className="mt-1 block text-[10px] font-medium text-neutral-700 dark:text-neutral-300">
                           {request.submitted}
                         </span>
                       </span>
@@ -201,8 +201,8 @@ export function SuperAdminReturnsPage({
                   );
                 })}
               </div>
-              <div className="sticky bottom-0 z-10 mt-auto flex items-center justify-between gap-2 border-t border-neutral-100 bg-white px-4 py-3 sm:px-5">
-                <p className="text-[11px] text-neutral-500">
+              <div className="sticky bottom-0 z-10 mt-auto flex items-center justify-between gap-2 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 sm:px-5">
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                   Showing {rangeStart}–{rangeEnd} of {filteredRequests.length}
                 </p>
                 {totalPages > 1 && (
@@ -212,7 +212,7 @@ export function SuperAdminReturnsPage({
                       onClick={() => setPage(safePage - 1)}
                       disabled={safePage <= 1}
                       aria-label="Previous page"
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+ className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
                     >
                       <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -227,8 +227,8 @@ export function SuperAdminReturnsPage({
                         }
                         className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors ${
                           safePage === index + 1
-                            ? "bg-neutral-900 text-white"
-                            : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                            ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                            : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                         }`}
                       >
                         {index + 1}
@@ -239,7 +239,7 @@ export function SuperAdminReturnsPage({
                       onClick={() => setPage(safePage + 1)}
                       disabled={safePage >= totalPages}
                       aria-label="Next page"
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+ className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
                     >
                       <ChevronRight className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -261,7 +261,7 @@ export function SuperAdminReturnsPage({
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2
                     id="return-item-heading"
-                    className="text-sm font-bold text-neutral-900"
+                    className="text-sm font-bold text-neutral-900 dark:text-neutral-100"
                   >
                     Lost item
                   </h2>
@@ -270,9 +270,9 @@ export function SuperAdminReturnsPage({
                   )}
                 </div>
                 <div className="grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                  <div className="flex min-h-48 items-center justify-center rounded-lg bg-neutral-50 p-3 text-center">
+                  <div className="flex min-h-48 items-center justify-center rounded-lg bg-neutral-50 dark:bg-neutral-800 p-3 text-center">
                     {selectedLostItem?.image ? (
-                      <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50">
+                      <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800">
                         <img
                           src={selectedLostItem.image}
                           alt={`${selectedRequest.lostItemTitle} item`}
@@ -288,49 +288,49 @@ export function SuperAdminReturnsPage({
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-neutral-900">
+                    <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
                       {selectedLostItem?.contactName || "None"}
                     </p>
-                    <p className="mt-0.5 truncate text-xs text-neutral-500">
+                    <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                       {selectedLostReport?.reporterEmail || "None"}
                     </p>
-                    <p className="mt-3 text-xs leading-relaxed text-neutral-700">
+                    <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                       {selectedLostItem?.description || "None"}
                     </p>
-                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-neutral-100 py-3 text-xs">
+                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-neutral-100 dark:border-neutral-800 py-3 text-xs">
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Tag className="h-3 w-3" aria-hidden="true" />
                           Category
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedLostReport?.category || "None"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <CalendarDays className="h-3 w-3" aria-hidden="true" />
                           Post date
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedLostReport?.date || "None"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <CalendarClock className="h-3 w-3" aria-hidden="true" />
                           Date lost
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {formatDate(selectedLostReport?.eventDateTime || "")}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Clock3 className="h-3 w-3" aria-hidden="true" />
                           Time lost
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedLostReport?.eventDateTime
                             ? new Intl.DateTimeFormat("en-PH", {
                                 timeStyle: "short",
@@ -339,29 +339,29 @@ export function SuperAdminReturnsPage({
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <MapPin className="h-3 w-3" aria-hidden="true" />
                           Specific location
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedLostReport?.specificLocation || "None"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Building2 className="h-3 w-3" aria-hidden="true" />
                           Building
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedLostReport?.buildingName?.trim() || "None"}
                         </dd>
                       </div>
                       <div className="col-span-2">
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Palette className="h-3 w-3" aria-hidden="true" />
                           Color
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedLostReport?.color?.trim() || "None"}
                         </dd>
                       </div>
@@ -371,12 +371,12 @@ export function SuperAdminReturnsPage({
               </section>
               <section
                 aria-labelledby="return-evidence-heading"
-                className="border-t border-neutral-100 pt-4"
+                className="border-t border-neutral-100 dark:border-neutral-800 pt-4"
               >
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2
                     id="return-evidence-heading"
-                    className="text-sm font-bold text-neutral-900"
+                    className="text-sm font-bold text-neutral-900 dark:text-neutral-100"
                   >
                     Return evidence
                   </h2>
@@ -395,7 +395,7 @@ export function SuperAdminReturnsPage({
                         {selectedRequest.evidence.map((image, index) => (
                           <div
                             key={`${selectedRequest.id}-evidence-${index}`}
-                            className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50"
+                            className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800"
                           >
                             <img
                               src={image}
@@ -412,7 +412,7 @@ export function SuperAdminReturnsPage({
                       />
                     )}
                     {selectedRequest.status === "Pending" && (
-                      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-4">
+                      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
                         <button
                           type="button"
                           onClick={() => changeStatus("Approved")}
@@ -424,7 +424,7 @@ export function SuperAdminReturnsPage({
                         <button
                           type="button"
                           onClick={() => changeStatus("Rejected")}
-                          className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                          className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                         >
                           <X className="h-3.5 w-3.5" aria-hidden="true" />
                           Reject
@@ -433,49 +433,49 @@ export function SuperAdminReturnsPage({
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-neutral-800">
+                    <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                       {selectedRequest.claimant}
                     </p>
-                    <p className="mt-0.5 truncate text-xs text-neutral-500">
+                    <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                       {selectedRequest.email || "None"}
                     </p>
-                    <p className="mt-3 text-xs leading-relaxed text-neutral-700">
+                    <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                       {selectedRequest.details || "None"}
                     </p>
-                    <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 pt-3 text-xs">
+                    <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 pt-3 text-xs">
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <CalendarDays className="h-3 w-3" aria-hidden="true" />
                           Submitted
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedRequest.submitted || "None"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <CalendarDays className="h-3 w-3" aria-hidden="true" />
                           Date found
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {formatDate(selectedRequest.dateLost)}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Clock3 className="h-3 w-3" aria-hidden="true" />
                           Time found
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedRequest.timeLost || "None"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <MapPin className="h-3 w-3" aria-hidden="true" />
                           Location found
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedRequest.location || "None"}
                         </dd>
                       </div>
@@ -485,7 +485,7 @@ export function SuperAdminReturnsPage({
               </section>
             </div>
           ) : (
-            <p className="px-5 py-10 text-center text-sm text-neutral-500">
+            <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
               No selected return request matches this search.
             </p>
           )}

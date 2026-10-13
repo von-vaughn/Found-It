@@ -132,7 +132,7 @@ function FilterOptionRow({
           checked={checked}
           disabled={disabled}
           onChange={onToggle}
-          className="h-4 w-4 shrink-0 rounded border-neutral-300 accent-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed"
+          className="h-4 w-4 shrink-0 rounded border-neutral-300 dark:border-neutral-600 accent-neutral-900 dark:accent-neutral-100 dark:[color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-not-allowed"
         />
         <Icon
           className={`w-4 h-4 shrink-0 transition-colors ${

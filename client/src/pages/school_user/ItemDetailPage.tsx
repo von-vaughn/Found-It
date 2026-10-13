@@ -647,7 +647,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   />
                   <div className="min-w-0">
                     <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                      Confidential info
+                      Important details
                     </dt>
                     <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
                       {item.confidentialInfo}

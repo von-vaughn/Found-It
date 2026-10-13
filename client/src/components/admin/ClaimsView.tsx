@@ -59,11 +59,11 @@ function ClaimRequestSection({
       {...(title
         ? { "aria-labelledby": headingId }
         : { "aria-label": `${claim.claimant}'s request` })}
-      className="border-t border-neutral-100 pt-4"
+      className="border-t border-neutral-100 dark:border-neutral-800 pt-4"
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         {title && (
-          <h2 id={headingId} className="text-sm font-bold text-neutral-900">
+          <h2 id={headingId} className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
             {title}
           </h2>
         )}
@@ -84,7 +84,7 @@ function ClaimRequestSection({
                   key={`${claim.id}-evidence-${index}`}
                   className={`flex ${
                     (claim.evidence?.length ?? 0) > 1 ? "h-48" : "h-72"
-                  } w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50`}
+                  } w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800`}
                 >
                   <img
                     src={image}
@@ -146,8 +146,8 @@ function ClaimRequestSection({
               onClick={() => onRequestStatus(claim.id, "Rejected")}
               className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default ${
                 claim.status === "Pending"
-                  ? "border-neutral-200 text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
-                  : "border-neutral-200 text-neutral-400"
+                  ? "border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+                  : "border-neutral-200 dark:border-neutral-800 text-neutral-400 dark:text-neutral-500"
               }`}
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
@@ -156,51 +156,51 @@ function ClaimRequestSection({
           </div>
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-neutral-800">
+          <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
             {claim.claimant}
           </p>
-          <p className="mt-0.5 truncate text-xs text-neutral-500">
+          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
             {getClaimantEmail(claim)}
           </p>
-          <div className="mt-3 border-b border-neutral-100 pb-3">
-            <p className="text-xs leading-relaxed text-neutral-700">
+          <div className="mt-3 border-b border-neutral-100 dark:border-neutral-800 pb-3">
+            <p className="text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
               {claim.details}
             </p>
           </div>
           <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <CalendarDays className="h-3 w-3" aria-hidden="true" />
               Submitted
             </dt>
-            <dd className="mt-1 font-semibold text-neutral-800">
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
               {claim.submitted}
             </dd>
           </div>
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <CalendarDays className="h-3 w-3" aria-hidden="true" />
               {itemType === "Lost" ? "Date found" : "Date lost"}
             </dt>
-            <dd className="mt-1 font-semibold text-neutral-800">
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
               {claim.dateLost}
             </dd>
           </div>
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <Clock3 className="h-3 w-3" aria-hidden="true" />
               {itemType === "Lost" ? "Time found" : "Time lost"}
             </dt>
-            <dd className="mt-1 font-semibold text-neutral-800">
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
               {claim.timeLost}
             </dd>
           </div>
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <MapPin className="h-3 w-3" aria-hidden="true" />
               Location lost
             </dt>
-            <dd className="mt-1 font-semibold text-neutral-800">
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
               {claim.location}
             </dd>
           </div>
@@ -349,12 +349,12 @@ export function ClaimsView({
           aria-labelledby="claim-status-title"
           aria-describedby="claim-status-description"
           onClose={() => setPendingStatusChange(null)}
-          className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-xl border border-neutral-200 bg-white p-0 text-neutral-900 shadow-xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+          className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0 text-neutral-900 dark:text-neutral-100 shadow-xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
         >
           <div className="p-5 sm:p-6">
             <h2
               id="claim-status-title"
-              className="text-base font-bold text-neutral-900"
+              className="text-base font-bold text-neutral-900 dark:text-neutral-100"
             >
               {pendingStatusChange.status === "Approved"
                 ? "Approve this request?"
@@ -366,7 +366,7 @@ export function ClaimsView({
             </h2>
             <p
               id="claim-status-description"
-              className="mt-2 text-sm leading-relaxed text-neutral-600"
+              className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
             >
               {pendingStatusChange.status === "Approved"
                 ? `Are you sure you want to approve ${claimForStatusChange.claimant}'s claim for ${claimForStatusChange.item}?`
@@ -377,7 +377,7 @@ export function ClaimsView({
                     : `Confirm that ${claimForStatusChange.claimant} has received ${claimForStatusChange.item}.`}
             </p>
             {pendingStatusChange.status === "Approved" && (
-              <p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-xs leading-relaxed text-neutral-700">
+              <p className="mt-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 px-3 py-2 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                 Once approved, the system will notify{" "}
                 {claimForStatusChange.claimant} to proceed to the OSA office
                 to claim the item.
@@ -387,7 +387,7 @@ export function ClaimsView({
               <button
                 type="button"
                 onClick={closeApprovalDialog}
-                className="h-9 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
               >
                 Cancel
               </button>
@@ -409,7 +409,7 @@ export function ClaimsView({
         </dialog>
       )}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           {filteredClaims.length} claims
         </p>
       </div>
@@ -429,12 +429,12 @@ export function ClaimsView({
           }
         >
           {filteredClaims.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-neutral-500">
+            <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
               No claims match this search.
             </p>
           ) : (
             <>
-            <div className="divide-y divide-neutral-100">
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {pagedClaims.map((claim) => {
                 const itemImage =
                   reports.find((report) => report.id === claim.itemId)
@@ -448,8 +448,8 @@ export function ClaimsView({
                     onClick={() => onSelectClaim(claim.id)}
                     className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5 ${
                       selectedClaimId === claim.id
-                        ? "bg-neutral-50"
-                        : "hover:bg-neutral-50/70"
+                        ? "bg-neutral-50 dark:bg-neutral-800"
+                        : "hover:bg-neutral-50 dark:bg-neutral-800/70 dark:hover:bg-neutral-800"
                     }`}
                   >
                     {itemImage ? (
@@ -463,10 +463,10 @@ export function ClaimsView({
                       <NoItemImage compact className="h-12 w-12" />
                     )}
                     <span className="min-w-0 flex-1">
-                      <span className="block break-normal text-sm font-bold leading-snug text-neutral-900">
+                      <span className="block break-normal text-sm font-bold leading-snug text-neutral-900 dark:text-neutral-100">
                         {claim.item}
                       </span>
-                    <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500">
+                    <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
                       {claim.claimant} · {claim.id}
                       {(claimCounts.get(claim.itemId) ?? 1) > 1 && (
                         <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
@@ -476,10 +476,10 @@ export function ClaimsView({
                     </span>
                     </span>
                     <span className="hidden text-right sm:block">
-                      <span className="block text-[10px] text-neutral-500">
+                      <span className="block text-[10px] text-neutral-500 dark:text-neutral-400">
                         Submitted
                       </span>
-                      <span className="mt-1 block text-[10px] font-medium text-neutral-700">
+                      <span className="mt-1 block text-[10px] font-medium text-neutral-700 dark:text-neutral-300">
                         {claim.submitted}
                       </span>
                     </span>
@@ -487,8 +487,8 @@ export function ClaimsView({
                 );
               })}
             </div>
-            <div className="sticky bottom-0 z-10 mt-auto flex items-center justify-between gap-2 border-t border-neutral-100 bg-white px-4 py-3 sm:px-5">
-              <p className="text-[11px] text-neutral-500">
+            <div className="sticky bottom-0 z-10 mt-auto flex items-center justify-between gap-2 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 sm:px-5">
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                 Showing {rangeStart}–{rangeEnd} of {filteredClaims.length}
               </p>
               {totalPages > 1 && (
@@ -498,7 +498,7 @@ export function ClaimsView({
                     onClick={() => setPage(safePage - 1)}
                     disabled={safePage <= 1}
                     aria-label="Previous page"
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+ className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
                   >
                     <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -513,8 +513,8 @@ export function ClaimsView({
                       }
                       className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors ${
                         safePage === index + 1
-                          ? "bg-neutral-900 text-white"
-                          : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                          ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                          : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                       }`}
                     >
                       {index + 1}
@@ -525,7 +525,7 @@ export function ClaimsView({
                     onClick={() => setPage(safePage + 1)}
                     disabled={safePage >= totalPages}
                     aria-label="Next page"
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+ className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
                   >
                     <ChevronRight className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -547,7 +547,7 @@ export function ClaimsView({
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2
                     id="claim-item-post-heading"
-                    className="text-sm font-bold text-neutral-900"
+                    className="text-sm font-bold text-neutral-900 dark:text-neutral-100"
                   >
                     {selectedItemPost?.type === "Found"
                       ? "Found item"
@@ -560,7 +560,7 @@ export function ClaimsView({
                 <div className="grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                   <div className="min-w-0">
                     {selectedItemImage ? (
-                      <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50">
+                      <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800">
                         <img
                           src={selectedItemImage}
                           alt={`${visibleSelectedClaim.item} item`}
@@ -578,36 +578,36 @@ export function ClaimsView({
                   <div className="min-w-0">
                     {selectedItemPost ? (
                       <>
-                        <p className="truncate text-sm font-bold text-neutral-900">
+                        <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
                           {selectedItemPost.reportedBy}
                         </p>
-                        <p className="mt-0.5 truncate text-xs text-neutral-500">
+                        <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                           {selectedItemPost.reporterEmail}
                         </p>
-                        <p className="mt-3 text-xs leading-relaxed text-neutral-700">
+                        <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                           {selectedItemPost.description}
                         </p>
-                        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-neutral-100 py-3 text-xs">
+                        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-neutral-100 dark:border-neutral-800 py-3 text-xs">
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Tag className="h-3 w-3" aria-hidden="true" />
                           Category
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedItemPost.category || "None"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <CalendarDays className="h-3 w-3" aria-hidden="true" />
                           Post date
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedItemPost.date || "None"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <CalendarClock
                             className="h-3 w-3"
                             aria-hidden="true"
@@ -616,50 +616,50 @@ export function ClaimsView({
                             ? "Date found"
                             : "Date lost"}
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {formatEventDate(selectedItemPost.eventDateTime)}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Clock3 className="h-3 w-3" aria-hidden="true" />
                           Time found
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {formatEventTime(selectedItemPost.eventDateTime)}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <MapPin className="h-3 w-3" aria-hidden="true" />
                           Specific location
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedItemPost.specificLocation || "None"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Building2 className="h-3 w-3" aria-hidden="true" />
                           Building
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedItemPost.buildingName?.trim() || "None"}
                         </dd>
                       </div>
                       <div className="col-span-2">
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500">
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Palette className="h-3 w-3" aria-hidden="true" />
                           Color
                         </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800">
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {selectedItemPost.color?.trim() || "None"}
                         </dd>
                       </div>
                     </dl>
                       </>
                     ) : (
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         The original item post could not be found.
                       </p>
                     )}
@@ -681,7 +681,7 @@ export function ClaimsView({
                 }
               />
               {siblingClaims.length > 0 && (
-                <div className="border-t border-neutral-100 pt-4">
+                <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
                   <div className="space-y-2">
                     {siblingClaims.map((sibling) => (
                       <ClaimRequestSection
@@ -700,7 +700,7 @@ export function ClaimsView({
               )}
             </div>
           ) : (
-            <p className="px-5 py-10 text-center text-sm text-neutral-500">
+            <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
               No selected claim matches this search.
             </p>
           )}

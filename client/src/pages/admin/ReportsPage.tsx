@@ -113,7 +113,7 @@ export function ReportsPage({
         title="Item reports"
         action={
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <span className="text-xs text-neutral-500">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
               {filteredRows.length} reports
             </span>
             <button
@@ -127,7 +127,7 @@ export function ReportsPage({
           </div>
         }
       >
-        <div className="flex flex-col gap-3 border-b border-neutral-100 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5">
+        <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5">
           <div className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="report-status-filter">
               Filter by status
@@ -137,7 +137,7 @@ export function ReportsPage({
               name="report-status"
               value={statusFilter}
               onChange={(event) => updateStatusFilter(event.target.value)}
-              className="h-9 rounded-md border border-neutral-200 bg-white px-2.5 text-xs text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option>All statuses</option>
               <option>Lost</option>
@@ -154,7 +154,7 @@ export function ReportsPage({
               name="report-category"
               value={categoryFilter}
               onChange={(event) => updateCategoryFilter(event.target.value)}
-              className="h-9 max-w-48 rounded-md border border-neutral-200 bg-white px-2.5 text-xs text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-9 max-w-48 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option value="All categories">All categories</option>
               {ITEM_CATEGORIES.map((category) => (
@@ -172,7 +172,7 @@ export function ReportsPage({
               name="report-building"
               value={buildingFilter}
               onChange={(event) => updateBuildingFilter(event.target.value)}
-              className="h-9 max-w-48 rounded-md border border-neutral-200 bg-white px-2.5 text-xs text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-9 max-w-48 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option value="All buildings">All buildings</option>
               {ITEM_BUILDINGS.map((building) => (
@@ -188,8 +188,8 @@ export function ReportsPage({
           wholeRowClickable
         />
 
-        <div className="flex flex-col gap-3 border-t border-neutral-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="text-xs text-neutral-500" aria-live="polite">
+        <div className="flex flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">
             Showing {rangeStart}–{rangeEnd} of {filteredRows.length}
           </p>
           {pageCount > 1 && (
@@ -199,7 +199,7 @@ export function ReportsPage({
                 aria-label="Previous page"
                 disabled={page <= 1}
                 onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+ className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -212,8 +212,8 @@ export function ReportsPage({
                   aria-current={page === index + 1 ? "page" : undefined}
                   className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                     page === index + 1
-                      ? "bg-neutral-900 text-white"
-                      : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                      ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                      : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                   }`}
                 >
                   {index + 1}
@@ -226,7 +226,7 @@ export function ReportsPage({
                 onClick={() =>
                   setCurrentPage((value) => Math.min(pageCount, value + 1))
                 }
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+ className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
               >
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>

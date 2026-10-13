@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Moon, Search, Sun } from "lucide-react";
+import { useTheme } from "@/context/useTheme";
 import {
   AdminSidebar,
   type AdminNotification,
@@ -33,6 +34,7 @@ export function AdminLayout({
   children,
 }: AdminLayoutProps) {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   // Restore the expanded state carried over from a nav-icon click (only set
   // when the pointer was over the sidebar). Fresh loads start collapsed.
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
@@ -55,7 +57,7 @@ export function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <AdminSidebar
         activeSection={activeSection}
         navigation={navigation}
@@ -82,13 +84,13 @@ export function AdminLayout({
       >
       {showSearch && onQueryChange && (
         <header
-          className={`sticky top-0 z-20 flex h-16 items-center justify-between gap-3 bg-white/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8 ${
+          className={`sticky top-0 z-20 flex h-16 items-center justify-between gap-3 bg-white/95 dark:bg-neutral-950/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8 ${
             notificationsOpen ? "md:ml-80 md:w-[calc(100%-20rem)]" : "w-full"
           }`}
         >
           <div className="relative hidden min-w-0 flex-1 sm:block">
             <Search
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
               aria-hidden="true"
             />
             <input
@@ -99,10 +101,42 @@ export function AdminLayout({
               onChange={(event) => onQueryChange(event.target.value)}
               placeholder={searchPlaceholder}
               autoComplete="off"
-              className="h-10 w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-xs text-neutral-800 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 pl-9 pr-3 text-xs text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             />
           </div>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-pressed={theme === "dark"}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
+            ) : (
+              <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
+            )}
+          </button>
         </header>
+      )}
+      {!showSearch && (
+        <div className="flex justify-end px-4 pt-4 sm:px-6 lg:px-8">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-pressed={theme === "dark"}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
+            ) : (
+              <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
+            )}
+          </button>
+        </div>
       )}
 
         <main
@@ -119,10 +153,10 @@ export function AdminLayout({
           </a>
           <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div className="min-w-0">
-              <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 sm:text-2xl">
+              <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-2xl">
                 {copy.title}
               </h1>
-              <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-neutral-600 sm:text-sm">
+              <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-neutral-600 dark:text-neutral-400 sm:text-sm">
                 {copy.description}
               </p>
             </div>
@@ -141,7 +175,7 @@ export function AdminLayout({
                 onChange={(event) => onQueryChange(event.target.value)}
                 placeholder={`Search ${copy.title.toLowerCase()}…`}
                 autoComplete="off"
-                className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
               />
             </div>
           )}

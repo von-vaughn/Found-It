@@ -22,7 +22,7 @@ export const ITEM_CATEGORIES = [
   { id: "id", label: "ID", icon: ContactRound },
   { id: "cards", label: "Cards", icon: CreditCard },
   { id: "bags", label: "Bags", icon: BriefcaseBusiness },
-  { id: "wallets-purses", label: "Wallets & Purses", icon: WalletCards },
+  { id: "wallets-purses", label: "Wallet", icon: WalletCards },
   { id: "keys", label: "Keys", icon: KeyRound },
   {
     id: "clothing-accessories",

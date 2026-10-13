@@ -169,12 +169,12 @@ export function AdminSidebar<TSection extends string>({
           width: expanded && !notificationsOpen ? 240 : collapsedWidth,
         }}
         transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
-        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center border-r border-neutral-200 bg-white py-5 selection:bg-[#E5192D] selection:text-white"
+        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 py-5 selection:bg-[#E5192D] selection:text-white"
       >
         <Link
           to="/"
           aria-label="FoundIt home"
-          className="group absolute left-2.5 top-5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl hover:bg-neutral-50 md:left-4.5"
+          className="group absolute left-2.5 top-5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl hover:bg-neutral-50 dark:hover:bg-neutral-800 md:left-4.5"
         >
           <img
             src="/logo.jpeg"
@@ -185,12 +185,12 @@ export function AdminSidebar<TSection extends string>({
           />
           <span
             aria-hidden="true"
-            className={`absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 transition-opacity duration-200 ${
+            className={`absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 transition-opacity duration-200 ${
               labelsVisible ? "opacity-100" : "opacity-0"
             }`}
           >
             Found<span className="text-[#E5192D]">It</span>
-            <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+            <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
               OSA
             </span>
           </span>
@@ -222,7 +222,7 @@ export function AdminSidebar<TSection extends string>({
                 className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl ${
                   active
                     ? "text-[#E5192D]"
-                    : "text-neutral-700 hover:bg-neutral-100/80 hover:text-neutral-900"
+                    : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                 }`}
               >
                 <Icon
@@ -254,7 +254,7 @@ export function AdminSidebar<TSection extends string>({
             className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl ${
               notificationsOpen
                 ? "text-[#E5192D]"
-                : "text-neutral-700 hover:bg-neutral-100/80 hover:text-neutral-900"
+                : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
             }`}
           >
             <Bell
@@ -265,7 +265,7 @@ export function AdminSidebar<TSection extends string>({
             {unreadCount > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border-2 border-white bg-[#E5192D] px-0.5 text-[9px] font-bold leading-none text-white"
+                className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border-2 border-white dark:border-neutral-900 bg-[#E5192D] px-0.5 text-[9px] font-bold leading-none text-white"
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
@@ -283,24 +283,24 @@ export function AdminSidebar<TSection extends string>({
 
         <div
           ref={profileRef}
-          className="absolute bottom-0 left-2.5 right-2.5 border-t border-neutral-100 py-4 md:left-4.5 md:right-4.5"
+          className="absolute bottom-0 left-2.5 right-2.5 border-t border-neutral-100 dark:border-neutral-800 py-4 md:left-4.5 md:right-4.5"
         >
           <button
             type="button"
             onClick={() => setProfileOpen((open) => !open)}
             aria-label="Open account menu"
             aria-expanded={profileOpen}
-            className="flex w-full items-center gap-3 rounded-xl text-left transition-colors hover:bg-neutral-100/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+            className="flex w-full items-center gap-3 rounded-xl text-left transition-colors hover:bg-neutral-100/80 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center">
               {user?.avatar ? (
                 <img
                   src={user.avatar}
                   alt=""
-                  className="h-9 w-9 rounded-full border border-neutral-200 object-cover"
+                  className="h-9 w-9 rounded-full border border-neutral-200 dark:border-neutral-700 object-cover"
                 />
               ) : (
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-bold text-white">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900 dark:bg-neutral-100 dark:bg-neutral-800 text-[11px] font-bold text-white dark:text-neutral-900 dark:text-neutral-100">
                   OSA
                 </span>
               )}
@@ -311,15 +311,15 @@ export function AdminSidebar<TSection extends string>({
                 labelsVisible ? "opacity-100" : "opacity-0"
               }`}
             >
-              <span className="block truncate text-xs font-bold text-neutral-900">
+              <span className="block truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
                 {user?.name || "OSA staff"}
               </span>
-              <span className="block truncate text-[10px] text-neutral-500">
+              <span className="block truncate text-[10px] text-neutral-500 dark:text-neutral-400">
                 {user?.email || "Demo workspace"}
               </span>
             </span>
             <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 text-neutral-400 transition-all duration-200 ${
+              className={`h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500 transition-all duration-200 ${
                 profileOpen ? "rotate-180" : ""
               } ${labelsVisible ? "opacity-100" : "opacity-0"}`}
               aria-hidden="true"
@@ -330,13 +330,13 @@ export function AdminSidebar<TSection extends string>({
             <div
               role="menu"
               aria-label="Account"
-              className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl"
+              className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 shadow-xl"
             >
-              <div className="mb-1 border-b border-neutral-100 px-3 py-2">
-                <p className="truncate text-xs font-bold text-neutral-900">
+              <div className="mb-1 border-b border-neutral-100 dark:border-neutral-800 px-3 py-2">
+                <p className="truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
                   {user?.name || "OSA staff"}
                 </p>
-                <p className="truncate text-[11px] text-neutral-400">
+                <p className="truncate text-[11px] text-neutral-400 dark:text-neutral-500">
                   {user?.email || "osa@wmsu.edu.ph"}
                 </p>
               </div>
@@ -344,7 +344,7 @@ export function AdminSidebar<TSection extends string>({
                 type="button"
                 role="menuitem"
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
               >
                 <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                 Sign out
@@ -365,11 +365,11 @@ export function AdminSidebar<TSection extends string>({
             exit={{ opacity: 0, x: -16 }}
             transition={{ type: "spring", stiffness: 360, damping: 34 }}
             style={{ left: collapsedWidth }}
-            className="fixed bottom-0 top-0 z-40 flex w-[min(20rem,calc(100vw-4rem))] flex-col bg-white shadow-xl"
+            className="fixed bottom-0 top-0 z-40 flex w-[min(20rem,calc(100vw-4rem))] flex-col bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-5">
+            <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 px-5 py-5">
               <div>
-                <h2 className="text-base font-bold text-neutral-900">
+                <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   Notifications
                 </h2>
               </div>
@@ -377,13 +377,13 @@ export function AdminSidebar<TSection extends string>({
                 type="button"
                 onClick={() => setPanelOpen(false)}
                 aria-label="Close notifications"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
             <div className="flex items-center justify-between gap-3 px-5 py-2.5">
-              <p className="text-xs font-semibold text-neutral-600">
+              <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
                 {unreadCount} unread
               </p>
               {unreadCount > 0 && (
@@ -406,8 +406,8 @@ export function AdminSidebar<TSection extends string>({
                       onNotificationSelect(notification);
                       setPanelOpen(false);
                     }}
-                    className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
-                      notification.read ? "" : "bg-red-50/60"
+                    className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
+                      notification.read ? "" : "bg-red-50/60 dark:bg-red-500/10"
                     }`}
                   >
                     <span
@@ -420,16 +420,16 @@ export function AdminSidebar<TSection extends string>({
                       <span
                         className={`block text-xs ${
                           notification.read
-                            ? "font-medium text-neutral-700"
-                            : "font-bold text-neutral-900"
+                            ? "font-medium text-neutral-700 dark:text-neutral-300"
+                            : "font-bold text-neutral-900 dark:text-neutral-100"
                         }`}
                       >
                         {notification.title}
                       </span>
-                      <span className="mt-1 line-clamp-2 block text-xs text-neutral-500">
+                      <span className="mt-1 line-clamp-2 block text-xs text-neutral-500 dark:text-neutral-400">
                         {notification.description}
                       </span>
-                      <span className="mt-1.5 block text-[10px] text-neutral-400">
+                      <span className="mt-1.5 block text-[10px] text-neutral-400 dark:text-neutral-500">
                         {notification.time}
                       </span>
                     </span>
@@ -437,7 +437,7 @@ export function AdminSidebar<TSection extends string>({
                 ))}
               </div>
             ) : (
-              <p className="px-5 py-8 text-center text-xs text-neutral-500">
+              <p className="px-5 py-8 text-center text-xs text-neutral-500 dark:text-neutral-400">
                 You’re all caught up.
               </p>
             )}

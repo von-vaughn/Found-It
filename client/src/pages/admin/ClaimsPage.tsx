@@ -102,7 +102,7 @@ export function ClaimsPage({
         query={query}
         onQueryChange={setQuery}
       >
-        <p className="px-5 py-10 text-center text-sm text-neutral-500">
+        <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
           No claims found.
         </p>
       </AdminLayout>

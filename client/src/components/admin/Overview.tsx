@@ -59,28 +59,28 @@ export function Overview({
     <>
       <section
         aria-label="Report totals"
-        className="grid grid-cols-2 overflow-hidden rounded-xl border border-neutral-200 bg-white xl:grid-cols-4"
+        className="grid grid-cols-2 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 xl:grid-cols-4"
       >
         {metrics.map(({ label, value, note, icon: Icon, section }) => (
           <button
             key={label}
             type="button"
             onClick={() => onNavigate(section)}
-            className="group flex min-w-0 items-center gap-3 border-b border-neutral-100 p-3 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] last:border-b-0 [&:nth-child(odd)]:border-r xl:border-b-0 xl:border-r xl:p-4 xl:last:border-r-0"
+            className="group flex min-w-0 items-center gap-3 border-b border-neutral-100 dark:border-neutral-800 p-3 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] last:border-b-0 [&:nth-child(odd)]:border-r xl:border-b-0 xl:border-r xl:p-4 xl:last:border-r-0"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-50 text-neutral-600 group-hover:bg-white">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 group-hover:bg-white dark:group-hover:bg-neutral-900 dark:group-hover:bg-neutral-900">
               <Icon className="h-4 w-4" aria-hidden="true" />
             </span>
             <span className="min-w-0">
               <span className="flex items-baseline gap-2">
-                <span className="text-lg font-extrabold tabular-nums tracking-tight text-neutral-900">
+                <span className="text-lg font-extrabold tabular-nums tracking-tight text-neutral-900 dark:text-neutral-100">
                   {value}
                 </span>
-                <span className="truncate text-[10px] font-semibold text-neutral-600 sm:text-[11px]">
+                <span className="truncate text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 sm:text-[11px]">
                   {label}
                 </span>
               </span>
-              <span className="mt-0.5 block truncate text-[10px] text-neutral-500">
+ <span className="mt-0.5 block truncate text-[10px] text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
                 {note}
               </span>
             </span>

@@ -142,7 +142,7 @@ export function AdminAccountsManager({
         title="Admin accounts"
         action={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-neutral-500">{filteredStaff.length} staff</span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">{filteredStaff.length} staff</span>
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
@@ -154,7 +154,7 @@ export function AdminAccountsManager({
           </div>
         }
       >
-        <div className="flex flex-col gap-3 border-b border-neutral-100 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
+        <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
           <div className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="staff-status-filter">
               Filter by status
@@ -166,7 +166,7 @@ export function AdminAccountsManager({
                 setStatusFilter(event.target.value);
                 setCurrentPage(1);
               }}
-              className="h-9 rounded-md border border-neutral-200 bg-white px-2.5 text-xs text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option>All statuses</option>
               <option>Active</option>
@@ -182,7 +182,7 @@ export function AdminAccountsManager({
                 setRoleFilter(event.target.value);
                 setCurrentPage(1);
               }}
-              className="h-9 rounded-md border border-neutral-200 bg-white px-2.5 text-xs text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option>All roles</option>
               <option>Admin</option>
@@ -193,14 +193,14 @@ export function AdminAccountsManager({
 
         {pageStaff.length === 0 ? (
           <div className="flex min-h-[400px] items-center justify-center px-5 py-10">
-            <p className="text-center text-sm text-neutral-500">
+            <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
               No admin accounts match these filters.
             </p>
           </div>
         ) : (
           <div className="min-h-[400px] overflow-x-auto">
             <table className="w-full min-w-[980px] text-left text-xs">
-              <thead className="bg-neutral-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <tr>
                   <th scope="col" className="px-5 py-3">Admin</th>
                   <th scope="col" className="px-4 py-3">Role</th>
@@ -210,9 +210,9 @@ export function AdminAccountsManager({
                   <th scope="col" className="px-5 py-3"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {pageStaff.map((admin) => (
-                  <tr key={admin.id} className="text-neutral-700">
+                  <tr key={admin.id} className="text-neutral-700 dark:text-neutral-300">
                     <td className="px-5 py-3.5">
                       <div className="flex min-w-0 items-center gap-3">
                         <span
@@ -222,10 +222,10 @@ export function AdminAccountsManager({
                           {initials(admin.name)}
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate font-semibold text-neutral-900">
+                          <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">
                             {admin.name}
                           </span>
-                          <span className="block truncate text-[11px] text-neutral-500">
+                          <span className="block truncate text-[11px] text-neutral-500 dark:text-neutral-400">
                             {admin.email}
                           </span>
                         </span>
@@ -263,7 +263,7 @@ export function AdminAccountsManager({
                             type="button"
                             onClick={() => onStatusChange(admin)}
                             aria-label={`Activate ${admin.name}`}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 px-3 text-[11px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 dark:border-neutral-800 px-3 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                           >
                             <Check className="h-3 w-3" aria-hidden="true" />
                             Activate
@@ -273,7 +273,7 @@ export function AdminAccountsManager({
                           type="button"
                           onClick={() => onDelete(admin)}
                           aria-label={`Remove ${admin.name}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-neutral-200 text-neutral-500 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                         >
                           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
@@ -286,8 +286,8 @@ export function AdminAccountsManager({
           </div>
         )}
 
-        <div className="flex flex-col gap-3 border-t border-neutral-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="text-xs text-neutral-500" aria-live="polite">
+        <div className="flex flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">
             Showing {rangeStart}–{rangeEnd} of {filteredStaff.length}
           </p>
           {pageCount > 1 && (
@@ -297,7 +297,7 @@ export function AdminAccountsManager({
                 aria-label="Previous page"
                 disabled={page <= 1}
                 onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -310,8 +310,8 @@ export function AdminAccountsManager({
                   aria-current={page === index + 1 ? "page" : undefined}
                   className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                     page === index + 1
-                      ? "bg-neutral-900 text-white"
-                      : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                      ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                      : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                   }`}
                 >
                   {index + 1}
@@ -322,7 +322,7 @@ export function AdminAccountsManager({
                 aria-label="Next page"
                 disabled={page >= pageCount}
                 onClick={() => setCurrentPage((value) => Math.min(pageCount, value + 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
               >
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -340,15 +340,15 @@ export function AdminAccountsManager({
         >
           <form
             onSubmit={handleSubmit(onCreate)}
-            className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-5 shadow-xl"
+            className="w-full max-w-md rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
-            <h2 className="text-base font-bold text-neutral-900">Create admin account</h2>
-            <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+            <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Create admin account</h2>
+            <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
               New admins are active immediately and can review claims and returns.
             </p>
             <div className="mt-4 space-y-3">
               <div>
-                <label htmlFor="staff-name" className="mb-1 block text-xs font-semibold text-neutral-700">
+                <label htmlFor="staff-name" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   Full name
                 </label>
                 <input
@@ -357,12 +357,12 @@ export function AdminAccountsManager({
                   autoComplete="name"
                   placeholder="e.g. OSA Officer"
                   {...register("name")}
-                  className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 />
                 {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
               </div>
               <div>
-                <label htmlFor="staff-email" className="mb-1 block text-xs font-semibold text-neutral-700">
+                <label htmlFor="staff-email" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   Email
                 </label>
                 <input
@@ -371,13 +371,13 @@ export function AdminAccountsManager({
                   autoComplete="email"
                   placeholder="admin@wmsu.edu.ph"
                   {...register("email")}
-                  className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 />
                 {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="staff-password" className="mb-1 block text-xs font-semibold text-neutral-700">
+                  <label htmlFor="staff-password" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Password
                   </label>
                   <input
@@ -386,18 +386,18 @@ export function AdminAccountsManager({
                     autoComplete="new-password"
                     placeholder="Min. 8 characters"
                     {...register("password")}
-                    className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   />
                   {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
                 </div>
                 <div>
-                  <label htmlFor="staff-role" className="mb-1 block text-xs font-semibold text-neutral-700">
+                  <label htmlFor="staff-role" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     Role
                   </label>
                   <select
                     id="staff-role"
                     {...register("role")}
-                    className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
                     <option value="admin">Admin</option>
                     <option value="super_admin">Super admin</option>
@@ -412,7 +412,7 @@ export function AdminAccountsManager({
                   setCreateOpen(false);
                   reset();
                 }}
-                className="h-9 rounded-lg border border-neutral-200 px-3.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
               >
                 Cancel
               </button>
@@ -439,13 +439,13 @@ export function AdminAccountsManager({
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="staff-status-title"
-            className="w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-5 shadow-xl"
+            className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
-            <h2 id="staff-status-title" className="text-base font-bold text-neutral-900">
+            <h2 id="staff-status-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
               {pendingUser.isActive ? "Deactivate admin?" : "Activate admin?"}
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-              <span className="font-semibold text-neutral-900">{pendingUser.name}</span>{" "}
+            <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+              <span className="font-semibold text-neutral-900 dark:text-neutral-100">{pendingUser.name}</span>{" "}
               {pendingUser.isActive
                 ? "will lose access immediately and be signed out."
                 : "will regain access to the admin workspace."}
@@ -454,7 +454,7 @@ export function AdminAccountsManager({
               <button
                 type="button"
                 onClick={() => onPendingChange(null)}
-                className="h-9 rounded-lg border border-neutral-200 px-3.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Cancel
               </button>
@@ -485,20 +485,20 @@ export function AdminAccountsManager({
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="staff-delete-title"
-            className="w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-5 shadow-xl"
+            className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
-            <h2 id="staff-delete-title" className="text-base font-bold text-neutral-900">
+            <h2 id="staff-delete-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
               Remove admin?
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-              <span className="font-semibold text-neutral-900">{deleteTarget.name}</span> will
+            <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+              <span className="font-semibold text-neutral-900 dark:text-neutral-100">{deleteTarget.name}</span> will
               be permanently removed from staff. This cannot be undone.
             </p>
             <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => onDeleteTargetChange(null)}
-                className="h-9 rounded-lg border border-neutral-200 px-3.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Cancel
               </button>

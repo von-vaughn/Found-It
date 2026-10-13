@@ -16,7 +16,7 @@ export function ItemTable({
   if (rows.length === 0) {
     return (
       <div className="flex min-h-[800px] items-center justify-center px-5 py-10">
-        <p className="text-center text-sm text-neutral-500">
+        <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
           No reports match these filters.
         </p>
       </div>
@@ -29,7 +29,7 @@ export function ItemTable({
         <thead
           className={
             showColumnHeadings
-              ? "bg-neutral-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500"
+              ? "bg-neutral-50 dark:bg-neutral-800/60 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
               : "sr-only"
           }
         >
@@ -65,7 +65,7 @@ export function ItemTable({
             )}
           </tr>
         </thead>
-        <tbody className="divide-y divide-neutral-100">
+        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
           {rows.map((row) => (
             <tr
               key={row.id}
@@ -89,9 +89,9 @@ export function ItemTable({
                     }
                   : undefined
               }
-              className={`text-neutral-700 ${
+              className={`text-neutral-700 dark:text-neutral-300 ${
                 wholeRowClickable
-                  ? "cursor-pointer hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-[#E5192D] focus-visible:outline-offset-[-2px]"
+                  ? "cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-[#E5192D] focus-visible:outline-offset-[-2px]"
                   : ""
               }`}
             >
@@ -108,10 +108,10 @@ export function ItemTable({
                     <NoItemImage compact className="h-12 w-12" />
                   )}
                   <span className="min-w-0">
-                    <span className="block truncate font-semibold text-neutral-900">
+                    <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">
                       {row.title}
                     </span>
-                    <span className="mt-0.5 block text-[10px] text-neutral-400">
+                    <span className="mt-0.5 block text-[10px] text-neutral-400 dark:text-neutral-500">
                       {row.id}
                     </span>
                   </span>
@@ -144,7 +144,7 @@ export function ItemTable({
                     type="button"
                     onClick={() => onViewDetails(row)}
                     aria-label={`View details for ${row.title}`}
-                    className="inline-flex h-8 items-center rounded-md border border-neutral-200 px-3 text-[11px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="inline-flex h-8 items-center rounded-md border border-neutral-200 dark:border-neutral-700 px-3 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
                     View details
                   </button>
