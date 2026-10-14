@@ -1,7 +1,7 @@
 import React from "react";
 import { HeroSection } from "@/components/landing/HeroSection";
-import { FoundItMarquee } from "@/components/landing/FoundItMarquee";
 import { HowItWorks } from "@/components/landing/HowItWorks";
+import { FoundItMarquee } from "@/components/landing/FoundItMarquee";
 
 interface HomePageProps {
   onBrowseLost: () => void;
@@ -20,9 +20,9 @@ export const HomePage: React.FC<HomePageProps> = ({
           onBrowseFound={onBrowseFound}
         />
 
-        <FoundItMarquee />
-
         <HowItWorks />
+
+        <FoundItMarquee />
       </main>
     </div>
   );
