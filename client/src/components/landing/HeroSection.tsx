@@ -19,7 +19,6 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
   const navigate = useNavigate();
 
   const heroRef = useRef<HTMLDivElement>(null);
-  const macRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -29,13 +28,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
       tl.fromTo(
-        macRef.current,
-        { opacity: 0, y: 28 },
-        { opacity: 1, y: 0, duration: 0.9 },
-        0,
-      )
-        .fromTo(
-          titleRef.current,
+        titleRef.current,
           { opacity: 0, y: 30 },
           { opacity: 1, y: 0, duration: 0.8, delay: 0.1 },
         )
@@ -78,25 +71,14 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
     <section
       id="home"
       ref={heroRef}
-      className="relative py-14 md:py-20 overflow-hidden flex items-center justify-center min-h-svh bg-white text-neutral-900 select-none"
+      className="relative py-8 md:py-10 overflow-hidden flex flex-col items-center justify-center min-h-svh bg-white text-neutral-900 select-none"
     >
-      <div className="relative z-20 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div ref={macRef} className="flex min-h-[75svh] flex-col overflow-hidden rounded-2xl border border-red-200 bg-white shadow-2xl shadow-red-600/15">
-          <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-4 py-3">
-            <div className="flex items-center gap-1.5" aria-hidden="true">
-              <span className="h-3 w-3 rounded-full bg-[#FF5F57]" />
-              <span className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
-              <span className="h-3 w-3 rounded-full bg-[#28C840]" />
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-col items-center justify-center px-4 sm:px-8 lg:px-12 py-10 md:py-14 text-center">
+      <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 text-left flex flex-col items-start">
         <h1
           ref={titleRef}
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-neutral-900 leading-[1.04] mb-5 md:mb-6"
+          className="font-black tracking-tight text-neutral-900 leading-[1.0] mb-3 md:mb-4 text-[clamp(2.25rem,9vw,8rem)]"
         >
-          Lost Something? <br />
-          We’ll Help You{" "}
+          <span className="whitespace-nowrap">Lost Something?</span> We’ll Help You{" "}
           <span className="text-[#E5192D] relative inline-block">
             Find It.
             <svg
@@ -117,13 +99,13 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
 
         <p
           ref={subtitleRef}
-          className="text-base sm:text-lg md:text-xl text-neutral-600 max-w-3xl mx-auto leading-relaxed font-normal mb-6"
+          className="text-base sm:text-lg md:text-xl text-neutral-600 max-w-3xl leading-relaxed font-normal mb-4"
         >
           FoundIt connects people across campus and the community to report,
           discover, and safely return lost belongings — quickly and easily.
         </p>
 
-        <div ref={searchContainerRef} className="w-full max-w-3xl mx-auto mb-6">
+        <div ref={searchContainerRef} className="w-full max-w-3xl mb-4">
           <ItemSearchBar
             searchQuery={searchQuery}
             searchType={searchType}
@@ -132,11 +114,13 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
             onSearchTypeChange={setSearchType}
             onSubmit={handleSearchSubmit}
           />
+        </div>
+      </div>
 
-          <div
-            aria-label="Browse items by category"
-            className="relative mt-4 overflow-hidden text-xs sm:text-sm"
-          >
+        <div
+          aria-label="Browse items by category"
+          className="relative w-full overflow-hidden text-xs sm:text-sm"
+        >
             <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
             <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
             <motion.div
@@ -172,11 +156,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
                 </div>
               ))}
             </motion.div>
-          </div>
         </div>
-          </div>
-        </div>
-      </div>
     </section>
   );
 };
