@@ -3,6 +3,7 @@ import gsap from "gsap";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import type { Item } from "@/data/mockItems";
 import {
   ItemSearchBar,
   type ItemSearchType,
@@ -16,11 +17,32 @@ interface HeroSectionProps {
 export const HeroSection: React.FC<HeroSectionProps> = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<ItemSearchType>("lost");
+  const [recentPosts, setRecentPosts] = useState<Item[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${import.meta.env.BASE_URL}data/examples.json`)
+      .then((response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((data) => {
+        if (cancelled || !data || !Array.isArray(data.items)) return;
+        setRecentPosts(
+          (data.items as Item[]).filter((item) => item.image).slice(0, 8),
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -35,6 +57,12 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
           searchContainerRef.current,
           { opacity: 0, y: 25, scale: 0.97 },
           { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "back.out(1.1)" },
+          "-=0.4",
+        )
+        .fromTo(
+          categoryRef.current,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.7 },
           "-=0.4",
         );
     }, heroRef);
@@ -64,10 +92,8 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
     { id: "electronics", className: "left-[2%] top-[32%] h-12 w-12", duration: 7 },
     { id: "keys", className: "right-[3%] top-[52%] h-10 w-10", duration: 8.5 },
     { id: "bags", className: "left-[3%] top-[48%] h-14 w-14", duration: 9 },
-    { id: "books-school-supplies", className: "left-[20%] top-[16%] h-12 w-12", duration: 7.5 },
     { id: "sports-gym-equipment", className: "left-[14%] bottom-[7%] h-10 w-10 hidden sm:block", duration: 8.2 },
     { id: "documents-papers", className: "right-[18%] bottom-[7%] h-10 w-10 hidden sm:block", duration: 8 },
-    { id: "wallets-purses", className: "right-[22%] top-[18%] h-9 w-9 hidden sm:block", duration: 9.5 },
     { id: "jewelry", className: "right-[18%] top-[40%] h-8 w-8 hidden md:block", duration: 7.2 },
     { id: "cards", className: "left-[45%] top-[7%] h-9 w-9 hidden md:block", duration: 9.8 },
     { id: "id", className: "right-[42%] top-[9%] h-8 w-8 hidden md:block", duration: 8.8 },
@@ -113,7 +139,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
           </motion.span>
         ))}
       </div>
-      <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 text-left flex flex-col items-start">
+      <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 mt-8 md:mt-12 text-left flex flex-col items-start">
         <h1
           ref={titleRef}
           className="font-black tracking-tight text-neutral-900 leading-[1.0] mb-6 md:mb-8 text-[clamp(2.25rem,9vw,8rem)]"
@@ -149,6 +175,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
         </div>
 
         <div
+          ref={categoryRef}
           aria-label="Browse items by category"
           className="relative w-full overflow-hidden text-xs sm:text-sm"
         >
@@ -188,6 +215,60 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
               ))}
             </motion.div>
         </div>
+
+        {recentPosts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: 1.5 }}
+            className="relative mt-5 w-full overflow-hidden"
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+            <motion.div
+              animate={{ x: ["-50%", "0%"] }}
+              transition={{
+                duration: 45,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              className="flex w-fit items-stretch gap-3"
+            >
+              {[0, 1].map((copy) => (
+                <div
+                  key={`recent-copy-${copy}`}
+                  aria-hidden={copy === 1}
+                  className="flex items-stretch gap-3"
+                >
+                  {recentPosts.map((post) => (
+                    <button
+                      key={`${post.id}-${copy}`}
+                      type="button"
+                      tabIndex={copy === 1 ? -1 : undefined}
+                      onClick={() => navigate(`/browse?type=${post.type}`)}
+                      className="w-60 shrink-0 overflow-hidden rounded-xl border border-neutral-200 bg-white text-left shadow-xs transition-colors hover:border-neutral-300 cursor-pointer"
+                    >
+                      <img
+                        src={post.image}
+                        alt=""
+                        loading="lazy"
+                        className="h-36 w-full object-cover"
+                      />
+                      <span className="block p-2.5">
+                        <span className="block truncate text-sm font-bold text-neutral-900">
+                          {post.title}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] font-medium text-neutral-500">
+                          {post.type === "lost" ? "Lost" : "Found"} • {post.timeAgo}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
 
         <div aria-hidden="true" className="mt-8 flex w-full items-center justify-center gap-4">
           <span className="h-2 w-2 rounded-full bg-[#E5192D]/30" />
