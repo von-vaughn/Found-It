@@ -20,7 +20,6 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
 
   const heroRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
-  const subtitleRef = useRef<HTMLParagraphElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,12 +30,6 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
         titleRef.current,
           { opacity: 0, y: 30 },
           { opacity: 1, y: 0, duration: 0.8, delay: 0.1 },
-        )
-        .fromTo(
-          subtitleRef.current,
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.7 },
-          "-=0.5",
         )
         .fromTo(
           searchContainerRef.current,
@@ -67,20 +60,67 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
 
   const categories = ITEM_CATEGORIES;
 
+  const floatingIcons = [
+    { id: "electronics", className: "left-[2%] top-[32%] h-12 w-12", duration: 7 },
+    { id: "keys", className: "right-[3%] top-[52%] h-10 w-10", duration: 8.5 },
+    { id: "bags", className: "left-[3%] top-[48%] h-14 w-14", duration: 9 },
+    { id: "books-school-supplies", className: "left-[20%] top-[16%] h-12 w-12", duration: 7.5 },
+    { id: "sports-gym-equipment", className: "left-[14%] bottom-[7%] h-10 w-10 hidden sm:block", duration: 8.2 },
+    { id: "documents-papers", className: "right-[18%] bottom-[7%] h-10 w-10 hidden sm:block", duration: 8 },
+    { id: "wallets-purses", className: "right-[22%] top-[18%] h-9 w-9 hidden sm:block", duration: 9.5 },
+    { id: "jewelry", className: "right-[18%] top-[40%] h-8 w-8 hidden md:block", duration: 7.2 },
+    { id: "cards", className: "left-[45%] top-[7%] h-9 w-9 hidden md:block", duration: 9.8 },
+    { id: "id", className: "right-[42%] top-[9%] h-8 w-8 hidden md:block", duration: 8.8 },
+  ].map((entry, index) => ({
+    ...entry,
+    Icon:
+      ITEM_CATEGORIES.find((category) => category.id === entry.id)?.icon ??
+      ITEM_CATEGORIES[0].icon,
+    delay: index * 0.9,
+  }));
+
   return (
     <section
       id="home"
       ref={heroRef}
       className="relative py-8 md:py-10 overflow-hidden flex flex-col items-center justify-center min-h-svh bg-white text-neutral-900 select-none"
     >
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
+        <div className="absolute -right-24 top-[8%] h-72 w-72 rounded-full border-[22px] border-red-50" />
+        <div className="absolute -left-20 bottom-[10%] h-60 w-60 rounded-full border-[18px] border-neutral-100" />
+        <div
+          className="absolute left-[4%] top-[10%] h-28 w-44 opacity-70"
+          style={{
+            backgroundImage: "radial-gradient(#fecdd3 1.6px, transparent 1.6px)",
+            backgroundSize: "14px 14px",
+          }}
+        />
+        <div
+          className="absolute bottom-[8%] right-[5%] h-24 w-40 opacity-70 hidden sm:block"
+          style={{
+            backgroundImage: "radial-gradient(#e7e5e4 1.6px, transparent 1.6px)",
+            backgroundSize: "14px 14px",
+          }}
+        />
+        {floatingIcons.map(({ id, Icon, className, duration, delay }) => (
+          <motion.span
+            key={`floating-${id}`}
+            animate={{ y: [0, -14, 0], rotate: [0, 6, 0] }}
+            transition={{ duration, repeat: Infinity, ease: "easeInOut", delay }}
+            className={`absolute text-[#E5192D]/10 ${className}`}
+          >
+            <Icon className="h-full w-full" strokeWidth={1.5} />
+          </motion.span>
+        ))}
+      </div>
       <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 text-left flex flex-col items-start">
         <h1
           ref={titleRef}
-          className="font-black tracking-tight text-neutral-900 leading-[1.0] mb-3 md:mb-4 text-[clamp(2.25rem,9vw,8rem)]"
+          className="font-black tracking-tight text-neutral-900 leading-[1.0] mb-6 md:mb-8 text-[clamp(2.25rem,9vw,8rem)]"
         >
           <span className="whitespace-nowrap">Lost Something?</span> We’ll Help You{" "}
           <span className="text-[#E5192D] relative inline-block">
-            Find It.
+            FOUND IT.
             <svg
               className="absolute -bottom-2 sm:-bottom-3 left-0 w-full h-3.5 sm:h-5 text-[#E5192D]/40"
               viewBox="0 0 200 12"
@@ -97,15 +137,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
           </span>
         </h1>
 
-        <p
-          ref={subtitleRef}
-          className="text-base sm:text-lg md:text-xl text-neutral-600 max-w-3xl leading-relaxed font-normal mb-4"
-        >
-          FoundIt connects people across campus and the community to report,
-          discover, and safely return lost belongings — quickly and easily.
-        </p>
-
-        <div ref={searchContainerRef} className="w-full max-w-3xl mb-4">
+        <div ref={searchContainerRef} className="w-full max-w-5xl mb-4">
           <ItemSearchBar
             searchQuery={searchQuery}
             searchType={searchType}
@@ -115,7 +147,6 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
             onSubmit={handleSearchSubmit}
           />
         </div>
-      </div>
 
         <div
           aria-label="Browse items by category"
@@ -157,6 +188,15 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
               ))}
             </motion.div>
         </div>
+
+        <div aria-hidden="true" className="mt-8 flex w-full items-center justify-center gap-4">
+          <span className="h-2 w-2 rounded-full bg-[#E5192D]/30" />
+          <span className="h-px w-24 border-t border-dashed border-neutral-300 sm:w-40" />
+          <span className="h-5 w-5 rounded-full border-2 border-[#E5192D]/25" />
+          <span className="h-px w-24 border-t border-dashed border-neutral-300 sm:w-40" />
+          <span className="h-2 w-2 rounded-full bg-[#E5192D]/30" />
+        </div>
+      </div>
     </section>
   );
 };

@@ -107,12 +107,12 @@ export const Navbar: React.FC<NavbarProps> = () => {
             navigate("/");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="flex items-center gap-2.5 group cursor-pointer text-left"
+          className="flex items-center gap-2.5 cursor-pointer text-left"
         >
           <img
             src="/logo.jpeg"
             alt="FoundIt logo"
-            className="w-9 h-9 object-cover rounded-none shadow-none ring-0 group-hover:scale-105 transition-transform duration-300"
+            className="w-9 h-9 object-cover rounded-none shadow-none ring-0"
           />
           <span className="text-2xl font-extrabold tracking-tight text-neutral-900">
             Found<span className="text-[#E5192D]">It</span>
@@ -175,7 +175,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
               <Button
                 onClick={() => openAuthModal("signup")}
-                className="h-11 px-6 rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                className="h-11 px-6 rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white font-semibold shadow-md shadow-red-500/20 transition-colors duration-300 cursor-pointer"
               >
                 Sign up
               </Button>
