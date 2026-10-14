@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -15,8 +15,6 @@ export const Navbar: React.FC<NavbarProps> = () => {
   const [authModalMode, setAuthModalMode] = useState<"signin" | "signup" | null>(
     null,
   );
-  const navRef = useRef<HTMLElement>(null);
-  const indicatorRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
@@ -39,37 +37,26 @@ export const Navbar: React.FC<NavbarProps> = () => {
     return () => window.removeEventListener("foundit:open-auth", handleOpenAuth);
   }, []);
 
-  const moveIndicator = (linkElement: HTMLButtonElement) => {
-    const indicator = indicatorRef.current;
-    if (!indicator) return;
-
-    indicator.style.left = `${linkElement.offsetLeft}px`;
-    indicator.style.width = `${linkElement.offsetWidth}px`;
-  };
-
-  useLayoutEffect(() => {
-    const updateIndicatorPosition = () => {
-      const activeLink = navRef.current?.querySelector<HTMLButtonElement>(
-        "[data-active='true']",
-      );
-      if (activeLink) {
-        moveIndicator(activeLink);
-      } else {
-        const indicator = indicatorRef.current;
-        if (indicator) indicator.style.width = "0px";
-      }
-    };
-
-    updateIndicatorPosition();
-    window.addEventListener("resize", updateIndicatorPosition);
-    return () => window.removeEventListener("resize", updateIndicatorPosition);
-  }, [location.pathname, location.hash]);
-
   const navLinks = [
     { name: "Home", path: "/", key: "home" },
     { name: "Browse Items", path: "/browse", key: "browse" },
     { name: "How It Works", path: "/#how-it-works", key: "how-it-works" },
   ];
+
+  const isLanding = location.pathname === "/";
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!isLanding) return;
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 24);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isLanding]);
+
+  const transparent = isLanding && !scrolled;
 
   const getIsActive = (link: (typeof navLinks)[0]) => {
     if (link.key === "browse")
@@ -108,8 +95,11 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
   return (
     <>
-    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-neutral-100 transition-all shadow-xs">
-      <div
+    <header className={`top-0 z-50 w-full transition-all ${isLanding ? "fixed" : "sticky"} ${transparent ? "bg-transparent border-b border-transparent" : "bg-white/95 backdrop-blur-md border-b border-neutral-100 shadow-xs"}`}>
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
         className="w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between"
       >
         <button
@@ -130,7 +120,6 @@ export const Navbar: React.FC<NavbarProps> = () => {
         </button>
 
         <nav
-          ref={navRef}
           className="relative hidden md:flex items-center gap-8"
         >
           {navLinks.map((link) => {
@@ -138,9 +127,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
             return (
               <button
                 key={link.name}
-                data-active={isActive ? "true" : undefined}
-                onClick={(event) => {
-                  moveIndicator(event.currentTarget);
+                onClick={() => {
                   handleNavClick(link);
                 }}
                 className={`relative py-2 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
@@ -153,11 +140,6 @@ export const Navbar: React.FC<NavbarProps> = () => {
               </button>
             );
           })}
-          <div
-            ref={indicatorRef}
-            aria-hidden="true"
-            className="absolute bottom-0 h-[2.5px] rounded-full bg-[#E5192D] transition-[left,width] duration-300 ease-out"
-          />
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
@@ -232,7 +214,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
             )}
           </button>
         </div>
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {mobileMenuOpen && (
