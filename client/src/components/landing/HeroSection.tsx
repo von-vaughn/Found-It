@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { motion } from "motion/react";
-import {
-  ArrowRight,
-  PlusCircle,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/useAuth";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import {
   ItemSearchBar,
@@ -19,42 +13,32 @@ interface HeroSectionProps {
   onBrowseFound: () => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({
-  onBrowseLost,
-  onBrowseFound,
-}) => {
+export const HeroSection: React.FC<HeroSectionProps> = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<ItemSearchType>("lost");
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-
-  const handleReportLostClick = () => {
-    if (isAuthenticated) {
-      onBrowseLost();
-      return;
-    }
-    window.dispatchEvent(
-      new CustomEvent<"signin" | "signup">("foundit:open-auth", {
-        detail: "signin",
-      }),
-    );
-  };
 
   const heroRef = useRef<HTMLDivElement>(null);
+  const macRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const ctaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
       tl.fromTo(
-        titleRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.8, delay: 0.1 },
+        macRef.current,
+        { opacity: 0, y: 28 },
+        { opacity: 1, y: 0, duration: 0.9 },
+        0,
       )
+        .fromTo(
+          titleRef.current,
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.8, delay: 0.1 },
+        )
         .fromTo(
           subtitleRef.current,
           { opacity: 0, y: 20 },
@@ -65,12 +49,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           searchContainerRef.current,
           { opacity: 0, y: 25, scale: 0.97 },
           { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "back.out(1.1)" },
-          "-=0.4",
-        )
-        .fromTo(
-          ctaRef.current,
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.7 },
           "-=0.4",
         );
     }, heroRef);
@@ -100,32 +78,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     <section
       id="home"
       ref={heroRef}
-      className="relative py-8 md:py-10 overflow-hidden flex items-center justify-center min-h-[calc(100svh-12rem)] bg-neutral-950 text-white select-none"
+      className="relative py-14 md:py-20 overflow-hidden flex items-center justify-center min-h-svh bg-white text-neutral-900 select-none"
     >
-      <div className="absolute inset-0 z-0">
-        <img
-          src="/images/campus.jpg"
-          alt="Campus background"
-          className="w-full h-full object-cover object-center opacity-25 filter brightness-50"
-        />
-        <div className="absolute inset-0 bg-neutral-95/85 backdrop-blur-[3px]" />
-      </div>
+      <div className="relative z-20 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div ref={macRef} className="flex min-h-[75svh] flex-col overflow-hidden rounded-2xl border border-red-200 bg-white shadow-2xl shadow-red-600/15">
+          <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-4 py-3">
+            <div className="flex items-center gap-1.5" aria-hidden="true">
+              <span className="h-3 w-3 rounded-full bg-[#FF5F57]" />
+              <span className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
+              <span className="h-3 w-3 rounded-full bg-[#28C840]" />
+            </div>
+          </div>
 
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-red-600/15 rounded-full blur-[140px] pointer-events-none z-10" />
-      <div className="absolute top-12 left-10 w-80 h-80 bg-[#E5192D]/10 rounded-full blur-3xl pointer-events-none z-10" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl pointer-events-none z-10" />
-
-      <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+          <div className="flex flex-1 flex-col items-center justify-center px-4 sm:px-8 lg:px-12 py-10 md:py-14 text-center">
         <h1
           ref={titleRef}
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.04] mb-5 md:mb-6"
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-neutral-900 leading-[1.04] mb-5 md:mb-6"
         >
           Lost Something? <br />
           We’ll Help You{" "}
-          <span className="text-[#E5192D] relative inline-block drop-shadow-[0_0_35px_rgba(229,25,45,0.45)]">
+          <span className="text-[#E5192D] relative inline-block">
             Find It.
             <svg
-              className="absolute -bottom-2 sm:-bottom-3 left-0 w-full h-3.5 sm:h-5 text-[#E5192D]/50"
+              className="absolute -bottom-2 sm:-bottom-3 left-0 w-full h-3.5 sm:h-5 text-[#E5192D]/40"
               viewBox="0 0 200 12"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -142,7 +117,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         <p
           ref={subtitleRef}
-          className="text-base sm:text-lg md:text-xl text-neutral-300 max-w-3xl mx-auto leading-relaxed font-normal mb-6"
+          className="text-base sm:text-lg md:text-xl text-neutral-600 max-w-3xl mx-auto leading-relaxed font-normal mb-6"
         >
           FoundIt connects people across campus and the community to report,
           discover, and safely return lost belongings — quickly and easily.
@@ -152,6 +127,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <ItemSearchBar
             searchQuery={searchQuery}
             searchType={searchType}
+            theme="light"
             onSearchQueryChange={setSearchQuery}
             onSearchTypeChange={setSearchType}
             onSubmit={handleSearchSubmit}
@@ -159,10 +135,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           <div
             aria-label="Browse items by category"
-            className="relative mt-4 overflow-hidden text-xs sm:text-sm text-neutral-400"
+            className="relative mt-4 overflow-hidden text-xs sm:text-sm"
           >
-            <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-neutral-950 to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-neutral-950 to-transparent z-10 pointer-events-none" />
+            <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
             <motion.div
               animate={{ x: ["-50%", "0%"] }}
               transition={{
@@ -186,7 +162,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                         type="button"
                         tabIndex={copy === 1 ? -1 : undefined}
                         onClick={() => handleQuickTagClick(category.label)}
-                        className="shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700/60 transition-colors cursor-pointer flex items-center gap-1.5 font-medium hover:border-red-500/40"
+                        className="shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-full bg-white hover:bg-neutral-50 text-neutral-600 hover:text-neutral-900 border border-neutral-200 shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
                       >
                         <Icon className="w-3.5 h-3.5" />
                         <span>{category.label}</span>
@@ -198,27 +174,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </motion.div>
           </div>
         </div>
-
-        <div
-          ref={ctaRef}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1"
-        >
-          <Button
-            onClick={handleReportLostClick}
-            className="w-full sm:w-auto h-12 sm:h-13 px-7 rounded-full bg-[#E5192D] hover:bg-[#c91424] text-white text-sm sm:text-base font-bold shadow-xl shadow-red-600/30 hover:shadow-red-600/50 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2.5"
-          >
-            <PlusCircle className="w-5 h-5 stroke-[2.5]" />
-            Report a Lost Item
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={onBrowseFound}
-            className="w-full sm:w-auto h-12 sm:h-13 px-7 rounded-full border-neutral-700 bg-neutral-900/80 hover:bg-neutral-800 text-white hover:text-white text-sm sm:text-base font-bold shadow-lg hover:border-neutral-500 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer group"
-          >
-            Browse Items
-            <ArrowRight className="w-5 h-5 text-neutral-400 group-hover:translate-x-1 group-hover:text-white transition-all" />
-          </Button>
+          </div>
         </div>
       </div>
     </section>

@@ -38,12 +38,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               name: "Alex Rivera",
               studentId: "STU-2026-9041",
             },
+            "vaughn@wmsu.edu.ph": {
+              name: "Vaughn Evangelista",
+              studentId: "STU-2021-00318",
+            },
           };
     } catch {
       return {
         "student@wmsu.edu.ph": {
           name: "Alex Rivera",
           studentId: "STU-2026-9041",
+        },
+        "vaughn@wmsu.edu.ph": {
+          name: "Vaughn Evangelista",
+          studentId: "STU-2021-00318",
         },
       };
     }
@@ -103,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const profile = registeredUsers[trimmedEmail] || {
       name: trimmedEmail.split("@")[0].replace(/[._-]/g, " "),
-      studentId: "",
+      studentId: "STU-2021-00318",
     };
 
     const newUser: User = {
