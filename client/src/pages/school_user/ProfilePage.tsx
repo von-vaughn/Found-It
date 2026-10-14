@@ -27,6 +27,7 @@ interface ProfilePageProps {
 const DEFAULT_PROFILE = {
   name: "Vaughn Evangelista",
   email: "vaughn@wmsu.edu.ph",
+  studentId: "STU-2021-00318",
   avatar: "/images/avatars/vaughn_evangelista.svg",
 };
 
@@ -77,6 +78,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   const name = user?.name || DEFAULT_PROFILE.name;
   const email = user?.email || DEFAULT_PROFILE.email;
+  const studentId =
+    user?.studentId || DEFAULT_PROFILE.studentId || "STU-2021-00318";
   const avatar = user?.avatar || DEFAULT_PROFILE.avatar;
   const profileUsername = name.toLowerCase().replace(/\s+/g, "_");
 
@@ -210,6 +213,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 )}
                 <p className="mt-1 break-all text-sm text-neutral-600 dark:text-neutral-400">
                   {email}
+                </p>
+                <p className="mt-0.5 break-all text-sm text-neutral-500 dark:text-neutral-400">
+                  Student ID: {studentId}
                 </p>
               </div>
             </section>
