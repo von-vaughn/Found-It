@@ -240,7 +240,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div
             ref={categoryRowRef}
             aria-label="Filter items by category"
-            className="relative flex min-w-0 flex-nowrap items-center gap-2 overflow-hidden pb-1"
+            className="relative flex w-full max-w-full min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {visibleCategories.map((category) => {
               const Icon = "icon" in category ? category.icon : null;
@@ -258,13 +258,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     setSelectedCategory(category.id);
                   }}
                   aria-pressed={isActive}
-                  className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
+                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
                     isActive
                       ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
                       : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   }`}
                 >
-                  {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
+                  {Icon ? <Icon className="w-3.5 h-3.5 shrink-0" /> : null}
                   <span>{category.label}</span>
                 </button>
               );
@@ -275,7 +275,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 onClick={() => setFilterModalOpen(true)}
                 aria-label="More category filters"
                 aria-pressed={activeCategoryId === "more"}
-                className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
+                className={`ml-auto shrink-0 sticky right-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
                   activeCategoryId === "more"
                     ? "bg-[#E5192D] text-white border-[#E5192D]"
                     : "border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"

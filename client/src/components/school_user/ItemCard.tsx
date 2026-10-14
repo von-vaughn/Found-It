@@ -52,25 +52,56 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     </div>
   );
 
-  return (
+  const menuDropdown = menuOpen && (
     <div
-      onClick={() => onItemClick && onItemClick(item)}
-      className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800 overflow-hidden shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
+      onClick={(e) => e.stopPropagation()}
+      className="absolute right-0 mt-1 w-36 bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-neutral-100 dark:border-neutral-800 py-1.5 z-20 text-xs font-medium text-neutral-700 dark:text-neutral-300 animate-in fade-in zoom-in-95 duration-100"
     >
-      {/* Top Author Row — kept in same position */}
-      <div className="flex items-center justify-between gap-3 p-4 pb-2.5">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="min-w-0">
-            <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100 truncate hover:text-[#E5192D] transition-colors leading-tight">
-              {item.title}
-            </div>
-            <div className="text-[11px] text-neutral-400 dark:text-neutral-500 font-normal truncate mt-0.5">
-              {isLost ? "Lost" : "Found"} • {item.timeAgo}
-            </div>
+      <button
+        onClick={() => {
+          setMenuOpen(false);
+          onItemClick?.(item);
+        }}
+        className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+      >
+        View Details
+      </button>
+      <button
+        onClick={(e) => {
+          setMenuOpen(false);
+          handleShare(e);
+        }}
+        className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+      >
+        Share Link
+      </button>
+      <button
+        onClick={() => {
+          setMenuOpen(false);
+          toast.success("Post reported to admin");
+        }}
+        className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+      >
+        Report Post
+      </button>
+    </div>
+  );
+
+  const headerRow = (
+    <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-0">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="min-w-0">
+          <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100 truncate hover:text-[#E5192D] transition-colors leading-tight">
+            {item.title}
+          </div>
+          <div className="text-[11px] text-neutral-400 dark:text-neutral-500 font-normal truncate mt-0.5">
+            {isLost ? "Lost" : "Found"} • {item.timeAgo}
           </div>
         </div>
+      </div>
 
-        {/* More Menu */}
+      {/* More Menu — inline only when there is no image to overlay on */}
+      {!item.image && (
         <div className="relative">
           <button
             onClick={(e) => {
@@ -83,47 +114,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             <MoreHorizontal className="w-4 h-4" />
           </button>
 
-          {menuOpen && (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 mt-1 w-36 bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-neutral-100 dark:border-neutral-800 py-1.5 z-20 text-xs font-medium text-neutral-700 dark:text-neutral-300 animate-in fade-in zoom-in-95 duration-100"
-            >
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  onItemClick?.(item);
-                }}
-                className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-              >
-                View Details
-              </button>
-              <button
-                onClick={(e) => {
-                  setMenuOpen(false);
-                  handleShare(e);
-                }}
-                className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-              >
-                Share Link
-              </button>
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  toast.success("Post reported to admin");
-                }}
-                className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-              >
-                Report Post
-              </button>
-            </div>
-          )}
+          {menuDropdown}
         </div>
-      </div>
+      )}
+    </div>
+  );
 
+  return (
+    <div
+      onClick={() => onItemClick && onItemClick(item)}
+      className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800 overflow-hidden shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
+    >
       {item.image ? (
         <>
-          {/* Photo block */}
-          <div className="relative aspect-[4/3] bg-neutral-100 dark:bg-neutral-800 overflow-hidden mx-3 rounded-lg">
+          {/* Photo block on top — full-bleed, no gaps */}
+          <div className="relative aspect-[4/3] bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
             <img
               src={item.image}
               alt={item.title}
@@ -143,11 +148,30 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             )}
           </div>
 
-          {/* Text content below photo */}
-          <div className="p-4 flex-1 flex flex-col justify-between">
+          {/* More Menu — top right of the image */}
+          <div className="absolute top-3 right-3 z-10">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen(!menuOpen);
+              }}
+              className="p-1.5 rounded-full text-white hover:text-white/80 transition-colors cursor-pointer drop-shadow-md"
+              aria-label="More options"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+
+            {menuDropdown}
+          </div>
+
+          {/* Item title + Lost/Found + time below photo */}
+          {headerRow}
+
+          {/* Text content below title */}
+          <div className="px-4 pb-4 flex-1 flex flex-col justify-between">
             <div>
               {titleBlock}
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5 leading-relaxed break-words line-clamp-2">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed break-words line-clamp-2">
                 {item.description}
               </p>
             </div>
@@ -157,6 +181,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </>
       ) : (
         <>
+          {headerRow}
           {/* Item name above the description */}
           <div className="px-4">{titleBlock}</div>
 
