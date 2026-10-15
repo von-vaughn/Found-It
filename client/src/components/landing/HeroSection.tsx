@@ -139,13 +139,13 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
           </motion.span>
         ))}
       </div>
-      <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 mt-8 md:mt-12 text-left flex flex-col items-start">
+      <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 mt-8 md:mt-12 text-center flex flex-col items-center">
         <h1
           ref={titleRef}
-          className="font-black tracking-tight text-neutral-900 leading-[1.0] mb-6 md:mb-8 text-[clamp(2.25rem,9vw,8rem)]"
+          className="w-full text-center font-black tracking-tight text-neutral-900 leading-[1.0] mb-6 md:mb-8 text-[clamp(2.25rem,9vw,8rem)]"
         >
           <span className="whitespace-nowrap">Lost Something?</span> We’ll Help You{" "}
-          <span className="text-[#E5192D] relative inline-block">
+          <span className="relative inline-block bg-gradient-to-r from-[#B51224] via-[#E5192D] to-[#FF5A67] bg-clip-text text-transparent">
             FOUND IT.
             <svg
               className="absolute -bottom-2 sm:-bottom-3 left-0 w-full h-3.5 sm:h-5 text-[#E5192D]/40"

@@ -1,17 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
-  Building2,
-  CalendarDays,
   Camera,
   CameraOff,
   CheckCircle2,
-  Clock3,
-  Lock,
-  MapPin,
-  Palette,
   RotateCcw,
-  Tag,
 } from "lucide-react";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 
@@ -436,10 +429,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           <div className="min-w-0 space-y-5">
           <div>
             <label htmlFor="found-item-title" className={labelClass}>
-              <span className="inline-flex items-center gap-1.5">
-                <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-                What is it? *
-              </span>
+              What is it? *
             </label>
             <input
               id="found-item-title"
@@ -461,10 +451,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="found-item-color" className={labelClass}>
-                <span className="inline-flex items-center gap-1.5">
-                  <Palette className="h-3.5 w-3.5" aria-hidden="true" />
-                  Primary color
-                </span>
+                Primary color
               </label>
               <input
                 id="found-item-color"
@@ -483,10 +470,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             </div>
             <div>
               <label htmlFor="found-item-date" className={labelClass}>
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                  Date found *
-                </span>
+                Date found *
               </label>
               <input
                 id="found-item-date"
@@ -507,10 +491,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="found-item-time" className={labelClass}>
-                <span className="inline-flex items-center gap-1.5">
-                  <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-                  Time found *
-                </span>
+                Time found *
               </label>
               <input
                 id="found-item-time"
@@ -527,10 +508,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             </div>
             <div>
               <label htmlFor="found-item-location" className={labelClass}>
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                  Specific location *
-                </span>
+                Specific location *
               </label>
               <input
                 id="found-item-location"
@@ -550,10 +528,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
 
           <div>
             <label htmlFor="found-item-building" className={labelClass}>
-              <span className="inline-flex items-center gap-1.5">
-                <Building2 className="h-3 w-3" aria-hidden="true" />
-                Building
-              </span>
+              Building
             </label>
             <select
               id="found-item-building"
@@ -607,8 +582,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               placeholder="Unique mark only the owner would know…"
               className={`${inputClass} min-h-24 resize-y`}
             />
-            <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-              <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            <p className="mt-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
               Not included in the public post. Only used to verify ownership.
             </p>
           </div>

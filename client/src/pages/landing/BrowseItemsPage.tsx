@@ -88,14 +88,27 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
     ...ITEM_CATEGORIES,
   ];
   const visibleCategories = categories.slice(0, visibleCategoryCount);
-  // A multi-category filter selection can't be shown on one pill,
-  // so the More button carries the highlight instead.
-  const hasMultipleCategoryFilters = filters.categories.length > 1;
+  const hasHiddenSelectedCategory = filters.categories.some(
+    (categoryId) =>
+      !visibleCategories.some((category) => category.id === categoryId),
+  );
+  const selectedVisibleCategory = visibleCategories.find((category) =>
+    filters.categories.includes(category.id),
+  );
+  const isSelectedCategoryVisible = visibleCategories.some(
+    (category) => category.id === selectedCategory,
+  );
+  // Mirrors DashboardPage: a multi-category or hidden single-category
+  // advanced-filter selection can't be shown on one pill, so More carries
+  // the highlight. A hidden quick-pill selection also falls back to More.
   const activeCategoryId =
-    hasMultipleCategoryFilters ||
-    !visibleCategories.some((category) => category.id === selectedCategory)
-      ? "more"
-      : selectedCategory;
+    filters.categories.length > 0
+      ? filters.categories.length > 1 || hasHiddenSelectedCategory
+        ? "more"
+        : (selectedVisibleCategory?.id ?? selectedCategory)
+      : isSelectedCategoryVisible
+        ? selectedCategory
+        : "more";
 
   useLayoutEffect(() => {
     const row = categoryRowRef.current;
@@ -213,7 +226,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
           <div
             ref={categoryRowRef}
             aria-label="Filter items by category"
-            className="relative flex min-w-0 flex-nowrap items-center gap-2 overflow-hidden pb-1"
+            className="relative flex w-full max-w-full min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {visibleCategories.map((cat) => {
               const Icon = "icon" in cat ? cat.icon : null;
@@ -222,12 +235,16 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
                 <button
                   key={cat.id}
                   onClick={() => {
+                    if (cat.id === "all") {
+                      handleSearchQueryChange("");
+                      setSelectedCategory("all");
+                      setFilters(defaultFilters);
+                      return;
+                    }
                     setSelectedCategory(cat.id);
-                    // "All" clears every filter, not just the category row.
-                    if (cat.id === "all") setFilters(defaultFilters);
                   }}
                   aria-pressed={isActive}
-                  className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
+                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
                     isActive
                       ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
                       : "bg-white text-neutral-600 border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50"
@@ -239,21 +256,19 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
               );
             })}
             {visibleCategoryCount < categories.length && (
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={openFilters}
-                  aria-label="More category filters"
-                  aria-pressed={activeCategoryId === "more"}
-                  className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
-                    activeCategoryId === "more"
-                      ? "bg-[#E5192D] text-white border-[#E5192D]"
-                      : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
-                  }`}
-                >
-                  <span>More</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={openFilters}
+                aria-label="More category filters"
+                aria-pressed={activeCategoryId === "more"}
+                className={`ml-auto shrink-0 sticky right-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
+                  activeCategoryId === "more"
+                    ? "bg-[#E5192D] text-white border-[#E5192D]"
+                    : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
+                }`}
+              >
+                <span>More</span>
+              </button>
             )}
             <div
               ref={categoryMeasureRef}

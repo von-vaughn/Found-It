@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Camera, CameraOff, ChevronDown, ImagePlus, Lock, RotateCcw } from "lucide-react";
+import { Camera, CameraOff, ChevronDown, ImagePlus, Lock, RotateCcw, X } from "lucide-react";
+import {
+  MAX_POST_IMAGES,
+  selectAddableImageFiles,
+} from "./createPostImages";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { Item } from "@/data/mockItems";
@@ -95,6 +99,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [importantDetails, setImportantDetails] = useState("");
   const [category, setCategory] = useState<Item["category"]>("electronics");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [lostImages, setLostImages] = useState<string[]>([]);
+  const lostUrlsRef = useRef<string[]>([]);
   const [photoRequiredError, setPhotoRequiredError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mobileCameraInputRef = useRef<HTMLInputElement>(null);
@@ -146,6 +152,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setImportantDetails(initialItem.confidentialInfo ?? "");
         setCategory(initialItem.category);
         setUploadedImage(initialItem.image || null);
+        setLostImages(initialItem.image ? [initialItem.image] : []);
       } else {
         setType(initialType);
         setTitle("");
@@ -158,6 +165,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setImportantDetails("");
         setCategory("electronics");
         setUploadedImage(null);
+        setLostImages([]);
       }
     }
   }
@@ -168,6 +176,19 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       if (uploadedImage) URL.revokeObjectURL(uploadedImage);
     };
   }, [uploadedImage]);
+
+  useEffect(
+    () => () => {
+      lostUrlsRef.current.forEach((url) => {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    lostUrlsRef.current = lostImages;
+  }, [lostImages]);
 
   // Live camera for found-item photos (desktop only): runs only while the
   // form is active on the Found tab without a photo yet. Mobile uses the
@@ -286,11 +307,39 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     e.target.value = "";
   };
 
-  const handleRemovePhoto = () => {
-    if (uploadedImage) {
-      URL.revokeObjectURL(uploadedImage);
-      setUploadedImage(null);
+  const handleLostFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files ?? []);
+    if (selectedFiles.length === 0) return;
+    const addable = selectAddableImageFiles(lostImages.length, selectedFiles);
+    if (addable.length === 0) {
+      if (selectedFiles.some((file) => !file.type.startsWith("image/"))) {
+        toast.error("Please choose image files.");
+      } else {
+        toast.error(`You can attach up to ${MAX_POST_IMAGES} pictures.`);
+      }
+      e.target.value = "";
+      return;
     }
+    const newUrls = addable.map((file) => URL.createObjectURL(file));
+    lostUrlsRef.current.push(...newUrls);
+    setLostImages((current) => [...current, ...newUrls]);
+    setPhotoRequiredError(false);
+    if (addable.length < selectedFiles.length) {
+      toast.error(`You can attach up to ${MAX_POST_IMAGES} pictures.`);
+    }
+    e.target.value = "";
+  };
+
+  const handleRemoveLostImage = (previewToRemove: string) => {
+    if (previewToRemove.startsWith("blob:")) {
+      URL.revokeObjectURL(previewToRemove);
+    }
+    lostUrlsRef.current = lostUrlsRef.current.filter(
+      (url) => url !== previewToRemove,
+    );
+    setLostImages((current) =>
+      current.filter((preview) => preview !== previewToRemove),
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -314,6 +363,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     }
 
     if (isEditing && initialItem) {
+      const lostCoverImage = lostImages[0] ?? "";
       const updatedItem: Item = {
         ...initialItem,
         title: title.trim(),
@@ -323,7 +373,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         location: location.trim(),
         date: dateValue,
         dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
-        image: previewImage ?? "",
+        image: type === "lost" ? lostCoverImage : (previewImage ?? ""),
         description: description.trim() || DEFAULT_DESCRIPTION_PLACEHOLDER,
       };
       if (color.trim()) {
@@ -358,7 +408,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       date: dateValue,
       dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
       timeAgo: "Just now",
-      image: previewImage ?? "",
+      image: type === "lost" ? (lostImages[0] ?? "") : (previewImage ?? ""),
       description: description.trim() || "No additional description provided.",
       status: "active",
       contactName: user?.name || "Vaughn Evangelista",
@@ -567,49 +617,55 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleFileChange}
+            multiple
+            onChange={handleLostFileChange}
             className="sr-only"
-            aria-label="Upload a photo of the item"
+            aria-label="Upload photos of the item (up to 4)"
             tabIndex={-1}
           />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full aspect-[4/5] rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-900 border border-dashed border-neutral-200 dark:border-neutral-800 flex flex-col items-center justify-center gap-2 p-3 text-center transition-colors hover:border-neutral-400 hover:bg-neutral-100/60 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
-          >
-            {previewImage ? (
-              <img
-                src={previewImage}
-                alt=""
-                className="h-full w-full object-cover rounded-lg"
-              />
-            ) : (
-              <>
-                <ImagePlus
-                  className="h-6 w-6 text-neutral-300"
-                  aria-hidden="true"
-                />
-                <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                  Upload photo
-                </span>
-                <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
-                  Click to choose a file
-                </span>
-              </>
-            )}
-          </button>
-          </>
-          )}
-          {previewImage && type === "lost" && (
-            <div className="mt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={handleRemovePhoto}
-                className="shrink-0 text-xs font-semibold text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
-              >
-                Remove
-              </button>
+          <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
+            <div className="grid grid-cols-2 gap-2">
+              {lostImages.map((preview, index) => (
+                <div
+                  key={preview}
+                  className="relative aspect-square overflow-hidden rounded-lg bg-white dark:bg-neutral-900"
+                >
+                  <img
+                    src={preview}
+                    alt={`Lost item photo ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveLostImage(preview)}
+                    aria-label={`Remove photo ${index + 1}`}
+                    className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 dark:bg-neutral-900/95 text-neutral-600 dark:text-neutral-400 shadow-sm transition-colors hover:bg-white hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+              {lostImages.length < MAX_POST_IMAGES && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 px-2 text-center transition-colors hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-neutral-400"
+                >
+                  <ImagePlus
+                    className="h-5 w-5 text-neutral-400 dark:text-neutral-500"
+                    aria-hidden="true"
+                  />
+                  <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Add photo
+                  </span>
+                </button>
+              )}
             </div>
+            <p className="mt-2 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+              {lostImages.length} of {MAX_POST_IMAGES} pictures selected. You can add up to 4.
+            </p>
+          </div>
+          </>
           )}
         </div>
 

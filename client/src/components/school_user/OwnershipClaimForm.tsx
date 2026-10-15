@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CalendarDays, Clock3, ImagePlus, Lock, MapPin, X } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { NewClaimRequest } from "@/types/claim";
@@ -283,10 +283,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
           </div>
           <div className="min-w-0">
             <label htmlFor="claim-date-lost" className={labelClass}>
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                Date lost <span aria-hidden="true">*</span>
-              </span>
+              Date lost <span aria-hidden="true">*</span>
             </label>
             <input
               id="claim-date-lost"
@@ -304,10 +301,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="min-w-0">
             <label htmlFor="claim-time-lost" className={labelClass}>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-                Approximate time lost <span aria-hidden="true">*</span>
-              </span>
+              Approximate time lost <span aria-hidden="true">*</span>
             </label>
             <input
               id="claim-time-lost"
@@ -321,10 +315,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
           </div>
           <div className="min-w-0">
             <label htmlFor="claim-location-lost" className={labelClass}>
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                Location lost <span aria-hidden="true">*</span>
-              </span>
+              Location lost <span aria-hidden="true">*</span>
             </label>
             <input
               id="claim-location-lost"
@@ -390,8 +381,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             placeholder="Enter the unique mark only the owner would know…"
             className="w-full resize-y rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 p-3.5 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200"
           />
-          <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-            <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+          <p className="mt-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
             Used to verify ownership against the poster&apos;s private details.
           </p>
         </div>

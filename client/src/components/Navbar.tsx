@@ -48,15 +48,11 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
   useEffect(() => {
     if (!isLanding) return;
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 24);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 24);
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isLanding]);
-
-  const transparent = isLanding && !scrolled;
 
   const getIsActive = (link: (typeof navLinks)[0]) => {
     if (link.key === "browse")
@@ -95,7 +91,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
   return (
     <>
-    <header className={`top-0 z-50 w-full transition-all ${isLanding ? "fixed" : "sticky"} ${transparent ? "bg-transparent border-b border-transparent" : "bg-white/95 backdrop-blur-md border-b border-neutral-100 shadow-xs"}`}>
+    <header className={`top-0 z-50 w-full transition-all ${isLanding ? `fixed ${scrolled ? "border-b border-white/50 bg-white/70 shadow-sm backdrop-blur-xl" : "border-b border-transparent bg-transparent"}` : "sticky bg-white/95 backdrop-blur-md border-b border-neutral-100 shadow-xs"}`}>
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
