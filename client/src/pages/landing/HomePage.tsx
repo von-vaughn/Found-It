@@ -20,9 +20,9 @@ export const HomePage: React.FC<HomePageProps> = ({
           onBrowseFound={onBrowseFound}
         />
 
-        <HowItWorks />
-
         <FoundItMarquee />
+
+        <HowItWorks />
       </main>
     </div>
   );

@@ -278,11 +278,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 My claim requests
               </h1>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                {counts.total} total · {counts.pending} pending ·{" "}
-                {counts.approved} approved · {counts.claimed} claimed ·{" "}
-                {counts.rejected} rejected
-              </p>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                 Requests you filed on found posts. Select a post to see the
                 original report.

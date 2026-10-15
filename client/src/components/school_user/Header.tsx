@@ -131,20 +131,6 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right User Actions (desktop only — profile lives in the mobile bottom bar) */}
       <div className="hidden md:flex items-center gap-3 sm:gap-4 shrink-0">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          aria-pressed={theme === "dark"}
-          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-        >
-          {theme === "dark" ? (
-            <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
-          ) : (
-            <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
-          )}
-        </button>
         {/* User Profile Bar */}
         <div className="relative" ref={dropdownRef}>
           <button
@@ -191,6 +177,32 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <UserIcon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                 Profile
+              </button>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={theme === "dark"}
+                aria-label="Dark mode"
+                onClick={toggleTheme}
+                className="w-full flex items-center justify-between gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-colors text-left"
+              >
+                <span className="flex items-center gap-2.5">
+                  {theme === "dark" ? (
+                    <Sun className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+                  ) : (
+                    <Moon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+                  )}
+                  Dark mode
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${theme === "dark" ? "bg-[#E5192D]" : "bg-neutral-200 dark:bg-neutral-700"}`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${theme === "dark" ? "translate-x-4" : "translate-x-0"}`}
+                  />
+                </span>
               </button>
 
               <button
