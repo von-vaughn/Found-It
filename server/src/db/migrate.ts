@@ -215,7 +215,8 @@ export async function migrate(): Promise<void> {
     );
   `);
 
-  // 2e. report (parent of item): who + where + when + status.
+  // 2e. report (parent of item): who + where + when.
+  // Status lives on request rows, not here.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS report (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -225,10 +226,18 @@ export async function migrate(): Promise<void> {
         CHECK (report_type IN ('lost', 'found')),
       date DATE NOT NULL,
       time TIME,
-      status VARCHAR(20) NOT NULL DEFAULT 'pending'
-        CHECK (status IN ('pending', 'approved', 'claimed', 'returned', 'rejected')),
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+  `);
+  // DBs created before the status move still carry report.status: drop it
+  // (no data to preserve — pre-production schema).
+  await pool.query(`
+    DO $$ BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'report' AND column_name = 'status') THEN
+        ALTER TABLE report DROP COLUMN status;
+      END IF;
+    END $$;
   `);
 
   // 2f. item reshape: reporter_id/report_type/item_date/category-text
@@ -316,11 +325,17 @@ export async function migrate(): Promise<void> {
       kind VARCHAR(20) NOT NULL
         CHECK (kind IN ('claim', 'return')),
       status VARCHAR(20) NOT NULL DEFAULT 'pending'
-        CHECK (status IN ('pending', 'approved', 'rejected')),
+        CHECK (status IN ('pending', 'approved', 'claimed', 'returned', 'rejected')),
       evidence TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  // Widen pre-move request.status (pending/approved/rejected) to the full set.
+  await pool.query(`ALTER TABLE request DROP CONSTRAINT IF EXISTS request_status_check;`);
+  await pool.query(
+    `ALTER TABLE request ADD CONSTRAINT request_status_check
+     CHECK (status IN ('pending', 'approved', 'claimed', 'returned', 'rejected'));`,
+  );
 
   await pool.query(`
     DROP INDEX IF EXISTS idx_users_email;
