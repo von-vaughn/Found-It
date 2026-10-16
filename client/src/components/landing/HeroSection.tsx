@@ -95,8 +95,8 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
     { id: "sports-gym-equipment", className: "left-[14%] bottom-[7%] h-10 w-10 hidden sm:block", duration: 8.2 },
     { id: "documents-papers", className: "right-[18%] bottom-[7%] h-10 w-10 hidden sm:block", duration: 8 },
     { id: "jewelry", className: "right-[18%] top-[40%] h-8 w-8 hidden md:block", duration: 7.2 },
-    { id: "cards", className: "left-[45%] top-[7%] h-9 w-9 hidden md:block", duration: 9.8 },
-    { id: "id", className: "right-[42%] top-[9%] h-8 w-8 hidden md:block", duration: 8.8 },
+    { id: "cards", className: "left-[calc(50%-260px)] top-[13%] h-9 w-9 hidden md:block", duration: 9.8 },
+    { id: "id", className: "right-[calc(50%-260px)] top-[14%] h-8 w-8 hidden md:block", duration: 8.8 },
   ].map((entry, index) => ({
     ...entry,
     Icon:
@@ -140,6 +140,16 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
         ))}
       </div>
       <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 mt-8 md:mt-12 text-center flex flex-col items-center">
+        <div className="mb-5 flex items-center gap-3 rounded-full border border-white/70 bg-white/20 bg-gradient-to-r from-white/40 via-white/10 to-white/30 py-1.5 pl-2 pr-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_0_rgba(255,255,255,0.3),0_12px_32px_-8px_rgba(181,18,36,0.25),0_4px_16px_rgba(0,0,0,0.08)] backdrop-blur-2xl backdrop-saturate-200 motion-reduce:bg-white motion-reduce:backdrop-blur-none">
+          <img
+            src="/WMSU_LOGO.JPG"
+            alt="Western Mindanao State University logo"
+            className="h-9 w-9 rounded-full object-cover"
+          />
+          <span className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-700 sm:text-sm">
+            Western Mindanao State University
+          </span>
+        </div>
         <h1
           ref={titleRef}
           className="w-full text-center font-black tracking-tight text-neutral-900 leading-[1.0] mb-6 md:mb-8 text-[clamp(2.25rem,9vw,8rem)]"
