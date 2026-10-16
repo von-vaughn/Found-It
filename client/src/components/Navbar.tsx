@@ -116,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
         </button>
 
         <nav
-          className="relative hidden md:flex items-center gap-8"
+          className="relative hidden md:flex items-center w-[420px] justify-between lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2"
         >
           {navLinks.map((link) => {
             const isActive = getIsActive(link);

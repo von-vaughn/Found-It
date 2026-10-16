@@ -82,8 +82,8 @@ export const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
           type="text"
           value={searchQuery}
           onChange={(event) => onSearchQueryChange(event.target.value)}
-          placeholder={`Search ${searchType} items`}
-          aria-label={`Search ${searchType} items`}
+          placeholder="Search lost or found items"
+          aria-label="Search lost or found items"
           className={`w-full h-8 text-sm sm:text-base bg-transparent focus:outline-none ${
             isLight
               ? "text-neutral-900 placeholder-neutral-400"
@@ -117,7 +117,7 @@ export const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         }`}
       >
         <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-        <span>Search {searchType === "lost" ? "Lost" : "Found"}</span>
+        <span>Search</span>
       </Button>
     </div>
   );

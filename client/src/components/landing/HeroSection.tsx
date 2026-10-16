@@ -41,6 +41,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
 
   const heroRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
 
@@ -49,9 +50,16 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
       tl.fromTo(
-        titleRef.current,
+        badgeRef.current,
           { opacity: 0, y: 30 },
           { opacity: 1, y: 0, duration: 0.8, delay: 0.1 },
+          "<",
+        )
+        .fromTo(
+          titleRef.current,
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.8, delay: 0.1 },
+          "<",
         )
         .fromTo(
           searchContainerRef.current,
@@ -140,13 +148,13 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
         ))}
       </div>
       <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 mt-8 md:mt-12 text-center flex flex-col items-center">
-        <div className="mb-5 flex items-center gap-3 rounded-full border border-white/70 bg-white/20 bg-gradient-to-r from-white/40 via-white/10 to-white/30 py-1.5 pl-2 pr-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_0_rgba(255,255,255,0.3),0_12px_32px_-8px_rgba(181,18,36,0.25),0_4px_16px_rgba(0,0,0,0.08)] backdrop-blur-2xl backdrop-saturate-200 motion-reduce:bg-white motion-reduce:backdrop-blur-none">
+        <div ref={badgeRef} className="mb-5 flex w-full max-w-[420px] items-center justify-center gap-3 rounded-full border border-white/70 bg-white/20 bg-gradient-to-r from-white/40 via-white/10 to-white/30 py-1.5 pl-4 pr-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_0_rgba(255,255,255,0.3),0_12px_32px_-8px_rgba(181,18,36,0.25),0_4px_16px_rgba(0,0,0,0.08)] backdrop-blur-2xl backdrop-saturate-200 motion-reduce:bg-white motion-reduce:backdrop-blur-none">
           <img
             src="/WMSU_LOGO.JPG"
             alt="Western Mindanao State University logo"
-            className="h-9 w-9 rounded-full object-cover"
+            className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-9 sm:w-9"
           />
-          <span className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-700 sm:text-sm">
+          <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-700 sm:text-sm sm:tracking-[0.18em]">
             Western Mindanao State University
           </span>
         </div>
@@ -178,6 +186,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
             searchQuery={searchQuery}
             searchType={searchType}
             theme="light"
+            showTypeToggle={false}
             onSearchQueryChange={setSearchQuery}
             onSearchTypeChange={setSearchType}
             onSubmit={handleSearchSubmit}
