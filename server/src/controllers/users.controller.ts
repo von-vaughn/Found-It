@@ -56,8 +56,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
     res.status(403).json({ message: 'Forbidden.' });
     return;
   }
-  const { passwordHash: _omit, ...safe } = target;
-  res.json({ user: safe });
+  res.json({ user: target });
 }
 
 /**

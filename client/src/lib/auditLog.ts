@@ -1,3 +1,5 @@
+import { getAccessToken } from "@/lib/api";
+
 export type AuditAction = "approved" | "rejected" | "returned" | "claimed";
 export type AuditEntityType = "claim" | "return_request" | "item";
 
@@ -227,7 +229,7 @@ async function postAuditToServer(input: LogDecisionInput): Promise<void> {
   const baseUrl =
     (import.meta as unknown as { env?: Record<string, string | undefined> }).env
       ?.VITE_API_URL ?? "";
-  const token = localStorage.getItem("foundit_access_token");
+  const token = getAccessToken();
   if (!baseUrl || !token) return;
   await fetch(`${baseUrl.replace(/\/$/, "")}/api/audit-logs`, {
     method: "POST",

@@ -1,4 +1,5 @@
 import { pool } from "../config/db";
+import { assertMailConfigured } from "../utils/mailer";
 
 /**
  * Code-first schema for PostgreSQL (singular table names) — fresh install.
@@ -6,6 +7,7 @@ import { pool } from "../config/db";
  * the migration path for schema changes is wipe + re-run.
  */
 export async function migrate(): Promise<void> {
+  assertMailConfigured();
   await pool.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
 
   await pool.query(`
@@ -82,7 +84,8 @@ export async function migrate(): Promise<void> {
         CHECK (report_type IN ('lost', 'found')),
       date DATE NOT NULL,
       time TIME,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
@@ -93,6 +96,7 @@ export async function migrate(): Promise<void> {
       category_id UUID NOT NULL REFERENCES category(id) ON DELETE RESTRICT,
       name VARCHAR(100) NOT NULL,
       description TEXT NOT NULL,
+      primary_color VARCHAR(50),
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -134,5 +138,18 @@ export async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_image_item_id ON image(item_id);
     CREATE INDEX IF NOT EXISTS idx_request_item_id ON request(item_id);
     CREATE INDEX IF NOT EXISTS idx_request_user_id ON request(user_id);
+  `);
+
+  await pool.query(`
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS verification_failed_attempts INT NOT NULL DEFAULT 0;
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS verification_locked_until TIMESTAMPTZ;
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS failed_login_attempts INT NOT NULL DEFAULT 0;
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS login_locked_until TIMESTAMPTZ;
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS last_resend_at TIMESTAMPTZ;
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS resend_count_window INT NOT NULL DEFAULT 0;
+
+    ALTER TABLE refresh_token ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;
+    ALTER TABLE refresh_token ADD COLUMN IF NOT EXISTS revoked_reason VARCHAR(20);
   `);
 }

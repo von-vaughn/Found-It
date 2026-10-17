@@ -33,15 +33,32 @@ export const env = {
   GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN || '',
   MAIL_FROM: process.env.MAIL_FROM || 'FoundIt <no-reply@foundit.local>',
   OTP_EXPIRES_MINUTES: Number(process.env.OTP_EXPIRES_MINUTES || 10),
+  OTP_SECRET: process.env.OTP_SECRET || 'dev-otp-secret-change-me-at-least-32-bytes',
+  COOKIE_SECURE:
+    process.env.COOKIE_SECURE === 'true' ||
+    (process.env.COOKIE_SECURE !== 'false' && (process.env.NODE_ENV || 'development') === 'production'),
 };
 
-// Fail fast in production with default secrets
+// Fail fast in production with default secrets or weak keys
 if (env.NODE_ENV === 'production') {
   required('DATABASE_URL');
   if (
     env.JWT_ACCESS_SECRET === 'dev-access-secret-change-me' ||
-    env.JWT_REFRESH_SECRET === 'dev-refresh-secret-change-me'
+    env.JWT_REFRESH_SECRET === 'dev-refresh-secret-change-me' ||
+    env.OTP_SECRET === 'dev-otp-secret-change-me-at-least-32-bytes'
   ) {
-    throw new Error('Set JWT_ACCESS_SECRET and JWT_REFRESH_SECRET in production.');
+    throw new Error('Default dev secrets cannot be used in production.');
+  }
+  if (Buffer.byteLength(env.JWT_ACCESS_SECRET) < 32) {
+    throw new Error('JWT_ACCESS_SECRET must be at least 32 bytes.');
+  }
+  if (Buffer.byteLength(env.JWT_REFRESH_SECRET) < 32) {
+    throw new Error('JWT_REFRESH_SECRET must be at least 32 bytes.');
+  }
+  if (env.JWT_ACCESS_SECRET === env.JWT_REFRESH_SECRET) {
+    throw new Error('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be distinct.');
+  }
+  if (Buffer.byteLength(env.OTP_SECRET) < 32) {
+    throw new Error('OTP_SECRET must be at least 32 bytes.');
   }
 }

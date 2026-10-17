@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { AdminUser, AdminUserRole } from "@/components/admin/types";
+import { getAccessToken } from "@/lib/api";
 
 const PAGE_SIZE = 10;
 
@@ -520,7 +521,7 @@ export function AdminAccountsManager({
 async function createStaffOnServer(values: CreateAdminValues): Promise<void> {
   const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
   const baseUrl = env?.VITE_API_URL ?? "";
-  const token = localStorage.getItem("foundit_access_token");
+  const token = getAccessToken();
   if (!baseUrl || !token) return;
   const res = await fetch(`${baseUrl.replace(/\/$/, "")}/api/users`, {
     method: "POST",

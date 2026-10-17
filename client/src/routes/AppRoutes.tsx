@@ -12,6 +12,7 @@ import { getDashboardRoutes } from "./dashboardRoutes";
 import { getAdminRoutes } from "./adminRoutes";
 import { getSuperAdminRoutes } from "./superAdminRoutes";
 import type { ItemFilters } from "@/components/school_user/itemFilters";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 interface AppRoutesProps {
   items: Item[];
@@ -49,37 +50,71 @@ export function AppRoutes({
   filters,
   onFiltersChange,
 }: AppRoutesProps) {
+  const publicRoutes = getPublicRoutes({
+    items,
+    onAddItem,
+    onBrowseLost,
+    onBrowseFound,
+  });
+
+  const dashboardRoutes = getDashboardRoutes({
+    items,
+    submittedClaims,
+    returnRequests,
+    onAddItem,
+    onUpdateItem,
+    onDeleteItem,
+    onSubmitClaim,
+    onUpdateClaimStatus,
+    onSubmitReturnRequest,
+    filters,
+    onFiltersChange,
+  }).map((route) => ({
+    ...route,
+    element: (
+      <ProtectedRoute allowedRoles={["school_user", "admin", "super_admin"]}>
+        {route.element}
+      </ProtectedRoute>
+    ),
+  }));
+
+  const adminRoutes = getAdminRoutes({
+    items,
+    onAddItem,
+    onDeleteItem,
+    submittedClaims,
+    returnRequests,
+    onUpdateReturnRequestStatus,
+  }).map((route) => ({
+    ...route,
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
+        {route.element}
+      </ProtectedRoute>
+    ),
+  }));
+
+  const superAdminRoutes = getSuperAdminRoutes({
+    items,
+    onAddItem,
+    onDeleteItem,
+    submittedClaims,
+    returnRequests,
+    onUpdateReturnRequestStatus,
+  }).map((route) => ({
+    ...route,
+    element: (
+      <ProtectedRoute allowedRoles={["super_admin"]}>
+        {route.element}
+      </ProtectedRoute>
+    ),
+  }));
+
   return useRoutes([
-    ...getPublicRoutes({ items, onAddItem, onBrowseLost, onBrowseFound }),
-    ...getDashboardRoutes({
-      items,
-      submittedClaims,
-      returnRequests,
-      onAddItem,
-      onUpdateItem,
-      onDeleteItem,
-      onSubmitClaim,
-      onUpdateClaimStatus,
-      onSubmitReturnRequest,
-      filters,
-      onFiltersChange,
-    }),
-    ...getAdminRoutes({
-      items,
-      onAddItem,
-      onDeleteItem,
-      submittedClaims,
-      returnRequests,
-      onUpdateReturnRequestStatus,
-    }),
-    ...getSuperAdminRoutes({
-      items,
-      onAddItem,
-      onDeleteItem,
-      submittedClaims,
-      returnRequests,
-      onUpdateReturnRequestStatus,
-    }),
+    ...publicRoutes,
+    ...dashboardRoutes,
+    ...adminRoutes,
+    ...superAdminRoutes,
     {
       path: paths.fallback,
       element: <Navigate to={paths.home} replace />,

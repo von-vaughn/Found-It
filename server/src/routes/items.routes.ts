@@ -7,11 +7,13 @@ import {
   updateItemReport,
 } from '../controllers/items.controller';
 import { authenticate } from '../middleware/authenticate';
+import { requirePasswordChanged } from '../middleware/must-change-password';
 
 const router = Router();
 
 // All item routes require authentication (normal users can submit + browse)
 router.use(authenticate);
+router.use(requirePasswordChanged);
 
 router.post('/', createItemReport);
 router.get('/', getAllItems);

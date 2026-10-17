@@ -21,3 +21,11 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
   message: { message: 'Too many auth attempts, please try again later.' },
 });
+
+export const resendOtpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { message: 'Too many OTP resend requests from this IP. Please try again later.' },
+});

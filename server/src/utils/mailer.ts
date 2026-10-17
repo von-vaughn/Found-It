@@ -29,7 +29,18 @@ function getTransporter(): Transporter {
  * Sends the 6-digit verification OTP.
  * Dev fallback: if Gmail OAuth2 isn't configured, prints the OTP to the
  * server console so the flow can be tested without Google credentials.
+ * In production, an unconfigured mailer is a fatal misconfiguration: silently
+ * logging OTPs would leak live credentials into the logs and no user would
+ * ever receive a code.
  */
+export function assertMailConfigured(): void {
+  if (env.NODE_ENV === 'production' && !isMailConfigured()) {
+    throw new Error(
+      'Gmail OAuth2 is not configured (GMAIL_USER, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN are required in production). Refusing to start with a console-only mailer.',
+    );
+  }
+}
+
 export async function sendOtpEmail(to: string, otp: string, name: string): Promise<void> {
   if (!isMailConfigured()) {
     console.log(`[dev-mail] OTP for ${to}: ${otp} (expires in ${env.OTP_EXPIRES_MINUTES} min)`);

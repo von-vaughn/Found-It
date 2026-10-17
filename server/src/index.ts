@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import { checkDbConnection, pool } from './config/db';
 import { migrate } from './db/migrate';
@@ -12,23 +13,45 @@ import usersRoutes from './routes/users.routes';
 import itemsRoutes from './routes/items.routes';
 import { errorHandler, notFound } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
+import { assertMailConfigured } from './utils/mailer';
 
 const app = express();
 
-// Trust first proxy hop (correct client IP for rate-limiting behind docker/proxy)
+// Trust first proxy hop (correct client IP for rate-limiting behind docker/nginx proxy)
 app.set('trust proxy', 1);
 
-app.use(helmet());
 app.use(
-  cors(
-    env.ALLOWED_ORIGINS.length > 0
-      ? { origin: env.ALLOWED_ORIGINS }
-      : undefined,
-  ),
+  helmet({
+    contentSecurityPolicy: env.NODE_ENV === 'production' ? undefined : false,
+  }),
 );
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // In dev, allow requests with no origin (curl/local dev scripts)
+      if (!origin) {
+        if (env.NODE_ENV !== 'production') return callback(null, true);
+        return callback(null, false);
+      }
+      const isDevLocalhost =
+        env.NODE_ENV !== 'production' &&
+        (origin.includes('localhost') || origin.includes('127.0.0.1'));
+      if (isDevLocalhost || env.ALLOWED_ORIGINS.includes(origin)) {
+        return callback(null, true);
+      }
+      // Not allowed: send no CORS headers (browser blocks it). Auth routes are
+      // additionally rejected with 403 by the CSRF middleware.
+      return callback(null, false);
+    },
+    credentials: true,
+  }),
+);
+
 app.use(morgan('dev'));
-app.use(express.json({ limit: '100kb' }));
-app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+app.use(cookieParser());
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Liveness (no dependencies) + readiness (DB check)
 app.get('/health', (_req, res) => {
@@ -54,6 +77,7 @@ app.use(errorHandler);
 
 async function boot(): Promise<void> {
   try {
+    assertMailConfigured();
     await checkDbConnection();
     await migrate();
     await seed();

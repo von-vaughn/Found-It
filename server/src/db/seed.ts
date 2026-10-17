@@ -24,7 +24,7 @@ const CATEGORIES = [
 
 /**
  * Ensures the canonical categories and at least one super_admin exist, plus
- * optional demo accounts. Idempotent — safe to run on every boot.
+ * optional demo accounts (dev only). Idempotent — safe to run on every boot.
  */
 export async function seed(): Promise<void> {
   await pool.query(
@@ -39,15 +39,18 @@ export async function seed(): Promise<void> {
     const [firstName, ...rest] = env.SUPER_ADMIN_NAME.trim().split(/\s+/);
     await createUser({
       firstName,
-      lastName: rest.join(' '),
+      lastName: rest.join(' ') || 'Admin',
       email: env.SUPER_ADMIN_EMAIL,
       passwordHash: await hashPassword(env.SUPER_ADMIN_PASSWORD),
       role: 'super_admin',
+      isVerified: true,
+      mustChangePassword: env.NODE_ENV === 'production',
     });
     console.log(`Seeded super_admin: ${env.SUPER_ADMIN_EMAIL}`);
   }
 
-  if (env.SEED_DEMO_USERS) {
+  // Demo accounts are strictly prohibited in production environments
+  if (env.NODE_ENV !== 'production' && env.SEED_DEMO_USERS) {
     const demos = [
       { firstName: 'Demo', lastName: 'Admin', email: 'admin@foundit.local', password: 'Admin123!', role: 'admin' as const },
       { firstName: 'Demo', lastName: 'User', email: 'user@foundit.local', password: 'User12345!', role: 'school_user' as const },
@@ -61,14 +64,21 @@ export async function seed(): Promise<void> {
           email: d.email,
           passwordHash: await hashPassword(d.password),
           role: d.role,
+          isVerified: true,
         });
         console.log(`Seeded ${d.role}: ${d.email}`);
       }
     }
+
+    // Dev convenience: ensure all seeded demo and superadmin accounts in dev are verified
+    await pool.query(
+      `UPDATE "user" SET is_verified = TRUE WHERE email IN ($1, $2, $3)`,
+      [env.SUPER_ADMIN_EMAIL, 'admin@foundit.local', 'user@foundit.local'],
+    );
   }
 
-  // sanity check so a misconfigured DB never boots silently with zero admins
-  const { rows } = await pool.query(
+  // Sanity check: abort boot if zero active super_admins exist
+  const { rows } = await pool.query<{ count: number }>(
     `SELECT COUNT(*)::int AS count FROM "user" WHERE role = 'super_admin' AND is_active = TRUE`,
   );
   if (rows[0].count === 0) {

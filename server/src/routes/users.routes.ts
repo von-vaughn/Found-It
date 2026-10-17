@@ -8,11 +8,13 @@ import {
 } from '../controllers/users.controller';
 import { authenticate } from '../middleware/authenticate';
 import { requireAdmin, requireSuperAdmin } from '../middleware/authorize';
+import { requirePasswordChanged } from '../middleware/must-change-password';
 
 const router = Router();
 
 // All user-management routes require authentication
 router.use(authenticate);
+router.use(requirePasswordChanged);
 
 // Admin + super_admin
 router.get('/', requireAdmin, getAllUsers);

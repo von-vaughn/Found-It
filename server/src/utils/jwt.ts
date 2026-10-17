@@ -8,14 +8,18 @@ function toSignOptions(expiresIn: string): SignOptions {
   return { expiresIn: expiresIn as SignOptions['expiresIn'] };
 }
 
-export function signAccessToken(user: { id: string; email: string; role: Role }): string {
+export function signAccessToken(user: { id: string; email: string; role: Role; mustChangePassword?: boolean }): string {
   const payload: JwtPayload = {
     sub: user.id,
     email: user.email,
     role: user.role,
     type: 'access',
+    mustChangePassword: user.mustChangePassword,
   };
-  return jwt.sign(payload, env.JWT_ACCESS_SECRET, toSignOptions(env.JWT_ACCESS_EXPIRES_IN));
+  return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
+    ...toSignOptions(env.JWT_ACCESS_EXPIRES_IN),
+    algorithm: 'HS256',
+  });
 }
 
 export function signRefreshToken(user: { id: string; email: string; role: Role }): string {
@@ -24,18 +28,24 @@ export function signRefreshToken(user: { id: string; email: string; role: Role }
     email: user.email,
     role: user.role,
     type: 'refresh',
+    // Unique per token: iat has 1s granularity, so two rotations in the same
+    // second would otherwise sign byte-identical JWTs and collide on token_hash.
+    jti: crypto.randomUUID(),
   };
-  return jwt.sign(payload, env.JWT_REFRESH_SECRET, toSignOptions(env.JWT_REFRESH_EXPIRES_IN));
+  return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
+    ...toSignOptions(env.JWT_REFRESH_EXPIRES_IN),
+    algorithm: 'HS256',
+  });
 }
 
 export function verifyAccessToken(token: string): JwtPayload {
-  const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as JwtPayload;
+  const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] }) as JwtPayload;
   if (decoded.type !== 'access') throw new Error('Not an access token');
   return decoded;
 }
 
 export function verifyRefreshToken(token: string): JwtPayload {
-  const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET) as JwtPayload;
+  const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as JwtPayload;
   if (decoded.type !== 'refresh') throw new Error('Not a refresh token');
   return decoded;
 }

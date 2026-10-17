@@ -15,6 +15,7 @@ export interface SafeUser {
   role: Role;
   isActive: boolean;
   isVerified: boolean;
+  mustChangePassword?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,4 +25,6 @@ export interface JwtPayload {
   email: string;
   role: Role;
   type: 'access' | 'refresh';
+  mustChangePassword?: boolean;
+  jti?: string; // refresh tokens only: unique id per token
 }

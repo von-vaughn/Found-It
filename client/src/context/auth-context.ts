@@ -1,39 +1,51 @@
 import { createContext } from "react";
 
-// Only students with a valid school email may register or sign in. Single source
-// of truth so the signup form and the auth provider cannot drift apart.
 export const SCHOOL_EMAIL_DOMAINS = ["@wmsu.edu.ph"] as const;
 
 export const isSchoolEmail = (email: string): boolean => {
-  const normalized = email.trim().toLowerCase();
-  return SCHOOL_EMAIL_DOMAINS.some((domain) => normalized.endsWith(domain));
+  const parts = email.trim().toLowerCase().split("@");
+  return parts.length === 2 && parts[1] === "wmsu.edu.ph";
 };
+
+export type Role = "school_user" | "admin" | "super_admin";
 
 export interface User {
   id: string;
   name: string;
   email: string;
+  role: Role;
+  isActive: boolean;
+  isVerified: boolean;
+  mustChangePassword?: boolean;
   studentId?: string;
   avatar?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   pendingEmail: string | null;
-  currentOtp: string;
   setPendingEmail: (email: string) => void;
-  sendOtp: (email: string) => string;
-  login: (email: string, password?: string) => Promise<boolean>;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    role?: Role;
+    requiresVerification?: boolean;
+  }>;
   signup: (userData: {
     name: string;
     email: string;
-    studentId?: string;
-    password?: string;
-  }) => Promise<boolean>;
-  verifyOtp: (code: string) => Promise<{ success: boolean; message?: string }>;
-  logout: () => void;
+    password: string;
+  }) => Promise<{ success: boolean; message?: string }>;
+  verifyOtp: (code: string) => Promise<{ success: boolean; message?: string; role?: Role }>;
+  resendOtp: (email?: string) => Promise<{ success: boolean; message?: string }>;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

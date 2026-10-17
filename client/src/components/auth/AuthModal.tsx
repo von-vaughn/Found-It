@@ -42,7 +42,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
-  const { login, signup, verifyOtp, sendOtp } = useAuth();
+  const { login, signup, verifyOtp, resendOtp } = useAuth();
 
   const screenKey =
     mode === "signin" ? "signin" : `signup-${signupScreen}`;
@@ -148,11 +148,29 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     setSignupScreen(nextScreen);
   };
 
+  const getSafeRedirect = (defaultRolePath: string): string => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectParam = searchParams.get("redirect");
+      if (
+        redirectParam &&
+        redirectParam.startsWith("/") &&
+        !redirectParam.startsWith("//") &&
+        !redirectParam.includes(":")
+      ) {
+        return redirectParam;
+      }
+    } catch {
+      // fallback
+    }
+    return defaultRolePath;
+  };
+
   const handleSignIn = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
-    const normalizedEmail = email.trim();
+    const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !emailPattern.test(normalizedEmail)) {
       setError("Enter a valid email address.");
       emailInputRef.current?.focus();
@@ -165,13 +183,28 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
     setIsLoading(true);
     try {
-      const success = await login(normalizedEmail, password);
-      if (!success) {
-        setError("We couldn't sign you in with those credentials. Check your email and password and try again.");
+      const res = await login(normalizedEmail, password);
+      if (!res.success) {
+        if (res.requiresVerification) {
+          setEmail(normalizedEmail);
+          setVerificationCode("");
+          setVerificationCountdown(60);
+          switchMode("signup");
+          setSignupScreen("verify");
+          setError("Account unverified. A verification code has been dispatched to your email.");
+          return;
+        }
+        setError(res.message || "Invalid email or password.");
         return;
       }
       onClose();
-      navigate("/dashboard");
+      const rolePath =
+        res.role === "admin"
+          ? paths.admin
+          : res.role === "super_admin"
+            ? paths.superadmin
+            : paths.dashboard;
+      navigate(getSafeRedirect(rolePath));
     } catch {
       setError("Sign in failed. Check your connection and try again.");
     } finally {
@@ -211,8 +244,8 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       setError("Enter your last name.");
       return;
     }
-    if (password.length < 8 || password.length > 128) {
-      setError("Enter a password between 8 and 128 characters.");
+    if (password.length < 8 || new TextEncoder().encode(password).length > 72) {
+      setError("Enter a password between 8 and 72 characters.");
       return;
     }
 
@@ -226,17 +259,17 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
     setIsLoading(true);
     try {
-      const success = await signup({
+      const res = await signup({
         name: fullName,
         email,
         password,
       });
-      if (!success) {
-        setError("We couldn't create your account. Check your details and try again.");
+      if (!res.success) {
+        setError(res.message || "We couldn't create your account. Check your details and try again.");
         return;
       }
       setVerificationCode("");
-      setVerificationCountdown(30);
+      setVerificationCountdown(60);
       changeSignupScreen("verify");
     } catch {
       setError("Account creation failed. Check your connection and try again.");
@@ -261,7 +294,13 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
         return;
       }
       onClose();
-      navigate("/dashboard");
+      const rolePath =
+        result.role === "admin"
+          ? paths.admin
+          : result.role === "super_admin"
+            ? paths.superadmin
+            : paths.dashboard;
+      navigate(getSafeRedirect(rolePath));
     } catch {
       setError("Verification failed. Check your connection and try again.");
     } finally {
@@ -269,22 +308,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     }
   };
 
-  const handleResendCode = () => {
+  const handleResendCode = async () => {
     if (verificationCountdown > 0) return;
-    sendOtp(email);
+    await resendOtp(email);
     setVerificationCode("");
-    setVerificationCountdown(30);
+    setVerificationCountdown(60);
     setError("");
-  };
-
-  const openTemporaryDashboard = (
-    destination:
-      | typeof paths.dashboard
-      | typeof paths.admin
-      | typeof paths.superadmin,
-  ) => {
-    onClose();
-    navigate(destination);
   };
 
   const title =
@@ -417,29 +446,48 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     {isLoading ? "Signing in…" : "Sign In"}
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => openTemporaryDashboard(paths.dashboard)}
-                    className="inline-flex min-h-10 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-                  >
-                    School User (temporary)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openTemporaryDashboard(paths.admin)}
-                    className="inline-flex min-h-10 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-                  >
-                    Admin (temporary)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openTemporaryDashboard(paths.superadmin)}
-                    className="col-span-2 inline-flex min-h-10 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-                  >
-                    Super Admin (temporary)
-                  </button>
-                </div>
+                {import.meta.env.DEV && (
+                  <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">
+                      Dev Demo Accounts (One-Click Fill)
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmail("user@foundit.local");
+                          setPassword("User12345!");
+                          setError("");
+                        }}
+                        className="inline-flex min-h-8 items-center justify-center rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                      >
+                        Demo Student
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmail("admin@foundit.local");
+                          setPassword("Admin123!");
+                          setError("");
+                        }}
+                        className="inline-flex min-h-8 items-center justify-center rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                      >
+                        Demo Admin
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmail("founditsuperadmin@foundit.local");
+                          setPassword("founditSuperAdminOSA!");
+                          setError("");
+                        }}
+                        className="col-span-2 inline-flex min-h-8 items-center justify-center rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                      >
+                        Demo Super Admin
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <p className="pt-1 text-center text-sm text-neutral-600">
                   New to FoundIt?{" "}
                   <button
@@ -605,7 +653,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     autoComplete="new-password"
                   />
                   <p className="mt-1.5 text-xs text-neutral-600">
-                    Use 8–128 characters.
+                    Use 8–72 characters.
                   </p>
                   {error.includes("Password") && (
                     <p role="alert" className="mt-1 text-sm font-medium text-red-700">{error}</p>
@@ -760,7 +808,7 @@ function PasswordInput({
         onChange={(event) => onChange(event.target.value)}
         required
         minLength={autoComplete === "new-password" ? 8 : undefined}
-        maxLength={autoComplete === "new-password" ? 128 : undefined}
+        maxLength={autoComplete === "new-password" ? 72 : undefined}
         className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 pr-12 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
       />
       <button
