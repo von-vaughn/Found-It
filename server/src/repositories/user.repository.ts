@@ -3,7 +3,8 @@ import type { Role, SafeUser } from '../types/roles';
 
 interface UserRow {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   password_hash: string;
   role: Role;
@@ -20,7 +21,7 @@ export interface UserWithHash extends SafeUser {
 function toSafeUser(row: UserRow): SafeUser {
   return {
     id: row.id,
-    name: row.name,
+    name: `${row.first_name} ${row.last_name}`.trim(),
     email: row.email,
     role: row.role,
     isActive: row.is_active,
@@ -35,7 +36,7 @@ function toUserWithHash(row: UserRow): UserWithHash {
 }
 
 export async function findUserByEmail(email: string): Promise<UserWithHash | null> {
-  const { rows } = await pool.query<UserRow>('SELECT * FROM users WHERE email = $1 LIMIT 1', [
+  const { rows } = await pool.query<UserRow>('SELECT * FROM "user" WHERE email = $1 LIMIT 1', [
     email.toLowerCase(),
   ]);
   return rows[0] ? toUserWithHash(rows[0]) : null;
@@ -47,20 +48,25 @@ export async function findUserById(id: string): Promise<UserWithHash | null> {
 }
 
 export async function createUser(input: {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   passwordHash: string;
   role?: Role;
 }): Promise<SafeUser> {
+  const role = input.role ?? 'school_user';
   const { rows } = await pool.query<UserRow>(
-    `INSERT INTO users (name, email, password_hash, role)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO "user" (first_name, last_name, email, password_hash, role, is_student, is_admin)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
     [
-      input.name,
+      input.firstName,
+      input.lastName,
       input.email.toLowerCase(),
       input.passwordHash,
-      input.role ?? 'school_user',
+      role,
+      role === 'school_user',
+      role !== 'school_user',
     ],
   );
   return toSafeUser(rows[0]);

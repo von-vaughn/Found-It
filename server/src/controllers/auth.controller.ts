@@ -86,8 +86,10 @@ export async function register(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  const [firstName, ...rest] = name.trim().split(/\s+/);
   const user = await createUser({
-    name,
+    firstName,
+    lastName: rest.join(' '),
     email,
     passwordHash: await hashPassword(password),
     role: 'school_user', // role escalation only via super_admin
