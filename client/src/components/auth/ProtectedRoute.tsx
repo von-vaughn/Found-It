@@ -24,7 +24,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      toast.error("Please sign in to access this page.", { id: "auth-required" });
+      // The auth modal itself explains why; a toast on top of it is noise.
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("foundit:open-auth", { detail: "signin" }),
