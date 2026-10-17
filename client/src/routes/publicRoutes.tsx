@@ -2,6 +2,7 @@ import type { RouteObject } from "react-router-dom";
 import { HomePage } from "@/pages/landing/HomePage";
 import { BrowseItemsPage } from "@/pages/landing/BrowseItemsPage";
 import { BrowseFiltersPage } from "@/pages/landing/BrowseFiltersPage";
+import { RedirectIfAuthenticated } from "@/components/auth/RedirectIfAuthenticated";
 import { LegacyItemsRedirect } from "./LegacyItemsRedirect";
 import type { Item } from "@/data/mockItems";
 import { paths } from "./paths";
@@ -23,7 +24,9 @@ export function getPublicRoutes({
     {
       path: paths.home,
       element: (
-        <HomePage onBrowseLost={onBrowseLost} onBrowseFound={onBrowseFound} />
+        <RedirectIfAuthenticated>
+          <HomePage onBrowseLost={onBrowseLost} onBrowseFound={onBrowseFound} />
+        </RedirectIfAuthenticated>
       ),
     },
     {

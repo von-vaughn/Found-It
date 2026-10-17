@@ -160,7 +160,7 @@ export function App() {
         <ScrollToTop />
 
         <Toaster
-          position="top-right"
+          position="bottom-right"
           toastOptions={{
             style: {
               borderRadius: "16px",

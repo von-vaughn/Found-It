@@ -1,11 +1,6 @@
 import {
   BadgeCheck,
-  CheckCheck,
-  FileSearch,
-  Flag,
-  GitCompare,
   LayoutDashboard,
-  PackageCheck,
   PackageSearch,
   RotateCcw,
   Users,
@@ -267,49 +262,6 @@ export const initialNotifications: AdminNotification[] = claims.map(
     read: false,
   }),
 );
-
-export const activityHistory = [
-  {
-    id: "h1",
-    title: "Claim request submitted",
-    detail: "Mika Ross submitted a claim for the Black Backpack.",
-    time: "Today, 9:42 AM",
-    status: "Pending",
-    icon: FileSearch,
-  },
-  {
-    id: "h2",
-    title: "Found item report added",
-    detail: "A Water Bottle was reported at Cafeteria B.",
-    time: "Today, 8:27 AM",
-    status: "Open",
-    icon: PackageCheck,
-  },
-  {
-    id: "h3",
-    title: "Possible match identified",
-    detail: "A backpack report was paired with a nearby found report.",
-    time: "Yesterday, 4:16 PM",
-    status: "Under review",
-    icon: GitCompare,
-  },
-  {
-    id: "h4",
-    title: "Report moved to review",
-    detail: "The iPhone 13 report was flagged for a location check.",
-    time: "October 5, 2026",
-    status: "Under review",
-    icon: Flag,
-  },
-  {
-    id: "h5",
-    title: "Item returned to owner",
-    detail: "A verified claim was completed and the item was marked returned.",
-    time: "October 4, 2026",
-    status: "Returned",
-    icon: CheckCheck,
-  },
-];
 
 export const navigation: AdminSidebarItem<AdminSection>[] = [
   {

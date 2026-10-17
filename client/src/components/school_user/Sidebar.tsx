@@ -203,7 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     >
       {/* Top Logo */}
       <button
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/dashboard")}
         title="FoundIt Home"
         className="group absolute left-2.5 md:left-4.5 top-5 w-11 h-11 shrink-0 flex items-center justify-center rounded-2xl hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer"
       >

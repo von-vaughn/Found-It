@@ -199,9 +199,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   <span className="absolute right-0 top-full z-30 mt-2 block w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden dark:border-neutral-800 dark:bg-neutral-900">
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                             setProfileMenuOpen(false);
-                            logout();
+                            await logout();
                             navigate("/");
                       }}
                       className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-red-400 dark:hover:bg-red-500/10"

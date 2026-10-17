@@ -31,5 +31,3 @@ export const paths = {
   browseFilters: "/browse/filters",
   fallback: "*",
 } as const;
-
-export type AppPath = (typeof paths)[keyof typeof paths];

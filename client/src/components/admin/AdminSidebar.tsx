@@ -119,9 +119,9 @@ export function AdminSidebar<TSection extends string>({
     };
   }, [profileOpen]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setProfileOpen(false);
-    logout();
+    await logout();
     navigate("/");
   };
 
@@ -172,8 +172,8 @@ export function AdminSidebar<TSection extends string>({
         className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 py-5 selection:bg-[#E5192D] selection:text-white"
       >
         <Link
-          to="/"
-          aria-label="FoundIt home"
+          to={user?.role === "super_admin" ? "/superadmin" : "/admin"}
+          aria-label="FoundIt dashboard"
           className="group absolute left-2.5 top-5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl hover:bg-neutral-50 dark:hover:bg-neutral-800 md:left-4.5"
         >
           <img
