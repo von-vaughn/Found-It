@@ -1,11 +1,9 @@
 import {
   api,
   rawAxios,
-  refreshAccessToken,
   setAccessToken,
   setInMemoryUser,
   broadcastAuthEvent,
-  getInMemoryUser,
   type SafeAuthUser,
 } from "@/lib/api";
 
@@ -66,16 +64,6 @@ export const authService = {
     const { data } = await api.get<{ user: SafeAuthUser }>("/auth/me");
     setInMemoryUser(data.user);
     return data;
-  },
-
-  async refresh(): Promise<{ accessToken: string; user: SafeAuthUser }> {
-    const accessToken = await refreshAccessToken();
-    const user = getInMemoryUser();
-    if (!user) {
-      const { user: fetchedUser } = await this.getMe();
-      return { accessToken, user: fetchedUser };
-    }
-    return { accessToken, user };
   },
 
   async logout(): Promise<void> {

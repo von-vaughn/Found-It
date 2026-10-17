@@ -1,77 +1,82 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { AuthContext, type User, type Role } from "@/context/auth-context";
-import {
-  authService,
-} from "@/services/authService";
+import { AuthContext, type Role } from "@/context/auth-context";
+import { authService } from "@/services/authService";
 import {
   authChannel,
   getInMemoryUser,
   type AuthSyncEvent,
+  type SafeAuthUser,
 } from "@/lib/api";
+
+const AUTH_USER_QUERY_KEY = ["auth", "user"] as const;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const queryClient = useQueryClient();
   const [pendingEmail, setPendingEmailState] = useState<string | null>(null);
 
+  const setAuthUser = useCallback(
+    (user: SafeAuthUser | null) =>
+      queryClient.setQueryData<SafeAuthUser | null>(
+        AUTH_USER_QUERY_KEY,
+        user,
+      ),
+    [queryClient],
+  );
+
+  // Access token lives in memory only, so on a fresh page load this request
+  // 401s once and the axios interceptor silently refreshes via the httpOnly
+  // cookie (serialized across tabs with Web Locks).
+  const userQuery = useQuery({
+    queryKey: AUTH_USER_QUERY_KEY,
+    queryFn: async () => (await authService.getMe()).user,
+    retry: false,
+    staleTime: Infinity,
+    // The auth events below are the only triggers that refetch the session.
+    refetchOnWindowFocus: false,
+  });
+
   useEffect(() => {
-    let isMounted = true;
-
-    const initAuth = async () => {
-      try {
-        // Refresh token is in httpOnly cookie; calling refreshAccessToken()
-        // returns { user, accessToken } serialized across open tabs with Web Locks.
-        const { user: refreshedUser } = await authService.refresh();
-        if (isMounted) setUser(refreshedUser);
-      } catch {
-        if (isMounted) setUser(null);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    initAuth();
-
     // Multi-tab synchronization
     const handleBroadcast = (event: MessageEvent<AuthSyncEvent>) => {
       if (event.data?.type === "LOGOUT") {
-        if (isMounted) setUser(null);
+        setAuthUser(null);
       } else if (event.data?.type === "REFRESHED") {
         const cached = getInMemoryUser();
-        if (cached && isMounted) {
-          setUser(cached);
+        if (cached) {
+          setAuthUser(cached);
         } else {
-          authService
-            .refresh()
-            .then(({ user: rehydrated }) => {
-              if (isMounted) setUser(rehydrated);
-            })
-            .catch(() => {
-              if (isMounted) setUser(null);
-            });
+          void queryClient.invalidateQueries({
+            queryKey: AUTH_USER_QUERY_KEY,
+          });
         }
       }
     };
 
     authChannel?.addEventListener("message", handleBroadcast);
 
-    const handleUnauthorized = () => {
-      if (isMounted) setUser(null);
-    };
+    const handleUnauthorized = () => setAuthUser(null);
     window.addEventListener("foundit:auth-unauthorized", handleUnauthorized);
 
     return () => {
-      isMounted = false;
       authChannel?.removeEventListener("message", handleBroadcast);
       window.removeEventListener(
         "foundit:auth-unauthorized",
         handleUnauthorized,
       );
     };
-  }, []);
+  }, [queryClient, setAuthUser]);
+
+  const loginMutation = useMutation({ mutationFn: authService.login });
+  const registerMutation = useMutation({ mutationFn: authService.register });
+  const verifyEmailMutation = useMutation({
+    mutationFn: authService.verifyEmail,
+  });
+  const resendOtpMutation = useMutation({ mutationFn: authService.resendOtp });
+  const logoutMutation = useMutation({ mutationFn: authService.logout });
 
   const setPendingEmail = (email: string) => {
     setPendingEmailState(email.trim().toLowerCase());
@@ -88,11 +93,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }> => {
     const normalizedEmail = email.trim().toLowerCase();
     try {
-      const data = await authService.login({
+      const data = await loginMutation.mutateAsync({
         email: normalizedEmail,
         password,
       });
-      setUser(data.user);
+      setAuthUser(data.user);
       setPendingEmailState(null);
       toast.success(`Welcome back, ${data.user.name}!`, {
         icon: "🎉",
@@ -102,9 +107,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         role: data.user.role,
       };
     } catch (err: unknown) {
-      const response = (err as { response?: { status?: number; data?: { message?: string } } })?.response;
+      const response = (
+        err as {
+          response?: { status?: number; data?: { message?: string } };
+        }
+      )?.response;
       const status = response?.status;
-      const message = response?.data?.message || "Sign in failed. Check your connection.";
+      const message =
+        response?.data?.message || "Sign in failed. Check your connection.";
 
       if (status === 403 && message.toLowerCase().includes("not verified")) {
         setPendingEmailState(normalizedEmail);
@@ -129,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }): Promise<{ success: boolean; message?: string }> => {
     const normalizedEmail = userData.email.trim().toLowerCase();
     try {
-      const data = await authService.register({
+      const data = await registerMutation.mutateAsync({
         name: userData.name.trim(),
         email: normalizedEmail,
         password: userData.password,
@@ -155,11 +165,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       };
     }
     try {
-      const data = await authService.verifyEmail({
+      const data = await verifyEmailMutation.mutateAsync({
         email,
         otp: code.trim(),
       });
-      setUser(data.user);
+      setAuthUser(data.user);
       setPendingEmailState(null);
       toast.success(`Welcome, ${data.user.name}! Your email is verified.`, {
         icon: "🎉",
@@ -184,7 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return { success: false, message: "No email provided." };
     }
     try {
-      const data = await authService.resendOtp({ email });
+      const data = await resendOtpMutation.mutateAsync({ email });
       toast.success(data.message || "A new verification code was sent.");
       return { success: true, message: data.message };
     } catch (err: unknown) {
@@ -198,9 +208,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = async () => {
     try {
-      await authService.logout();
+      await logoutMutation.mutateAsync();
     } finally {
-      setUser(null);
+      setAuthUser(null);
       setPendingEmailState(null);
       toast.success("Successfully signed out.", {
         icon: "👋",
@@ -211,9 +221,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <AuthContext.Provider
       value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
+        user: userQuery.data ?? null,
+        isAuthenticated: !!userQuery.data,
+        isLoading: userQuery.isPending,
         pendingEmail,
         setPendingEmail,
         login,

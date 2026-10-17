@@ -22,6 +22,35 @@ const CATEGORIES = [
   'other',
 ];
 
+// Canonical building list for report forms. Add/rename here; boot re-seeds new names.
+const BUILDINGS = [
+  'Cafeteria B - Beside CCS',
+  'Integrated Laboratory Building/High School Building',
+  'CCS - College of Computing Studies',
+  'Old High School Building',
+  'CCJE - College of Criminal Justice Education',
+  'COM - College of Medicine',
+  'CSM - College of Science and Mathematics',
+  'CAIS - College of Asian & Islamic Studies',
+  'CSWD - College of Social Works & Development',
+  'Canteen A - Near COL',
+  'Cafeteria A - Near gate 3',
+  'COL - College of Law',
+  'COE - College of Engineering',
+  'CTE - College of Teacher Education',
+  'CHE - College of Home Economics',
+  'Grade School Building',
+  'Cover Court',
+  'CLA - College of Liberal Arts',
+  'Library',
+  'Gymnasium',
+  'CSSPE - College of Sports Science and Physical Education',
+  'WMSU Administration Building',
+  'Registrar',
+  'MISTO Office',
+  'Open Stage',
+];
+
 /**
  * Ensures the canonical categories and at least one super_admin exist, plus
  * optional demo accounts (dev only). Idempotent — safe to run on every boot.
@@ -32,6 +61,13 @@ export async function seed(): Promise<void> {
      SELECT unnest($1::text[])
      ON CONFLICT (name) DO NOTHING`,
     [CATEGORIES],
+  );
+
+  await pool.query(
+    `INSERT INTO building (name)
+     SELECT unnest($1::text[])
+     ON CONFLICT (name) DO NOTHING`,
+    [BUILDINGS],
   );
 
   const superAdmin = await findUserByEmail(env.SUPER_ADMIN_EMAIL);
