@@ -3,11 +3,37 @@ import { env } from '../config/env';
 import { findUserByEmail, createUser } from '../repositories/user.repository';
 import { hashPassword } from '../utils/password';
 
+// Canonical category list for report forms. Add/rename here; boot re-seeds new names.
+const CATEGORIES = [
+  'electronics',
+  'id',
+  'cards',
+  'bags',
+  'wallets-purses',
+  'keys',
+  'clothing-accessories',
+  'books-school-supplies',
+  'jewelry',
+  'eyewear',
+  'tumblers',
+  'umbrellas',
+  'sports-gym-equipment',
+  'documents-papers',
+  'other',
+];
+
 /**
- * Ensures at least one super_admin exists, plus optional demo accounts.
- * Idempotent — safe to run on every boot.
+ * Ensures the canonical categories and at least one super_admin exist, plus
+ * optional demo accounts. Idempotent — safe to run on every boot.
  */
 export async function seed(): Promise<void> {
+  await pool.query(
+    `INSERT INTO category (name)
+     SELECT unnest($1::text[])
+     ON CONFLICT (name) DO NOTHING`,
+    [CATEGORIES],
+  );
+
   const superAdmin = await findUserByEmail(env.SUPER_ADMIN_EMAIL);
   if (!superAdmin) {
     const [firstName, ...rest] = env.SUPER_ADMIN_NAME.trim().split(/\s+/);
