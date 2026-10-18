@@ -18,6 +18,7 @@ interface ItemRow {
   category_name: string;
   reporter_name: string;
   reporter_email: string;
+  images: string[] | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -39,6 +40,10 @@ const ITEM_COLUMNS = `
   loc.description AS location, b.name AS building,
   c.id AS category_id, c.name AS category_name,
   u.first_name || ' ' || u.last_name AS reporter_name, u.email AS reporter_email,
+  COALESCE(
+    (SELECT json_agg(img.image_url ORDER BY img.created_at ASC) FROM image img WHERE img.item_id = i.id),
+    '[]'::json
+  ) AS images,
   i.created_at, i.updated_at
 `;
 const ITEM_JOIN = `
@@ -57,6 +62,7 @@ const ITEM_JOIN = `
  */
 function toItem(row: ItemRow, includeEmail: boolean, viewerId: string): Item {
   const canSeeMarker = includeEmail || row.reporter_id === viewerId;
+  const imageList: string[] = Array.isArray(row.images) ? row.images : [];
   return {
     id: row.id,
     reporterId: row.reporter_id,
@@ -70,6 +76,8 @@ function toItem(row: ItemRow, includeEmail: boolean, viewerId: string): Item {
     color: row.color,
     building: row.building,
     location: row.location,
+    image: imageList[0] ?? null,
+    images: imageList,
     ...(canSeeMarker && row.important_details
       ? { importantDetails: row.important_details }
       : {}),
@@ -135,6 +143,7 @@ export async function createItem(input: {
   building?: string;
   location?: string;
   importantDetails?: string;
+  images?: string[];
 }): Promise<{ id: string }> {
   const client = await pool.connect();
   try {
@@ -160,8 +169,19 @@ export async function createItem(input: {
        VALUES ($1, $2, $3, $4, $5) RETURNING id`,
       [reportRows[0].id, input.categoryId, input.name, input.description, input.color ?? null],
     );
+    const itemId = itemRows[0].id;
+    if (input.images && input.images.length > 0) {
+      for (const imgUrl of input.images) {
+        if (imgUrl && typeof imgUrl === 'string' && imgUrl.trim()) {
+          await client.query(
+            `INSERT INTO image (item_id, image_url) VALUES ($1, $2)`,
+            [itemId, imgUrl.trim()],
+          );
+        }
+      }
+    }
     await client.query('COMMIT');
-    return { id: itemRows[0].id };
+    return { id: itemId };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -243,6 +263,7 @@ export async function updateItem(
     importantDetails?: string;
     building?: string;
     location?: string;
+    images?: string[];
   },
   includeEmail: boolean,
   viewerId: string,
@@ -301,6 +322,17 @@ export async function updateItem(
          WHERE id = (SELECT report_id FROM item WHERE id = $1)`,
         [id, ...reportValues],
       );
+    }
+    if (updates.images !== undefined) {
+      await client.query(`DELETE FROM image WHERE item_id = $1`, [id]);
+      for (const imgUrl of updates.images) {
+        if (imgUrl && typeof imgUrl === 'string' && imgUrl.trim()) {
+          await client.query(
+            `INSERT INTO image (item_id, image_url) VALUES ($1, $2)`,
+            [id, imgUrl.trim()],
+          );
+        }
+      }
     }
     await client.query('COMMIT');
   } catch (err) {

@@ -34,6 +34,8 @@ const createItemSchema = z.object({
   building: z.string().trim().min(1).max(100).optional(),
   location: z.string().trim().min(1).max(500).optional(),
   importantDetails: z.string().trim().min(1).max(2000).optional(),
+  image: z.string().trim().min(1).optional(),
+  images: z.array(z.string().trim().min(1)).max(10).optional(),
 });
 
 const updateItemSchema = z.object({
@@ -46,6 +48,8 @@ const updateItemSchema = z.object({
   importantDetails: z.string().trim().min(1).max(2000).optional(),
   building: z.string().trim().min(1).max(100).optional(),
   location: z.string().trim().min(1).max(500).optional(),
+  image: z.string().trim().min(1).optional(),
+  images: z.array(z.string().trim().min(1)).max(10).optional(),
 });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -91,7 +95,12 @@ export async function createItemReport(req: Request, res: Response): Promise<voi
     res.status(400).json({ message: 'Unknown categoryId.' });
     return;
   }
-  const { id } = await createItem({ reporterId: req.user!.sub, ...parsed.data });
+  const data = parsed.data;
+  let images = data.images;
+  if (!images && data.image) {
+    images = [data.image];
+  }
+  const { id } = await createItem({ reporterId: req.user!.sub, ...data, images });
   const item = await findItemById(id, seesReporterEmail(req), req.user!.sub);
   res.status(201).json({ message: 'Item report submitted.', item });
 }
@@ -161,7 +170,17 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
     res.status(400).json({ message: 'location is required when changing building.' });
     return;
   }
-  const updated = await updateItem(id, parsed.data, seesReporterEmail(req), req.user!.sub);
+  const data = parsed.data;
+  let images = data.images;
+  if (!images && data.image !== undefined) {
+    images = data.image ? [data.image] : [];
+  }
+  const updated = await updateItem(
+    id,
+    { ...data, images },
+    seesReporterEmail(req),
+    req.user!.sub,
+  );
   res.json({ message: 'Item report updated.', item: updated });
 }
 

@@ -12,9 +12,11 @@ import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
 import itemsRoutes from './routes/items.routes';
 import categoriesRoutes from './routes/categories.routes';
+import uploadRoutes from './routes/upload.routes';
 import { errorHandler, notFound } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
 import { assertMailConfigured } from './utils/mailer';
+import { isDriveConfigured, testDriveConnection } from './utils/google-drive';
 
 const app = express();
 
@@ -73,6 +75,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -84,6 +87,15 @@ async function boot(): Promise<void> {
     await migrate();
     await seed();
     console.log('PostgreSQL connected, migrated, and seeded.');
+
+    if (isDriveConfigured()) {
+      const driveOk = await testDriveConnection();
+      if (driveOk) {
+        console.log('Google Drive API connected and authenticated.');
+      } else {
+        console.warn('Google Drive API credentials configured but connection check failed.');
+      }
+    }
   } catch (err) {
     console.error('Failed to connect/migrate PostgreSQL:', err);
     console.error('Hint: copy .env.example to .env and set DATABASE_URL, or run: docker compose up -d db');

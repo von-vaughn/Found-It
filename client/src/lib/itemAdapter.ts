@@ -39,7 +39,8 @@ export function toClientItem(server: ServerItem): Item {
     date: server.itemDate,
     dateTime,
     timeAgo: timeAgo(server.createdAt),
-    image: "", // images are not yet stored on the server
+    image: server.image || (server.images?.[0] ?? ""),
+    images: server.images ?? (server.image ? [server.image] : []),
     description: server.description,
     status: "active",
     color: server.color ?? undefined,

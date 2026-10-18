@@ -11,6 +11,7 @@ export interface Item {
   dateTime?: string;
   timeAgo: string;
   image: string;
+  images?: string[];
   description: string;
   status: 'active' | 'reunited' | 'pending';
   reward?: string;

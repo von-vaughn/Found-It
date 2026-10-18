@@ -10,6 +10,7 @@ import type { Item } from "@/data/mockItems";
 import { useAuth } from "@/context/useAuth";
 import { useCreateItem } from "@/hooks/useItems";
 import { useCategoryMap, getCategoryUuid } from "@/hooks/useCategories";
+import { uploadImage, uploadImages } from "@/services/itemService";
 import toast from "react-hot-toast";
 
 interface CreatePostFormProps {
@@ -103,7 +104,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [importantDetails, setImportantDetails] = useState("");
   const [category, setCategory] = useState<Item["category"]>("electronics");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | Blob | null>(null);
   const [lostImages, setLostImages] = useState<string[]>([]);
+  const [lostFiles, setLostFiles] = useState<(File | Blob)[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingText, setUploadingText] = useState<string | null>(null);
   const lostUrlsRef = useRef<string[]>([]);
   const [photoRequiredError, setPhotoRequiredError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -156,7 +161,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setImportantDetails(initialItem.confidentialInfo ?? "");
         setCategory(initialItem.category);
         setUploadedImage(initialItem.image || null);
+        setUploadedFile(null);
         setLostImages(initialItem.image ? [initialItem.image] : []);
+        setLostFiles([]);
       } else {
         setType(initialType);
         setTitle("");
@@ -169,7 +176,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setImportantDetails("");
         setCategory("electronics");
         setUploadedImage(null);
+        setUploadedFile(null);
         setLostImages([]);
+        setLostFiles([]);
       }
     }
   }
@@ -190,9 +199,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     [],
   );
 
-  useEffect(() => {
-    lostUrlsRef.current = lostImages;
-  }, [lostImages]);
+  // lostUrlsRef tracks created object URLs for revocation only. It must never
+  // alias lostImages, or the push in handleLostFileChange mutates state.
 
   // Live camera for found-item photos (desktop only): runs only while the
   // form is active on the Found tab without a photo yet. Mobile uses the
@@ -286,6 +294,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       }
       if (uploadedImage) URL.revokeObjectURL(uploadedImage);
       setUploadedImage(URL.createObjectURL(blob));
+      setUploadedFile(blob);
       setPhotoRequiredError(false);
     }, "image/jpeg", 0.92);
   };
@@ -293,6 +302,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const handleRetakePhoto = () => {
     if (uploadedImage) URL.revokeObjectURL(uploadedImage);
     setUploadedImage(null);
+    setUploadedFile(null);
     setCameraState("starting");
     setCameraError(null);
   };
@@ -306,6 +316,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     }
     if (uploadedImage) URL.revokeObjectURL(uploadedImage);
     setUploadedImage(URL.createObjectURL(file));
+    setUploadedFile(file);
     setPhotoRequiredError(false);
     // Reset so picking the same file twice still fires onChange.
     e.target.value = "";
@@ -327,6 +338,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     const newUrls = addable.map((file) => URL.createObjectURL(file));
     lostUrlsRef.current.push(...newUrls);
     setLostImages((current) => [...current, ...newUrls]);
+    setLostFiles((current) => [...current, ...addable]);
     setPhotoRequiredError(false);
     if (addable.length < selectedFiles.length) {
       toast.error(`You can attach up to ${MAX_POST_IMAGES} pictures.`);
@@ -335,6 +347,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   const handleRemoveLostImage = (previewToRemove: string) => {
+    const removeIndex = lostImages.indexOf(previewToRemove);
     if (previewToRemove.startsWith("blob:")) {
       URL.revokeObjectURL(previewToRemove);
     }
@@ -344,6 +357,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     setLostImages((current) =>
       current.filter((preview) => preview !== previewToRemove),
     );
+    if (removeIndex !== -1) {
+      setLostFiles((current) => current.filter((_, idx) => idx !== removeIndex));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -366,80 +382,122 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       return;
     }
 
-    if (isEditing && initialItem) {
-      const lostCoverImage = lostImages[0] ?? "";
-      const updatedItem: Item = {
-        ...initialItem,
-        title: title.trim(),
-        type,
-        category,
-        building: building.trim() || undefined,
-        location: location.trim(),
-        date: dateValue,
-        dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
-        image: type === "lost" ? lostCoverImage : (previewImage ?? ""),
-        description: description.trim() || DEFAULT_DESCRIPTION_PLACEHOLDER,
-      };
-      if (color.trim()) {
-        updatedItem.color = color.trim();
-      } else {
-        delete updatedItem.color;
-      }
-      if (importantDetails.trim()) {
-        updatedItem.confidentialInfo = importantDetails.trim();
-      } else {
-        delete updatedItem.confidentialInfo;
-      }
-      onUpdateItem?.(updatedItem);
-      toast.success("Your report was updated.");
-      onSubmitted();
-      return;
-    }
+    const submitAsync = async () => {
+      setIsSubmitting(true);
+      try {
+        let finalImageUrl = "";
+        let finalImageUrls: string[] = [];
 
-    const username = user?.name
-      ? user.name.toLowerCase().replace(/\s+/g, "_")
-      : "vaughn_e";
+        // Upload images if any
+        if (type === "found") {
+          if (uploadedFile) {
+            setUploadingText("Uploading photo to Drive...");
+            finalImageUrl = await uploadImage(uploadedFile);
+            finalImageUrls = [finalImageUrl];
+          } else if (previewImage && !previewImage.startsWith("blob:")) {
+            finalImageUrl = previewImage;
+            finalImageUrls = [previewImage];
+          }
+        } else {
+          // lost item
+          const filesToUpload: (File | Blob)[] = [];
+          const existingUrls: string[] = [];
 
-    const newItem: Item = {
-      id: `post-${Date.now()}`,
-      title: title.trim(),
-      type,
-      category,
-      username,
-      userAvatar: "/images/avatars/vaughn_evangelista.svg",
-      building: building.trim() || undefined,
-      location: location.trim(),
-      date: dateValue,
-      dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
-      timeAgo: "Just now",
-      image: type === "lost" ? (lostImages[0] ?? "") : (previewImage ?? ""),
-      description: description.trim() || "No additional description provided.",
-      status: "active",
-      contactName: user?.name || "Vaughn Evangelista",
-      likes: 0,
-      commentsCount: 0,
-      saved: false,
-    };
-    if (color.trim()) newItem.color = color.trim();
-    if (importantDetails.trim())
-      newItem.confidentialInfo = importantDetails.trim();
+          lostImages.forEach((imgUrl, index) => {
+            if (imgUrl.startsWith("blob:") && lostFiles[index]) {
+              filesToUpload.push(lostFiles[index]);
+            } else if (!imgUrl.startsWith("blob:")) {
+              existingUrls.push(imgUrl);
+            }
+          });
 
-    // Optimistic local update so the item shows immediately in the feed.
-    onAddItem(newItem);
-
-    // Submit to the API. Resolve the category slug to its server-side UUID.
-    const submitToServer = async () => {
-      let categoryUuid = categoryMap?.get(category);
-      if (!categoryUuid) {
-        try {
-          categoryUuid = await getCategoryUuid(category);
-        } catch {
-          // ignore network failure on category fetch
+          if (filesToUpload.length > 0) {
+            setUploadingText(
+              `Uploading ${filesToUpload.length} picture${filesToUpload.length > 1 ? "s" : ""} to Drive...`,
+            );
+            const uploadedUrls = await uploadImages(filesToUpload);
+            finalImageUrls = [...existingUrls, ...uploadedUrls];
+            finalImageUrl = finalImageUrls[0] ?? "";
+          } else {
+            finalImageUrls = existingUrls;
+            finalImageUrl = existingUrls[0] ?? "";
+          }
         }
-      }
-      if (categoryUuid) {
-        createItemMutation.mutate(
-          {
+
+        if (isEditing && initialItem) {
+          const updatedItem: Item = {
+            ...initialItem,
+            title: title.trim(),
+            type,
+            category,
+            building: building.trim() || undefined,
+            location: location.trim(),
+            date: dateValue,
+            dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
+            image: finalImageUrl || (type === "lost" ? (lostImages[0] ?? "") : (previewImage ?? "")),
+            images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
+            description: description.trim() || DEFAULT_DESCRIPTION_PLACEHOLDER,
+          };
+          if (color.trim()) {
+            updatedItem.color = color.trim();
+          } else {
+            delete updatedItem.color;
+          }
+          if (importantDetails.trim()) {
+            updatedItem.confidentialInfo = importantDetails.trim();
+          } else {
+            delete updatedItem.confidentialInfo;
+          }
+          onUpdateItem?.(updatedItem);
+          toast.success("Your report was updated.");
+          onSubmitted();
+          return;
+        }
+
+        const username = user?.name
+          ? user.name.toLowerCase().replace(/\s+/g, "_")
+          : "vaughn_e";
+
+        const newItem: Item = {
+          id: `post-${Date.now()}`,
+          title: title.trim(),
+          type,
+          category,
+          username,
+          userAvatar: "/images/avatars/vaughn_evangelista.svg",
+          building: building.trim() || undefined,
+          location: location.trim(),
+          date: dateValue,
+          dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
+          timeAgo: "Just now",
+          image: finalImageUrl || (type === "lost" ? (lostImages[0] ?? "") : (previewImage ?? "")),
+          images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
+          description: description.trim() || "No additional description provided.",
+          status: "active",
+          contactName: user?.name || "Vaughn Evangelista",
+          likes: 0,
+          commentsCount: 0,
+          saved: false,
+        };
+        if (color.trim()) newItem.color = color.trim();
+        if (importantDetails.trim())
+          newItem.confidentialInfo = importantDetails.trim();
+
+        // Optimistic local update so the item shows immediately in the feed.
+        onAddItem(newItem);
+
+        // Submit to the API. Resolve the category slug to its server-side UUID.
+        let categoryUuid = categoryMap?.get(category);
+        if (!categoryUuid) {
+          try {
+            categoryUuid = await getCategoryUuid(category);
+          } catch {
+            // ignore network failure on category fetch
+          }
+        }
+        if (categoryUuid) {
+          setUploadingText("Publishing report...");
+          await createItemMutation.mutateAsync({
             reportType: type,
             name: title.trim(),
             description: description.trim() || "No additional description provided.",
@@ -450,22 +508,26 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             building: building.trim() || undefined,
             location: location.trim() || undefined,
             importantDetails: importantDetails.trim() || undefined,
-          },
-          {
-            onError: (error) => {
-              console.error("Failed to create item on server:", error);
-              toast.error("Failed to save to server. Your post is saved locally.");
-            },
-          },
+            image: finalImageUrl || undefined,
+            images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
+          });
+        }
+
+        toast.success(
+          `Published your ${type === "lost" ? "lost" : "found"} item post.`,
         );
+        onSubmitted();
+      } catch (err: unknown) {
+        console.error("Failed to submit item report:", err);
+        const errMsg = err instanceof Error ? err.message : "Failed to save to server.";
+        toast.error(`Error: ${errMsg}`);
+      } finally {
+        setIsSubmitting(false);
+        setUploadingText(null);
       }
     };
-    void submitToServer();
 
-    toast.success(
-      `Published your ${type === "lost" ? "lost" : "found"} item post.`,
-    );
-    onSubmitted();
+    void submitAsync();
   };
 
   return (
@@ -899,9 +961,17 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           <div className="pt-1">
             <button
               type="submit"
-              className="w-full h-11 rounded-xl bg-[#E5192D] text-white font-bold text-sm transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
+              disabled={isSubmitting}
+              className="w-full h-11 rounded-xl bg-[#E5192D] text-white font-bold text-sm transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isEditing ? "Save changes" : "Publish report"}
+              {isSubmitting ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>{uploadingText || "Publishing report..."}</span>
+                </>
+              ) : (
+                isEditing ? "Save changes" : "Publish report"
+              )}
             </button>
           </div>
         </div>

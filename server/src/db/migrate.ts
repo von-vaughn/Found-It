@@ -152,5 +152,7 @@ export async function migrate(): Promise<void> {
 
     -- A report can name a location without picking a building.
     ALTER TABLE location ALTER COLUMN building_id DROP NOT NULL;
+
+    ALTER TABLE image ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
   `);
 }

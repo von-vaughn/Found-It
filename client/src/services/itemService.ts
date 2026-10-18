@@ -15,6 +15,8 @@ export interface ServerItem {
   building: string | null;
   location: string | null;
   importantDetails?: string;
+  image?: string | null;
+  images?: string[];
   user: { id: string; name: string; email?: string };
   createdAt: string;
   updatedAt: string;
@@ -46,6 +48,8 @@ export interface CreateItemPayload {
   building?: string;
   location?: string;
   importantDetails?: string;
+  image?: string;
+  images?: string[];
 }
 
 export interface ListItemsParams {
@@ -97,6 +101,56 @@ export interface UpdateItemPayload {
   building?: string;
   location?: string;
   importantDetails?: string;
+  image?: string;
+  images?: string[];
+}
+
+export interface UploadImageResponse {
+  message: string;
+  url: string;
+  urls: string[];
+  files: Array<{
+    id: string;
+    name: string;
+    url: string;
+    thumbnailUrl?: string;
+  }>;
+}
+
+/**
+ * Uploads a single image File or Blob to Google Drive via the server.
+ * Returns the public direct CDN image URL.
+ */
+export async function uploadImage(file: File | Blob, filename?: string): Promise<string> {
+  const formData = new FormData();
+  if (file instanceof File) {
+    formData.append("file", file);
+  } else {
+    formData.append("file", file, filename || "capture.jpg");
+  }
+  const { data } = await api.post<UploadImageResponse>("/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.url;
+}
+
+/**
+ * Uploads multiple image Files or Blobs to Google Drive via the server.
+ * Returns an array of public direct CDN image URLs.
+ */
+export async function uploadImages(files: (File | Blob)[]): Promise<string[]> {
+  const formData = new FormData();
+  files.forEach((f, index) => {
+    if (f instanceof File) {
+      formData.append("files", f);
+    } else {
+      formData.append("files", f, `image-${index + 1}.jpg`);
+    }
+  });
+  const { data } = await api.post<UploadImageResponse>("/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.urls;
 }
 
 /** PATCH /api/items/:id — update an existing item report. */
@@ -123,5 +177,7 @@ export default {
   listMyItems,
   updateItem,
   deleteItem,
+  uploadImage,
+  uploadImages,
 };
 

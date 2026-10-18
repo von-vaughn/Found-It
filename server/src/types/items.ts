@@ -17,6 +17,10 @@ export interface Item {
   color: string | null;
   building: string | null;
   location: string | null;
+  /** Primary image URL or null if no image attached. */
+  image: string | null;
+  /** All images associated with the item. */
+  images: string[];
   /** Ownership-verification marker. Present for the report owner and admin+ only. */
   importantDetails?: string;
   /** Reporter identity. Email is included for admin/super_admin only. */

@@ -324,8 +324,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           {/* Masonry Items Grid */}
           {filteredItems.length > 0 ? (
+            // Data source in the key so the grid remounts when mock props are
+            // swapped for API items — cards added after the one-shot in-view
+            // animation otherwise stay hidden at opacity 0.
             <StaggerGrid
-              key={`${activeNavTab}-${selectedCategory}-${JSON.stringify(filters)}`}
+              key={`${activeNavTab}-${selectedCategory}-${JSON.stringify(filters)}-${serverItems ? "api" : "mock"}`}
               className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 gap-6 pb-12"
             >
               {filteredItems.map((item) => (
