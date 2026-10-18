@@ -26,6 +26,9 @@ import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
+import { useItemDetail, useDeleteItem } from "@/hooks/useItems";
+import { toClientItem } from "@/lib/itemAdapter";
+import { UUID_RE } from "@/services/itemService";
 import type {
   ClaimRequest,
   NewClaimRequest,
@@ -130,7 +133,13 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     }
   };
 
-  const item = useMemo(() => items.find((entry) => entry.id === id), [items, id]);
+  const { data: serverItem, isLoading: isItemLoading } = useItemDetail(id ?? "");
+  const deleteItemMutation = useDeleteItem();
+
+  const item = useMemo(() => {
+    if (serverItem) return toClientItem(serverItem);
+    return items.find((entry) => entry.id === id);
+  }, [serverItem, items, id]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
@@ -195,6 +204,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const handleConfirmDelete = () => {
     if (!item) return;
     propOnDeleteItem?.(item.id);
+    if (UUID_RE.test(item.id)) {
+      deleteItemMutation.mutate(item.id, {
+        onError: (err) => {
+          console.error("Failed to delete item on server:", err);
+          toast.error("Failed to delete item from server.");
+        },
+      });
+    }
     setDeleteDialogOpen(false);
     toast.success("Your report was deleted.");
     navigate("/dashboard");
@@ -305,13 +322,16 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const profileName = user?.name || FALLBACK_PROFILE_NAME;
   const isOwnItem = useMemo(() => {
     if (!item) return false;
+    if (serverItem && user?.id) {
+      if (serverItem.reporterId === user.id) return true;
+    }
     return (
       item.username?.toLowerCase() ===
         profileName.toLowerCase().replace(/\s+/g, "_") ||
       item.contactName.trim().toLowerCase() ===
         profileName.trim().toLowerCase()
     );
-  }, [item, profileName]);
+  }, [item, profileName, serverItem, user?.id]);
 
   const finderReports = useMemo(() => {
     if (!item) return [];
@@ -319,6 +339,42 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       (claim) => claim.itemId === item.id,
     );
   }, [item, submittedClaims]);
+
+  if (isItemLoading && !item) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
+        <Sidebar
+          activeTab={sidebarActiveTab}
+          expanded={sidebarExpanded}
+          onExpandedChange={setSidebarExpanded}
+          onNotificationsOpenChange={setNotificationsOpen}
+          onTabChange={(tab) => {
+            if (tab === "claims") navigate("/dashboard/claims");
+            else navigate("/dashboard");
+          }}
+          onOpenCreateModal={() => handleOpenCreateModal("lost")}
+          items={items}
+          submittedClaims={submittedClaims}
+        />
+        <div className={`flex-1 min-w-0 ml-0 md:ml-16 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
+          <Header
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
+            searchInputRef={searchInputRef}
+            notificationsOpen={notificationsOpen}
+            activeFilterCount={countActiveFilters(filters)}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            onClearFilters={() => onFiltersChange(defaultFilters)}
+            filterResultCount={applyAdvancedFilters(items, filters).length}
+          />
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-[#E5192D]" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!item) {
     return (

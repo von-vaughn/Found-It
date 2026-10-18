@@ -1,3 +1,5 @@
+import { useMyItems } from "@/hooks/useItems";
+import { toClientItems } from "@/lib/itemAdapter";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut, PlusCircle } from "lucide-react";
@@ -83,7 +85,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const avatar = user?.avatar || DEFAULT_PROFILE.avatar;
   const profileUsername = name.toLowerCase().replace(/\s+/g, "_");
 
-  const userItems = useMemo(
+  // Fetch the current user's own reports from the API.
+  const { data: serverMyItems } = useMyItems({
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const apiMyItems = serverMyItems ? toClientItems(serverMyItems) : null;
+
+  // Fall back to client-side username matching while the API loads.
+  const clientUserItems = useMemo(
     () =>
       items.filter(
         (item) =>
@@ -92,6 +102,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       ),
     [items, name, profileUsername],
   );
+  const userItems = apiMyItems ?? clientUserItems;
   const lostItems = userItems.filter((item) => item.type === "lost").length;
   const foundItems = userItems.length - lostItems;
   const filteredUserItems =

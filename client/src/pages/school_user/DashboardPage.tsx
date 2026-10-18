@@ -1,3 +1,5 @@
+import { useItems } from "@/hooks/useItems";
+import { toClientItems } from "@/lib/itemAdapter";
 import React, {
   useState,
   useRef,
@@ -42,7 +44,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onFiltersChange: setFilters,
 }) => {
   const [internalItems, setInternalItems] = useState<Item[]>([]);
-  const items = propItems ?? internalItems;
+
+  // Fetch all items from the API; falls back to prop items (mock data) while
+  // the query is loading or if the user is not authenticated yet.
+  const { data: serverItems } = useItems(undefined, {
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const apiItems = serverItems ? toClientItems(serverItems) : null;
+  const items = apiItems ?? propItems ?? internalItems;
 
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
     takeSchoolSidebarExpanded(),

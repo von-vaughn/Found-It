@@ -8,6 +8,8 @@ import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { Item } from "@/data/mockItems";
 import { useAuth } from "@/context/useAuth";
+import { useCreateItem } from "@/hooks/useItems";
+import { useCategoryMap, getCategoryUuid } from "@/hooks/useCategories";
 import toast from "react-hot-toast";
 
 interface CreatePostFormProps {
@@ -86,6 +88,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   initialItem = null,
 }) => {
   const { user } = useAuth();
+  const createItemMutation = useCreateItem();
+  const categoryMap = useCategoryMap();
   const isMobileView = useIsMobileView();
   const isEditing = initialItem !== null;
   const [type, setType] = useState<"lost" | "found">(initialItem?.type ?? initialType);
@@ -420,7 +424,44 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     if (importantDetails.trim())
       newItem.confidentialInfo = importantDetails.trim();
 
+    // Optimistic local update so the item shows immediately in the feed.
     onAddItem(newItem);
+
+    // Submit to the API. Resolve the category slug to its server-side UUID.
+    const submitToServer = async () => {
+      let categoryUuid = categoryMap?.get(category);
+      if (!categoryUuid) {
+        try {
+          categoryUuid = await getCategoryUuid(category);
+        } catch {
+          // ignore network failure on category fetch
+        }
+      }
+      if (categoryUuid) {
+        createItemMutation.mutate(
+          {
+            reportType: type,
+            name: title.trim(),
+            description: description.trim() || "No additional description provided.",
+            itemDate: dateValue,
+            itemTime: timeValue || undefined,
+            categoryId: categoryUuid,
+            color: color.trim() || undefined,
+            building: building.trim() || undefined,
+            location: location.trim() || undefined,
+            importantDetails: importantDetails.trim() || undefined,
+          },
+          {
+            onError: (error) => {
+              console.error("Failed to create item on server:", error);
+              toast.error("Failed to save to server. Your post is saved locally.");
+            },
+          },
+        );
+      }
+    };
+    void submitToServer();
+
     toast.success(
       `Published your ${type === "lost" ? "lost" : "found"} item post.`,
     );
@@ -429,39 +470,41 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
   return (
     <>
-      {/* Type tabs */}
-      <div
-        role="tablist"
-        aria-label="Post type"
-        className="mt-5 flex items-center gap-5 border-b border-neutral-100 dark:border-neutral-800"
-      >
-        {(
-          [
-            { id: "lost", label: "Lost" },
-            { id: "found", label: "Found" },
-          ] as const
-        ).map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={type === tab.id}
-            onClick={() =>
-              tab.id === "found" ? handleFoundTabSelect() : setType(tab.id)
-            }
-            className={`relative pb-2.5 text-sm font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded-sm ${
-              type === tab.id
-                ? "text-neutral-900 dark:text-neutral-100"
-                : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-            }`}
-          >
-            {tab.label}
-            {type === tab.id && (
-              <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-neutral-900 rounded-full dark:hidden" />
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Type tabs — create only: an existing report cannot switch lost/found */}
+      {!isEditing && (
+        <div
+          role="tablist"
+          aria-label="Post type"
+          className="mt-5 flex items-center gap-5 border-b border-neutral-100 dark:border-neutral-800"
+        >
+          {(
+            [
+              { id: "lost", label: "Lost" },
+              { id: "found", label: "Found" },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={type === tab.id}
+              onClick={() =>
+                tab.id === "found" ? handleFoundTabSelect() : setType(tab.id)
+              }
+              className={`relative pb-2.5 text-sm font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded-sm ${
+                type === tab.id
+                  ? "text-neutral-900 dark:text-neutral-100"
+                  : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+              }`}
+            >
+              {tab.label}
+              {type === tab.id && (
+                <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-neutral-900 rounded-full dark:hidden" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Form: upload left, details right */}
       <form
