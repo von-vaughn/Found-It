@@ -1,5 +1,6 @@
 import {
   BadgeCheck,
+  History,
   LayoutDashboard,
   PackageSearch,
   RotateCcw,
@@ -289,7 +290,24 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
     compactLabel: "Users",
     icon: Users,
   },
+  {
+    id: "audit",
+    label: "Audit Logs",
+    compactLabel: "Audit",
+    icon: History,
+  },
 ];
+
+/** Sections only a super admin may reach; hidden from the sidebar and route-guarded. */
+export const superAdminOnlySections: AdminSection[] = ["audit"];
+
+export function navigationFor(
+  isSuperAdmin: boolean,
+): AdminSidebarItem<AdminSection>[] {
+  return isSuperAdmin
+    ? navigation
+    : navigation.filter((item) => !superAdminOnlySections.includes(item.id));
+}
 
 export const pageCopy: Record<AdminSection, { title: string; description: string }> = {
   overview: {
@@ -312,7 +330,48 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
     title: "User management",
     description: "Search, filter, and manage campus account access.",
   },
+  audit: {
+    title: "Audit logs",
+    description:
+      "See which admin approved or rejected each report across all claims, returns, and items.",
+  },
 };
+
+/** Copy that differs when a super admin views the same section. */
+export const superAdminPageCopy: Partial<
+  Record<AdminSection, { title: string; description: string }>
+> = {
+  overview: {
+    title: "Super admin dashboard",
+    description:
+      "Full campus oversight — every admin workflow plus staff and audit control.",
+  },
+  claims: {
+    title: "Ownership claims",
+    description:
+      "Review the details submitted to verify an item claim. Decisions are audit-logged.",
+  },
+  returns: {
+    title: "Return item requests",
+    description:
+      "Review ownership confirmations submitted by school users. Decisions are audit-logged.",
+  },
+  users: {
+    title: "User management",
+    description:
+      "Manage campus users and admin accounts — create admins, change roles, and control access.",
+  },
+};
+
+export function getPageCopy(
+  section: AdminSection,
+  isSuperAdmin: boolean,
+): { title: string; description: string } {
+  return (
+    (isSuperAdmin ? superAdminPageCopy[section] : undefined) ??
+    pageCopy[section]
+  );
+}
 
 export const adminUsers: AdminUser[] = [
   {

@@ -7,4 +7,5 @@ export const adminSectionPaths: Record<AdminSection, string> = {
   claims: paths.adminClaims,
   returns: paths.adminReturns,
   users: paths.adminUsers,
+  audit: paths.adminAudit,
 };

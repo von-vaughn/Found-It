@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { SuperAdminLayout } from "./SuperAdminLayout";
+import { AdminLayout } from "./AdminLayout";
 import {
   actionLabel,
   entityTypeLabel,
@@ -87,7 +87,7 @@ export function AuditLogsPage() {
   };
 
   return (
-    <SuperAdminLayout
+    <AdminLayout
       activeSection="audit"
       showSearch
       query={query}
@@ -262,7 +262,7 @@ export function AuditLogsPage() {
           )}
         </div>
       </Panel>
-    </SuperAdminLayout>
+    </AdminLayout>
   );
 }
 

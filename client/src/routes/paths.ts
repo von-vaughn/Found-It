@@ -16,6 +16,9 @@ export const paths = {
   adminClaims: "/admin/claims",
   adminReturns: "/admin/returns",
   adminUsers: "/admin/users",
+  adminAudit: "/admin/audit",
+  // Legacy super-admin URLs. Kept only so old bookmarks redirect instead of
+  // dead-ending; the admin and super_admin roles now share /admin.
   superadmin: "/superadmin",
   superadminItems: "/superadmin/items",
   superadminLost: "/superadmin/lost",

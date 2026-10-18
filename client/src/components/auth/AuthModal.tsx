@@ -199,11 +199,9 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       }
       onClose();
       const rolePath =
-        res.role === "admin"
+        res.role === "admin" || res.role === "super_admin"
           ? paths.admin
-          : res.role === "super_admin"
-            ? paths.superadmin
-            : paths.dashboard;
+          : paths.dashboard;
       navigate(getSafeRedirect(rolePath));
     } catch {
       setError("Sign in failed. Check your connection and try again.");
@@ -295,11 +293,9 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       }
       onClose();
       const rolePath =
-        result.role === "admin"
+        result.role === "admin" || result.role === "super_admin"
           ? paths.admin
-          : result.role === "super_admin"
-            ? paths.superadmin
-            : paths.dashboard;
+          : paths.dashboard;
       navigate(getSafeRedirect(rolePath));
     } catch {
       setError("Verification failed. Check your connection and try again.");

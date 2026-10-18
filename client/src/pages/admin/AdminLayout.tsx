@@ -3,14 +3,15 @@ import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { Moon, Search, Sun } from "lucide-react";
 import { useTheme } from "@/context/useTheme";
+import { useAuth } from "@/context/useAuth";
 import {
   AdminSidebar,
   type AdminNotification,
 } from "@/components/admin/AdminSidebar";
 import {
+  getPageCopy,
   initialNotifications,
-  navigation,
-  pageCopy,
+  navigationFor,
 } from "@/components/admin/adminData";
 import type { AdminSection } from "@/components/admin/types";
 import { takeAdminSidebarExpanded } from "@/components/admin/sidebarStickyState";
@@ -35,6 +36,8 @@ export function AdminLayout({
 }: AdminLayoutProps) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   // Restore the expanded state carried over from a nav-icon click (only set
   // when the pointer was over the sidebar). Fresh loads start collapsed.
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
@@ -44,7 +47,7 @@ export function AdminLayout({
   const [notifications, setNotifications] =
     useState<AdminNotification[]>(initialNotifications);
 
-  const copy = pageCopy[activeSection];
+  const copy = getPageCopy(activeSection, isSuperAdmin);
 
   const handleNotificationSelect = (notification: AdminNotification) => {
     setNotifications((current) =>
@@ -53,14 +56,14 @@ export function AdminLayout({
       ),
     );
     setNotificationsOpen(false);
-    navigate(`/admin/claims?claimId=${notification.claimId}`);
+    navigate(`${adminSectionPaths.claims}?claimId=${notification.claimId}`);
   };
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <AdminSidebar
         activeSection={activeSection}
-        navigation={navigation}
+        navigation={navigationFor(isSuperAdmin)}
         expanded={sidebarExpanded}
         onExpandedChange={setSidebarExpanded}
         notifications={notifications}
@@ -104,20 +107,27 @@ export function AdminLayout({
               className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 pl-9 pr-3 text-xs text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             />
           </div>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            aria-pressed={theme === "dark"}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
-          >
-            {theme === "dark" ? (
-              <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
-            ) : (
-              <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
+          <div className="flex shrink-0 items-center gap-2">
+            {isSuperAdmin && (
+              <span className="hidden shrink-0 rounded-md bg-neutral-900 dark:bg-neutral-100 dark:bg-neutral-800 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white dark:text-neutral-900 dark:text-neutral-100 sm:inline-block">
+                Super admin
+              </span>
             )}
-          </button>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-pressed={theme === "dark"}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
+              ) : (
+                <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </header>
       )}
       {!showSearch && (
@@ -153,6 +163,11 @@ export function AdminLayout({
           </a>
           <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div className="min-w-0">
+              {isSuperAdmin && (
+                <p className="mb-1 inline-flex rounded-md bg-neutral-900 dark:bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white dark:text-neutral-900 dark:text-neutral-100">
+                  Super admin
+                </p>
+              )}
               <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-2xl">
                 {copy.title}
               </h1>

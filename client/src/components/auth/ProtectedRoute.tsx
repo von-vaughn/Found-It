@@ -158,11 +158,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     toast.error("You are not authorized to view this section.");
     const roleFallback =
-      user.role === "admin"
+      user.role === "admin" || user.role === "super_admin"
         ? "/admin"
-        : user.role === "super_admin"
-          ? "/superadmin"
-          : "/dashboard";
+        : "/dashboard";
     return <Navigate to={roleFallback} replace />;
   }
 

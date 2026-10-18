@@ -25,6 +25,7 @@ import {
   LockedValue,
 } from "@/components/admin/SensitiveDetails";
 import { useSensitiveUnlock } from "@/components/admin/useSensitiveUnlock";
+import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import type { Item } from "@/data/mockItems";
 import type { ReturnItemRequest } from "@/types/claim";
 import { AdminLayout } from "./AdminLayout";
@@ -350,6 +351,7 @@ export function ReturnItemsPage({
 
   const { unlocked, promptOpen, requestUnlock, submitPassword, setPromptOpen } =
     useSensitiveUnlock();
+  const logDecision = useAuditDecision();
 
   const requestStatusChange = (requestId: string, status: StatusDecision) => {
     const target = requests.find((request) => request.id === requestId);
@@ -363,6 +365,13 @@ export function ReturnItemsPage({
   const confirmStatusChange = () => {
     if (!confirmAction || !confirmTargetRequest) return;
     onStatusChange(confirmAction.requestId, confirmAction.status);
+    logDecision({
+      action: confirmAction.status === "Approved" ? "approved" : "rejected",
+      entityType: "return_request",
+      entityId: confirmAction.requestId,
+      itemTitle: confirmTargetRequest.lostItemTitle,
+      details: `${confirmAction.status} by super admin for return ${confirmAction.requestId} (${confirmTargetRequest.claimant}).`,
+    });
     if (confirmAction.status === "Approved") {
       toast.success(
         `Approved return of "${confirmTargetRequest.lostItemTitle}" for ${confirmTargetRequest.claimant}.`,

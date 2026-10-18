@@ -10,6 +10,7 @@ import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { AdminLayout } from "./AdminLayout";
 import { useSelectedReport } from "@/components/admin/useSelectedReport";
+import { useAuditDecision } from "@/components/admin/useAuditDecision";
 
 const PAGE_SIZE = 10;
 
@@ -31,6 +32,22 @@ export function ReportsPage({
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
   const reports = useMemo(() => items.map(itemToAdminReport), [items]);
+  const logDecision = useAuditDecision();
+
+  const handleDelete = (id: string, reason?: string) => {
+    const target = reports.find((report) => report.id === id);
+    logDecision({
+      action: "rejected",
+      entityType: "item",
+      entityId: id,
+      itemTitle: target?.title ?? id,
+      details: reason
+        ? `Report removed: ${reason}`
+        : "Report removed by super admin.",
+    });
+    onDeleteItem(id, reason);
+    setSelectedReport(null);
+  };
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -241,10 +258,7 @@ export function ReportsPage({
           report={selectedReport}
           dialogRef={dialogRef}
           onClose={() => setSelectedReport(null)}
-          onDelete={(id, reason) => {
-            onDeleteItem(id, reason);
-            setSelectedReport(null);
-          }}
+          onDelete={handleDelete}
         />
       )}
       <CreatePostModal

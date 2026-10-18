@@ -27,11 +27,9 @@ export const RedirectIfAuthenticated: React.FC<{
 
   if (user) {
     const roleHome =
-      user.role === "admin"
+      user.role === "admin" || user.role === "super_admin"
         ? paths.admin
-        : user.role === "super_admin"
-          ? paths.superadmin
-          : paths.dashboard;
+        : paths.dashboard;
     return <Navigate to={roleHome} replace />;
   }
 

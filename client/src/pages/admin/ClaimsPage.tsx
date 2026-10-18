@@ -4,6 +4,7 @@ import type { ClaimRequest } from "@/types/claim";
 import type { RecordStatus } from "@/components/admin/types";
 import { ClaimsView } from "@/components/admin/ClaimsView";
 import { claims, itemToAdminReport } from "@/components/admin/adminData";
+import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import type { Item } from "@/data/mockItems";
 import { AdminLayout } from "./AdminLayout";
 
@@ -24,6 +25,7 @@ export function ClaimsPage({
   const [itemStatuses, setItemStatuses] = useState<
     Record<string, RecordStatus>
   >({});
+  const logDecision = useAuditDecision();
 
   const allClaims = useMemo(
     () =>
@@ -99,6 +101,27 @@ export function ClaimsPage({
     status: ClaimRequest["status"],
   ) => {
     setClaimStatuses((current) => ({ ...current, [id]: status }));
+    const action =
+      status === "Approved"
+        ? "approved"
+        : status === "Rejected"
+          ? "rejected"
+          : status === "Returned"
+            ? "returned"
+            : status === "Claimed"
+              ? "claimed"
+              : null;
+    if (!action) return;
+    const claim = allClaims.find((entry) => entry.id === id);
+    logDecision({
+      action,
+      entityType: "claim",
+      entityId: id,
+      itemTitle: claim?.item ?? id,
+      details: `${status} by super admin for claim ${id}${
+        claim ? ` (${claim.claimant})` : ""
+      }.`,
+    });
   };
 
   const handleItemStatusChange = (itemId: string, status: RecordStatus) => {

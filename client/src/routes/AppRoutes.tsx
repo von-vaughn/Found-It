@@ -10,7 +10,6 @@ import { paths } from "./paths";
 import { getPublicRoutes } from "./publicRoutes";
 import { getDashboardRoutes } from "./dashboardRoutes";
 import { getAdminRoutes } from "./adminRoutes";
-import { getSuperAdminRoutes } from "./superAdminRoutes";
 import type { ItemFilters } from "@/components/school_user/itemFilters";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
@@ -94,27 +93,10 @@ export function AppRoutes({
     ),
   }));
 
-  const superAdminRoutes = getSuperAdminRoutes({
-    items,
-    onAddItem,
-    onDeleteItem,
-    submittedClaims,
-    returnRequests,
-    onUpdateReturnRequestStatus,
-  }).map((route) => ({
-    ...route,
-    element: (
-      <ProtectedRoute allowedRoles={["super_admin"]}>
-        {route.element}
-      </ProtectedRoute>
-    ),
-  }));
-
   return useRoutes([
     ...publicRoutes,
     ...dashboardRoutes,
     ...adminRoutes,
-    ...superAdminRoutes,
     {
       path: paths.fallback,
       element: <Navigate to={paths.home} replace />,
