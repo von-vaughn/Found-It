@@ -6,8 +6,6 @@ import {
   findUserByEmail,
   findUserById,
   findUserWithHashByEmail,
-  recordFailedLogin,
-  resetFailedLogin,
   setUserVerified,
   updateUserPassword,
   updateUserRegistration,
@@ -273,19 +271,11 @@ export async function login(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  if (user.loginLockedUntil && user.loginLockedUntil.getTime() > Date.now()) {
-    res.status(429).json({ message: 'Account is temporarily locked due to failed login attempts. Try again later.' });
-    return;
-  }
-
   const passwordOk = await comparePassword(password, user.passwordHash);
   if (!passwordOk) {
-    await recordFailedLogin(user.id);
     res.status(401).json({ message: 'Invalid email or password.' });
     return;
   }
-
-  await resetFailedLogin(user.id);
 
   if (!user.isActive) {
     res.status(403).json({ message: 'Account is deactivated. Contact an administrator.' });
@@ -305,7 +295,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { passwordHash: _omit, failedLoginAttempts: _fla, loginLockedUntil: _llu, ...safe } = user;
+  const { passwordHash: _omit, ...safe } = user;
   const accessToken = signAccessToken(safe);
   const refreshToken = signRefreshToken(safe);
   await storeRefreshToken(safe.id, refreshToken, refreshExpiryDate());
@@ -315,7 +305,6 @@ export async function login(req: Request, res: Response): Promise<void> {
     message: 'Logged in successfully.',
     user: safe,
     accessToken,
-    mustChangePassword: safe.mustChangePassword,
   });
 }
 

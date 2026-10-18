@@ -8,13 +8,12 @@ function toSignOptions(expiresIn: string): SignOptions {
   return { expiresIn: expiresIn as SignOptions['expiresIn'] };
 }
 
-export function signAccessToken(user: { id: string; email: string; role: Role; mustChangePassword?: boolean }): string {
+export function signAccessToken(user: { id: string; email: string; role: Role }): string {
   const payload: JwtPayload = {
     sub: user.id,
     email: user.email,
     role: user.role,
     type: 'access',
-    mustChangePassword: user.mustChangePassword,
   };
   return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
     ...toSignOptions(env.JWT_ACCESS_EXPIRES_IN),

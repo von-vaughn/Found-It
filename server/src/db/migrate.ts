@@ -15,7 +15,7 @@ export async function migrate(): Promise<void> {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       first_name VARCHAR(50) NOT NULL,
       last_name VARCHAR(50) NOT NULL,
-      email VARCHAR(255) NOT NULL UNIQUE,
+      email VARCHAR(255) NOT NULL,
       password_hash TEXT NOT NULL,
       role VARCHAR(20) NOT NULL DEFAULT 'school_user'
         CHECK (role IN ('school_user', 'admin', 'super_admin')),
@@ -84,6 +84,7 @@ export async function migrate(): Promise<void> {
         CHECK (report_type IN ('lost', 'found')),
       date DATE NOT NULL,
       time TIME,
+      important_details TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -126,7 +127,7 @@ export async function migrate(): Promise<void> {
   `);
 
   await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_user_email ON "user"(email);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_user_email_lower ON "user" (LOWER(email));
     CREATE INDEX IF NOT EXISTS idx_user_role ON "user"(role);
     CREATE INDEX IF NOT EXISTS idx_refresh_token_user_id ON refresh_token(user_id);
     CREATE INDEX IF NOT EXISTS idx_email_otp_user_id ON email_otp(user_id);
@@ -141,11 +142,8 @@ export async function migrate(): Promise<void> {
   `);
 
   await pool.query(`
-    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS verification_failed_attempts INT NOT NULL DEFAULT 0;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS verification_locked_until TIMESTAMPTZ;
-    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS failed_login_attempts INT NOT NULL DEFAULT 0;
-    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS login_locked_until TIMESTAMPTZ;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS last_resend_at TIMESTAMPTZ;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS resend_count_window INT NOT NULL DEFAULT 0;
 

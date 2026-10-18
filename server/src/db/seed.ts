@@ -80,7 +80,6 @@ export async function seed(): Promise<void> {
       passwordHash: await hashPassword(env.SUPER_ADMIN_PASSWORD),
       role: 'super_admin',
       isVerified: true,
-      mustChangePassword: env.NODE_ENV === 'production',
     });
     console.log(`Seeded super_admin: ${env.SUPER_ADMIN_EMAIL}`);
   }
@@ -109,7 +108,7 @@ export async function seed(): Promise<void> {
     // Dev convenience: ensure all seeded demo and superadmin accounts in dev are verified
     await pool.query(
       `UPDATE "user" SET is_verified = TRUE WHERE email IN ($1, $2, $3)`,
-      [env.SUPER_ADMIN_EMAIL, 'admin@foundit.local', 'user@foundit.local'],
+      [env.SUPER_ADMIN_EMAIL.trim().toLowerCase(), 'admin@foundit.local', 'user@foundit.local'],
     );
   }
 
