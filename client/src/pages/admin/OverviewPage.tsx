@@ -3,8 +3,8 @@ import { Overview } from "@/components/admin/Overview";
 import { ItemDetailsDialog } from "@/components/admin/ItemDetailsDialog";
 import type { AdminSection } from "@/components/admin/types";
 import { AdminLayout } from "./AdminLayout";
-import { adminSectionPaths } from "./adminRoutes";
-import { useSelectedReport } from "./useSelectedReport";
+import { adminSectionPaths } from "./sectionPaths";
+import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import type { Item } from "@/data/mockItems";
 import type { ReturnItemRequest } from "@/types/claim";
 

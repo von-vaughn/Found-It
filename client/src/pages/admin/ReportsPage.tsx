@@ -9,7 +9,7 @@ import type { Item } from "@/data/mockItems";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { AdminLayout } from "./AdminLayout";
-import { useSelectedReport } from "./useSelectedReport";
+import { useSelectedReport } from "@/components/admin/useSelectedReport";
 
 const PAGE_SIZE = 10;
 

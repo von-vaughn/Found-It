@@ -11,7 +11,7 @@ import { initialNotifications } from "@/components/admin/adminData";
 import type { SuperAdminSection } from "./types";
 import { superAdminNavigation, superAdminPageCopy } from "./superAdminData";
 import { takeAdminSidebarExpanded } from "@/components/admin/sidebarStickyState";
-import { superAdminSectionPaths } from "./superAdminRoutes";
+import { superAdminSectionPaths } from "./sectionPaths";
 
 interface SuperAdminLayoutProps {
   activeSection: SuperAdminSection;

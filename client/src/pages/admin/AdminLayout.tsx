@@ -14,7 +14,7 @@ import {
 } from "@/components/admin/adminData";
 import type { AdminSection } from "@/components/admin/types";
 import { takeAdminSidebarExpanded } from "@/components/admin/sidebarStickyState";
-import { adminSectionPaths } from "./adminRoutes";
+import { adminSectionPaths } from "./sectionPaths";
 
 interface AdminLayoutProps {
   activeSection: AdminSection;

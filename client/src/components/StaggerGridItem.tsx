@@ -1,5 +1,5 @@
 import React from "react";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { motion, useReducedMotion, type Variants } from "motion/react";
 
 const gridVariants: Variants = {
   hidden: {},
@@ -25,7 +25,7 @@ interface StaggerGridProps {
 /**
  * Grid container that orchestrates a single smooth left-to-right,
  * top-to-bottom cascade across its `StaggerItem` children via
- * framer-motion's `staggerChildren`. Give it a `key` derived from the
+ * motion's `staggerChildren`. Give it a `key` derived from the
  * active filters so the cascade replays when the result set changes.
  * Respects prefers-reduced-motion.
  */

@@ -6,7 +6,7 @@ import { Footer } from "@/components/Footer";
 import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { AppRoutes } from "@/routes";
+import { AppRoutes } from "@/routes/AppRoutes";
 import type { Item } from "@/data/mockItems";
 import {
   defaultFilters,

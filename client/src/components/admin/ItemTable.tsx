@@ -1,5 +1,5 @@
 import { StatusBadge } from "./StatusBadge";
-import { NoItemImage } from "./NoItemImage";
+import { NoItemImage } from "@/components/NoItemImage";
 import type { AdminReport } from "./types";
 
 export function ItemTable({

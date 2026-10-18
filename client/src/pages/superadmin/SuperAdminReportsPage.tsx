@@ -9,7 +9,7 @@ import type { Item } from "@/data/mockItems";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { SuperAdminLayout } from "./SuperAdminLayout";
-import { useSelectedReport } from "./useSelectedReport";
+import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import { useAuth } from "@/context/useAuth";
 import { appendAuditLog, loadAuditLogs } from "@/lib/auditLog";
 

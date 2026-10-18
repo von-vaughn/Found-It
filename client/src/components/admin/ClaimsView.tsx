@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { Panel } from "./Panel";
-import { NoItemImage } from "./NoItemImage";
+import { NoItemImage } from "@/components/NoItemImage";
 import {
   AdminPasswordModal,
   LockedValue,

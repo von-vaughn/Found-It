@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { itemToAdminReport } from "@/components/admin/adminData";
-import { NoItemImage } from "@/components/admin/NoItemImage";
+import { NoItemImage } from "@/components/NoItemImage";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { StatusFilter } from "@/components/admin/StatusFilter";

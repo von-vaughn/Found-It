@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useEffect, useRef, type RefObject } from "react";
 import { Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
-import { NoItemImage } from "./NoItemImage";
+import { NoItemImage } from "@/components/NoItemImage";
 import type { AdminReport } from "./types";
 
 function formatEventDate(report: AdminReport): string {
