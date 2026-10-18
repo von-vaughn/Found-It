@@ -62,7 +62,7 @@ export async function migrate(): Promise<void> {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS location (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      building_id UUID NOT NULL REFERENCES building(building_id) ON DELETE CASCADE,
+      building_id UUID REFERENCES building(building_id) ON DELETE CASCADE,
       description TEXT NOT NULL
     );
   `);
@@ -149,5 +149,8 @@ export async function migrate(): Promise<void> {
 
     ALTER TABLE refresh_token ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;
     ALTER TABLE refresh_token ADD COLUMN IF NOT EXISTS revoked_reason VARCHAR(20);
+
+    -- A report can name a location without picking a building.
+    ALTER TABLE location ALTER COLUMN building_id DROP NOT NULL;
   `);
 }

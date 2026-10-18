@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
+  categoryExists,
   createItem,
   deleteItem,
   findItemById,
@@ -17,19 +18,34 @@ const itemDateSchema = z
   .refine((s) => !Number.isNaN(Date.parse(`${s}T00:00:00Z`)), 'Invalid calendar date')
   .refine((s) => new Date(`${s}T00:00:00Z`) <= new Date(), 'Date cannot be in the future');
 
+const itemTimeSchema = z
+  .string()
+  .trim()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be HH:MM');
+
 const createItemSchema = z.object({
   reportType: z.enum(REPORT_TYPES),
   name: z.string().trim().min(2, 'Item name must be at least 2 characters').max(100),
   description: z.string().trim().min(10, 'Description must be at least 10 characters').max(2000),
   itemDate: itemDateSchema,
-  category: z.string().trim().min(2, 'Category must be at least 2 characters').max(50),
+  itemTime: itemTimeSchema.optional(),
+  categoryId: z.string().uuid('categoryId must be a UUID'),
+  color: z.string().trim().min(1).max(50).optional(),
+  building: z.string().trim().min(1).max(100).optional(),
+  location: z.string().trim().min(1).max(500).optional(),
+  importantDetails: z.string().trim().min(1).max(2000).optional(),
 });
 
 const updateItemSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   description: z.string().trim().min(10).max(2000).optional(),
   itemDate: itemDateSchema.optional(),
-  category: z.string().trim().min(2).max(50).optional(),
+  itemTime: itemTimeSchema.optional(),
+  categoryId: z.string().uuid('categoryId must be a UUID').optional(),
+  color: z.string().trim().min(1).max(50).optional(),
+  importantDetails: z.string().trim().min(1).max(2000).optional(),
+  building: z.string().trim().min(1).max(100).optional(),
+  location: z.string().trim().min(1).max(500).optional(),
 });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -71,25 +87,34 @@ export async function createItemReport(req: Request, res: Response): Promise<voi
     zodError(res, parsed.error);
     return;
   }
+  if (!(await categoryExists(parsed.data.categoryId))) {
+    res.status(400).json({ message: 'Unknown categoryId.' });
+    return;
+  }
   const { id } = await createItem({ reporterId: req.user!.sub, ...parsed.data });
-  const item = await findItemById(id, seesReporterEmail(req));
+  const item = await findItemById(id, seesReporterEmail(req), req.user!.sub);
   res.status(201).json({ message: 'Item report submitted.', item });
 }
 
-/** GET /api/items — any authenticated user (admins see reporter emails). Filters: reportType, category, search, mine */
+/** GET /api/items — any authenticated user (admins see reporter emails). Filters: reportType, categoryId, search, mine */
 export async function getAllItems(req: Request, res: Response): Promise<void> {
   const reportType =
     typeof req.query.reportType === 'string' ? (req.query.reportType as ReportType) : undefined;
-  const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+  const categoryId = typeof req.query.categoryId === 'string' ? req.query.categoryId : undefined;
   const search = typeof req.query.search === 'string' ? req.query.search : undefined;
   const mine = req.query.mine === 'true' ? req.user!.sub : undefined;
   if (reportType && !REPORT_TYPES.includes(reportType)) {
     res.status(400).json({ message: `Invalid reportType. Allowed: ${REPORT_TYPES.join(', ')}` });
     return;
   }
+  if (categoryId && !UUID_RE.test(categoryId)) {
+    res.status(400).json({ message: 'Invalid categoryId. Must be a UUID.' });
+    return;
+  }
   const items = await listItems(
-    { reportType, category, search, reporterId: mine },
+    { reportType, categoryId, search, reporterId: mine },
     seesReporterEmail(req),
+    req.user!.sub,
   );
   res.json({ items, count: items.length });
 }
@@ -98,7 +123,7 @@ export async function getAllItems(req: Request, res: Response): Promise<void> {
 export async function getItemById(req: Request, res: Response): Promise<void> {
   const id = getId(req);
   if (invalidId(res, id)) return;
-  const item = await findItemById(id, seesReporterEmail(req));
+  const item = await findItemById(id, seesReporterEmail(req), req.user!.sub);
   if (!item) {
     res.status(404).json({ message: 'Item not found.' });
     return;
@@ -128,7 +153,15 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
     res.status(403).json({ message: 'You can only edit your own reports.' });
     return;
   }
-  const updated = await updateItem(id, parsed.data, seesReporterEmail(req));
+  if (parsed.data.categoryId && !(await categoryExists(parsed.data.categoryId))) {
+    res.status(400).json({ message: 'Unknown categoryId.' });
+    return;
+  }
+  if (parsed.data.building && !parsed.data.location) {
+    res.status(400).json({ message: 'location is required when changing building.' });
+    return;
+  }
+  const updated = await updateItem(id, parsed.data, seesReporterEmail(req), req.user!.sub);
   res.json({ message: 'Item report updated.', item: updated });
 }
 
