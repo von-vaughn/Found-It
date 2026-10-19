@@ -3,6 +3,8 @@ import { MoreHorizontal, Award, Package } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
+import { useAuth } from "@/context/useAuth";
+import { useDeleteItem } from "@/hooks/useItems";
 import toast from "react-hot-toast";
 
 interface ItemCardProps {
@@ -15,13 +17,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   onItemClick,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useAuth();
+  const deleteMutation = useDeleteItem();
+  const isOwnPost = Boolean(item.reporterId && item.reporterId === user?.id);
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard?.writeText(window.location.href);
-    toast.success(`Copied link to "${item.title}"`, {
-      icon: "🔗",
-      id: `share-${item.id}`,
+  const handleDelete = () => {
+    setMenuOpen(false);
+    if (!window.confirm(`Delete "${item.title}"? This action cannot be undone.`)) {
+      return;
+    }
+    deleteMutation.mutate(item.id, {
+      onSuccess: () => toast.success("Your report was deleted."),
+      onError: (err) => {
+        console.error("Failed to delete item:", err);
+        toast.error("Failed to delete item.");
+      },
     });
   };
 
@@ -56,24 +66,24 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       >
         View Details
       </button>
-      <button
-        onClick={(e) => {
-          setMenuOpen(false);
-          handleShare(e);
-        }}
-        className="w-full px-3 py-1.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-      >
-        Share Link
-      </button>
-      <button
-        onClick={() => {
-          setMenuOpen(false);
-          toast.success("Post reported to admin");
-        }}
-        className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-      >
-        Report Post
-      </button>
+      {isOwnPost ? (
+        <button
+          onClick={handleDelete}
+          className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+        >
+          Delete Post
+        </button>
+      ) : (
+        <button
+          onClick={() => {
+            setMenuOpen(false);
+            toast.success("Post reported to admin");
+          }}
+          className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+        >
+          Report Post
+        </button>
+      )}
     </div>
   );
 

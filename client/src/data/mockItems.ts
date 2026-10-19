@@ -2,6 +2,7 @@ import type { ItemCategory } from "@/data/itemCategories";
 
 export interface Item {
   id: string;
+  reporterId?: string;
   title: string;
   type: 'lost' | 'found';
   category: ItemCategory;

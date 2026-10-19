@@ -31,6 +31,7 @@ export function toClientItem(server: ServerItem): Item {
 
   return {
     id: server.id,
+    reporterId: server.reporterId,
     title: server.name,
     type: server.reportType,
     category: server.category as Item["category"],

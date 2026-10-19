@@ -26,8 +26,8 @@ import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
-import { useItemDetail, useDeleteItem } from "@/hooks/useItems";
-import { toClientItem } from "@/lib/itemAdapter";
+import { useItemDetail, useDeleteItem, useItems } from "@/hooks/useItems";
+import { toClientItem, toClientItems } from "@/lib/itemAdapter";
 import { UUID_RE } from "@/services/itemService";
 import type {
   ClaimRequest,
@@ -134,6 +134,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   };
 
   const { data: serverItem, isLoading: isItemLoading } = useItemDetail(id ?? "");
+  const { data: serverItems } = useItems();
   const deleteItemMutation = useDeleteItem();
 
   const item = useMemo(() => {
@@ -171,6 +172,12 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Opening another item from the related list swaps the route id without
+  // remounting the page; bring the new item's details into view.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -257,12 +264,24 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     toast.success("Response marked as not yours.");
   };
 
-  const similarItems = useMemo(() => {
+  // Related posts come from the backend list, not the example-content props:
+  // same category, same lost/found type, excluding the item being viewed.
+  const apiItems = useMemo(
+    () => (serverItems ? toClientItems(serverItems) : []),
+    [serverItems],
+  );
+
+  const relatedItems = useMemo(() => {
     if (!item) return [];
-    return items
-      .filter((entry) => entry.id !== item.id && entry.category === item.category)
+    return apiItems
+      .filter(
+        (entry) =>
+          entry.id !== item.id &&
+          entry.category === item.category &&
+          entry.type === item.type,
+      )
       .slice(0, 4);
-  }, [items, item]);
+  }, [apiItems, item]);
   // Found reports that may match your own lost item, ranked by how closely
   // category, color, place, timing, and title overlap.
   const suggestedMatches = useMemo(() => {
@@ -887,20 +906,21 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             </section>
           )}
 
-          {/* Similar items (hidden on your own reports) */}
-          {!isOwnItem && similarItems.length > 0 && (
-            <section aria-labelledby="similar-heading">
+          {/* Related posts: same category and same lost/found type */}
+          {relatedItems.length > 0 && (
+            <section aria-labelledby="related-heading">
               <h2
-                id="similar-heading"
+                id="related-heading"
                 className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
               >
-                Similar {category?.label.toLowerCase() ?? "item"} reports
+                Related {isLost ? "lost" : "found"}{" "}
+                {category?.label.toLowerCase() ?? "item"} reports
               </h2>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {similarItems.map((similar) => (
+                {relatedItems.map((related) => (
                   <ItemCard
-                    key={similar.id}
-                    item={similar}
+                    key={related.id}
+                    item={related}
                     onItemClick={(selected) =>
                       navigate(`/dashboard/items/${selected.id}`)
                     }
