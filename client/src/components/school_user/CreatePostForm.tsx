@@ -778,7 +778,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         <div className="min-w-0 space-y-4">
           <div>
             <label htmlFor="report-title" className={labelClass}>
-              What is it?
+              What is it? *
             </label>
             <input
               id="report-title"
