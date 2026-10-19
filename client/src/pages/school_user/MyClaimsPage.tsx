@@ -486,7 +486,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                 })}
               </StaggerGrid>
             ) : (
-              <div className="py-16 text-center">
+              <div className="flex min-h-[60dvh] flex-col items-center justify-center px-4 py-16 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500">
                   {searchQuery || statusFilter !== "all" ? (
                     <SearchX
@@ -501,27 +501,19 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                   )}
                 </div>
                 <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                  {searchQuery || statusFilter !== "all"
-                    ? "No matching requests"
-                    : "No claim requests yet"}
+                  {statusFilter !== "all"
+                    ? `No ${statusFilter.toLowerCase()} requests`
+                    : searchQuery.trim()
+                      ? "No matching requests"
+                      : "No claim requests yet"}
                 </h2>
-                <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-                  {searchQuery || statusFilter !== "all"
-                    ? "Try a different search term or status filter."
-                    : "Requests you file on found posts will appear here with their approval status."}
-                </p>
-                {searchQuery || statusFilter !== "all" ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setStatusFilter("all");
-                    }}
-                    className="mt-4 rounded-xl bg-neutral-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
-                  >
-                    Clear search and filters
-                  </button>
-                ) : (
+                {!searchQuery.trim() && statusFilter === "all" && (
+                  <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
+                    Requests you file on found posts will appear here with their
+                    approval status.
+                  </p>
+                )}
+                {!searchQuery.trim() && statusFilter === "all" && (
                   <button
                     type="button"
                     onClick={() => navigate("/dashboard")}

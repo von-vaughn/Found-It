@@ -108,13 +108,16 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
             <ul className="space-y-2 pb-8">
               {notifications.map((notification) =>
                 notification.itemId ? (
-                  <li key={notification.id}>
+                  <li
+                    key={notification.id}
+                    className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 max-md:rounded-none max-md:border-x-0 max-md:border-t-0 max-md:last:border-b-0"
+                  >
                     <button
                       type="button"
                       onClick={() =>
                         navigate(`/dashboard/items/${notification.itemId}`)
                       }
-                      className="block w-full rounded-2xl border border-neutral-200/80 p-4 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:hover:bg-neutral-800"
+                      className="block w-full rounded-2xl p-4 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:hover:bg-neutral-800 max-md:rounded-none"
                     >
                       <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                         {notification.title}
@@ -130,7 +133,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
                 ) : (
                   <li
                     key={notification.id}
-                    className="rounded-2xl border border-neutral-200/80 p-4 dark:border-neutral-800"
+                    className="rounded-2xl border border-neutral-200/80 p-4 dark:border-neutral-800 max-md:rounded-none max-md:border-x-0 max-md:border-t-0 max-md:last:border-b-0"
                   >
                     <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                       {notification.title}

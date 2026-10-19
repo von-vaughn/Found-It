@@ -776,6 +776,30 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             </section>
           )}
 
+          {/* Related posts: same category and same lost/found type */}
+          {relatedItems.length > 0 && (
+            <section aria-labelledby="related-heading">
+              <h2
+                id="related-heading"
+                className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
+              >
+                Related {isLost ? "lost" : "found"}{" "}
+                {category?.label.toLowerCase() ?? "item"} reports
+              </h2>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {relatedItems.map((related) => (
+                  <ItemCard
+                    key={related.id}
+                    item={related}
+                    onItemClick={(selected) =>
+                      navigate(`/dashboard/items/${selected.id}`)
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* People holding this item (own lost reports only) */}
           {isOwnItem && isLost && (
             <section aria-labelledby="finder-reports-heading">
@@ -906,29 +930,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             </section>
           )}
 
-          {/* Related posts: same category and same lost/found type */}
-          {relatedItems.length > 0 && (
-            <section aria-labelledby="related-heading">
-              <h2
-                id="related-heading"
-                className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
-              >
-                Related {isLost ? "lost" : "found"}{" "}
-                {category?.label.toLowerCase() ?? "item"} reports
-              </h2>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {relatedItems.map((related) => (
-                  <ItemCard
-                    key={related.id}
-                    item={related}
-                    onItemClick={(selected) =>
-                      navigate(`/dashboard/items/${selected.id}`)
-                    }
-                  />
-                ))}
-              </div>
-            </section>
-          )}
         </main>
         </div>
       </div>
