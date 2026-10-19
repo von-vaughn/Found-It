@@ -75,7 +75,21 @@ export function useCreateItem() {
 
   return useMutation({
     mutationFn: (payload: CreateItemPayload) => createItem(payload),
-    onSuccess: () => {
+    onSuccess: (created) => {
+      // Insert the server-confirmed item into cached lists immediately so the
+      // dashboard shows it without waiting for (or depending on) a refetch.
+      queryClient.setQueriesData<ServerItem[]>(
+        { queryKey: itemKeys.lists() },
+        (current) =>
+          current
+            ? [created, ...current.filter((item) => item.id !== created.id)]
+            : current,
+      );
+      queryClient.setQueryData<ServerItem[]>(itemKeys.mine(), (current) =>
+        current
+          ? [created, ...current.filter((item) => item.id !== created.id)]
+          : current,
+      );
       // Invalidate both the full list and the user's own list so the new
       // item shows up immediately on the dashboard and profile pages.
       queryClient.invalidateQueries({ queryKey: itemKeys.lists() });

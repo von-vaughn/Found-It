@@ -327,10 +327,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {isItemsLoading ? (
             <DashboardGridSkeleton />
           ) : filteredItems.length > 0 ? (
-            // Key includes the result-shaping state so the one-shot in-view
-            // animation replays when the result set changes.
+            // Key includes the result-shaping state and data identity so
+            // newly published cards remount instead of inheriting the
+            // one-shot animation's finished hidden state.
             <StaggerGrid
-              key={`${activeNavTab}-${selectedCategory}-${JSON.stringify(filters)}`}
+              key={`${activeNavTab}-${selectedCategory}-${JSON.stringify(filters)}-${filteredItems.length}-${filteredItems[0]?.id ?? ""}`}
               className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 gap-6 pb-12"
             >
               {filteredItems.map((item) => (

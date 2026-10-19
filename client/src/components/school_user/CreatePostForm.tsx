@@ -7,7 +7,7 @@ import {
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { Item } from "@/data/mockItems";
-import { useAuth } from "@/context/useAuth";
+import { toClientItem } from "@/lib/itemAdapter";
 import { useCreateItem } from "@/hooks/useItems";
 import { useCategoryMap, getCategoryUuid } from "@/hooks/useCategories";
 import { uploadImage, uploadImages } from "@/services/itemService";
@@ -48,6 +48,38 @@ const inputClass =
 const labelClass =
   "block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1.5";
 
+type FieldId =
+  | "report-title"
+  | "report-color"
+  | "report-date"
+  | "report-time"
+  | "report-building"
+  | "report-location"
+  | "report-category"
+  | "report-description"
+  | "report-important-details";
+
+type FieldErrors = Partial<Record<FieldId, string>>;
+
+function FieldError({
+  fieldId,
+  message,
+}: {
+  fieldId: FieldId;
+  message?: string;
+}) {
+  if (!message) return null;
+  return (
+    <p
+      id={`${fieldId}-error`}
+      role="alert"
+      className="mt-1.5 text-[11px] font-medium text-[#E5192D] dark:text-red-400"
+    >
+      {message}
+    </p>
+  );
+}
+
 function stopCameraStream(stream: MediaStream | null): void {
   stream?.getTracks().forEach((track) => track.stop());
 }
@@ -80,6 +112,27 @@ function getCameraErrorMessage(error: unknown): string {
   return "The camera could not be started. Check your camera connection and try again.";
 }
 
+function getPublishErrorMessage(error: unknown): string {
+  const data = (
+    error as {
+      response?: {
+        data?: {
+          message?: string;
+          errors?: Array<{ field?: string; message?: string }>;
+        };
+      };
+    }
+  )?.response?.data;
+  const details = data?.errors
+    ?.map((issue) => issue.message)
+    .filter((message): message is string => Boolean(message))
+    .join(" ");
+  if (data?.message && details) return `${data.message}: ${details}`;
+  if (data?.message) return data.message;
+  if (error instanceof Error) return error.message;
+  return "Could not publish your report. Please try again.";
+}
+
 export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   active,
   onAddItem,
@@ -88,7 +141,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   initialType = "lost",
   initialItem = null,
 }) => {
-  const { user } = useAuth();
   const createItemMutation = useCreateItem();
   const categoryMap = useCategoryMap();
   const isMobileView = useIsMobileView();
@@ -108,9 +160,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [lostImages, setLostImages] = useState<string[]>([]);
   const [lostFiles, setLostFiles] = useState<(File | Blob)[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [uploadingText, setUploadingText] = useState<string | null>(null);
   const lostUrlsRef = useRef<string[]>([]);
   const [photoRequiredError, setPhotoRequiredError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mobileCameraInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -138,6 +192,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       initialType,
     });
     setPhotoRequiredError(false);
+    setFieldErrors({});
     if (active) {
       // Reset the camera preview state for a fresh capture session.
       setCameraState("starting");
@@ -362,29 +417,138 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     }
   };
 
+  const errorProps = (fieldId: FieldId) => ({
+    "aria-invalid": fieldErrors[fieldId] ? true : undefined,
+    "aria-describedby": fieldErrors[fieldId]
+      ? `${fieldId}-error`
+      : undefined,
+  });
+
+  const handleFieldChange = (e: React.ChangeEvent<HTMLFormElement>) => {
+    const fieldId = (e.target as HTMLElement).id as FieldId;
+    setFieldErrors((current) => {
+      if (!current[fieldId]) return current;
+      const next = { ...current };
+      delete next[fieldId];
+      return next;
+    });
+  };
+
+  const validateFields = (): FieldErrors => {
+    const errors: FieldErrors = {};
+    const trimmedTitle = title.trim();
+    const trimmedLocation = location.trim();
+    const trimmedDescription = description.trim();
+    const trimmedDetails = importantDetails.trim();
+
+    if (!trimmedTitle) {
+      errors["report-title"] = "Enter what the item is.";
+    } else if (trimmedTitle.length < 2) {
+      errors["report-title"] = "Use at least 2 characters.";
+    } else if (trimmedTitle.length > 100) {
+      errors["report-title"] = "Keep the title to 100 characters or fewer.";
+    }
+
+    if (color.trim().length > 50) {
+      errors["report-color"] = "Use 50 characters or fewer.";
+    }
+
+    if (!dateValue) {
+      errors["report-date"] = "Choose the date.";
+    } else {
+      const parsedDate = new Date(`${dateValue}T00:00:00Z`);
+      if (
+        Number.isNaN(parsedDate.getTime()) ||
+        parsedDate.toISOString().slice(0, 10) !== dateValue
+      ) {
+        errors["report-date"] = "Enter a valid date.";
+      } else if (parsedDate > new Date()) {
+        errors["report-date"] = "The date cannot be in the future.";
+      }
+    }
+
+    if (!timeValue) {
+      errors["report-time"] = "Choose the approximate time.";
+    } else if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(timeValue)) {
+      errors["report-time"] = "Enter a valid time.";
+    }
+
+    if (building.trim().length > 100) {
+      errors["report-building"] = "Use 100 characters or fewer.";
+    }
+
+    if (!trimmedLocation) {
+      errors["report-location"] =
+        type === "lost"
+          ? "Enter where you lost the item."
+          : "Enter where you found the item.";
+    } else if (trimmedLocation.length > 500) {
+      errors["report-location"] = "Use 500 characters or fewer.";
+    }
+
+    if (!ITEM_CATEGORIES.some((option) => option.id === category)) {
+      errors["report-category"] = "Choose a category.";
+    }
+
+    if (trimmedDescription && trimmedDescription.length < 10) {
+      errors["report-description"] =
+        "Use at least 10 characters, or leave it blank.";
+    } else if (trimmedDescription.length > 2000) {
+      errors["report-description"] = "Use 2,000 characters or fewer.";
+    }
+
+    if (!trimmedDetails) {
+      errors["report-important-details"] =
+        "Add a detail only the owner would know.";
+    } else if (trimmedDetails.length > 2000) {
+      errors["report-important-details"] = "Use 2,000 characters or fewer.";
+    }
+
+    return errors;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !location.trim()) {
-      toast.error("Add a title and location first.");
-      return;
-    }
-    if (type === "found" && !previewImage) {
-      setPhotoRequiredError(true);
-      toast.error("Attach a photo of the found item first.");
-      return;
-    }
-    if (!dateValue || !timeValue) {
-      toast.error("Add the date and time first.");
-      return;
-    }
-    if (!importantDetails.trim()) {
-      toast.error("Add important details for ownership verification.");
+    if (isSubmittingRef.current) return;
+
+    const errors = validateFields();
+    const photoMissing = type === "found" && !previewImage;
+    setFieldErrors(errors);
+    setPhotoRequiredError(photoMissing);
+
+    if (Object.keys(errors).length > 0 || photoMissing) {
+      toast.error("Please fix the highlighted fields before publishing.");
+      const firstInvalidField = Object.keys(errors)[0];
+      if (firstInvalidField) {
+        document.getElementById(firstInvalidField)?.focus();
+      }
       return;
     }
 
     const submitAsync = async () => {
+      isSubmittingRef.current = true;
       setIsSubmitting(true);
       try {
+        // Resolve the category before uploading anything, so a failed lookup
+        // can never leave an orphaned Drive image with no published post.
+        let categoryUuid: string | undefined;
+        if (!isEditing) {
+          setUploadingText("Preparing report...");
+          categoryUuid = categoryMap?.get(category);
+          if (!categoryUuid) {
+            try {
+              categoryUuid = await getCategoryUuid(category);
+            } catch {
+              categoryUuid = undefined;
+            }
+          }
+          if (!categoryUuid) {
+            throw new Error(
+              "Could not resolve the selected category. Check your connection and try again.",
+            );
+          }
+        }
+
         let finalImageUrl = "";
         let finalImageUrls: string[] = [];
 
@@ -454,74 +618,37 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           return;
         }
 
-        const username = user?.name
-          ? user.name.toLowerCase().replace(/\s+/g, "_")
-          : "vaughn_e";
-
-        const newItem: Item = {
-          id: `post-${Date.now()}`,
-          title: title.trim(),
-          type,
-          category,
-          username,
-          userAvatar: "/images/avatars/vaughn_evangelista.svg",
-          building: building.trim() || undefined,
-          location: location.trim(),
-          date: dateValue,
-          dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
-          timeAgo: "Just now",
-          image: finalImageUrl || (type === "lost" ? (lostImages[0] ?? "") : (previewImage ?? "")),
-          images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
-          description: description.trim() || "No additional description provided.",
-          status: "active",
-          contactName: user?.name || "Vaughn Evangelista",
-          likes: 0,
-          commentsCount: 0,
-          saved: false,
-        };
-        if (color.trim()) newItem.color = color.trim();
-        if (importantDetails.trim())
-          newItem.confidentialInfo = importantDetails.trim();
-
-        // Optimistic local update so the item shows immediately in the feed.
-        onAddItem(newItem);
-
-        // Submit to the API. Resolve the category slug to its server-side UUID.
-        let categoryUuid = categoryMap?.get(category);
+        // Submit to the API and wait for the server-confirmed item before
+        // showing a success message or adding anything to the dashboard.
         if (!categoryUuid) {
-          try {
-            categoryUuid = await getCategoryUuid(category);
-          } catch {
-            // ignore network failure on category fetch
-          }
+          throw new Error(
+            "Could not resolve the selected category. Check your connection and try again.",
+          );
         }
-        if (categoryUuid) {
-          setUploadingText("Publishing report...");
-          await createItemMutation.mutateAsync({
-            reportType: type,
-            name: title.trim(),
-            description: description.trim() || "No additional description provided.",
-            itemDate: dateValue,
-            itemTime: timeValue || undefined,
-            categoryId: categoryUuid,
-            color: color.trim() || undefined,
-            building: building.trim() || undefined,
-            location: location.trim() || undefined,
-            importantDetails: importantDetails.trim() || undefined,
-            image: finalImageUrl || undefined,
-            images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
-          });
-        }
+        setUploadingText("Publishing report...");
+        const created = await createItemMutation.mutateAsync({
+          reportType: type,
+          name: title.trim(),
+          description: description.trim() || "No additional description provided.",
+          itemDate: dateValue,
+          itemTime: timeValue || undefined,
+          categoryId: categoryUuid,
+          color: color.trim() || undefined,
+          building: building.trim() || undefined,
+          location: location.trim() || undefined,
+          importantDetails: importantDetails.trim() || undefined,
+          image: finalImageUrl || undefined,
+          images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
+        });
 
-        toast.success(
-          `Published your ${type === "lost" ? "lost" : "found"} item post.`,
-        );
+        onAddItem(toClientItem(created));
+        toast.success(`Published "${created.name}" to the dashboard.`);
         onSubmitted();
       } catch (err: unknown) {
         console.error("Failed to submit item report:", err);
-        const errMsg = err instanceof Error ? err.message : "Failed to save to server.";
-        toast.error(`Error: ${errMsg}`);
+        toast.error(getPublishErrorMessage(err));
       } finally {
+        isSubmittingRef.current = false;
         setIsSubmitting(false);
         setUploadingText(null);
       }
@@ -571,6 +698,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       {/* Form: upload left, details right */}
       <form
         onSubmit={handleSubmit}
+        onChange={handleFieldChange}
+        noValidate
         className="mt-5 grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6"
       >
         {/* Left: photo — live camera for found items, file upload for lost */}
@@ -772,6 +901,15 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           </div>
           </>
           )}
+          {type === "found" && photoRequiredError && (
+            <p
+              id="report-photo-error"
+              role="alert"
+              className="mt-2 text-[11px] font-medium text-[#E5192D] dark:text-red-400"
+            >
+              Add a photo of the found item.
+            </p>
+          )}
         </div>
 
         {/* Right: details */}
@@ -791,6 +929,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               autoComplete="off"
               spellCheck={false}
               className={inputClass}
+              {...errorProps("report-title")}
+            />
+            <FieldError
+              fieldId="report-title"
+              message={fieldErrors["report-title"]}
             />
           </div>
 
@@ -810,6 +953,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   autoComplete="off"
                   spellCheck={false}
                   className={`${inputClass} pr-9`}
+                  {...errorProps("report-color")}
                 />
                 <span
                   aria-hidden="true"
@@ -819,6 +963,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-neutral-200 dark:border-neutral-800"
                 />
               </div>
+              <FieldError
+                fieldId="report-color"
+                message={fieldErrors["report-color"]}
+              />
             </div>
             <div className="min-w-0">
               <label htmlFor="report-date" className={labelClass}>
@@ -833,6 +981,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 max={localDateTime().slice(0, 10)}
                 onChange={(e) => setDateValue(e.target.value)}
                 className={`${inputClass} cursor-pointer`}
+                {...errorProps("report-date")}
+              />
+              <FieldError
+                fieldId="report-date"
+                message={fieldErrors["report-date"]}
               />
             </div>
           </div>
@@ -850,6 +1003,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 value={timeValue}
                 onChange={(e) => setTimeValue(e.target.value)}
                 className={`${inputClass} cursor-pointer`}
+                {...errorProps("report-time")}
+              />
+              <FieldError
+                fieldId="report-time"
+                message={fieldErrors["report-time"]}
               />
             </div>
             <div className="min-w-0">
@@ -863,6 +1021,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                     value={building}
                     onChange={(e) => setBuilding(e.target.value)}
                     className={`${inputClass} appearance-none pr-9 cursor-pointer`}
+                    {...errorProps("report-building")}
                   >
                     <option value="">Select a building</option>
                     {ITEM_BUILDINGS.map((buildingOption) => (
@@ -876,6 +1035,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                     className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
                   />
                 </div>
+                <FieldError
+                  fieldId="report-building"
+                  message={fieldErrors["report-building"]}
+                />
             </div>
           </div>
 
@@ -899,6 +1062,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   autoComplete="off"
                   spellCheck={false}
                   className={inputClass}
+                  {...errorProps("report-location")}
+                />
+                <FieldError
+                  fieldId="report-location"
+                  message={fieldErrors["report-location"]}
                 />
               </div>
             <div className="min-w-0">
@@ -914,6 +1082,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   setCategory(e.target.value as Item["category"])
                 }
                 className={`${inputClass} cursor-pointer`}
+                {...errorProps("report-category")}
               >
                 {ITEM_CATEGORIES.map((categoryOption) => (
                   <option key={categoryOption.id} value={categoryOption.id}>
@@ -921,6 +1090,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   </option>
                 ))}
               </select>
+              <FieldError
+                fieldId="report-category"
+                message={fieldErrors["report-category"]}
+              />
             </div>
           </div>
 
@@ -936,6 +1109,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the item's appearance"
               className="w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none"
+              {...errorProps("report-description")}
+            />
+            <FieldError
+              fieldId="report-description"
+              message={fieldErrors["report-description"]}
             />
           </div>
 
@@ -952,6 +1130,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               onChange={(e) => setImportantDetails(e.target.value)}
               placeholder="Unique mark only the owner would know…"
               className="w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none"
+              {...errorProps("report-important-details")}
+            />
+            <FieldError
+              fieldId="report-important-details"
+              message={fieldErrors["report-important-details"]}
             />
             <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
               <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
