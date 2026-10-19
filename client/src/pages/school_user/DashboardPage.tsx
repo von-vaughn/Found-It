@@ -29,7 +29,6 @@ import type { Item } from "@/data/mockItems";
 import type { ClaimRequest } from "@/types/claim";
 
 interface DashboardPageProps {
-  items?: Item[];
   submittedClaims?: ClaimRequest[];
   onAddItem?: (newItem: Item) => void;
   filters: ItemFilters;
@@ -37,7 +36,6 @@ interface DashboardPageProps {
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
-  items: propItems,
   submittedClaims = [],
   onAddItem: propOnAddItem,
   filters,
@@ -45,14 +43,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 }) => {
   const [internalItems, setInternalItems] = useState<Item[]>([]);
 
-  // Fetch all items from the API; falls back to prop items (mock data) while
-  // the query is loading or if the user is not authenticated yet.
-  const { data: serverItems } = useItems(undefined, {
-    staleTime: 30_000,
-    retry: 1,
-  });
+  // Only backend items are rendered; example JSON must never reach the grid.
+  // Until the query settles, the skeleton below stands in for the feed.
+  const { data: serverItems, isLoading: isItemsLoading } = useItems(
+    undefined,
+    {
+      staleTime: 30_000,
+      retry: 1,
+    },
+  );
   const apiItems = serverItems ? toClientItems(serverItems) : null;
-  const items = apiItems ?? propItems ?? internalItems;
+  const items = apiItems ?? internalItems;
 
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
     takeSchoolSidebarExpanded(),
@@ -323,12 +324,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
 
           {/* Masonry Items Grid */}
-          {filteredItems.length > 0 ? (
-            // Data source in the key so the grid remounts when mock props are
-            // swapped for API items — cards added after the one-shot in-view
-            // animation otherwise stay hidden at opacity 0.
+          {isItemsLoading ? (
+            <DashboardGridSkeleton />
+          ) : filteredItems.length > 0 ? (
+            // Key includes the result-shaping state so the one-shot in-view
+            // animation replays when the result set changes.
             <StaggerGrid
-              key={`${activeNavTab}-${selectedCategory}-${JSON.stringify(filters)}-${serverItems ? "api" : "mock"}`}
+              key={`${activeNavTab}-${selectedCategory}-${JSON.stringify(filters)}`}
               className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 gap-6 pb-12"
             >
               {filteredItems.map((item) => (
@@ -383,5 +385,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     </div>
   );
 };
+
+const DashboardGridSkeleton: React.FC = () => (
+  <div
+    role="status"
+    aria-label="Loading items"
+    className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 gap-6 pb-12"
+  >
+    {Array.from({ length: 10 }, (_, index) => (
+      <div
+        key={index}
+        aria-hidden="true"
+        className="overflow-hidden rounded-lg border border-neutral-200/80 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <div className="aspect-[4/3] animate-pulse bg-neutral-100 dark:bg-neutral-800" />
+        <div className="space-y-2 p-4">
+          <div className="h-4 w-3/4 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+          <div className="h-3 w-1/2 animate-pulse rounded bg-neutral-100 dark:bg-neutral-800" />
+          <div className="h-3 w-full animate-pulse rounded bg-neutral-100 dark:bg-neutral-800" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 export default DashboardPage;

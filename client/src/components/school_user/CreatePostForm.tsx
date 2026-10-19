@@ -903,11 +903,12 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               </div>
             <div className="min-w-0">
               <label htmlFor="report-category" className={labelClass}>
-                Category
+                Category *
               </label>
               <select
                 id="report-category"
                 name="category"
+                required
                 value={category}
                 onChange={(e) =>
                   setCategory(e.target.value as Item["category"])

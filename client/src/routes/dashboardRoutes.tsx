@@ -50,7 +50,6 @@ export function getDashboardRoutes({
       path: paths.dashboard,
       element: (
         <DashboardPage
-          items={items}
           submittedClaims={submittedClaims}
           onAddItem={onAddItem}
           filters={filters}
