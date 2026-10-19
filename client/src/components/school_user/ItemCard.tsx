@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { MoreHorizontal, Award, Package } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
+import { NoItemImage } from "@/components/NoItemImage";
 import toast from "react-hot-toast";
 
 interface ItemCardProps {
@@ -27,17 +28,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   const isLost = item.type === "lost";
   const category = ITEM_CATEGORIES.find(({ id }) => id === item.category);
   const CategoryIcon = category?.icon ?? Package;
-
-  const titleBlock = (
-    <>
-      {!item.image && item.reward && (
-        <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold text-white">
-          <Award className="h-3 w-3" aria-hidden="true" />
-          {item.reward}
-        </span>
-      )}
-    </>
-  );
 
   const footerRow = (
     <div className="pt-3 mt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
@@ -99,24 +89,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           </div>
         </div>
       </div>
-
-      {/* More Menu — inline only when there is no image to overlay on */}
-      {!item.image && (
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen(!menuOpen);
-            }}
-            className="p-1 rounded-lg text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-            aria-label="More options"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </button>
-
-          {menuDropdown}
-        </div>
-      )}
     </div>
   );
 
@@ -125,10 +97,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       onClick={() => onItemClick && onItemClick(item)}
       className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800 overflow-hidden shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
     >
-      {item.image ? (
-        <>
-          {/* Photo block on top — full-bleed, no gaps */}
-          <div className="relative aspect-[4/3] bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+      {/* Media block on top — full-bleed for both photos and the placeholder */}
+      <div className="relative aspect-[4/3] bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+        {item.image ? (
+          <>
             <img
               src={item.image}
               alt={item.title}
@@ -136,77 +108,55 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               loading="lazy"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+          </>
+        ) : (
+          <NoItemImage
+            className="h-full w-full rounded-none border-0 bg-neutral-200/70 dark:bg-neutral-800"
+          />
+        )}
 
-            {/* Reward badge top-left */}
-            {item.reward && (
-              <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
-                  <Award className="w-3 h-3" />
-                  {item.reward}
-                </span>
-              </div>
-            )}
+        {/* Reward badge top-left */}
+        {item.reward && (
+          <div className="absolute top-3 left-3 flex items-center gap-1.5">
+            <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
+              <Award className="w-3 h-3" />
+              {item.reward}
+            </span>
           </div>
+        )}
+      </div>
 
-          {/* More Menu — top right of the image */}
-          <div className="absolute top-3 right-3 z-10">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen(!menuOpen);
-              }}
-              className="p-1.5 rounded-full text-white hover:text-white/80 transition-colors cursor-pointer drop-shadow-md"
-              aria-label="More options"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
+      {/* More Menu — top right of the media */}
+      <div className="absolute top-3 right-3 z-10">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(!menuOpen);
+          }}
+          className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+            item.image
+              ? "text-white hover:text-white/80 drop-shadow-md"
+              : "text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300"
+          }`}
+          aria-label="More options"
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
 
-            {menuDropdown}
-          </div>
+        {menuDropdown}
+      </div>
 
-          {/* Item title + Lost/Found + time below photo */}
-          {headerRow}
+      {/* Item title + Lost/Found + time below media */}
+      {headerRow}
 
-          {/* Text content below title */}
-          <div className="px-4 pb-4 flex-1 flex flex-col justify-between">
-            <div>
-              {titleBlock}
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed break-words line-clamp-2">
-                {item.description}
-              </p>
-            </div>
+      {/* Text content below title */}
+      <div className="px-4 pb-4 flex-1 flex flex-col justify-between">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed break-words line-clamp-2">
+          {item.description}
+        </p>
 
-            {footerRow}
-          </div>
-        </>
-      ) : (
-        <>
-          {headerRow}
-          {/* Item name above the description */}
-          <div className="px-4">{titleBlock}</div>
-
-          {/* Description block — same box size as a photo, so every
-              card keeps the same height. */}
-          <div className="aspect-[4/3] mx-3 mt-3 overflow-hidden rounded-xl">
-            <div className="h-full overflow-y-auto px-2">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed break-words">
-                {item.description}
-              </p>
-            </div>
-          </div>
-
-          <div className="p-4 flex-1 flex flex-col justify-between">
-            <div>
-              {/* Spacer standing in for the 2-line description block
-                  minus the mt-3 gap above (45px - 12px), so imageless
-                  cards measure exactly like photo cards. */}
-              <div aria-hidden="true" className="h-[33px]" />
-            </div>
-
-            {footerRow}
-          </div>
-        </>
-      )}
+        {footerRow}
+      </div>
     </div>
   );
 };

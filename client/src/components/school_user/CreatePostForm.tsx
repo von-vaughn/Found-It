@@ -161,7 +161,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [lostFiles, setLostFiles] = useState<(File | Blob)[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
-  const [uploadingText, setUploadingText] = useState<string | null>(null);
   const lostUrlsRef = useRef<string[]>([]);
   const [photoRequiredError, setPhotoRequiredError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -533,7 +532,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         // can never leave an orphaned Drive image with no published post.
         let categoryUuid: string | undefined;
         if (!isEditing) {
-          setUploadingText("Preparing report...");
           categoryUuid = categoryMap?.get(category);
           if (!categoryUuid) {
             try {
@@ -555,7 +553,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         // Upload images if any
         if (type === "found") {
           if (uploadedFile) {
-            setUploadingText("Uploading photo to Drive...");
             finalImageUrl = await uploadImage(uploadedFile);
             finalImageUrls = [finalImageUrl];
           } else if (previewImage && !previewImage.startsWith("blob:")) {
@@ -576,9 +573,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           });
 
           if (filesToUpload.length > 0) {
-            setUploadingText(
-              `Uploading ${filesToUpload.length} picture${filesToUpload.length > 1 ? "s" : ""} to Drive...`,
-            );
             const uploadedUrls = await uploadImages(filesToUpload);
             finalImageUrls = [...existingUrls, ...uploadedUrls];
             finalImageUrl = finalImageUrls[0] ?? "";
@@ -625,7 +619,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             "Could not resolve the selected category. Check your connection and try again.",
           );
         }
-        setUploadingText("Publishing report...");
         const created = await createItemMutation.mutateAsync({
           reportType: type,
           name: title.trim(),
@@ -650,7 +643,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       } finally {
         isSubmittingRef.current = false;
         setIsSubmitting(false);
-        setUploadingText(null);
       }
     };
 
@@ -1151,7 +1143,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               {isSubmitting ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  <span>{uploadingText || "Publishing report..."}</span>
+                  <span>Publishing</span>
                 </>
               ) : (
                 isEditing ? "Save changes" : "Publish report"
