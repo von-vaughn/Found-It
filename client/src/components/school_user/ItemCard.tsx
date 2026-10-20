@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { MoreHorizontal, Award, Package } from "lucide-react";
+import React, { useId, useState } from "react";
+import { createPortal } from "react-dom";
+import { MoreHorizontal, Award, Package, Trash2 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
@@ -17,15 +18,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   onItemClick,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const deleteDialogId = useId();
   const { user } = useAuth();
   const deleteMutation = useDeleteItem();
   const isOwnPost = Boolean(item.reporterId && item.reporterId === user?.id);
 
   const handleDelete = () => {
     setMenuOpen(false);
-    if (!window.confirm(`Delete "${item.title}"? This action cannot be undone.`)) {
-      return;
-    }
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    setDeleteConfirmOpen(false);
     deleteMutation.mutate(item.id, {
       onSuccess: () => toast.success("Your report was deleted."),
       onError: (err) => {
@@ -167,6 +172,68 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
         {footerRow}
       </div>
+
+      {deleteConfirmOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
+            onClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              if (event.target === event.currentTarget) {
+                setDeleteConfirmOpen(false);
+              }
+            }}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={`${deleteDialogId}-title`}
+              aria-describedby={`${deleteDialogId}-description`}
+              className="w-full max-w-sm rounded-2xl border border-neutral-100 bg-white p-6 text-center shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
+            >
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10">
+                <Trash2
+                  className="h-6 w-6 text-[#E5192D] dark:text-red-400"
+                  aria-hidden="true"
+                />
+              </div>
+              <h2
+                id={`${deleteDialogId}-title`}
+                className="mt-4 text-base font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
+              >
+                Delete this post?
+              </h2>
+              <p
+                id={`${deleteDialogId}-description`}
+                className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
+              >
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  &ldquo;{item.title}&rdquo;
+                </span>{" "}
+                will be permanently removed. This action cannot be undone.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  className="h-10 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                >
+                  Keep post
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={deleteMutation.isPending}
+                  className="h-10 rounded-xl bg-[#E5192D] text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {deleteMutation.isPending ? "Deleting…" : "Delete post"}
+                </button>
+              </div>
+            </section>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
