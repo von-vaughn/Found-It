@@ -154,7 +154,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [importantDetails, setImportantDetails] = useState("");
-  const [category, setCategory] = useState<Item["category"]>("electronics");
+  const [category, setCategory] = useState<Item["category"] | "">("");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | Blob | null>(null);
   const [lostImages, setLostImages] = useState<string[]>([]);
@@ -228,7 +228,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setLocation("");
         setDescription("");
         setImportantDetails("");
-        setCategory("electronics");
+        setCategory("");
         setUploadedImage(null);
         setUploadedFile(null);
         setLostImages([]);
@@ -523,6 +523,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       }
       return;
     }
+
+    if (!category) return; // validateFields already flagged this; narrows the type.
 
     const submitAsync = async () => {
       isSubmittingRef.current = true;
@@ -985,7 +987,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div className="min-w-0">
               <label htmlFor="report-time" className={labelClass}>
-                {type === "lost" ? "Approximate time lost *" : "Time found *"}
+                {type === "lost" ? "Approximate time lost *" : "Approximate time found *"}
               </label>
               <input
                 id="report-time"
@@ -1071,11 +1073,14 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 required
                 value={category}
                 onChange={(e) =>
-                  setCategory(e.target.value as Item["category"])
+                  setCategory(e.target.value as Item["category"] | "")
                 }
                 className={`${inputClass} cursor-pointer`}
                 {...errorProps("report-category")}
               >
+                <option value="" disabled>
+                  Select category
+                </option>
                 {ITEM_CATEGORIES.map((categoryOption) => (
                   <option key={categoryOption.id} value={categoryOption.id}>
                     {categoryOption.label}
