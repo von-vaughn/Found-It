@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import type { Role } from "@/context/auth-context";
 import { authService } from "@/services/authService";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import toast from "react-hot-toast";
 
 interface ProtectedRouteProps {
@@ -34,17 +35,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }, [isLoading, isAuthenticated]);
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
-        <img
-          src="/logo.jpeg"
-          alt=""
-          aria-hidden="true"
-          className="h-10 w-10 animate-pulse rounded-xl object-contain"
-        />
-        <p className="text-xs font-semibold text-neutral-500">Checking credentials…</p>
-      </div>
-    );
+    return <LoadingScreen message="Checking credentials…" />;
   }
 
   if (!isAuthenticated || !user) {

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -201,21 +202,7 @@ export function App() {
               onFiltersChange={setFilters}
             />
           ) : (
-            <div
-              role="status"
-              aria-label="Loading example content"
-              className="flex min-h-[60dvh] flex-col items-center justify-center gap-3"
-            >
-              <img
-                src="/logo.jpeg"
-                alt=""
-                aria-hidden="true"
-                className="h-12 w-12 animate-pulse rounded-xl object-contain"
-              />
-              <p className="text-xs font-semibold text-neutral-500">
-                Loading FoundIt…
-              </p>
-            </div>
+            <LoadingScreen message="Loading FoundIt…" />
           )}
         </div>
 
