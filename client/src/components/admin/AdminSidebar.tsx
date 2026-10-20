@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, ChevronDown, LogOut, X } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useAuth } from "@/context/useAuth";
 import { rememberAdminSidebarExpanded } from "./sidebarStickyState";
 
 export interface AdminNotification {
@@ -50,10 +49,6 @@ export function AdminSidebar<TSection extends string>({
   const asideRef = useRef<HTMLElement>(null);
   const notificationsPanelRef = useRef<HTMLElement>(null);
   const notificationsButtonRef = useRef<HTMLButtonElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [profileOpen, setProfileOpen] = useState(false);
   const [collapsedWidth, setCollapsedWidth] = useState(() =>
     window.matchMedia("(min-width: 768px)").matches ? 80 : 64,
   );
@@ -96,34 +91,6 @@ export function AdminSidebar<TSection extends string>({
     breakpoint.addEventListener("change", updateCollapsedWidth);
     return () => breakpoint.removeEventListener("change", updateCollapsedWidth);
   }, []);
-
-  // Close the account menu on outside click or Escape.
-  useEffect(() => {
-    if (!profileOpen) return;
-    const handlePointerDown = (event: MouseEvent) => {
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(event.target as Node)
-      ) {
-        setProfileOpen(false);
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setProfileOpen(false);
-    };
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [profileOpen]);
-
-  const handleSignOut = async () => {
-    setProfileOpen(false);
-    await logout();
-    navigate("/");
-  };
 
   const labelsVisible = expanded && !notificationsOpen;
 
@@ -281,75 +248,6 @@ export function AdminSidebar<TSection extends string>({
           </button>
         </nav>
 
-        <div
-          ref={profileRef}
-          className="absolute bottom-0 left-2.5 right-2.5 border-t border-neutral-100 dark:border-neutral-800 py-4 md:left-4.5 md:right-4.5"
-        >
-          <button
-            type="button"
-            onClick={() => setProfileOpen((open) => !open)}
-            aria-label="Open account menu"
-            aria-expanded={profileOpen}
-            className="flex w-full items-center gap-3 rounded-xl text-left transition-colors hover:bg-neutral-100/80 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center">
-              <img
-                src={user?.avatar || "/images/avatars/vaughn_evangelista.svg"}
-                alt=""
-                className="h-9 w-9 rounded-full border border-neutral-200 dark:border-neutral-700 object-cover"
-                onError={(event) => {
-                  event.currentTarget.src =
-                    "/images/avatars/vaughn_evangelista.svg";
-                }}
-              />
-            </span>
-            <span
-              aria-hidden={!labelsVisible}
-              className={`min-w-0 flex-1 overflow-hidden whitespace-nowrap transition-opacity duration-200 ${
-                labelsVisible ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              <span className="block truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                {user?.name || "Admin"}
-              </span>
-              <span className="block truncate text-[10px] text-neutral-500 dark:text-neutral-400">
-                {user?.email || ""}
-              </span>
-            </span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500 transition-all duration-200 ${
-                profileOpen ? "rotate-180" : ""
-              } ${labelsVisible ? "opacity-100" : "opacity-0"}`}
-              aria-hidden="true"
-            />
-          </button>
-
-          {profileOpen && (
-            <div
-              role="menu"
-              aria-label="Account"
-              className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 shadow-xl"
-            >
-              <div className="mb-1 border-b border-neutral-100 dark:border-neutral-800 px-3 py-2">
-                <p className="truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                  {user?.name || "Admin"}
-                </p>
-                <p className="truncate text-[11px] text-neutral-400 dark:text-neutral-500">
-                  {user?.email || "osa@wmsu.edu.ph"}
-                </p>
-              </div>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handleSignOut}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-              >
-                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-                Sign out
-              </button>
-            </div>
-          )}
-        </div>
       </motion.aside>
 
       <AnimatePresence>

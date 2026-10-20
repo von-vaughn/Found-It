@@ -28,6 +28,7 @@ import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
 import { useItemDetail, useDeleteItem, useItems } from "@/hooks/useItems";
 import { toClientItem, toClientItems } from "@/lib/itemAdapter";
+import { minutesApart, reportMoment, timePoints } from "@/lib/itemMatchTime";
 import { UUID_RE } from "@/services/itemService";
 import type {
   ClaimRequest,
@@ -72,13 +73,6 @@ const finderStatusStyles: Record<string, string> = {  Pending: "bg-amber-50 dark
   Returned: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400",
   Rejected: "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
 };
-
-function toTime(entry: Item): number | null {
-  const parsed = entry.dateTime
-    ? new Date(entry.dateTime)
-    : new Date(`${entry.date}T12:00:00`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed.getTime();
-}
 
 function keywordSet(value: string): Set<string> {
   const stopwords = new Set([
@@ -134,7 +128,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   };
 
   const { data: serverItem, isLoading: isItemLoading } = useItemDetail(id ?? "");
-  const { data: serverItems } = useItems();
+  const {
+    data: serverItems,
+    isLoading: areItemsLoading,
+    isError: areItemsError,
+  } = useItems(undefined, {
+    staleTime: 30_000,
+    retry: 1,
+  });
   const deleteItemMutation = useDeleteItem();
 
   const item = useMemo(() => {
@@ -282,22 +283,31 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       )
       .slice(0, 4);
   }, [apiItems, item]);
-  // Found reports that may match your own lost item, ranked by how closely
-  // category, color, place, timing, and title overlap.
+  // Found reports that may match your own lost item. Category is a hard gate;
+  // color, place, timing, and title only rank reports that already pass it.
+  // shortcut: apiItems holds the latest 200 reports from useItems; move this
+  // scoring to a server query if the report history outgrows that window.
   const suggestedMatches = useMemo(() => {
-    if (!item || item.type !== "lost") return [];
-    const lostTime = toTime(item);
+    if (!item || item.type !== "lost" || !item.reporterId) return [];
+    const lostMoment = reportMoment(item);
     const lostKeywords = keywordSet(`${item.title} ${item.description}`);
-    const scored = items
-      .filter(
-        (entry) =>
-          entry.id !== item.id &&
-          entry.type === "found" &&
-          entry.status !== "reunited",
-      )
+    const scored = apiItems
+      .filter((entry) => {
+        if (entry.id === item.id) return false;
+        if (entry.type !== "found") return false;
+        if (entry.category !== item.category) return false;
+        if (entry.reporterId === item.reporterId) return false;
+        if (entry.status === "reunited") return false;
+        const foundMoment = reportMoment(entry);
+        return (
+          !lostMoment ||
+          !foundMoment ||
+          minutesApart(lostMoment, foundMoment) >= 0
+        );
+      })
       .map((entry) => {
-        let score = 0;
-        if (entry.category === item.category) score += 40;
+        // Every candidate here already passed the category gate.
+        let score = 40;
         if (
           item.color?.trim() &&
           entry.color?.trim() &&
@@ -318,10 +328,9 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         ) {
           score += 20;
         }
-        const foundTime = toTime(entry);
-        if (lostTime !== null && foundTime !== null) {
-          const daysAfter = (foundTime - lostTime) / 86_400_000;
-          if (daysAfter >= 0 && daysAfter <= 30) score += 15;
+        const foundMoment = reportMoment(entry);
+        if (lostMoment && foundMoment) {
+          score += timePoints(minutesApart(lostMoment, foundMoment));
         }
         const foundKeywords = keywordSet(`${entry.title} ${entry.description}`);
         let overlap = 0;
@@ -331,12 +340,12 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         score += Math.min(overlap * 5, 20);
         return { entry, score };
       })
-      .filter(({ score }) => score >= 20)
+      .filter(({ score }) => score >= 45)
       .sort((a, b) => b.score - a.score)
       .slice(0, 4)
       .map(({ entry }) => entry);
     return scored;
-  }, [items, item]);
+  }, [apiItems, item]);
 
   const profileName = user?.name || FALLBACK_PROFILE_NAME;
   const isOwnItem = useMemo(() => {
@@ -743,7 +752,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           </div>
 
           {/* Possible matches: found reports the system suggests for your lost item */}
-          {isOwnItem && isLost && (
+          {serverItem && isOwnItem && isLost && (
             <section aria-labelledby="suggested-matches-heading">
               <h2
                 id="suggested-matches-heading"
@@ -752,10 +761,24 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 Possible matches for you
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-                Found reports that look related to your lost item, ranked by
-                category, color, place, timing, and title.
+                Found reports in the same category that look related to your
+                lost item, ranked by color, place, timing, and title.
               </p>
-              {suggestedMatches.length > 0 ? (
+              {areItemsLoading ? (
+                <p
+                  role="status"
+                  className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400"
+                >
+                  Checking for possible matches…
+                </p>
+              ) : areItemsError ? (
+                <p
+                  role="alert"
+                  className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400"
+                >
+                  Could not load possible matches right now. Try again later.
+                </p>
+              ) : suggestedMatches.length > 0 ? (
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                   {suggestedMatches.map((suggested) => (
                     <ItemCard
