@@ -19,6 +19,7 @@ import { adminSectionPaths } from "./sectionPaths";
 
 function AdminAccountMenu() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -93,6 +94,35 @@ function AdminAccountMenu() {
           </div>
           <button
             type="button"
+            role="switch"
+            aria-checked={theme === "dark"}
+            aria-label="Dark mode"
+            onClick={toggleTheme}
+            className="flex w-full items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+          >
+            <span className="flex items-center gap-2.5">
+              {theme === "dark" ? (
+                <Sun className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+              ) : (
+                <Moon className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+              )}
+              Dark mode
+            </span>
+            <span
+              aria-hidden="true"
+              className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${
+                theme === "dark" ? "bg-[#E5192D]" : "bg-neutral-200 dark:bg-neutral-700"
+              }`}
+            >
+              <span
+                className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                  theme === "dark" ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </span>
+          </button>
+          <button
+            type="button"
             role="menuitem"
             onClick={handleSignOut}
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-red-400 dark:hover:bg-red-500/10"
@@ -124,7 +154,6 @@ export function AdminLayout({
   children,
 }: AdminLayoutProps) {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
   // Restore the expanded state carried over from a nav-icon click (only set
@@ -202,40 +231,12 @@ export function AdminLayout({
                 Super admin
               </span>
             )}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              aria-pressed={theme === "dark"}
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
-              ) : (
-                <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
-              )}
-            </button>
             <AdminAccountMenu />
           </div>
         </header>
       )}
       {!showSearch && (
         <div className="flex items-center justify-end gap-2 px-4 pt-4 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            aria-pressed={theme === "dark"}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
-          >
-            {theme === "dark" ? (
-              <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
-            ) : (
-              <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
-            )}
-          </button>
           <AdminAccountMenu />
         </div>
       )}
