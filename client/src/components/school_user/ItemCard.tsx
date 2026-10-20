@@ -1,6 +1,6 @@
-import React, { useId, useState } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreHorizontal, Award, Package, Trash2 } from "lucide-react";
+import { MoreHorizontal, Award, Package } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
@@ -19,7 +19,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const deleteDialogId = useId();
   const { user } = useAuth();
   const deleteMutation = useDeleteItem();
   const isOwnPost = Boolean(item.reporterId && item.reporterId === user?.id);
@@ -176,7 +175,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       {deleteConfirmOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/40"
             onClick={(event) => event.stopPropagation()}
             onMouseDown={(event) => {
               event.stopPropagation();
@@ -188,46 +187,38 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             <section
               role="dialog"
               aria-modal="true"
-              aria-labelledby={`${deleteDialogId}-title`}
-              aria-describedby={`${deleteDialogId}-description`}
-              className="w-full max-w-sm rounded-2xl border border-neutral-100 bg-white p-6 text-center shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
+              aria-labelledby="delete-report-title"
+              aria-describedby="delete-report-description"
+              className="relative w-full max-w-sm bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-100 dark:border-neutral-800 p-6"
             >
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10">
-                <Trash2
-                  className="h-6 w-6 text-[#E5192D] dark:text-red-400"
-                  aria-hidden="true"
-                />
-              </div>
               <h2
-                id={`${deleteDialogId}-title`}
-                className="mt-4 text-base font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
+                id="delete-report-title"
+                className="text-base font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
               >
-                Delete this post?
+                Delete this report?
               </h2>
               <p
-                id={`${deleteDialogId}-description`}
-                className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
+                id="delete-report-description"
+                className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400 break-words"
               >
-                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                  &ldquo;{item.title}&rdquo;
-                </span>{" "}
-                will be permanently removed. This action cannot be undone.
+                Are you sure you want to delete &ldquo;{item.title}&rdquo;? This
+                action cannot be undone.
               </p>
-              <div className="mt-6 grid grid-cols-2 gap-2">
+              <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmOpen(false)}
-                  className="h-10 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                  className="h-10 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 text-xs font-bold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
                 >
-                  Keep post
+                  Cancel
                 </button>
                 <button
                   type="button"
                   onClick={confirmDelete}
                   disabled={deleteMutation.isPending}
-                  className="h-10 rounded-xl bg-[#E5192D] text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-10 px-4 rounded-xl bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {deleteMutation.isPending ? "Deleting…" : "Delete post"}
+                  {deleteMutation.isPending ? "Deleting…" : "Confirm"}
                 </button>
               </div>
             </section>
