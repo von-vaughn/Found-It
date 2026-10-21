@@ -148,6 +148,9 @@ export async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_image_item_id ON image(item_id);
     CREATE INDEX IF NOT EXISTS idx_request_item_id ON request(item_id);
     CREATE INDEX IF NOT EXISTS idx_request_user_id ON request(user_id);
+    -- One ownership claim per user per item; return requests are unaffected.
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_request_claim_unique
+      ON request(item_id, user_id) WHERE kind = 'claim';
   `);
 
   await pool.query(`

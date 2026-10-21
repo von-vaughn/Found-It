@@ -37,6 +37,10 @@ import type {
 } from "@/types/claim";
 import { getClaimantEmail } from "@/types/claim";
 import { ClaimEvidenceGallery } from "@/components/school_user/ClaimEvidenceGallery";
+import {
+  simplifiedClaimStatusStyles,
+  simplifyClaimStatus,
+} from "@/components/school_user/claimStatus";
 import { claims as demoClaims } from "@/components/admin/adminData";
 import {
   applyAdvancedFilters,
@@ -363,6 +367,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     );
   }, [item, submittedClaims]);
 
+  const existingClaim = useMemo(() => {
+    if (!item) return null;
+    return submittedClaims.find((claim) => claim.itemId === item.id) ?? null;
+  }, [item, submittedClaims]);
+
   if (isItemLoading && !item) {
     return (
       <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
@@ -587,31 +596,41 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   {item.timeAgo}
                 </p>
               </div>
-              {!isOwnItem && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isLost) {
-                      // On mobile the found flow is a full page, not a modal.
-                      if (window.matchMedia("(max-width: 767px)").matches) {
-                        navigate(`/dashboard/items/${item.id}/found-report`);
+              {!isOwnItem &&
+                (existingClaim ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/claims")}
+                    title="You already submitted a claim for this item."
+                    className={`shrink-0 inline-flex h-10 items-center justify-center rounded-full px-4 text-xs font-bold transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer ${simplifiedClaimStatusStyles[simplifyClaimStatus(existingClaim.status)]}`}
+                  >
+                    {simplifyClaimStatus(existingClaim.status)} claim request
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isLost) {
+                        // On mobile the found flow is a full page, not a modal.
+                        if (window.matchMedia("(max-width: 767px)").matches) {
+                          navigate(`/dashboard/items/${item.id}/found-report`);
+                          return;
+                        }
+                        setFoundItemCameraOpen(true);
                         return;
                       }
-                      setFoundItemCameraOpen(true);
-                      return;
-                    }
-                    // On mobile the claim flow is a full page, not a modal.
-                    if (window.matchMedia("(max-width: 767px)").matches) {
-                      navigate(`/dashboard/items/${item.id}/claim`);
-                      return;
-                    }
-                    setOwnershipClaimOpen(true);
-                  }}
-                  className="shrink-0 h-10 px-5 rounded-full bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
-                >
-                  {isLost ? "I Found This" : "This Is Mine"}
-                </button>
-              )}
+                      // On mobile the claim flow is a full page, not a modal.
+                      if (window.matchMedia("(max-width: 767px)").matches) {
+                        navigate(`/dashboard/items/${item.id}/claim`);
+                        return;
+                      }
+                      setOwnershipClaimOpen(true);
+                    }}
+                    className="shrink-0 h-10 px-5 rounded-full bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
+                  >
+                    {isLost ? "I Found This" : "This Is Mine"}
+                  </button>
+                ))}
             </div>
 
             <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">

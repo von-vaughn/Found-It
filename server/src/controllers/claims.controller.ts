@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   createClaim,
   findClaimableItem,
+  findClaimForUserAndItem,
   listClaimsByUser,
 } from "../repositories/request.repository";
 import { createClaimSchema } from "../validation/claims";
@@ -39,7 +40,24 @@ export async function submitClaim(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  const existingClaim = await findClaimForUserAndItem(
+    req.user!.sub,
+    parsed.data.itemId,
+  );
+  if (existingClaim) {
+    res
+      .status(409)
+      .json({ message: "You already submitted a claim for this item." });
+    return;
+  }
+
   const claim = await createClaim({ userId: req.user!.sub, ...parsed.data });
+  if (!claim) {
+    res
+      .status(409)
+      .json({ message: "You already submitted a claim for this item." });
+    return;
+  }
   res.status(201).json({ message: "Claim request submitted.", claim });
 }
 

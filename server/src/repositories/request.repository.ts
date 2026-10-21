@@ -102,6 +102,19 @@ export async function findClaimById(id: string): Promise<Claim | null> {
   return rows[0] ? toClaim(rows[0]) : null;
 }
 
+export async function findClaimForUserAndItem(
+  userId: string,
+  itemId: string,
+): Promise<Claim | null> {
+  const { rows } = await pool.query<ClaimRow>(
+    `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
+     WHERE rq.user_id = $1 AND rq.item_id = $2 AND rq.kind = 'claim'
+     LIMIT 1`,
+    [userId, itemId],
+  );
+  return rows[0] ? toClaim(rows[0]) : null;
+}
+
 export async function listClaimsByUser(userId: string): Promise<Claim[]> {
   const { rows } = await pool.query<ClaimRow>(
     `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
@@ -125,31 +138,39 @@ export async function createClaim(input: {
   details: string;
   importantDetails: string;
   evidence?: string[];
-}): Promise<Claim> {
-  const { rows } = await pool.query<{ id: string }>(
-    `INSERT INTO request (
-       item_id, user_id, kind, status, evidence, claimant_title,
-       primary_color, building, date_lost, time_lost, location_lost,
-       details, important_details
-     )
-     VALUES ($1, $2, 'claim', 'pending', $3, $4, $5, $6, $7, $8, $9, $10, $11)
-     RETURNING id`,
-    [
-      input.itemId,
-      input.userId,
-      JSON.stringify(input.evidence ?? []),
-      input.claimantTitle,
-      input.color ?? null,
-      input.building ?? null,
-      input.dateLost,
-      input.timeLost,
-      input.location,
-      input.details,
-      input.importantDetails,
-    ],
-  );
+}): Promise<Claim | null> {
+  const result = await pool
+    .query<{ id: string }>(
+      `INSERT INTO request (
+         item_id, user_id, kind, status, evidence, claimant_title,
+         primary_color, building, date_lost, time_lost, location_lost,
+         details, important_details
+       )
+       VALUES ($1, $2, 'claim', 'pending', $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING id`,
+      [
+        input.itemId,
+        input.userId,
+        JSON.stringify(input.evidence ?? []),
+        input.claimantTitle,
+        input.color ?? null,
+        input.building ?? null,
+        input.dateLost,
+        input.timeLost,
+        input.location,
+        input.details,
+        input.importantDetails,
+      ],
+    )
+    .catch((error: unknown) => {
+      // The partial unique index is the final guard against a concurrent duplicate.
+      if ((error as { code?: string }).code === "23505") return null;
+      throw error;
+    });
 
-  const claim = await findClaimById(rows[0].id);
+  if (!result) return null;
+
+  const claim = await findClaimById(result.rows[0].id);
   if (!claim) throw new Error("Created claim could not be read back.");
   return claim;
 }

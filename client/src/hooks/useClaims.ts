@@ -50,5 +50,11 @@ export function useCreateClaim() {
       );
       queryClient.invalidateQueries({ queryKey: claimKeys.all });
     },
+    onError: (error) => {
+      // A 409 means another tab/session already saved this claim; refresh the list.
+      if ((error as { response?: { status?: number } }).response?.status === 409) {
+        queryClient.invalidateQueries({ queryKey: claimKeys.all });
+      }
+    },
   });
 }

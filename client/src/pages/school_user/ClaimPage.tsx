@@ -5,6 +5,10 @@ import { OwnershipClaimForm } from "@/components/school_user/OwnershipClaimForm"
 import { Header } from "@/components/school_user/Header";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import {
+  simplifiedClaimStatusStyles,
+  simplifyClaimStatus,
+} from "@/components/school_user/claimStatus";
+import {
   applyAdvancedFilters,
   countActiveFilters,
   defaultFilters,
@@ -47,6 +51,10 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
       serverItem ? toClientItem(serverItem) : items.find((entry) => entry.id === id),
     [serverItem, items, id],
   );
+  const existingClaim = useMemo(() => {
+    if (!item) return null;
+    return submittedClaims.find((claim) => claim.itemId === item.id) ?? null;
+  }, [item, submittedClaims]);
 
   const goBack = () =>
     window.history.length > 1 ? navigate(-1) : navigate("/dashboard");
@@ -135,6 +143,38 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                   Please wait for approval. We&apos;ll notify you once your
                   request is approved or rejected.
+                </p>
+                <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/claims")}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424]"
+                  >
+                    View my claims
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard")}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 px-5 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                  >
+                    Home
+                  </button>
+                </div>
+              </div>
+            ) : existingClaim ? (
+              <div className="py-10 text-center">
+                <span
+                  className={`inline-flex rounded-full px-3 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simplifyClaimStatus(existingClaim.status)]}`}
+                >
+                  {simplifyClaimStatus(existingClaim.status)}
+                </span>
+                <h1 className="mt-4 text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                  Claim already submitted
+                </h1>
+                <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  You already have a claim request for this item. You can track
+                  its status in My Claims.
                 </p>
                 <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
                   <button
