@@ -8,13 +8,8 @@ import {
   AdminSidebar,
   type AdminNotification,
 } from "@/components/admin/AdminSidebar";
-import {
-  getPageCopy,
-  initialNotifications,
-  navigationFor,
-} from "@/components/admin/adminData";
+import { getPageCopy, initialNotifications, navigationFor } from "@/components/admin/adminData";
 import type { AdminSection } from "@/components/admin/types";
-import { takeAdminSidebarExpanded } from "@/components/admin/sidebarStickyState";
 import { adminSectionPaths } from "./sectionPaths";
 
 function AdminAccountMenu() {
@@ -156,12 +151,6 @@ export function AdminLayout({
   const navigate = useNavigate();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
-  // Restore the expanded state carried over from a nav-icon click (only set
-  // when the pointer was over the sidebar). Fresh loads start collapsed.
-  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
-    takeAdminSidebarExpanded(),
-  );
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] =
     useState<AdminNotification[]>(initialNotifications);
 
@@ -173,7 +162,6 @@ export function AdminLayout({
         entry.id === notification.id ? { ...entry, read: true } : entry,
       ),
     );
-    setNotificationsOpen(false);
     navigate(`${adminSectionPaths.claims}?claimId=${notification.claimId}`);
   };
 
@@ -182,11 +170,7 @@ export function AdminLayout({
       <AdminSidebar
         activeSection={activeSection}
         navigation={navigationFor(isSuperAdmin)}
-        expanded={sidebarExpanded}
-        onExpandedChange={setSidebarExpanded}
         notifications={notifications}
-        notificationsOpen={notificationsOpen}
-        onNotificationsOpenChange={setNotificationsOpen}
         onSectionChange={(newSection: AdminSection) => {
           navigate(adminSectionPaths[newSection]);
         }}
@@ -199,15 +183,11 @@ export function AdminLayout({
       />
 
       <div
-        className={`min-h-screen min-w-0 pl-16 transition-[margin] duration-300 ease-in-out ${
-          sidebarExpanded ? "md:ml-60" : "md:ml-20"
-        }`}
+        className="sidebar-shift min-h-screen min-w-0 pl-16 md:ml-20 transition-[margin] duration-300 ease-in-out"
       >
       {showSearch && onQueryChange && (
         <header
-          className={`sticky top-0 z-20 flex h-16 items-center justify-between gap-3 bg-white/95 dark:bg-neutral-950/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8 ${
-            notificationsOpen ? "md:ml-80 md:w-[calc(100%-20rem)]" : "w-full"
-          }`}
+          className="notifications-shift sticky top-0 z-20 flex h-16 w-full items-center justify-between gap-3 bg-white/95 dark:bg-neutral-950/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8"
         >
           <div className="relative hidden min-w-0 flex-1 sm:block">
             <Search
@@ -243,9 +223,7 @@ export function AdminLayout({
 
         <main
           id="admin-main"
-          className={`min-w-0 px-4 py-6 transition-[margin,width] duration-300 sm:px-6 lg:px-8 lg:py-8 ${
-            notificationsOpen ? "md:ml-80 md:w-[calc(100%-20rem)]" : "w-full"
-          }`}
+          className="notifications-shift min-w-0 w-full px-4 py-6 transition-[margin,width] duration-300 sm:px-6 lg:px-8 lg:py-8"
         >
           <a
             href="#admin-main"

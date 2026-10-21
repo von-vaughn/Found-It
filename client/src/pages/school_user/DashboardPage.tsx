@@ -11,7 +11,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import {
   discardSchoolSidebarExpanded,
-  takeSchoolSidebarExpanded,
 } from "@/components/school_user/sidebarExpandedState";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
@@ -55,10 +54,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const apiItems = serverItems ? toClientItems(serverItems) : null;
   const items = apiItems ?? internalItems;
 
-  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
-    takeSchoolSidebarExpanded(),
-  );
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
   const [selectedCategory, setSelectedCategory] = useState<
     "all" | ItemCategory
@@ -203,9 +198,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Left Sidebar */}
       <Sidebar
         activeTab={activeNavTab}
-        expanded={sidebarExpanded}
-        onExpandedChange={setSidebarExpanded}
-        onNotificationsOpenChange={setNotificationsOpen}
         items={items}
         submittedClaims={submittedClaims}
         onTabChange={(tab) => {
@@ -223,7 +215,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       />
 
       {/* Main Content Area */}
-      <div className={`flex-1 min-w-0 ml-0 md:ml-16 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
+      <div className="sidebar-shift flex-1 min-w-0 ml-0 md:ml-20 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300">
         {/* Top Header */}
         <Header
           searchQuery={searchQuery}
@@ -234,18 +226,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           onFiltersChange={setFilters}
           onClearFilters={() => setFilters(defaultFilters)}
           filterResultCount={filteredItems.length}
-          notificationsOpen={notificationsOpen}
           isFilterModalOpen={filterModalOpen}
           onFilterModalOpenChange={setFilterModalOpen}
         />
 
         {/* Dashboard Main Container */}
         <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto bg-white dark:bg-neutral-950 px-2 sm:px-3 lg:px-4 pt-2 pb-5 space-y-5">
-          <div className={`@container min-w-0 space-y-5 transition-[margin,width] duration-300 ease-in-out ${
-            notificationsOpen
-              ? "md:ml-80 md:w-[calc(100%-20rem)]"
-              : "w-full"
-          }`}>
+          <div className="@container notifications-shift min-w-0 w-full space-y-5 transition-[margin,width] duration-300 ease-in-out">
            {/* Filter Pills and Tabs Bar */}
 
           <div

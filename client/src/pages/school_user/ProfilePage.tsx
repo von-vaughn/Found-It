@@ -7,7 +7,6 @@ import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
-import { takeSchoolSidebarExpanded } from "@/components/school_user/sidebarExpandedState";
 import { useAuth } from "@/context/useAuth";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import {
@@ -44,10 +43,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const navigate = useNavigate();
   const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
-  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
-    takeSchoolSidebarExpanded(),
-  );
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [reportFilter, setReportFilter] = useState<"all" | "lost" | "found">(
     "all",
@@ -130,9 +125,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="profile"
-        expanded={sidebarExpanded}
-        onExpandedChange={setSidebarExpanded}
-        onNotificationsOpenChange={setNotificationsOpen}
         items={items}
         submittedClaims={submittedClaims}
         onTabChange={(tab) => {
@@ -143,16 +135,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       />
 
       <div
-        className={`ml-0 flex min-h-screen min-w-0 flex-1 flex-col pb-20 md:pb-0 transition-[margin] duration-300 ${
-          sidebarExpanded ? "md:ml-60" : "md:ml-20"
-        }`}
+        className="sidebar-shift ml-0 flex min-h-screen min-w-0 flex-1 flex-col pb-20 md:pb-0 md:ml-20 transition-[margin] duration-300"
       >
         <div className="hidden md:block">
           <Header
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             searchInputRef={searchInputRef}
-            notificationsOpen={notificationsOpen}
             activeFilterCount={countActiveFilters(filters)}
             filters={filters}
             onFiltersChange={onFiltersChange}
@@ -162,11 +151,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
 
         <div
-          className={`min-w-0 flex-1 transition-[margin,width] duration-300 ease-in-out ${
-            notificationsOpen
-              ? "md:ml-80 md:w-[calc(100%-20rem)]"
-              : "w-full"
-          }`}
+          className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
         >
           <main className="mx-auto w-full max-w-[1100px] bg-white px-4 py-8 sm:px-6 lg:px-8 dark:bg-neutral-950">
             <section

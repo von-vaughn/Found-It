@@ -139,3 +139,16 @@
     display: none;
   }
 }
+
+/* Sidebar and notification layout is driven by body classes so their
+   animations do not re-render the page content underneath. */
+@media (min-width: 768px) {
+  body.sidebar-expanded .sidebar-shift {
+    margin-left: 15rem;
+  }
+
+  body.notifications-open .notifications-shift {
+    margin-left: 20rem;
+    width: calc(100% - 20rem);
+  }
+}

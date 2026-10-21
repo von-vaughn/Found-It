@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Sidebar } from "@/components/school_user/Sidebar";
-import { takeSchoolSidebarExpanded } from "@/components/school_user/sidebarExpandedState";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
@@ -144,10 +143,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   }, [serverItem, items, id]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() =>
-    takeSchoolSidebarExpanded(),
-  );
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [foundItemCameraOpen, setFoundItemCameraOpen] = useState(false);
   const [ownershipClaimOpen, setOwnershipClaimOpen] = useState(false);
@@ -373,9 +368,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
         <Sidebar
           activeTab={sidebarActiveTab}
-          expanded={sidebarExpanded}
-          onExpandedChange={setSidebarExpanded}
-          onNotificationsOpenChange={setNotificationsOpen}
           onTabChange={(tab) => {
             if (tab === "claims") navigate("/dashboard/claims");
             else navigate("/dashboard");
@@ -384,12 +376,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           items={items}
           submittedClaims={submittedClaims}
         />
-        <div className={`flex-1 min-w-0 ml-0 md:ml-16 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
+        <div className="sidebar-shift flex-1 min-w-0 ml-0 md:ml-20 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300">
           <Header
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             searchInputRef={searchInputRef}
-            notificationsOpen={notificationsOpen}
             activeFilterCount={countActiveFilters(filters)}
             filters={filters}
             onFiltersChange={onFiltersChange}
@@ -409,9 +400,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
         <Sidebar
           activeTab={sidebarActiveTab}
-          expanded={sidebarExpanded}
-          onExpandedChange={setSidebarExpanded}
-          onNotificationsOpenChange={setNotificationsOpen}
           onTabChange={(tab) => {
             if (tab === "claims") navigate("/dashboard/claims");
             else navigate("/dashboard");
@@ -420,12 +408,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           items={items}
           submittedClaims={submittedClaims}
         />
-        <div className={`flex-1 min-w-0 ml-0 md:ml-16 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
+        <div className="sidebar-shift flex-1 min-w-0 ml-0 md:ml-20 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300">
           <Header
             searchQuery={searchQuery}
             onSearchChange={handleSearchChange}
             searchInputRef={searchInputRef}
-            notificationsOpen={notificationsOpen}
             activeFilterCount={countActiveFilters(filters)}
             filters={filters}
             onFiltersChange={onFiltersChange}
@@ -433,11 +420,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             filterResultCount={applyAdvancedFilters(items, filters).length}
           />
           <div
-            className={`min-w-0 flex-1 transition-[margin,width] duration-300 ease-in-out ${
-              notificationsOpen
-                ? "md:ml-80 md:w-[calc(100%-20rem)]"
-                : "w-full"
-            }`}
+            className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
           >
             <div className="flex h-full items-center justify-center px-8 py-16">
               <main className="max-w-sm text-center">
@@ -501,9 +484,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       </a>
       <Sidebar
         activeTab={sidebarActiveTab}
-        expanded={sidebarExpanded}
-        onExpandedChange={setSidebarExpanded}
-        onNotificationsOpenChange={setNotificationsOpen}
         onTabChange={(tab) => {
             if (tab === "claims") navigate("/dashboard/claims");
             else navigate("/dashboard");
@@ -513,13 +493,12 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         submittedClaims={submittedClaims}
       />
 
-      <div className={`flex-1 min-w-0 ml-0 md:ml-16 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300 ${sidebarExpanded ? "md:ml-60" : "md:ml-20"}`}>
+      <div className="sidebar-shift flex-1 min-w-0 ml-0 md:ml-20 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300">
         {/* Same search header as the dashboard */}
         <Header
           searchQuery={searchQuery}
           onSearchChange={handleSearchChange}
           searchInputRef={searchInputRef}
-          notificationsOpen={notificationsOpen}
           activeFilterCount={countActiveFilters(filters)}
           filters={filters}
           onFiltersChange={onFiltersChange}
@@ -528,11 +507,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         />
 
         <div
-          className={`min-w-0 flex-1 transition-[margin,width] duration-300 ease-in-out ${
-            notificationsOpen
-              ? "md:ml-80 md:w-[calc(100%-20rem)]"
-              : "w-full"
-          }`}
+          className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
         >
         {/* Detail actions row */}
         <div className="px-2 sm:px-3 lg:px-4 pt-4 flex items-center justify-between max-w-[1100px] mx-auto w-full">

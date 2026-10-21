@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { rememberAdminSidebarExpanded } from "./sidebarStickyState";
+import {
+  rememberAdminSidebarExpanded,
+  takeAdminSidebarExpanded,
+} from "./sidebarStickyState";
 
 export interface AdminNotification {
   id: string;
@@ -24,40 +27,52 @@ export interface AdminSidebarItem<TSection extends string = string> {
 interface AdminSidebarProps<TSection extends string> {
   activeSection: TSection;
   navigation: AdminSidebarItem<TSection>[];
-  expanded: boolean;
-  onExpandedChange: (expanded: boolean) => void;
   notifications: AdminNotification[];
   onSectionChange: (section: TSection) => void;
   onNotificationSelect: (notification: AdminNotification) => void;
   onMarkAllRead: () => void;
-  onNotificationsOpenChange: (open: boolean) => void;
-  notificationsOpen: boolean;
 }
 
 export function AdminSidebar<TSection extends string>({
   activeSection,
   navigation,
-  expanded,
-  onExpandedChange,
   notifications,
   onSectionChange,
   onNotificationSelect,
   onMarkAllRead,
-  onNotificationsOpenChange,
-  notificationsOpen,
 }: AdminSidebarProps<TSection>) {
   const asideRef = useRef<HTMLElement>(null);
   const notificationsPanelRef = useRef<HTMLElement>(null);
   const notificationsButtonRef = useRef<HTMLButtonElement>(null);
+  const [panelStartX, setPanelStartX] = useState(0);
+  const [expanded, setExpanded] = useState<boolean>(() =>
+    takeAdminSidebarExpanded(),
+  );
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [collapsedWidth, setCollapsedWidth] = useState(() =>
     window.matchMedia("(min-width: 768px)").matches ? 80 : 64,
   );
   const unreadCount = notifications.filter(({ read }) => !read).length;
 
   const setPanelOpen = useCallback((open: boolean) => {
-    onNotificationsOpenChange(open);
-    if (open) onExpandedChange(false);
-  }, [onExpandedChange, onNotificationsOpenChange]);
+    if (open) {
+      // Start the drawer at the expanded sidebar's edge so it is not hidden
+      // behind the sidebar while that collapses.
+      setPanelStartX(expanded ? 240 - collapsedWidth : 0);
+      setExpanded(false);
+    }
+    setNotificationsOpen(open);
+  }, [collapsedWidth, expanded]);
+
+  useLayoutEffect(() => {
+    document.body.classList.toggle("sidebar-expanded", expanded);
+    return () => document.body.classList.remove("sidebar-expanded");
+  }, [expanded]);
+
+  useLayoutEffect(() => {
+    document.body.classList.toggle("notifications-open", notificationsOpen);
+    return () => document.body.classList.remove("notifications-open");
+  }, [notificationsOpen]);
 
   useEffect(() => {
     if (!notificationsOpen) return;
@@ -99,7 +114,7 @@ export function AdminSidebar<TSection extends string>({
       <motion.aside
         ref={asideRef}
         onMouseEnter={() => {
-          if (!notificationsOpen) onExpandedChange(true);
+          if (!notificationsOpen) setExpanded(true);
         }}
         onMouseLeave={() => {
           const activeElement = document.activeElement;
@@ -116,10 +131,10 @@ export function AdminSidebar<TSection extends string>({
           ) {
             activeElement.blur();
           }
-          onExpandedChange(false);
+          setExpanded(false);
         }}
         onFocus={() => {
-          if (!notificationsOpen) onExpandedChange(true);
+          if (!notificationsOpen) setExpanded(true);
         }}
         onBlur={(event) => {
           const nextTarget = event.relatedTarget;
@@ -128,14 +143,14 @@ export function AdminSidebar<TSection extends string>({
               !event.currentTarget.contains(nextTarget)) &&
             !event.currentTarget.matches(":hover")
           ) {
-            onExpandedChange(false);
+            setExpanded(false);
           }
         }}
         initial={false}
         animate={{
           width: expanded && !notificationsOpen ? 240 : collapsedWidth,
         }}
-        transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 py-5 selection:bg-[#E5192D] selection:text-white"
       >
         <Link
@@ -256,11 +271,11 @@ export function AdminSidebar<TSection extends string>({
             ref={notificationsPanelRef}
             id="admin-notification-panel"
             aria-label="Notifications"
-            initial={{ opacity: 0, x: -16 }}
+            initial={{ opacity: 0, x: panelStartX }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -16 }}
-            transition={{ type: "spring", stiffness: 360, damping: 34 }}
-            style={{ left: collapsedWidth }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            style={{ left: collapsedWidth, willChange: "transform, opacity" }}
             className="fixed bottom-0 top-0 z-40 flex w-[min(20rem,calc(100vw-4rem))] flex-col bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 shadow-xl"
           >
             <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 px-5 py-5">

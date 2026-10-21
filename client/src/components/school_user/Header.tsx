@@ -16,7 +16,6 @@ interface HeaderProps {
   onFiltersChange?: (filters: ItemFilters) => void;
   onClearFilters?: () => void;
   filterResultCount?: number;
-  notificationsOpen?: boolean;
   isFilterModalOpen?: boolean;
   onFilterModalOpenChange?: (open: boolean) => void;
 }
@@ -31,7 +30,6 @@ export const Header: React.FC<HeaderProps> = ({
   onFiltersChange,
   onClearFilters,
   filterResultCount,
-  notificationsOpen = false,
   isFilterModalOpen,
   onFilterModalOpenChange,
 }) => {
@@ -72,11 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
     <>
     <header className="h-20 bg-white dark:bg-neutral-950 sticky top-0 z-30">
       <div className="h-full w-full max-w-[1600px] mx-auto px-2 sm:px-3 lg:px-4">
-      <div className={`h-full flex items-center justify-between transition-[margin,width] duration-300 ease-in-out ${
-        notificationsOpen
-          ? "md:ml-80 md:w-[calc(100%-20rem)]"
-          : "w-full"
-      }`}>
+      <div className="notifications-shift h-full flex items-center justify-between w-full transition-[margin,width] duration-300 ease-in-out">
       {/* Search Input Bar */}
         <div className="flex-1 pr-0 md:pr-4">
           <div

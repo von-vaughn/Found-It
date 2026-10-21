@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ClipboardList,
   Home,
@@ -12,7 +18,10 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import { type Item } from "@/data/mockItems";
-import { rememberSchoolSidebarExpanded } from "./sidebarExpandedState";
+import {
+  rememberSchoolSidebarExpanded,
+  takeSchoolSidebarExpanded,
+} from "./sidebarExpandedState";
 import {
   FALLBACK_PROFILE_NAME,
   buildNotifications,
@@ -21,11 +30,8 @@ import type { ClaimRequest } from "@/types/claim";
 
 interface SidebarProps {
   activeTab?: string;
-  expanded?: boolean;
   onTabChange?: (tab: string) => void;
   onOpenCreateModal?: () => void;
-  onExpandedChange?: (expanded: boolean) => void;
-  onNotificationsOpenChange?: (open: boolean) => void;
   hideMobileNav?: boolean;
   items?: Item[];
   submittedClaims?: ClaimRequest[];
@@ -33,11 +39,8 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab = "home",
-  expanded = false,
   onTabChange,
   onOpenCreateModal,
-  onExpandedChange,
-  onNotificationsOpenChange,
   hideMobileNav = false,
   items: propItems,
   submittedClaims = [],
@@ -48,6 +51,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const notificationsPanelRef = useRef<HTMLElement>(null);
   const notificationsButtonRef = useRef<HTMLButtonElement>(null);
   const mobileNotificationsButtonRef = useRef<HTMLButtonElement>(null);
+  const [panelStartX, setPanelStartX] = useState(0);
+  const [expanded, setExpanded] = useState<boolean>(() =>
+    takeSchoolSidebarExpanded(),
+  );
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [collapsedWidth, setCollapsedWidth] = useState(() =>
     window.matchMedia("(min-width: 768px)").matches ? 80 : 64,
@@ -71,13 +78,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       if (asideRef.current?.matches(":hover")) {
-        onExpandedChange?.(true);
+        setExpanded(true);
       }
     });
     return () => cancelAnimationFrame(raf);
-    // Only run on mount; hover is re-checked via mouseenter afterwards.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The sidebar and drawer own these layout states so opening them never
+  // re-renders the page underneath (which caused the animation to drop frames).
+  useLayoutEffect(() => {
+    document.body.classList.toggle("sidebar-expanded", expanded);
+    return () => document.body.classList.remove("sidebar-expanded");
+  }, [expanded]);
+
+  useLayoutEffect(() => {
+    document.body.classList.toggle("notifications-open", notificationsOpen);
+    return () => document.body.classList.remove("notifications-open");
+  }, [notificationsOpen]);
 
   useEffect(() => {
     if (!notificationsOpen) return;
@@ -105,10 +122,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [notificationsOpen]);
 
   useEffect(() => {
-    onNotificationsOpenChange?.(notificationsOpen);
-  }, [notificationsOpen, onNotificationsOpenChange]);
-
-  useEffect(() => {
     const breakpoint = window.matchMedia("(min-width: 768px)");
     const updateCollapsedWidth = () => {
       setCollapsedWidth(breakpoint.matches ? 80 : 64);
@@ -118,6 +131,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     breakpoint.addEventListener("change", updateCollapsedWidth);
     return () => breakpoint.removeEventListener("change", updateCollapsedWidth);
   }, []);
+
+  const toggleNotifications = () => {
+    const opening = !notificationsOpen;
+    if (opening) {
+      // Start the drawer at the expanded sidebar's edge so it is not hidden
+      // behind the sidebar while that collapses.
+      setPanelStartX(expanded ? 240 - collapsedWidth : 0);
+      setExpanded(false);
+    }
+    setNotificationsOpen(opening);
+  };
 
   const navItems = [
     {
@@ -150,10 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: "notifications",
       label: "Notifications",
       icon: Bell,
-      onClick: () => {
-        onExpandedChange?.(false);
-        setNotificationsOpen((open) => !open);
-      },
+      onClick: toggleNotifications,
     },
   ];
 
@@ -164,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <motion.aside
       ref={asideRef}
       onMouseEnter={() => {
-        if (!notificationsOpen) onExpandedChange?.(true);
+        if (!notificationsOpen) setExpanded(true);
       }}
       onMouseLeave={() => {
         const activeElement = document.activeElement;
@@ -181,10 +202,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) {
           activeElement.blur();
         }
-        onExpandedChange?.(false);
+        setExpanded(false);
       }}
       onFocus={() => {
-        if (!notificationsOpen) onExpandedChange?.(true);
+        if (!notificationsOpen) setExpanded(true);
       }}
       onBlur={(event) => {
         const nextTarget = event.relatedTarget;
@@ -193,12 +214,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             !event.currentTarget.contains(nextTarget)) &&
           !event.currentTarget.matches(":hover")
         ) {
-          onExpandedChange?.(false);
+          setExpanded(false);
         }
       }}
       initial={false}
       animate={{ width: expanded && !notificationsOpen ? 240 : collapsedWidth }}
-      transition={{ type: "spring", stiffness: 360, damping: 34, mass: 0.8 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className={`shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
     >
       {/* Top Logo */}
@@ -378,11 +399,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <motion.aside
           ref={notificationsPanelRef}
           aria-label="Notifications"
-          initial={{ opacity: 0, x: -16 }}
+          initial={{ opacity: 0, x: panelStartX }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -16 }}
-          transition={{ type: "spring", stiffness: 360, damping: 34 }}
-          style={isDesktop ? { left: collapsedWidth } : undefined}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          style={
+            isDesktop
+              ? { left: collapsedWidth, willChange: "transform, opacity" }
+              : undefined
+          }
           className="fixed z-40 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-xl max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:overflow-y-auto max-md:rounded-t-2xl max-md:border max-md:border-b-0 md:top-0 md:bottom-0 md:w-80 md:border-r"
         >
           <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100 dark:border-neutral-800">
