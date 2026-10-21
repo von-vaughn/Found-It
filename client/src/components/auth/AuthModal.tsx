@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Eye, EyeOff, KeyRound, RotateCcw, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -44,8 +50,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const reduceMotion = useReducedMotion();
   const { login, signup, verifyOtp, resendOtp } = useAuth();
 
-  const screenKey =
-    mode === "signin" ? "signin" : `signup-${signupScreen}`;
+  const screenKey = mode === "signin" ? "signin" : `signup-${signupScreen}`;
   const screenOrder: Record<string, number> = {
     signin: 0,
     "signup-email": 1,
@@ -191,7 +196,9 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
           setVerificationCountdown(60);
           switchMode("signup");
           setSignupScreen("verify");
-          setError("Account unverified. A verification code has been dispatched to your email.");
+          setError(
+            "Account unverified. A verification code has been dispatched to your email.",
+          );
           return;
         }
         setError(res.message || "Invalid email or password.");
@@ -219,7 +226,9 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       return;
     }
     if (!isSchoolEmail(normalizedEmail)) {
-      setError(`Use your school email ending in ${SCHOOL_EMAIL_DOMAINS.join(" or ")}.`);
+      setError(
+        `Use your school email ending in ${SCHOOL_EMAIL_DOMAINS.join(" or ")}.`,
+      );
       emailInputRef.current?.focus();
       return;
     }
@@ -263,7 +272,10 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
         password,
       });
       if (!res.success) {
-        setError(res.message || "We couldn't create your account. Check your details and try again.");
+        setError(
+          res.message ||
+            "We couldn't create your account. Check your details and try again.",
+        );
         return;
       }
       setVerificationCode("");
@@ -288,7 +300,9 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     try {
       const result = await verifyOtp(verificationCode);
       if (!result.success) {
-        setError(result.message || "That code didn't work. Check it and try again.");
+        setError(
+          result.message || "That code didn't work. Check it and try again.",
+        );
         return;
       }
       onClose();
@@ -400,9 +414,15 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+                transition={{
+                  duration: reduceMotion ? 0 : 0.2,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
               >
-                <label className="block text-sm font-semibold text-neutral-800" htmlFor="modal-signin-email">
+                <label
+                  className="block text-sm font-semibold text-neutral-800"
+                  htmlFor="modal-signin-email"
+                >
                   Email address
                 </label>
                 <input
@@ -421,7 +441,10 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
                   placeholder="you@example.com"
                 />
-                <label className="block text-sm font-semibold text-neutral-800" htmlFor="modal-signin-password">
+                <label
+                  className="block text-sm font-semibold text-neutral-800"
+                  htmlFor="modal-signin-password"
+                >
                   Password
                 </label>
                 <PasswordInput
@@ -432,7 +455,11 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   onToggleVisibility={() => setShowPassword((shown) => !shown)}
                   autoComplete="current-password"
                 />
-                {error && <p role="alert" className="text-sm font-medium text-red-700">{error}</p>}
+                {error && (
+                  <p role="alert" className="text-sm font-medium text-red-700">
+                    {error}
+                  </p>
+                )}
                 <div className={actionDockClass}>
                   <button
                     type="submit"
@@ -485,7 +512,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   </div>
                 )}
                 <p className="pt-1 text-center text-sm text-neutral-600">
-                  New to FoundIt?{" "}
+                  Don't have an account?{" "}
                   <button
                     type="button"
                     onClick={() => switchMode("signup")}
@@ -506,9 +533,15 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+                transition={{
+                  duration: reduceMotion ? 0 : 0.2,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
               >
-                <label className="block text-sm font-semibold text-neutral-800" htmlFor="modal-signup-email">
+                <label
+                  className="block text-sm font-semibold text-neutral-800"
+                  htmlFor="modal-signup-email"
+                >
                   School email <span className="text-[#E5192D]">*</span>
                 </label>
                 <input
@@ -529,7 +562,15 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
                   placeholder="you@wmsu.edu.ph"
                 />
-                {error && <p id="signup-email-error" role="alert" className="text-sm font-medium text-red-700">{error}</p>}
+                {error && (
+                  <p
+                    id="signup-email-error"
+                    role="alert"
+                    className="text-sm font-medium text-red-700"
+                  >
+                    {error}
+                  </p>
+                )}
                 <div className={actionDockClass}>
                   <button
                     type="submit"
@@ -560,16 +601,26 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+                transition={{
+                  duration: reduceMotion ? 0 : 0.2,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
               >
                 <div className="rounded-xl bg-neutral-50 px-4 py-3">
-                  <p className="text-xs font-semibold text-neutral-500">Email address</p>
-                  <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900">{email}</p>
+                  <p className="text-xs font-semibold text-neutral-500">
+                    Email address
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900">
+                    {email}
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
                   <div>
-                    <label className="mb-1.5 block min-h-10 text-sm font-semibold text-neutral-800" htmlFor="modal-first-name">
+                    <label
+                      className="mb-1.5 block min-h-10 text-sm font-semibold text-neutral-800"
+                      htmlFor="modal-first-name"
+                    >
                       First Name <span className="text-[#E5192D]">*</span>
                     </label>
                     <input
@@ -588,7 +639,10 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block min-h-10 text-sm font-semibold text-neutral-800" htmlFor="modal-middle-initial">
+                    <label
+                      className="mb-1.5 block min-h-10 text-sm font-semibold text-neutral-800"
+                      htmlFor="modal-middle-initial"
+                    >
                       Middle Initial
                     </label>
                     <input
@@ -607,11 +661,16 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   </div>
                 </div>
                 {error && error.includes("first name") && (
-                  <p role="alert" className="text-sm font-medium text-red-700">{error}</p>
+                  <p role="alert" className="text-sm font-medium text-red-700">
+                    {error}
+                  </p>
                 )}
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-neutral-800" htmlFor="modal-last-name">
+                  <label
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    htmlFor="modal-last-name"
+                  >
                     Last Name <span className="text-[#E5192D]">*</span>
                   </label>
                   <input
@@ -629,12 +688,20 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
                   />
                   {error === "Enter your last name." && (
-                    <p role="alert" className="mt-1.5 text-sm font-medium text-red-700">{error}</p>
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-sm font-medium text-red-700"
+                    >
+                      {error}
+                    </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-neutral-800" htmlFor="modal-signup-password">
+                  <label
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    htmlFor="modal-signup-password"
+                  >
                     Password
                   </label>
                   <PasswordInput
@@ -645,20 +712,35 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       setError("");
                     }}
                     showPassword={showPassword}
-                    onToggleVisibility={() => setShowPassword((shown) => !shown)}
+                    onToggleVisibility={() =>
+                      setShowPassword((shown) => !shown)
+                    }
                     autoComplete="new-password"
                   />
                   <p className="mt-1.5 text-xs text-neutral-600">
                     Use 8–72 characters.
                   </p>
                   {error.includes("Password") && (
-                    <p role="alert" className="mt-1 text-sm font-medium text-red-700">{error}</p>
+                    <p
+                      role="alert"
+                      className="mt-1 text-sm font-medium text-red-700"
+                    >
+                      {error}
+                    </p>
                   )}
                 </div>
 
-                {error && !error.includes("first name") && error !== "Enter your last name." && !error.includes("Password") && (
-                  <p role="alert" className="text-sm font-medium text-red-700">{error}</p>
-                )}
+                {error &&
+                  !error.includes("first name") &&
+                  error !== "Enter your last name." &&
+                  !error.includes("Password") && (
+                    <p
+                      role="alert"
+                      className="text-sm font-medium text-red-700"
+                    >
+                      {error}
+                    </p>
+                  )}
 
                 <div className={actionDockClass}>
                   <div className="flex gap-3">
@@ -703,7 +785,10 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+                transition={{
+                  duration: reduceMotion ? 0 : 0.2,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
               >
                 <div>
                   <label
@@ -728,12 +813,18 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       setError("");
                     }}
                     aria-invalid={Boolean(error)}
-                    aria-describedby={error ? "verification-code-error" : undefined}
+                    aria-describedby={
+                      error ? "verification-code-error" : undefined
+                    }
                     className="h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-center font-mono text-2xl font-bold tracking-[0.4em] text-neutral-900 outline-none transition placeholder:tracking-normal focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
                     placeholder="000000"
                   />
                   {error && (
-                    <p id="verification-code-error" role="alert" className="mt-2 text-sm font-medium text-red-700">
+                    <p
+                      id="verification-code-error"
+                      role="alert"
+                      className="mt-2 text-sm font-medium text-red-700"
+                    >
                       {error}
                     </p>
                   )}
@@ -755,7 +846,9 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   </button>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-4 text-sm">
-                  <span className="text-neutral-600">Didn&apos;t get the code?</span>
+                  <span className="text-neutral-600">
+                    Didn&apos;t get the code?
+                  </span>
                   <button
                     type="button"
                     onClick={handleResendCode}
@@ -771,7 +864,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
               </motion.form>
             )}
           </AnimatePresence>
-          </div>
+        </div>
       </motion.div>
     </motion.div>
   );

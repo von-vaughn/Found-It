@@ -50,9 +50,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         <span className="truncate">{category?.label ?? "Other"}</span>
       </div>
 
-      <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-        {isLost ? "I Found This" : "This Is Mine"}
-      </span>
+      {!isOwnPost && (
+        <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+          {isLost ? "I Found This" : "This Is Mine"}
+        </span>
+      )}
     </div>
   );
 
