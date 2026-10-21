@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { uploadImages } from "@/services/itemService";
 import type { NewClaimRequest } from "@/types/claim";
 
 interface OwnershipClaimFormProps {
   itemId: string;
   itemTitle: string;
   claimant: string;
-  onSubmitClaim: (claim: NewClaimRequest) => void;
+  onSubmitClaim: (claim: NewClaimRequest) => Promise<void> | void;
   onSubmitted: () => void;
   onCancel: () => void;
 }
@@ -103,18 +104,6 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
     setFormError("");
   };
 
-  const readFileAsDataUrl = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") resolve(reader.result);
-        else reject(new Error("The selected evidence image could not be read."));
-      };
-      reader.onerror = () =>
-        reject(reader.error ?? new Error("The selected evidence image could not be read."));
-      reader.readAsDataURL(file);
-    });
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (
@@ -132,10 +121,11 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
     setFormError("");
     setIsSubmitting(true);
     try {
-      const evidence = await Promise.all(
-        evidenceFiles.map(({ file }) => readFileAsDataUrl(file)),
-      );
-      onSubmitClaim({
+      const evidence =
+        evidenceFiles.length > 0
+          ? await uploadImages(evidenceFiles.map(({ file }) => file))
+          : [];
+      await onSubmitClaim({
         item: itemTitle,
         itemId,
         claimant,
@@ -152,8 +142,13 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
       toast.success("Claim request submitted for admin review.");
       onSubmitted();
     } catch (error) {
-      console.error("Failed to read claim evidence images.", error);
-      setFormError("We couldn't read the selected pictures. Please try again.");
+      const message = (
+        error as { response?: { data?: { message?: string } } }
+      )?.response?.data?.message;
+      console.error("Failed to submit claim request.", error);
+      setFormError(
+        message ?? "We couldn't submit your claim. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }

@@ -15,7 +15,6 @@ import {
 } from "@/components/school_user/itemFilters";
 import type {
   ClaimRequest,
-  NewClaimRequest,
   NewReturnItemRequest,
   ReturnItemRequest,
 } from "@/types/claim";
@@ -83,22 +82,6 @@ export function App() {
 
   const handleDeleteItem = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const handleSubmitClaim = (claim: NewClaimRequest) => {
-    const submittedAt = new Date();
-    setSubmittedClaims((current) => [
-      {
-        ...claim,
-        id: `CL-${String(Date.now()).slice(-4)}`,
-        status: "Pending",
-        submitted: new Intl.DateTimeFormat("en", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        }).format(submittedAt),
-      },
-      ...current,
-    ]);
   };
 
   const handleUpdateClaimStatus = (
@@ -191,7 +174,6 @@ export function App() {
               onAddItem={handleAddItem}
               onUpdateItem={handleUpdateItem}
               onDeleteItem={handleDeleteItem}
-              onSubmitClaim={handleSubmitClaim}
               onUpdateClaimStatus={handleUpdateClaimStatus}
               returnRequests={returnRequests}
               onSubmitReturnRequest={handleSubmitReturnRequest}

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Navigate, useRoutes } from "react-router-dom";
 import type { Item } from "@/data/mockItems";
 import type {
@@ -12,15 +13,17 @@ import { getDashboardRoutes } from "./dashboardRoutes";
 import { getAdminRoutes } from "./adminRoutes";
 import type { ItemFilters } from "@/components/school_user/itemFilters";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useCreateClaim, useMyClaims } from "@/hooks/useClaims";
+import { toClaimRequests } from "@/lib/claimAdapter";
 
 interface AppRoutesProps {
   items: Item[];
+  /** Example claims used only by the admin demo views. */
   submittedClaims: ClaimRequest[];
   returnRequests: ReturnItemRequest[];
   onAddItem: (newItem: Item) => void;
   onUpdateItem: (updatedItem: Item) => void;
   onDeleteItem: (id: string, reason?: string) => void;
-  onSubmitClaim: (claim: NewClaimRequest) => void;
   onUpdateClaimStatus: (claimId: string, status: ClaimRequest["status"]) => void;
   onSubmitReturnRequest: (request: NewReturnItemRequest) => void;
   onUpdateReturnRequestStatus: (
@@ -35,12 +38,11 @@ interface AppRoutesProps {
 
 export function AppRoutes({
   items,
-  submittedClaims,
+  submittedClaims: exampleClaims,
   returnRequests,
   onAddItem,
   onUpdateItem,
   onDeleteItem,
-  onSubmitClaim,
   onUpdateClaimStatus,
   onSubmitReturnRequest,
   onUpdateReturnRequestStatus,
@@ -49,6 +51,28 @@ export function AppRoutes({
   filters,
   onFiltersChange,
 }: AppRoutesProps) {
+  const { data: serverClaims = [] } = useMyClaims();
+  const createClaimMutation = useCreateClaim();
+  const submittedClaims = useMemo(
+    () => toClaimRequests(serverClaims),
+    [serverClaims],
+  );
+
+  const handleSubmitClaim = async (claim: NewClaimRequest) => {
+    await createClaimMutation.mutateAsync({
+      itemId: claim.itemId,
+      claimantTitle: claim.claimantTitle ?? claim.item,
+      color: claim.color,
+      building: claim.building,
+      dateLost: claim.dateLost,
+      timeLost: claim.timeLost,
+      location: claim.location,
+      details: claim.details,
+      importantDetails: claim.importantDetails ?? "",
+      evidence: claim.evidence,
+    });
+  };
+
   const publicRoutes = getPublicRoutes({
     items,
     onAddItem,
@@ -63,7 +87,7 @@ export function AppRoutes({
     onAddItem,
     onUpdateItem,
     onDeleteItem,
-    onSubmitClaim,
+    onSubmitClaim: handleSubmitClaim,
     onUpdateClaimStatus,
     onSubmitReturnRequest,
     filters,
@@ -81,7 +105,7 @@ export function AppRoutes({
     items,
     onAddItem,
     onDeleteItem,
-    submittedClaims,
+    submittedClaims: exampleClaims,
     returnRequests,
     onUpdateReturnRequestStatus,
   }).map((route) => ({

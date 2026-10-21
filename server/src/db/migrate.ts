@@ -112,6 +112,7 @@ export async function migrate(): Promise<void> {
   `);
 
   // claim/return asks on an item; status tracks the request lifecycle.
+  // evidence is a JSON array of uploaded photo URLs.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS request (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -122,6 +123,14 @@ export async function migrate(): Promise<void> {
       status VARCHAR(20) NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'approved', 'claimed', 'returned', 'rejected')),
       evidence TEXT,
+      claimant_title VARCHAR(100),
+      primary_color VARCHAR(50),
+      building VARCHAR(100),
+      date_lost DATE,
+      time_lost TIME,
+      location_lost TEXT,
+      details TEXT,
+      important_details TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
@@ -154,5 +163,15 @@ export async function migrate(): Promise<void> {
     ALTER TABLE location ALTER COLUMN building_id DROP NOT NULL;
 
     ALTER TABLE image ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+    -- Claim form details stored on the request row.
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS claimant_title VARCHAR(100);
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS primary_color VARCHAR(50);
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS building VARCHAR(100);
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS date_lost DATE;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS time_lost TIME;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS location_lost TEXT;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS details TEXT;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS important_details TEXT;
   `);
 }

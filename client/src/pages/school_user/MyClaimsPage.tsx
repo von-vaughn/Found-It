@@ -23,8 +23,9 @@ import {
 } from "@/components/school_user/claimStatus";
 import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
-import { useAuth } from "@/context/useAuth";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { useItems } from "@/hooks/useItems";
+import { toClientItems } from "@/lib/itemAdapter";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -32,7 +33,6 @@ import {
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
 import type { ClaimRequest } from "@/types/claim";
-import { FALLBACK_PROFILE_NAME } from "@/components/school_user/notifications";
 
 interface MyClaimsPageProps {
   items?: Item[];
@@ -145,23 +145,22 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   filters,
   onFiltersChange,
 }) => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const items = propItems ?? EMPTY_ITEMS;
+  const { data: serverItems } = useItems(undefined, {
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const items = useMemo(
+    () =>
+      serverItems ? toClientItems(serverItems) : (propItems ?? EMPTY_ITEMS),
+    [serverItems, propItems],
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const profileName = user?.name || FALLBACK_PROFILE_NAME;
-
-  const myClaims = useMemo(() => {
-    return submittedClaims.filter(
-      (claim) =>
-        claim.claimant.trim().toLowerCase() ===
-        profileName.trim().toLowerCase(),
-    );
-  }, [submittedClaims, profileName]);
+  const myClaims = submittedClaims;
 
   const counts = useMemo(() => {
     let pending = 0;

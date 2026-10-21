@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { OwnershipClaimForm } from "@/components/school_user/OwnershipClaimForm";
@@ -12,6 +12,8 @@ import {
 } from "@/components/school_user/itemFilters";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { useAuth } from "@/context/useAuth";
+import { useItemDetail } from "@/hooks/useItems";
+import { toClientItem } from "@/lib/itemAdapter";
 import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
 
 interface ClaimPageProps {
@@ -19,7 +21,7 @@ interface ClaimPageProps {
   submittedClaims?: ClaimRequest[];
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
-  onSubmitClaim?: (claim: NewClaimRequest) => void;
+  onSubmitClaim?: (claim: NewClaimRequest) => Promise<void> | void;
 }
 
 export const ClaimPage: React.FC<ClaimPageProps> = ({
@@ -37,7 +39,14 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
   const [submitted, setSubmitted] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const item = items.find((entry) => entry.id === id);
+  const { data: serverItem, isLoading: isItemLoading } = useItemDetail(
+    id ?? "",
+  );
+  const item = useMemo(
+    () =>
+      serverItem ? toClientItem(serverItem) : items.find((entry) => entry.id === id),
+    [serverItem, items, id],
+  );
 
   const goBack = () =>
     window.history.length > 1 ? navigate(-1) : navigate("/dashboard");
@@ -97,7 +106,11 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
               </button>
             )}
 
-            {!item ? (
+            {isItemLoading && !item ? (
+              <div className="flex justify-center py-16">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-[#E5192D]" />
+              </div>
+            ) : !item ? (
               <div className="py-16 text-center">
                 <h1 className="text-lg font-extrabold text-neutral-900 dark:text-neutral-100">
                   Item not found
@@ -123,14 +136,21 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
                   Please wait for approval. We&apos;ll notify you once your
                   request is approved or rejected.
                 </p>
-                <div className="mt-6 flex justify-center">
+                <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/claims")}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424]"
+                  >
+                    View my claims
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => navigate("/dashboard")}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 text-xs font-bold text-white transition-colors hover:bg-neutral-700"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 px-5 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
                   >
                     Home
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 </div>
               </div>
