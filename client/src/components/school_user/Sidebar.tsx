@@ -163,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: "claims",
-      label: "My Claims",
+      label: "Claims & Returned",
       icon: ClipboardList,
       onClick: () => {
         if (onTabChange) onTabChange("claims");
@@ -363,7 +363,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </Badge>
                 )}
               </span>
-              <span className="text-[10px] font-semibold">{item.label}</span>
             </Button>
           );
         })}
@@ -389,7 +388,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
             </span>
           </span>
-          <span className="text-[10px] font-semibold">Profile</span>
         </button>
       </div>
     </nav>

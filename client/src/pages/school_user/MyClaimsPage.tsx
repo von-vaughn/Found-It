@@ -260,7 +260,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
           <main className="mx-auto w-full max-w-[1100px] bg-white dark:bg-neutral-950 px-4 py-8 sm:px-6 lg:px-8">
             <header>
               <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-                My claim requests
+                Claims &amp; Returned
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                 Requests you filed on found posts. Select a post to see the

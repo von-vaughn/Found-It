@@ -150,7 +150,7 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
                     onClick={() => navigate("/dashboard/claims")}
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424]"
                   >
-                    View my claims
+                    View Claims &amp; Returned
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                   <button
@@ -174,7 +174,7 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
                 </h1>
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                   You already have a claim request for this item. You can track
-                  its status in My Claims.
+                  its status in Claims &amp; Returned.
                 </p>
                 <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
                   <button
@@ -182,7 +182,7 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
                     onClick={() => navigate("/dashboard/claims")}
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424]"
                   >
-                    View my claims
+                    View Claims &amp; Returned
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                   <button
