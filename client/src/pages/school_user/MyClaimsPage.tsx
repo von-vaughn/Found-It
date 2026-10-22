@@ -42,12 +42,13 @@ interface MyClaimsPageProps {
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
-type StatusFilter = "all" | SimplifiedClaimStatus;
+type StatusFilter = "all" | SimplifiedClaimStatus | "Unclaimed";
 
 const FILTER_TABS: { id: StatusFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "Pending", label: "Pending" },
   { id: "Approved", label: "Approved" },
+  { id: "Unclaimed", label: "Unclaimed" },
   { id: "Claimed", label: "Claimed" },
   { id: "Rejected", label: "Rejected" },
   { id: "Returned", label: "Returned" },
@@ -180,11 +181,12 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   const filteredClaims = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return myClaims.filter((claim) => {
-      if (
-        statusFilter !== "all" &&
-        simplifyClaimStatus(claim.status) !== statusFilter
-      ) {
-        return false;
+      if (statusFilter !== "all") {
+        const matches =
+          statusFilter === "Unclaimed"
+            ? claim.status === "Approved"
+            : simplifyClaimStatus(claim.status) === statusFilter;
+        if (!matches) return false;
       }
       if (!query) return true;
       const item = items.find((entry) => entry.id === claim.itemId);
@@ -262,10 +264,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 Claims &amp; Returned
               </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                Requests you filed on found posts. Select a post to see the
-                original report.
-              </p>
             </header>
 
             <nav
@@ -273,7 +271,12 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-neutral-200 dark:border-neutral-800 pb-3"
             >
               {FILTER_TABS.map((tab) => {
-                const count = tab.id === "all" ? counts.total : counts[tab.id];
+                const count =
+                  tab.id === "all"
+                    ? counts.total
+                    : tab.id === "Unclaimed"
+                      ? counts.Approved
+                      : counts[tab.id];
                 const isActive = statusFilter === tab.id;
                 return (
                   <button
@@ -282,8 +285,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     onClick={() => setStatusFilter(tab.id)}
                     aria-pressed={isActive}
                     className={`relative px-1 py-1 text-sm font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
-                      tab.id === "Returned" ? "ml-auto" : ""
-                    } ${
                       isActive
                         ? "text-neutral-900 dark:text-neutral-100"
                         : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
