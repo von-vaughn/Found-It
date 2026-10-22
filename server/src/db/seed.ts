@@ -196,6 +196,58 @@ async function seedDemoItems(): Promise<void> {
 }
 
 /**
+ * Dev-only sample claim so the school-user claim status views have a returned
+ * example to show. Inserts once; the NOT EXISTS guard keeps it idempotent.
+ */
+async function seedDemoReturnedClaim(): Promise<void> {
+  const { rows: users } = await pool.query<{ id: string }>(
+    `SELECT id FROM "user" WHERE email = 'user@foundit.local' LIMIT 1`,
+  );
+  const userId = users[0]?.id;
+  if (!userId) return;
+
+  const { rows: items } = await pool.query<{ id: string }>(
+    `SELECT i.id
+     FROM item i
+     JOIN report r ON r.id = i.report_id
+     WHERE i.name = 'BPI ATM Card'
+       AND r.report_type = 'found'
+       AND r.user_id <> $1
+     LIMIT 1`,
+    [userId],
+  );
+  const itemId = items[0]?.id;
+  if (!itemId) return;
+
+  const { rowCount } = await pool.query(
+    `INSERT INTO request (
+       item_id, user_id, kind, status, evidence, claimant_title,
+       primary_color, building, date_lost, time_lost, location_lost,
+       details, important_details, created_at
+     )
+     SELECT $1, $2, 'claim', 'returned', '[]', $3, $4, $5,
+            CURRENT_DATE - 4, '15:40', $6, $7, $8, NOW() - INTERVAL '2 days'
+     WHERE NOT EXISTS (
+       SELECT 1 FROM request
+       WHERE item_id = $1 AND user_id = $2 AND kind = 'claim'
+     )`,
+    [
+      itemId,
+      userId,
+      'BPI ATM Card',
+      'Green',
+      'CAIS - College of Asian & Islamic Studies',
+      'CAIS lobby',
+      'Green BPI ATM card with my name on it. I last used it at the vending machine near CAIS.',
+      'Card number ends in 4821; the signature panel is slightly worn.',
+    ],
+  );
+  if (rowCount === 1) {
+    console.log('Seeded demo returned claim for user@foundit.local.');
+  }
+}
+
+/**
  * Ensures the canonical categories and at least one super_admin exist, plus
  * optional demo accounts (dev only). Idempotent — safe to run on every boot.
  */
@@ -258,6 +310,7 @@ export async function seed(): Promise<void> {
     ]);
 
     await seedDemoItems();
+    await seedDemoReturnedClaim();
   }
 
   // Sanity check: abort boot if zero active super_admins exist

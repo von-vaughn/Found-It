@@ -25,6 +25,15 @@ const inputClass =
 const labelClass =
   "mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400";
 
+const foundDateFormatter = new Intl.DateTimeFormat("en", {
+  dateStyle: "medium",
+});
+
+function formatFoundDate(value: string): string {
+  const date = new Date(`${value}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? value : foundDateFormatter.format(date);
+}
+
 function useIsMobileView(): boolean {
   const [isMobile, setIsMobile] = useState(() =>
     window.matchMedia("(max-width: 767px)").matches,
@@ -608,6 +617,94 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
 
       {step === "confirmation" && (
         <div className="space-y-5 p-5 sm:p-6">
+          <section
+            aria-labelledby="submitted-found-item-title"
+            className="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800"
+          >
+            <div
+              className={`grid gap-4 p-4 ${capturedPhoto ? "sm:grid-cols-[160px_minmax(0,1fr)]" : ""}`}
+            >
+              {capturedPhoto && (
+                <img
+                  src={capturedPhoto}
+                  alt="Submitted found-item photo"
+                  className="aspect-[4/3] w-full rounded-xl bg-neutral-100 object-cover dark:bg-neutral-800"
+                />
+              )}
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                  Item submitted
+                </p>
+                <h3
+                  id="submitted-found-item-title"
+                  className="mt-1 truncate text-sm font-extrabold text-neutral-900 dark:text-neutral-100"
+                >
+                  {itemTitle}
+                </h3>
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                  {color.trim() && (
+                    <div>
+                      <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                        Primary color
+                      </dt>
+                      <dd className="mt-0.5 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
+                        {color}
+                      </dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                      Date found
+                    </dt>
+                    <dd className="mt-0.5 font-semibold text-neutral-800 dark:text-neutral-200">
+                      {formatFoundDate(dateFound)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                      Time found
+                    </dt>
+                    <dd className="mt-0.5 font-semibold text-neutral-800 dark:text-neutral-200">
+                      {timeFound}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                      Location found
+                    </dt>
+                    <dd className="mt-0.5 font-semibold text-neutral-800 dark:text-neutral-200">
+                      {location}
+                    </dd>
+                  </div>
+                  {building.trim() && (
+                    <div>
+                      <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                        Building
+                      </dt>
+                      <dd className="mt-0.5 font-semibold text-neutral-800 dark:text-neutral-200">
+                        {building}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            </div>
+            <div className="space-y-2 border-t border-neutral-100 px-4 py-3 dark:border-neutral-800">
+              <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                  Description:
+                </span>{" "}
+                {description}
+              </p>
+              <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                  Important details:
+                </span>{" "}
+                {importantDetails}
+              </p>
+            </div>
+          </section>
+
           <div className="flex items-start gap-3">
             <CheckCircle2
               className="mt-0.5 h-6 w-6 shrink-0 text-green-700"

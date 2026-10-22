@@ -50,6 +50,7 @@ const FILTER_TABS: { id: StatusFilter; label: string }[] = [
   { id: "Approved", label: "Approved" },
   { id: "Claimed", label: "Claimed" },
   { id: "Rejected", label: "Rejected" },
+  { id: "Returned", label: "Returned" },
 ];
 
 function ClaimPhotosCarousel({
@@ -163,18 +164,17 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   const myClaims = submittedClaims;
 
   const counts = useMemo(() => {
-    let pending = 0;
-    let approved = 0;
-    let claimed = 0;
-    let rejected = 0;
+    const byStatus: Record<SimplifiedClaimStatus, number> = {
+      Pending: 0,
+      Approved: 0,
+      Claimed: 0,
+      Returned: 0,
+      Rejected: 0,
+    };
     for (const claim of myClaims) {
-      const simple = simplifyClaimStatus(claim.status);
-      if (simple === "Pending") pending += 1;
-      else if (simple === "Approved") approved += 1;
-      else if (simple === "Claimed") claimed += 1;
-      else rejected += 1;
+      byStatus[simplifyClaimStatus(claim.status)] += 1;
     }
-    return { total: myClaims.length, pending, approved, claimed, rejected };
+    return { total: myClaims.length, ...byStatus };
   }, [myClaims]);
 
   const filteredClaims = useMemo(() => {
@@ -273,16 +273,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-neutral-200 dark:border-neutral-800 pb-3"
             >
               {FILTER_TABS.map((tab) => {
-                const count =
-                  tab.id === "all"
-                    ? counts.total
-                    : tab.id === "Pending"
-                      ? counts.pending
-                      : tab.id === "Approved"
-                        ? counts.approved
-                        : tab.id === "Claimed"
-                          ? counts.claimed
-                          : counts.rejected;
+                const count = tab.id === "all" ? counts.total : counts[tab.id];
                 const isActive = statusFilter === tab.id;
                 return (
                   <button
@@ -291,6 +282,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     onClick={() => setStatusFilter(tab.id)}
                     aria-pressed={isActive}
                     className={`relative px-1 py-1 text-sm font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
+                      tab.id === "Returned" ? "ml-auto" : ""
+                    } ${
                       isActive
                         ? "text-neutral-900 dark:text-neutral-100"
                         : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
