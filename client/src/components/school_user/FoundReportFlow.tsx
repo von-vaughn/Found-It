@@ -206,7 +206,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
       !timeFound
     ) {
       setFormError(
-        "Enter a title, description, important details, specific location, date found, and time found to continue.",
+        "Enter a title, description, important details, location found, date found, and approximate time found to continue.",
       );
       return;
     }
@@ -491,7 +491,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="found-item-time" className={labelClass}>
-                Time found *
+                Approximate time found *
               </label>
               <input
                 id="found-item-time"
@@ -508,7 +508,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             </div>
             <div>
               <label htmlFor="found-item-location" className={labelClass}>
-                Specific location *
+                Location found *
               </label>
               <input
                 id="found-item-location"
@@ -582,9 +582,6 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               placeholder="Unique mark only the owner would know…"
               className={`${inputClass} min-h-24 resize-y`}
             />
-            <p className="mt-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-              Not included in the public post. Only used to verify ownership.
-            </p>
           </div>
 
           </div>
