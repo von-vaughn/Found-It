@@ -548,7 +548,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
 
           <div>
             <label htmlFor="found-item-description" className={labelClass}>
-              Description
+              Description *
             </label>
             <textarea
               id="found-item-description"

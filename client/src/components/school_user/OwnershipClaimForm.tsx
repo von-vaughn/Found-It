@@ -164,6 +164,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         additional information, important details, lost date, time, and
         location are required. You may also attach picture evidence.
       </p>
+      <hr className="mt-4 border-t border-neutral-200 dark:border-neutral-800" />
 
       <form onSubmit={handleSubmit} className="mt-5">
         <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6">
