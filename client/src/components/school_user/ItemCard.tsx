@@ -11,11 +11,13 @@ import toast from "react-hot-toast";
 interface ItemCardProps {
   item: Item;
   onItemClick?: (item: Item) => void;
+  showActionLabel?: boolean;
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({
   item,
   onItemClick,
+  showActionLabel = true,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -50,7 +52,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         <span className="truncate">{category?.label ?? "Other"}</span>
       </div>
 
-      {!isOwnPost && (
+      {!isOwnPost && showActionLabel && (
         <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
           {isLost ? "I Found This" : "This Is Mine"}
         </span>

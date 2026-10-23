@@ -40,6 +40,7 @@ import { ClaimEvidenceGallery } from "@/components/school_user/ClaimEvidenceGall
 import {
   simplifiedClaimStatusStyles,
   simplifyClaimStatus,
+  submissionStatusLabel,
 } from "@/components/school_user/claimStatus";
 import { claims as demoClaims } from "@/components/admin/adminData";
 import {
@@ -52,6 +53,7 @@ import {
 interface ItemDetailPageProps {
   items?: Item[];
   submittedClaims?: ClaimRequest[];
+  foundReports?: ClaimRequest[];
   returnRequests?: ReturnItemRequest[];
   onAddItem?: (newItem: Item) => void;
   onUpdateItem?: (updatedItem: Item) => void;
@@ -99,6 +101,7 @@ function keywordSet(value: string): Set<string> {
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   items: propItems,
   submittedClaims = [],
+  foundReports = [],
   returnRequests = [],
   onAddItem: propOnAddItem,
   onUpdateItem: propOnUpdateItem,
@@ -372,6 +375,25 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     return submittedClaims.find((claim) => claim.itemId === item.id) ?? null;
   }, [item, submittedClaims]);
 
+  const existingFoundReport = useMemo(() => {
+    if (!item) return null;
+    return (
+      foundReports.find(
+        (report) => report.kind === "return" && report.itemId === item.id,
+      ) ?? null
+    );
+  }, [item, foundReports]);
+
+  const foundReportStatus = existingFoundReport
+    ? submissionStatusLabel(existingFoundReport)
+    : null;
+  const foundReportStatusStyle =
+    foundReportStatus !== null
+      ? simplifiedClaimStatusStyles[
+          foundReportStatus === "Unclaimed" ? "Approved" : foundReportStatus
+        ]
+      : "";
+
   if (isItemLoading && !item) {
     return (
       <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
@@ -597,7 +619,16 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 </p>
               </div>
               {!isOwnItem &&
-                (existingClaim ? (
+                (existingFoundReport ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/claims")}
+                    title="You already submitted a found report for this item."
+                    className={`shrink-0 inline-flex h-10 items-center justify-center rounded-full px-4 text-xs font-bold transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer ${foundReportStatusStyle}`}
+                  >
+                    {foundReportStatus} found report
+                  </button>
+                ) : existingClaim ? (
                   <button
                     type="button"
                     onClick={() => navigate("/dashboard/claims")}
@@ -967,8 +998,12 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           initialItem={item}
         />
       )}
-      {foundItemCameraOpen && (
-        <FoundItemCameraModal onClose={() => setFoundItemCameraOpen(false)} />
+      {item && foundItemCameraOpen && (
+        <FoundItemCameraModal
+          lostItemId={item.id}
+          lostItemTitle={item.title}
+          onClose={() => setFoundItemCameraOpen(false)}
+        />
       )}
       {ownershipClaimOpen && (
         <OwnershipClaimModal

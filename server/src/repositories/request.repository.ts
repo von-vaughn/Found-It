@@ -102,31 +102,57 @@ export async function findClaimById(id: string): Promise<Claim | null> {
   return rows[0] ? toClaim(rows[0]) : null;
 }
 
-export async function findClaimForUserAndItem(
+async function findRequestForUserAndItem(
   userId: string,
   itemId: string,
+  kind: "claim" | "return",
 ): Promise<Claim | null> {
   const { rows } = await pool.query<ClaimRow>(
     `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
-     WHERE rq.user_id = $1 AND rq.item_id = $2 AND rq.kind = 'claim'
+     WHERE rq.user_id = $1 AND rq.item_id = $2 AND rq.kind = $3
      LIMIT 1`,
-    [userId, itemId],
+    [userId, itemId, kind],
   );
   return rows[0] ? toClaim(rows[0]) : null;
 }
 
-export async function listClaimsByUser(userId: string): Promise<Claim[]> {
+export function findClaimForUserAndItem(
+  userId: string,
+  itemId: string,
+): Promise<Claim | null> {
+  return findRequestForUserAndItem(userId, itemId, "claim");
+}
+
+export function findReturnForUserAndItem(
+  userId: string,
+  itemId: string,
+): Promise<Claim | null> {
+  return findRequestForUserAndItem(userId, itemId, "return");
+}
+
+async function listRequestsByUser(
+  userId: string,
+  kind: "claim" | "return",
+): Promise<Claim[]> {
   const { rows } = await pool.query<ClaimRow>(
     `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
-     WHERE rq.user_id = $1 AND rq.kind = 'claim'
+     WHERE rq.user_id = $1 AND rq.kind = $2
      ORDER BY rq.created_at DESC
      LIMIT 200`,
-    [userId],
+    [userId, kind],
   );
   return rows.map(toClaim);
 }
 
-export async function createClaim(input: {
+export function listClaimsByUser(userId: string): Promise<Claim[]> {
+  return listRequestsByUser(userId, "claim");
+}
+
+export function listReturnsByUser(userId: string): Promise<Claim[]> {
+  return listRequestsByUser(userId, "return");
+}
+
+interface CreateRequestInput {
   userId: string;
   itemId: string;
   claimantTitle: string;
@@ -138,7 +164,12 @@ export async function createClaim(input: {
   details: string;
   importantDetails: string;
   evidence?: string[];
-}): Promise<Claim | null> {
+}
+
+async function createRequest(
+  kind: "claim" | "return",
+  input: CreateRequestInput,
+): Promise<Claim | null> {
   const result = await pool
     .query<{ id: string }>(
       `INSERT INTO request (
@@ -146,11 +177,12 @@ export async function createClaim(input: {
          primary_color, building, date_lost, time_lost, location_lost,
          details, important_details
        )
-       VALUES ($1, $2, 'claim', 'pending', $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING id`,
       [
         input.itemId,
         input.userId,
+        kind,
         JSON.stringify(input.evidence ?? []),
         input.claimantTitle,
         input.color ?? null,
@@ -170,7 +202,17 @@ export async function createClaim(input: {
 
   if (!result) return null;
 
-  const claim = await findClaimById(result.rows[0].id);
-  if (!claim) throw new Error("Created claim could not be read back.");
-  return claim;
+  const request = await findClaimById(result.rows[0].id);
+  if (!request) throw new Error("Created request could not be read back.");
+  return request;
+}
+
+export function createClaim(input: CreateRequestInput): Promise<Claim | null> {
+  return createRequest("claim", input);
+}
+
+export function createReturnRequest(
+  input: CreateRequestInput,
+): Promise<Claim | null> {
+  return createRequest("return", input);
 }

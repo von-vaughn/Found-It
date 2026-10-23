@@ -311,6 +311,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
               >
                 <ItemCard
                   item={item}
+                  showActionLabel={false}
                   onItemClick={(selected) => setSelectedItem(selected)}
                 />
               </StaggerItem>

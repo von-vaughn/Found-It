@@ -1,6 +1,5 @@
-import React, { useId } from "react";
+import React from "react";
 import { Search, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export type ItemSearchType = "lost" | "found";
 
@@ -24,14 +23,11 @@ export const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
   onSubmit,
 }) => {
   const isLight = theme === "light";
-  const formId = useId();
 
   return (
-    <div className="w-full flex flex-col sm:flex-row items-stretch gap-2 sm:gap-3">
     <form
-      id={formId}
       onSubmit={onSubmit}
-      className={`flex-1 p-1.5 rounded-3xl border flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 transition-all focus-within:border-red-500/80 focus-within:ring-2 focus-within:ring-red-500/20 ${
+      className={`w-full p-1 rounded-3xl border flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 transition-all focus-within:border-red-500/80 focus-within:ring-2 focus-within:ring-red-500/20 ${
         isLight
           ? "bg-white shadow-xs border-neutral-200"
           : "bg-neutral-900/90 shadow-2xl shadow-black/80 border-white/15 backdrop-blur-xl"
@@ -84,7 +80,7 @@ export const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
           onChange={(event) => onSearchQueryChange(event.target.value)}
           placeholder="Search lost or found items"
           aria-label="Search lost or found items"
-          className={`w-full h-8 text-sm sm:text-base bg-transparent focus:outline-none ${
+          className={`w-full h-7 text-sm sm:text-base bg-transparent focus:outline-none ${
             isLight
               ? "text-neutral-900 placeholder-neutral-400"
               : "text-white placeholder-neutral-500"
@@ -106,19 +102,5 @@ export const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         )}
       </div>
     </form>
-
-      <Button
-        type="submit"
-        form={formId}
-        className={`h-10 sm:h-auto px-6 rounded-2xl font-bold text-xs sm:text-sm shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 ${
-          searchType === "lost"
-            ? "bg-[#E5192D] hover:bg-[#c91424] text-white shadow-red-500/30"
-            : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/30"
-        }`}
-      >
-        <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-        <span>Search</span>
-      </Button>
-    </div>
   );
 };

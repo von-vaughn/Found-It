@@ -6,7 +6,10 @@ import {
   CheckCircle2,
   RotateCcw,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { useCreateReturnRequest } from "@/hooks/useReturns";
+import { uploadImage } from "@/services/itemService";
 
 interface FoundReportFlowProps {
   active: boolean;
@@ -14,6 +17,8 @@ interface FoundReportFlowProps {
   framed?: boolean;
   step: FoundFlowStep;
   onStepChange: (step: FoundFlowStep) => void;
+  lostItemId: string;
+  lostItemTitle: string;
 }
 
 type CameraState = "starting" | "ready" | "error";
@@ -24,15 +29,6 @@ const inputClass =
 
 const labelClass =
   "mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400";
-
-const foundDateFormatter = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-});
-
-function formatFoundDate(value: string): string {
-  const date = new Date(`${value}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? value : foundDateFormatter.format(date);
-}
 
 function useIsMobileView(): boolean {
   const [isMobile, setIsMobile] = useState(() =>
@@ -72,16 +68,20 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   framed = true,
   step,
   onStepChange,
+  lostItemId,
+  lostItemTitle,
 }) => {
   const isMobileView = useIsMobileView();
+  const createReturnRequest = useCreateReturnRequest();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cameraState, setCameraState] = useState<CameraState>("starting");
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [capturedFile, setCapturedFile] = useState<Blob | null>(null);
   const [captureError, setCaptureError] = useState<string | null>(null);
-  const [itemTitle, setItemTitle] = useState("");
+  const [itemTitle, setItemTitle] = useState(lostItemTitle);
   const [color, setColor] = useState("");
   const [dateFound, setDateFound] = useState("");
   const [timeFound, setTimeFound] = useState("");
@@ -90,6 +90,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   const [location, setLocation] = useState("");
   const [building, setBuilding] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Live camera preview (desktop only — mobile uses the native camera
   // input instead).
@@ -176,6 +177,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
         return;
       }
       setCaptureError(null);
+      setCapturedFile(blob);
       setCapturedPhoto(URL.createObjectURL(blob));
     }, "image/jpeg", 0.92);
   };
@@ -191,6 +193,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
     }
     if (capturedPhoto) URL.revokeObjectURL(capturedPhoto);
     setCaptureError(null);
+    setCapturedFile(file);
     setCapturedPhoto(URL.createObjectURL(file));
     event.target.value = "";
   };
@@ -199,12 +202,15 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
     if (capturedPhoto) URL.revokeObjectURL(capturedPhoto);
     setCameraState("starting");
     setCameraError(null);
+    setCapturedFile(null);
     setCapturedPhoto(null);
     setCaptureError(null);
     onStepChange("camera");
   };
 
-  const handleDetailsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleDetailsSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     if (
       !itemTitle.trim() ||
@@ -220,7 +226,42 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
       return;
     }
     setFormError(null);
-    onStepChange("confirmation");
+    setIsSubmitting(true);
+    try {
+      const evidence = capturedFile
+        ? [await uploadImage(capturedFile, "found-item.jpg")]
+        : [];
+      await createReturnRequest.mutateAsync({
+        itemId: lostItemId,
+        claimantTitle: itemTitle.trim(),
+        color: color.trim() || undefined,
+        building: building.trim() || undefined,
+        dateLost: dateFound,
+        timeLost: timeFound,
+        location: location.trim(),
+        details: description.trim(),
+        importantDetails: importantDetails.trim(),
+        evidence,
+      });
+      toast.success("Found report submitted.");
+      onStepChange("confirmation");
+    } catch (error) {
+      const data = (
+        error as {
+          response?: {
+            data?: { message?: string; errors?: { message?: string }[] };
+          };
+        }
+      )?.response?.data;
+      console.error("Failed to submit found report.", error);
+      setFormError(
+        data?.errors?.[0]?.message ??
+          data?.message ??
+          "We couldn't submit your found report. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const title =
@@ -250,7 +291,10 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           {step !== "confirmation" && (
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
               {step === "camera" ? (
-                <>Capture a photo to review. It won&apos;t be sent or submitted.</>
+                <>
+                  Capture a photo of the item. It will be included with your
+                  report.
+                </>
               ) : (
                 <>Add a description and where you found it. These details won&apos;t be published.</>
               )}
@@ -600,16 +644,18 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             <button
               type="button"
               onClick={() => onStepChange("camera")}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              disabled={isSubmitting}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Back
             </button>
             <button
               type="submit"
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+              disabled={isSubmitting}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
             >
-              Submit details
+              {isSubmitting ? "Submitting..." : "Submit details"}
             </button>
           </div>
         </form>
@@ -617,94 +663,6 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
 
       {step === "confirmation" && (
         <div className="space-y-5 p-5 sm:p-6">
-          <section
-            aria-labelledby="submitted-found-item-title"
-            className="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800"
-          >
-            <div
-              className={`grid gap-4 p-4 ${capturedPhoto ? "sm:grid-cols-[160px_minmax(0,1fr)]" : ""}`}
-            >
-              {capturedPhoto && (
-                <img
-                  src={capturedPhoto}
-                  alt="Submitted found-item photo"
-                  className="aspect-[4/3] w-full rounded-xl bg-neutral-100 object-cover dark:bg-neutral-800"
-                />
-              )}
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-                  Item submitted
-                </p>
-                <h3
-                  id="submitted-found-item-title"
-                  className="mt-1 truncate text-sm font-extrabold text-neutral-900 dark:text-neutral-100"
-                >
-                  {itemTitle}
-                </h3>
-                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                  {color.trim() && (
-                    <div>
-                      <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
-                        Primary color
-                      </dt>
-                      <dd className="mt-0.5 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
-                        {color}
-                      </dd>
-                    </div>
-                  )}
-                  <div>
-                    <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
-                      Date found
-                    </dt>
-                    <dd className="mt-0.5 font-semibold text-neutral-800 dark:text-neutral-200">
-                      {formatFoundDate(dateFound)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
-                      Time found
-                    </dt>
-                    <dd className="mt-0.5 font-semibold text-neutral-800 dark:text-neutral-200">
-                      {timeFound}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
-                      Location found
-                    </dt>
-                    <dd className="mt-0.5 font-semibold text-neutral-800 dark:text-neutral-200">
-                      {location}
-                    </dd>
-                  </div>
-                  {building.trim() && (
-                    <div>
-                      <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
-                        Building
-                      </dt>
-                      <dd className="mt-0.5 font-semibold text-neutral-800 dark:text-neutral-200">
-                        {building}
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-              </div>
-            </div>
-            <div className="space-y-2 border-t border-neutral-100 px-4 py-3 dark:border-neutral-800">
-              <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-                <span className="font-bold text-neutral-800 dark:text-neutral-200">
-                  Description:
-                </span>{" "}
-                {description}
-              </p>
-              <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-                <span className="font-bold text-neutral-800 dark:text-neutral-200">
-                  Important details:
-                </span>{" "}
-                {importantDetails}
-              </p>
-            </div>
-          </section>
-
           <div className="flex items-start gap-3">
             <CheckCircle2
               className="mt-0.5 h-6 w-6 shrink-0 text-green-700"
@@ -716,15 +674,9 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                 (OSA) for safekeeping and verification.
               </p>
               <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                Your report will first be sent to the user who posted the
-                lost-item report. If they confirm that the item could be
-                theirs, the OSA will verify the item's ownership after
-                you turn it over to their office.
-              </p>
-              <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                If the user confirms that the item is not theirs, your
-                found-item report will be published publicly so the rightful
-                owner can identify and claim it.
+                Your report will be reviewed by the Office of Student Affairs
+                (OSA). If it matches the lost-item report, the OSA will
+                coordinate the item&apos;s return.
               </p>
             </div>
           </div>

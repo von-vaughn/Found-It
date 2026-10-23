@@ -21,6 +21,7 @@ import { paths } from "./paths";
 interface DashboardRoutesOptions {
   items: Item[];
   submittedClaims: ClaimRequest[];
+  foundReports: ClaimRequest[];
   returnRequests: ReturnItemRequest[];
   onAddItem: (newItem: Item) => void;
   onUpdateItem: (updatedItem: Item) => void;
@@ -35,6 +36,7 @@ interface DashboardRoutesOptions {
 export function getDashboardRoutes({
   items,
   submittedClaims,
+  foundReports,
   returnRequests,
   onAddItem,
   onUpdateItem,
@@ -101,6 +103,7 @@ export function getDashboardRoutes({
           onSubmitClaim={onSubmitClaim}
           onUpdateClaimStatus={onUpdateClaimStatus}
           submittedClaims={submittedClaims}
+          foundReports={foundReports}
           returnRequests={returnRequests}
           onSubmitReturnRequest={onSubmitReturnRequest}
           filters={filters}
@@ -149,6 +152,7 @@ export function getDashboardRoutes({
         <MyClaimsPage
           items={items}
           submittedClaims={submittedClaims}
+          foundReports={foundReports}
           onAddItem={onAddItem}
           filters={filters}
           onFiltersChange={onFiltersChange}

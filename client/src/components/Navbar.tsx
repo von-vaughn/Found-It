@@ -91,7 +91,19 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
   return (
     <>
-    <header className={`top-0 z-50 w-full transition-all ${isLanding ? `fixed ${scrolled ? "border-b border-white/50 bg-white/70 shadow-sm backdrop-blur-xl" : "border-b border-transparent bg-transparent"}` : "sticky bg-white/95 backdrop-blur-md border-b border-neutral-100 shadow-xs"}`}>
+    <header
+      className={`top-0 z-50 w-full transition-all ${
+        isLanding ? "fixed" : "sticky"
+      } ${
+        mobileMenuOpen
+          ? "bg-white"
+          : isLanding
+            ? scrolled
+              ? "border-b border-white/50 bg-white/70 shadow-sm backdrop-blur-xl"
+              : "border-b border-transparent bg-transparent"
+            : "bg-white/95 backdrop-blur-md border-b border-neutral-100 shadow-xs"
+      }`}
+    >
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}

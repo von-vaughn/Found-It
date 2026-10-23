@@ -14,7 +14,8 @@ import { getAdminRoutes } from "./adminRoutes";
 import type { ItemFilters } from "@/components/school_user/itemFilters";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useCreateClaim, useMyClaims } from "@/hooks/useClaims";
-import { toClaimRequests } from "@/lib/claimAdapter";
+import { useMyReturns } from "@/hooks/useReturns";
+import { toClaimRequests, toFoundReportClaims } from "@/lib/claimAdapter";
 
 interface AppRoutesProps {
   items: Item[];
@@ -52,10 +53,15 @@ export function AppRoutes({
   onFiltersChange,
 }: AppRoutesProps) {
   const { data: serverClaims = [] } = useMyClaims();
+  const { data: serverReturns = [] } = useMyReturns();
   const createClaimMutation = useCreateClaim();
   const submittedClaims = useMemo(
     () => toClaimRequests(serverClaims),
     [serverClaims],
+  );
+  const foundReports = useMemo(
+    () => toFoundReportClaims(serverReturns),
+    [serverReturns],
   );
 
   const handleSubmitClaim = async (claim: NewClaimRequest) => {
@@ -83,6 +89,7 @@ export function AppRoutes({
   const dashboardRoutes = getDashboardRoutes({
     items,
     submittedClaims,
+    foundReports,
     returnRequests,
     onAddItem,
     onUpdateItem,

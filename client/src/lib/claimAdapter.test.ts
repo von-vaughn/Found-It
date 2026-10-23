@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { toClaimRequest } from "./claimAdapter.ts";
+import { toClaimRequest, toFoundReportClaim } from "./claimAdapter.ts";
 import type { ServerClaim } from "@/services/claimService";
 
 const serverClaim: ServerClaim = {
@@ -32,6 +32,14 @@ test("maps a saved server claim into the school-user claim shape", () => {
   assert.equal(claim.dateLost, "Oct 10, 2026");
   assert.equal(claim.submitted, "Oct 12, 2026, 1:12 PM");
   assert.deepEqual(claim.evidence, ["https://example.com/evidence-1.jpg"]);
+});
+
+test("maps a saved server return into a found-report submission", () => {
+  const report = toFoundReportClaim(serverClaim);
+
+  assert.equal(report.kind, "return");
+  assert.equal(report.item, "iPhone 13");
+  assert.equal(report.status, "Pending");
 });
 
 test("maps every server status to its school-user badge", () => {

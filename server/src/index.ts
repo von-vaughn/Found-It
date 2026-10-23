@@ -13,6 +13,7 @@ import usersRoutes from './routes/users.routes';
 import itemsRoutes from './routes/items.routes';
 import categoriesRoutes from './routes/categories.routes';
 import claimsRoutes from './routes/claims.routes';
+import returnsRoutes from './routes/returns.routes';
 import uploadRoutes from './routes/upload.routes';
 import { errorHandler, notFound } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
@@ -77,6 +78,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/claims', claimsRoutes);
+app.use('/api/returns', returnsRoutes);
 app.use('/api/upload', uploadRoutes);
 
 app.use(notFound);

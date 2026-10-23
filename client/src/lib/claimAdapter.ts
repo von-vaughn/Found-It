@@ -54,3 +54,12 @@ export function toClaimRequest(claim: ServerClaim): ClaimRequest {
 export function toClaimRequests(claims: ServerClaim[]): ClaimRequest[] {
   return claims.map(toClaimRequest);
 }
+
+/** Converts a saved server return request into the shared school-user row. */
+export function toFoundReportClaim(claim: ServerClaim): ClaimRequest {
+  return { ...toClaimRequest(claim), kind: "return" };
+}
+
+export function toFoundReportClaims(claims: ServerClaim[]): ClaimRequest[] {
+  return claims.map(toFoundReportClaim);
+}

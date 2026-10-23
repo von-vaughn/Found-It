@@ -11,6 +11,7 @@ import {
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { useItemDetail } from "@/hooks/useItems";
 import type { ClaimRequest } from "@/types/claim";
 
 interface FoundReportPageProps {
@@ -29,6 +30,11 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const items = propItems ?? EMPTY_ITEMS;
+  const { data: serverItem, isLoading: isItemLoading } = useItemDetail(
+    id ?? "",
+  );
+  const lostItemTitle =
+    serverItem?.name ?? items.find((item) => item.id === id)?.title ?? "";
   const [searchQuery, setSearchQuery] = useState("");
   const [flowStep, setFlowStep] = useState<FoundFlowStep>("camera");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -80,21 +86,10 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
           className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
         >
           <main className="mx-auto w-full max-w-[640px] bg-white px-4 py-6 sm:px-6 lg:px-8 dark:bg-neutral-950">
-            {flowStep === "camera" ? (
+            {flowStep !== "confirmation" && (
               <button
                 type="button"
-                onClick={goBack}
-                className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-              >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Go back
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() =>
-                  setFlowStep(flowStep === "details" ? "camera" : "details")
-                }
+                onClick={flowStep === "camera" ? goBack : () => setFlowStep("camera")}
                 className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -103,14 +98,22 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
             )}
 
             <div className="mt-3 pb-8">
-              <FoundReportFlow
-                key={id}
-                active
-                framed={false}
-                onExit={goBack}
-                step={flowStep}
-                onStepChange={setFlowStep}
-              />
+              {isItemLoading && !lostItemTitle ? (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Loading item…
+                </p>
+              ) : (
+                <FoundReportFlow
+                  key={id}
+                  active
+                  framed={false}
+                  onExit={goBack}
+                  step={flowStep}
+                  onStepChange={setFlowStep}
+                  lostItemId={id ?? ""}
+                  lostItemTitle={lostItemTitle}
+                />
+              )}
             </div>
           </main>
         </div>

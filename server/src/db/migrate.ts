@@ -151,6 +151,9 @@ export async function migrate(): Promise<void> {
     -- One ownership claim per user per item; return requests are unaffected.
     CREATE UNIQUE INDEX IF NOT EXISTS idx_request_claim_unique
       ON request(item_id, user_id) WHERE kind = 'claim';
+    -- One found report per user per lost item.
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_request_return_unique
+      ON request(item_id, user_id) WHERE kind = 'return';
   `);
 
   await pool.query(`

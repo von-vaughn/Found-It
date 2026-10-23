@@ -25,6 +25,16 @@ export function simplifyClaimStatus(
   return "Pending";
 }
 
+/** Found reports call an approved (published, not yet returned) item unclaimed. */
+export function submissionStatusLabel(
+  claim: Pick<ClaimRequest, "status" | "kind">,
+): SimplifiedClaimStatus | "Unclaimed" {
+  if (claim.kind === "return" && claim.status === "Approved") {
+    return "Unclaimed";
+  }
+  return simplifyClaimStatus(claim.status);
+}
+
 export const simplifiedClaimStatusStyles: Record<SimplifiedClaimStatus, string> = {
   Pending: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-500/25",
   Approved: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-500/25",

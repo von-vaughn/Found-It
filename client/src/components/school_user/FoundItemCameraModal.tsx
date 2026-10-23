@@ -2,10 +2,14 @@ import React, { useEffect, useState } from "react";
 import { FoundReportFlow, type FoundFlowStep } from "./FoundReportFlow";
 
 interface FoundItemCameraModalProps {
+  lostItemId: string;
+  lostItemTitle: string;
   onClose: () => void;
 }
 
 export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
+  lostItemId,
+  lostItemTitle,
   onClose,
 }) => {
   const [step, setStep] = useState<FoundFlowStep>("camera");
@@ -27,7 +31,14 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
         className="fixed inset-0 cursor-default"
       />
       <div className={`relative z-10 my-6 w-full transition-[max-width] duration-300 ${step === "camera" ? "max-w-xl" : "max-w-3xl"}`}>
-        <FoundReportFlow active onExit={onClose} step={step} onStepChange={setStep} />
+        <FoundReportFlow
+          active
+          onExit={onClose}
+          step={step}
+          onStepChange={setStep}
+          lostItemId={lostItemId}
+          lostItemTitle={lostItemTitle}
+        />
       </div>
     </div>
   );

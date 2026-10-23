@@ -18,7 +18,7 @@ import { Sidebar } from "@/components/school_user/Sidebar";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import {
   simplifiedClaimStatusStyles,
-  simplifyClaimStatus,
+  submissionStatusLabel,
   type SimplifiedClaimStatus,
 } from "@/components/school_user/claimStatus";
 import { NoItemImage } from "@/components/NoItemImage";
@@ -37,15 +37,15 @@ import type { ClaimRequest } from "@/types/claim";
 interface MyClaimsPageProps {
   items?: Item[];
   submittedClaims?: ClaimRequest[];
+  foundReports?: ClaimRequest[];
   onAddItem?: (newItem: Item) => void;
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
-type StatusFilter = "all" | SimplifiedClaimStatus | "Unclaimed";
+type StatusFilter = SimplifiedClaimStatus | "Unclaimed";
 
 const FILTER_TABS: { id: StatusFilter; label: string }[] = [
-  { id: "all", label: "All" },
   { id: "Pending", label: "Pending" },
   { id: "Approved", label: "Approved" },
   { id: "Unclaimed", label: "Unclaimed" },
@@ -143,6 +143,7 @@ function ClaimPhotosCarousel({
 export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   items: propItems,
   submittedClaims = [],
+  foundReports = [],
   onAddItem,
   filters,
   onFiltersChange,
@@ -159,34 +160,34 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const myClaims = submittedClaims;
+  const myClaims = useMemo(
+    () => [...submittedClaims, ...foundReports],
+    [submittedClaims, foundReports],
+  );
 
   const counts = useMemo(() => {
-    const byStatus: Record<SimplifiedClaimStatus, number> = {
+    const byStatus: Record<StatusFilter, number> = {
       Pending: 0,
       Approved: 0,
+      Unclaimed: 0,
       Claimed: 0,
       Returned: 0,
       Rejected: 0,
     };
     for (const claim of myClaims) {
-      byStatus[simplifyClaimStatus(claim.status)] += 1;
+      byStatus[submissionStatusLabel(claim)] += 1;
     }
-    return { total: myClaims.length, ...byStatus };
+    return byStatus;
   }, [myClaims]);
 
   const filteredClaims = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return myClaims.filter((claim) => {
-      if (statusFilter !== "all") {
-        const matches =
-          statusFilter === "Unclaimed"
-            ? claim.status === "Approved"
-            : simplifyClaimStatus(claim.status) === statusFilter;
-        if (!matches) return false;
+      if (submissionStatusLabel(claim) !== statusFilter) {
+        return false;
       }
       if (!query) return true;
       const item = items.find((entry) => entry.id === claim.itemId);
@@ -268,15 +269,10 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
 
             <nav
               aria-label="Filter claim requests by status"
-              className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-neutral-200 dark:border-neutral-800 pb-3"
+              className="mt-5 flex items-center gap-x-5 gap-y-2 overflow-x-auto border-b border-neutral-200 pb-3 sm:flex-wrap sm:overflow-visible dark:border-neutral-800"
             >
               {FILTER_TABS.map((tab) => {
-                const count =
-                  tab.id === "all"
-                    ? counts.total
-                    : tab.id === "Unclaimed"
-                      ? counts.Approved
-                      : counts[tab.id];
+                const count = counts[tab.id];
                 const isActive = statusFilter === tab.id;
                 return (
                   <button
@@ -284,7 +280,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     type="button"
                     onClick={() => setStatusFilter(tab.id)}
                     aria-pressed={isActive}
-                    className={`relative px-1 py-1 text-sm font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
+                    className={`relative shrink-0 whitespace-nowrap px-1 py-1 text-sm font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
                       isActive
                         ? "text-neutral-900 dark:text-neutral-100"
                         : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
@@ -300,6 +296,11 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               <StaggerGrid key={statusFilter} className="mt-6 space-y-6">
                 {groupedByPost.map(([itemId, claims]) => {
                   const item = itemById.get(itemId);
+                  const statusLabel = submissionStatusLabel(claims[0]);
+                  const statusStyle =
+                    simplifiedClaimStatusStyles[
+                      statusLabel === "Unclaimed" ? "Approved" : statusLabel
+                    ];
                   return (
                     <StaggerItem key={itemId}>
                     <section
@@ -317,26 +318,16 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                             {item?.location ?? claims[0]?.location ?? ""}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate(`/dashboard/items/${itemId}`, {
-                              state: { from: "/dashboard/claims" },
-                            })
-                          }
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+                        <span
+                          className={`inline-flex shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${statusStyle}`}
                         >
-                          View post
-                          <ArrowRight
-                            className="h-3.5 w-3.5"
-                            aria-hidden="true"
-                          />
-                        </button>
+                          {statusLabel}
+                        </span>
                       </div>
 
                       <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
                         {claims.map((claim) => {
-                          const simple = simplifyClaimStatus(claim.status);
+                          const isFoundReport = claim.kind === "return";
                           const detailImages = (claim.evidence ?? []).filter(
                             (src) => src !== item?.image,
                           );
@@ -350,16 +341,10 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   detailImages={detailImages}
                                 />
                                 <div className="flex min-w-0 flex-col">
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
-                                      Submitted {claim.submitted}
-                                    </p>
-                                    <span
-                                      className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simple]}`}
-                                    >
-                                      {simple}
-                                    </span>
-                                  </div>
+                                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
+                                    {isFoundReport ? "Found report" : "Claim"} ·
+                                    Submitted {claim.submitted}
+                                  </p>
                                   <div className="mt-1.5">
                                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
                                       Description
@@ -399,7 +384,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
-                                    Date lost
+                                    Date {isFoundReport ? "found" : "lost"}
                                   </dt>
                                   <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                     {claim.dateLost}
@@ -411,7 +396,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
-                                    Time lost
+                                    Time {isFoundReport ? "found" : "lost"}
                                   </dt>
                                   <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                     {claim.timeLost}
@@ -423,7 +408,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
-                                    Location lost
+                                    Location {isFoundReport ? "found" : "lost"}
                                   </dt>
                                   <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                                     {claim.location}
@@ -452,6 +437,23 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   </p>
                                 </div>
                               )}
+                              <div className="mt-3 flex justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    navigate(`/dashboard/items/${itemId}`, {
+                                      state: { from: "/dashboard/claims" },
+                                    })
+                                  }
+                                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+                                >
+                                  View post
+                                  <ArrowRight
+                                    className="h-3.5 w-3.5"
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              </div>
                                 </div>
                               </div>
                             </li>
@@ -466,7 +468,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
             ) : (
               <div className="flex min-h-[60dvh] flex-col items-center justify-center px-4 py-16 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500">
-                  {searchQuery || statusFilter !== "all" ? (
+                  {searchQuery || myClaims.length > 0 ? (
                     <SearchX
                       className="h-8 w-8 stroke-[1.5]"
                       aria-hidden="true"
@@ -479,19 +481,19 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                   )}
                 </div>
                 <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                  {statusFilter !== "all"
-                    ? `No ${statusFilter.toLowerCase()} requests`
-                    : searchQuery.trim()
-                      ? "No matching requests"
-                      : "No claim requests yet"}
+                  {searchQuery.trim()
+                    ? "No matching requests"
+                    : myClaims.length === 0
+                      ? "No claim requests yet"
+                      : `No ${statusFilter.toLowerCase()} requests`}
                 </h2>
-                {!searchQuery.trim() && statusFilter === "all" && (
+                {!searchQuery.trim() && myClaims.length === 0 && (
                   <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
                     Requests you file on found posts will appear here with their
                     approval status.
                   </p>
                 )}
-                {!searchQuery.trim() && statusFilter === "all" && (
+                {!searchQuery.trim() && myClaims.length === 0 && (
                   <button
                     type="button"
                     onClick={() => navigate("/dashboard")}

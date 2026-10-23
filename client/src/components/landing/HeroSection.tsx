@@ -148,21 +148,23 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
         ))}
       </div>
       <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 mt-8 md:mt-12 text-center flex flex-col items-center">
-        <div ref={badgeRef} className="mb-5 flex w-full max-w-[420px] items-center justify-center gap-3 rounded-full border border-white/70 bg-white/20 bg-gradient-to-r from-white/40 via-white/10 to-white/30 py-1.5 pl-4 pr-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_0_rgba(255,255,255,0.3),0_12px_32px_-8px_rgba(181,18,36,0.25),0_4px_16px_rgba(0,0,0,0.08)] backdrop-blur-2xl backdrop-saturate-200 motion-reduce:bg-white motion-reduce:backdrop-blur-none">
+        <div ref={badgeRef} className="mt-6 mb-5 flex w-fit max-w-full items-center justify-center gap-2.5 sm:mt-0 rounded-full border border-white/70 bg-white/20 bg-gradient-to-r from-white/40 via-white/10 to-white/30 py-1.5 pl-3 pr-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_0_rgba(255,255,255,0.3),0_12px_32px_-8px_rgba(181,18,36,0.25),0_4px_16px_rgba(0,0,0,0.08)] backdrop-blur-2xl backdrop-saturate-200 motion-reduce:bg-white motion-reduce:backdrop-blur-none sm:w-full sm:max-w-[420px] sm:gap-3 sm:pl-4 sm:pr-5">
           <img
             src="/WMSU_LOGO.JPG"
             alt="Western Mindanao State University logo"
             className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-9 sm:w-9"
           />
-          <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-700 sm:text-sm sm:tracking-[0.18em]">
+          <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-700 sm:text-sm sm:tracking-[0.18em]">
             Western Mindanao State University
           </span>
         </div>
         <h1
           ref={titleRef}
-          className="w-full text-center font-black tracking-tight text-neutral-900 leading-[1.0] mb-6 md:mb-8 text-[clamp(2.25rem,9vw,8rem)]"
+          className="w-full text-center font-black tracking-tight text-neutral-900 leading-[1.0] mb-6 md:mb-8 text-[clamp(2.375rem,11vw,3rem)] sm:text-[clamp(2.25rem,9vw,8rem)]"
         >
-          <span className="whitespace-nowrap">Lost Something?</span> We’ll Help You{" "}
+          <span className="whitespace-nowrap">Lost Something?</span>
+          <br className="sm:hidden" /> We’ll Help You{" "}
+          <br className="sm:hidden" />
           <span className="relative inline-block bg-gradient-to-r from-[#B51224] via-[#E5192D] to-[#FF5A67] bg-clip-text text-transparent">
             FOUND IT.
             <svg
@@ -181,7 +183,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
           </span>
         </h1>
 
-        <div ref={searchContainerRef} className="w-full max-w-5xl mb-4">
+        <div ref={searchContainerRef} className="w-[90%] max-w-3xl mb-4">
           <ItemSearchBar
             searchQuery={searchQuery}
             searchType={searchType}
