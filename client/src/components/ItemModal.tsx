@@ -102,13 +102,13 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
               </div>
             )}
 
-            <div className="min-w-0 p-6 sm:p-7 space-y-6">
+            <div className="min-w-0 p-6 sm:p-7 space-y-4">
               <div>
                 <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-900">
                   {item.title}
                 </h2>
-                <p className="mt-1 text-xs text-neutral-400">
-                  {item.date}
+                <p className="mt-1 text-xs text-neutral-500">
+                  {isLost ? "Lost" : "Found"} • {item.timeAgo}
                 </p>
               </div>
 

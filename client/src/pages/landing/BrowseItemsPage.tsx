@@ -190,7 +190,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
     activeTab === "all" ? "all" : activeTab === "lost" ? "lost" : "found";
 
   return (
-    <div className="min-h-screen bg-neutral-50/50 py-10 sm:py-14">
+    <div className="min-h-screen bg-neutral-50/50 pt-5 pb-10 sm:pt-7 sm:pb-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-4 mb-8 w-full">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
