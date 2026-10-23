@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { AuthProvider } from "@/context/AuthContext";
+import { useAuth } from "@/context/useAuth";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AppRoutes } from "@/routes/AppRoutes";
 import type { Item } from "@/data/mockItems";
@@ -28,6 +29,16 @@ function ScrollToTop() {
 }
 
 export function App() {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
   // Example content (items, claim requests, return requests) lives in a
   // single JSON file and is fetched dynamically at startup instead of being
   // hardcoded: `public/data/examples.json`.
@@ -40,6 +51,7 @@ export function App() {
   const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
@@ -136,66 +148,67 @@ export function App() {
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/superadmin");
+  const isHome = location.pathname === "/";
+  const shouldShowHomeChrome = !isAuthenticated && !isAuthLoading;
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-      <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white flex flex-col justify-between">
-        <ScrollToTop />
+    <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white flex flex-col justify-between">
+      <ScrollToTop />
 
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              borderRadius: "16px",
-              background: "#171717",
-              color: "#fff",
-              fontSize: "13px",
-              fontWeight: 500,
-            },
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            borderRadius: "16px",
+            background: "#171717",
+            color: "#fff",
+            fontSize: "13px",
+            fontWeight: 500,
+          },
+        }}
+      />
+
+      {!isDashboard && (
+        <Navbar
+          onReportClick={(type) => {
+            navigate(
+              type === "lost" ? "/browse?type=lost" : "/browse?type=found",
+            );
           }}
         />
+      )}
 
-        {!isDashboard && (
-          <Navbar
-            onReportClick={(type) => {
-              navigate(
-                type === "lost" ? "/browse?type=lost" : "/browse?type=found",
-              );
-            }}
+      <div className="flex-1">
+        {examplesLoaded ? (
+          <AppRoutes
+            items={items}
+            submittedClaims={submittedClaims}
+            onAddItem={handleAddItem}
+            onUpdateItem={handleUpdateItem}
+            onDeleteItem={handleDeleteItem}
+            onUpdateClaimStatus={handleUpdateClaimStatus}
+            returnRequests={returnRequests}
+            onSubmitReturnRequest={handleSubmitReturnRequest}
+            onUpdateReturnRequestStatus={handleUpdateReturnRequestStatus}
+            onBrowseLost={handleBrowseLost}
+            onBrowseFound={handleBrowseFound}
+            filters={filters}
+            onFiltersChange={setFilters}
           />
+        ) : (
+          <LoadingScreen message="Loading FoundIt…" />
         )}
-
-        <div className="flex-1">
-          {examplesLoaded ? (
-            <AppRoutes
-              items={items}
-              submittedClaims={submittedClaims}
-              onAddItem={handleAddItem}
-              onUpdateItem={handleUpdateItem}
-              onDeleteItem={handleDeleteItem}
-              onUpdateClaimStatus={handleUpdateClaimStatus}
-              returnRequests={returnRequests}
-              onSubmitReturnRequest={handleSubmitReturnRequest}
-              onUpdateReturnRequestStatus={handleUpdateReturnRequestStatus}
-              onBrowseLost={handleBrowseLost}
-              onBrowseFound={handleBrowseFound}
-              filters={filters}
-              onFiltersChange={setFilters}
-            />
-          ) : (
-            <LoadingScreen message="Loading FoundIt…" />
-          )}
-        </div>
-
-        {examplesLoaded && location.pathname === "/" && <CommunityReunions />}
-        {!isDashboard &&
-          location.pathname !== "/lost-items" &&
-          location.pathname !== "/found-items" &&
-          !location.pathname.startsWith("/browse") && <Footer />}
       </div>
-      </ThemeProvider>
-    </AuthProvider>
+
+      {examplesLoaded && isHome && shouldShowHomeChrome && (
+        <CommunityReunions />
+      )}
+      {!isDashboard &&
+        location.pathname !== "/lost-items" &&
+        location.pathname !== "/found-items" &&
+        !location.pathname.startsWith("/browse") &&
+        (!isHome || shouldShowHomeChrome) && <Footer />}
+    </div>
   );
 }
 
