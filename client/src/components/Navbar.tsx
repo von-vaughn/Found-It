@@ -73,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
       navigate("/");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (link.key === "browse") {
-      navigate("/browse?type=lost");
+      navigate("/browse?type=all");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (link.key === "how-it-works") {
       if (location.pathname === "/") {

@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { Search, SearchX, SlidersHorizontal } from "lucide-react";
+import { Search, SearchX, SlidersHorizontal, Loader2 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Item } from "@/data/mockItems";
@@ -13,6 +13,8 @@ import {
   defaultFilters,
 } from "@/components/school_user/itemFilters";
 import { useBrowseFilters } from "./useBrowseFilters";
+import { useItems } from "@/hooks/useItems";
+import { toClientItems } from "@/lib/itemAdapter";
 
 interface BrowseItemsPageProps {
   items: Item[];
@@ -22,7 +24,7 @@ interface BrowseItemsPageProps {
 type BrowseTab = "all" | "lost" | "found";
 
 export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
-  items,
+  items: exampleItems,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -41,9 +43,18 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
   const searchQuery = searchParams.get("q") || "";
   const requestedType = searchParams.get("type");
   const activeTab: BrowseTab =
-    requestedType === "all" || requestedType === "found"
+    requestedType === "lost" || requestedType === "found"
       ? requestedType
-      : "lost";
+      : "all";
+
+  // Fetch real items from the API (works for both guests and authenticated users)
+  const { data: serverItems, isLoading } = useItems(undefined, {
+    staleTime: 30_000,
+  });
+  const items =
+    serverItems && serverItems.length > 0
+      ? toClientItems(serverItems)
+      : exampleItems;
 
   const updateParams = (patch: { type?: BrowseTab; q?: string }) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -299,7 +310,12 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
           </div>
         </div>
 
-        {filteredItems.length > 0 ? (
+        {isLoading ? (
+          <div className="min-h-[60dvh] flex flex-col items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-neutral-400 mb-3" />
+            <p className="text-sm text-neutral-500">Loading items…</p>
+          </div>
+        ) : filteredItems.length > 0 ? (
           <StaggerGrid
             key={`${activeTab}-${selectedCategory}-${JSON.stringify(filters)}`}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"

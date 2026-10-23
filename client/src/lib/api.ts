@@ -116,6 +116,17 @@ const NO_RETRY_PATHS = [
   "/auth/logout",
 ];
 
+/**
+ * Returns true when the failing request was sent without a token — i.e. it was
+ * an intentionally unauthenticated (public) call that just happens to hit a
+ * route the server responds to with 401 when no token is present.  We must NOT
+ * retry these: there is nothing to refresh.
+ */
+function wasSentWithoutToken(config: InternalAxiosRequestConfig): boolean {
+  const authHeader = config.headers?.Authorization;
+  return !authHeader || authHeader === 'Bearer null';
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -129,7 +140,7 @@ api.interceptors.response.use(
       originalRequest.url?.includes(path),
     );
 
-    if (error.response?.status === 401 && !originalRequest._retry && !isExcluded) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isExcluded && !wasSentWithoutToken(originalRequest)) {
       originalRequest._retry = true;
       try {
         const newAccessToken = await refreshAccessToken();

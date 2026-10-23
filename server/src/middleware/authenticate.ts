@@ -34,3 +34,27 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     res.status(401).json({ message: 'Invalid or expired access token.' });
   }
 }
+
+/**
+ * Like `authenticate`, but does NOT reject unauthenticated requests.
+ * If a valid Bearer token is present, req.user is populated as usual;
+ * otherwise req.user stays undefined and the request proceeds as a guest.
+ */
+export async function optionalAuthenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    next();
+    return;
+  }
+  const token = header.slice(7);
+  try {
+    const payload = verifyAccessToken(token);
+    const user = await findUserById(payload.sub);
+    if (user && user.isActive && user.isVerified) {
+      req.user = { ...payload, role: user.role };
+    }
+  } catch {
+    // Invalid token — proceed as guest
+  }
+  next();
+}

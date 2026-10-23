@@ -74,9 +74,9 @@ function invalidId(res: Response, id: string): boolean {
   return false;
 }
 
-/** Admins see reporter email; school users see reporter name only. */
+/** Admins see reporter email; school users and guests see reporter name only. */
 function seesReporterEmail(req: Request): boolean {
-  return req.user!.role === 'admin' || req.user!.role === 'super_admin';
+  return req.user?.role === 'admin' || req.user?.role === 'super_admin';
 }
 
 function canManage(req: Request, reporterId: string): boolean {
@@ -105,13 +105,13 @@ export async function createItemReport(req: Request, res: Response): Promise<voi
   res.status(201).json({ message: 'Item report submitted.', item });
 }
 
-/** GET /api/items — any authenticated user (admins see reporter emails). Filters: reportType, categoryId, search, mine */
+/** GET /api/items — any user or guest (admins see reporter emails). Filters: reportType, categoryId, search, mine */
 export async function getAllItems(req: Request, res: Response): Promise<void> {
   const reportType =
     typeof req.query.reportType === 'string' ? (req.query.reportType as ReportType) : undefined;
   const categoryId = typeof req.query.categoryId === 'string' ? req.query.categoryId : undefined;
   const search = typeof req.query.search === 'string' ? req.query.search : undefined;
-  const mine = req.query.mine === 'true' ? req.user!.sub : undefined;
+  const mine = req.query.mine === 'true' && req.user ? req.user.sub : undefined;
   if (reportType && !REPORT_TYPES.includes(reportType)) {
     res.status(400).json({ message: `Invalid reportType. Allowed: ${REPORT_TYPES.join(', ')}` });
     return;
@@ -120,19 +120,21 @@ export async function getAllItems(req: Request, res: Response): Promise<void> {
     res.status(400).json({ message: 'Invalid categoryId. Must be a UUID.' });
     return;
   }
+  const viewerId = req.user?.sub ?? '';
   const items = await listItems(
     { reportType, categoryId, search, reporterId: mine },
     seesReporterEmail(req),
-    req.user!.sub,
+    viewerId,
   );
   res.json({ items, count: items.length });
 }
 
-/** GET /api/items/:id — any authenticated user */
+/** GET /api/items/:id — any user or guest */
 export async function getItemById(req: Request, res: Response): Promise<void> {
   const id = getId(req);
   if (invalidId(res, id)) return;
-  const item = await findItemById(id, seesReporterEmail(req), req.user!.sub);
+  const viewerId = req.user?.sub ?? '';
+  const item = await findItemById(id, seesReporterEmail(req), viewerId);
   if (!item) {
     res.status(404).json({ message: 'Item not found.' });
     return;

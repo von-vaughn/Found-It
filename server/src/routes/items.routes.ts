@@ -6,17 +6,17 @@ import {
   removeItemReport,
   updateItemReport,
 } from '../controllers/items.controller';
-import { authenticate } from '../middleware/authenticate';
+import { authenticate, optionalAuthenticate } from '../middleware/authenticate';
 
 const router = Router();
 
-// All item routes require authentication (normal users can submit + browse)
-router.use(authenticate);
+// Public read routes — guests can browse; logged-in users get richer data
+router.get('/', optionalAuthenticate, getAllItems);
+router.get('/:id', optionalAuthenticate, getItemById);
 
-router.post('/', createItemReport);
-router.get('/', getAllItems);
-router.get('/:id', getItemById);
-router.patch('/:id', updateItemReport); // owner or admin+ (checked in controller)
-router.delete('/:id', removeItemReport); // owner or admin+ (checked in controller)
+// Write routes require authentication
+router.post('/', authenticate, createItemReport);
+router.patch('/:id', authenticate, updateItemReport); // owner or admin+ (checked in controller)
+router.delete('/:id', authenticate, removeItemReport); // owner or admin+ (checked in controller)
 
 export default router;

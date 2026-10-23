@@ -9,24 +9,35 @@ import {
 } from "@/components/school_user/itemFilters";
 import type { Item } from "@/data/mockItems";
 import { useBrowseFilters } from "./useBrowseFilters";
+import { useItems } from "@/hooks/useItems";
+import { toClientItems } from "@/lib/itemAdapter";
 
 interface BrowseFiltersPageProps {
   items: Item[];
 }
 
 export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = ({
-  items,
+  items: exampleItems,
 }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { filters, setFilters, selectedCategory } = useBrowseFilters();
 
+  // Fetch real items from the API (works for both guests and authenticated users)
+  const { data: serverItems } = useItems(undefined, {
+    staleTime: 30_000,
+  });
+  const items =
+    serverItems && serverItems.length > 0
+      ? toClientItems(serverItems)
+      : exampleItems;
+
   const requestedType = searchParams.get("type");
   const searchQuery = searchParams.get("q") || "";
   const activeTab =
-    requestedType === "all" || requestedType === "found"
+    requestedType === "lost" || requestedType === "found"
       ? requestedType
-      : "lost";
+      : "all";
 
   const backTo = searchQuery.trim()
     ? `/browse?type=${activeTab}&q=${encodeURIComponent(searchQuery.trim())}`
