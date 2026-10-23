@@ -6,6 +6,7 @@ export type AdminSection =
   | "claims"
   | "returns"
   | "users"
+  | "options"
   | "audit";
 
 export type RecordStatus = "Lost" | "Found" | "Returned" | "Claimed";

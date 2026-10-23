@@ -6,6 +6,7 @@ import { ClaimsPage } from "@/pages/admin/ClaimsPage";
 import { ReturnItemsPage } from "@/pages/admin/ReturnItemsPage";
 import { UsersPage } from "@/pages/admin/UsersPage";
 import { AuditLogsPage } from "@/pages/admin/AuditLogsPage";
+import { FilterOptionsPage } from "@/pages/admin/FilterOptionsPage";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import type { Item } from "@/data/mockItems";
 import type { ClaimRequest, ReturnItemRequest } from "@/types/claim";
@@ -64,6 +65,10 @@ export function getAdminRoutes({
       element: <UsersPage />,
     },
     {
+      path: paths.adminFilterOptions,
+      element: <FilterOptionsPage />,
+    },
+    {
       // Audit logs are super-admin only; plain admins bounce back to the dashboard.
       path: paths.adminAudit,
       element: (
@@ -81,6 +86,10 @@ export function getAdminRoutes({
     { path: paths.superadminClaims, element: <Navigate to={paths.adminClaims} replace /> },
     { path: paths.superadminReturns, element: <Navigate to={paths.adminReturns} replace /> },
     { path: paths.superadminUsers, element: <Navigate to={paths.adminUsers} replace /> },
+    {
+      path: paths.superadminFilterOptions,
+      element: <Navigate to={paths.adminFilterOptions} replace />,
+    },
     {
       path: paths.superadminAdmins,
       element: <Navigate to={`${paths.adminUsers}?tab=admins`} replace />,

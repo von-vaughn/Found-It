@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   History,
   LayoutDashboard,
+  ListFilter,
   PackageSearch,
   RotateCcw,
   Users,
@@ -291,6 +292,12 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
     icon: Users,
   },
   {
+    id: "options",
+    label: "Filter Options",
+    compactLabel: "Options",
+    icon: ListFilter,
+  },
+  {
     id: "audit",
     label: "Audit Logs",
     compactLabel: "Audit",
@@ -329,6 +336,11 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
   users: {
     title: "User management",
     description: "Search, filter, and manage campus account access.",
+  },
+  options: {
+    title: "Filter options",
+    description:
+      "Add category and building choices to the filters available to school users.",
   },
   audit: {
     title: "Audit logs",
