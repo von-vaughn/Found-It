@@ -116,6 +116,11 @@ const NO_RETRY_PATHS = [
   "/auth/logout",
 ];
 
+// `/auth/me` is the one authenticated request intentionally sent without an
+// access token on a new page load. Its 401 is the signal to restore the
+// in-memory token from the httpOnly refresh cookie.
+const SESSION_BOOTSTRAP_PATHS = ["/auth/me"];
+
 /**
  * Returns true when the failing request was sent without a token — i.e. it was
  * an intentionally unauthenticated (public) call that just happens to hit a
@@ -125,6 +130,10 @@ const NO_RETRY_PATHS = [
 function wasSentWithoutToken(config: InternalAxiosRequestConfig): boolean {
   const authHeader = config.headers?.Authorization;
   return !authHeader || authHeader === 'Bearer null';
+}
+
+function isSessionBootstrapRequest(config: InternalAxiosRequestConfig): boolean {
+  return SESSION_BOOTSTRAP_PATHS.some((path) => config.url?.includes(path));
 }
 
 api.interceptors.response.use(
@@ -140,7 +149,16 @@ api.interceptors.response.use(
       originalRequest.url?.includes(path),
     );
 
-    if (error.response?.status === 401 && !originalRequest._retry && !isExcluded && !wasSentWithoutToken(originalRequest)) {
+    const shouldRefresh =
+      !wasSentWithoutToken(originalRequest) ||
+      isSessionBootstrapRequest(originalRequest);
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isExcluded &&
+      shouldRefresh
+    ) {
       originalRequest._retry = true;
       try {
         const newAccessToken = await refreshAccessToken();
