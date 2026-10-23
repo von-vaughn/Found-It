@@ -116,6 +116,20 @@ async function findRequestForUserAndItem(
   return rows[0] ? toClaim(rows[0]) : null;
 }
 
+async function findRequestForUserById(
+  userId: string,
+  requestId: string,
+  kind: "claim" | "return",
+): Promise<Claim | null> {
+  const { rows } = await pool.query<ClaimRow>(
+    `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
+     WHERE rq.id = $1 AND rq.user_id = $2 AND rq.kind = $3
+     LIMIT 1`,
+    [requestId, userId, kind],
+  );
+  return rows[0] ? toClaim(rows[0]) : null;
+}
+
 export function findClaimForUserAndItem(
   userId: string,
   itemId: string,
@@ -128,6 +142,20 @@ export function findReturnForUserAndItem(
   itemId: string,
 ): Promise<Claim | null> {
   return findRequestForUserAndItem(userId, itemId, "return");
+}
+
+export function findClaimForUserById(
+  userId: string,
+  requestId: string,
+): Promise<Claim | null> {
+  return findRequestForUserById(userId, requestId, "claim");
+}
+
+export function findReturnForUserById(
+  userId: string,
+  requestId: string,
+): Promise<Claim | null> {
+  return findRequestForUserById(userId, requestId, "return");
 }
 
 async function listRequestsByUser(
@@ -165,6 +193,8 @@ interface CreateRequestInput {
   importantDetails: string;
   evidence?: string[];
 }
+
+type UpdateRequestInput = Omit<CreateRequestInput, "userId" | "itemId">;
 
 async function createRequest(
   kind: "claim" | "return",
@@ -215,4 +245,75 @@ export function createReturnRequest(
   input: CreateRequestInput,
 ): Promise<Claim | null> {
   return createRequest("return", input);
+}
+
+async function updateRequest(
+  kind: "claim" | "return",
+  userId: string,
+  requestId: string,
+  input: UpdateRequestInput,
+): Promise<Claim | null> {
+  const { rows } = await pool.query<{ id: string }>(
+    `UPDATE request
+     SET evidence = $1, claimant_title = $2, primary_color = $3, building = $4,
+         date_lost = $5, time_lost = $6, location_lost = $7, details = $8,
+         important_details = $9
+     WHERE id = $10 AND user_id = $11 AND kind = $12 AND status = 'pending'
+     RETURNING id`,
+    [
+      JSON.stringify(input.evidence ?? []),
+      input.claimantTitle,
+      input.color ?? null,
+      input.building ?? null,
+      input.dateLost,
+      input.timeLost,
+      input.location,
+      input.details,
+      input.importantDetails,
+      requestId,
+      userId,
+      kind,
+    ],
+  );
+  return rows[0] ? findClaimById(rows[0].id) : null;
+}
+
+async function deleteRequest(
+  kind: "claim" | "return",
+  userId: string,
+  requestId: string,
+): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `DELETE FROM request
+     WHERE id = $1 AND user_id = $2 AND kind = $3 AND status = 'pending'`,
+    [requestId, userId, kind],
+  );
+  return rowCount === 1;
+}
+
+export function updateClaim(
+  userId: string,
+  requestId: string,
+  input: UpdateRequestInput,
+): Promise<Claim | null> {
+  return updateRequest("claim", userId, requestId, input);
+}
+
+export function updateReturnRequest(
+  userId: string,
+  requestId: string,
+  input: UpdateRequestInput,
+): Promise<Claim | null> {
+  return updateRequest("return", userId, requestId, input);
+}
+
+export function deleteClaim(userId: string, requestId: string): Promise<boolean> {
+  return deleteRequest("claim", userId, requestId);
+}
+
+export function deleteReturnRequest(
+  userId: string,
+  requestId: string,
+): Promise<boolean> {
+  return deleteRequest("return", userId, requestId);
 }

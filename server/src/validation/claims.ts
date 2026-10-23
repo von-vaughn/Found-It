@@ -25,4 +25,7 @@ export const createClaimSchema = z.object({
   evidence: z.array(z.string().url("Evidence must be an image URL").max(2048)).max(4).optional(),
 });
 
+export const updateClaimSchema = createClaimSchema.omit({ itemId: true });
+
 export type CreateClaimInput = z.infer<typeof createClaimSchema>;
+export type UpdateClaimInput = z.infer<typeof updateClaimSchema>;

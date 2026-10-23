@@ -10,12 +10,19 @@ import {
   Clock3,
   MapPin,
   Palette,
+  Pencil,
   SearchX,
   Tag,
+  Trash2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { Header } from "@/components/school_user/Header";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
+import {
+  RequestEditDialog,
+  type EditableRequestPayload,
+} from "@/components/school_user/RequestEditDialog";
 import {
   simplifiedClaimStatusStyles,
   submissionStatusLabel,
@@ -25,6 +32,11 @@ import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { useItems } from "@/hooks/useItems";
+import { useDeleteClaim, useUpdateClaim } from "@/hooks/useClaims";
+import {
+  useDeleteReturnRequest,
+  useUpdateReturnRequest,
+} from "@/hooks/useReturns";
 import { toClientItems } from "@/lib/itemAdapter";
 import {
   applyAdvancedFilters,
@@ -161,7 +173,14 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending");
+  const [editingRequest, setEditingRequest] = useState<ClaimRequest | null>(
+    null,
+  );
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const updateClaim = useUpdateClaim();
+  const deleteClaim = useDeleteClaim();
+  const updateReturnRequest = useUpdateReturnRequest();
+  const deleteReturnRequest = useDeleteReturnRequest();
 
   const myClaims = useMemo(
     () => [...submittedClaims, ...foundReports],
@@ -226,6 +245,46 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
     onAddItem?.(newItem);
     setCreateModalOpen(false);
     navigate("/dashboard");
+  };
+
+  const isSubmittingChange =
+    updateClaim.isPending ||
+    deleteClaim.isPending ||
+    updateReturnRequest.isPending ||
+    deleteReturnRequest.isPending;
+
+  const handleSaveRequest = async (payload: EditableRequestPayload) => {
+    if (!editingRequest || editingRequest.status !== "Pending") return;
+
+    if (editingRequest.kind === "return") {
+      await updateReturnRequest.mutateAsync({ id: editingRequest.id, payload });
+      toast.success("Found report updated.");
+    } else {
+      await updateClaim.mutateAsync({ id: editingRequest.id, payload });
+      toast.success("Claim request updated.");
+    }
+    setEditingRequest(null);
+  };
+
+  const handleDeleteRequest = async (request: ClaimRequest) => {
+    if (request.status !== "Pending" || isSubmittingChange) return;
+
+    const label = request.kind === "return" ? "found report" : "claim request";
+    if (!window.confirm(`Delete this ${label}? This cannot be undone.`)) return;
+
+    try {
+      if (request.kind === "return") {
+        await deleteReturnRequest.mutateAsync(request.id);
+      } else {
+        await deleteClaim.mutateAsync(request.id);
+      }
+      toast.success(`${label[0].toUpperCase()}${label.slice(1)} deleted.`);
+    } catch (error) {
+      const message = (
+        error as { response?: { data?: { message?: string } } }
+      )?.response?.data?.message;
+      toast.error(message ?? `We couldn't delete this ${label}.`);
+    }
   };
 
   return (
@@ -328,6 +387,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                       <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
                         {claims.map((claim) => {
                           const isFoundReport = claim.kind === "return";
+                          const isPending = claim.status === "Pending";
                           const detailImages = (claim.evidence ?? []).filter(
                             (src) => src !== item?.image,
                           );
@@ -437,7 +497,29 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   </p>
                                 </div>
                               )}
-                              <div className="mt-3 flex justify-end">
+                              <div className="mt-3 flex flex-wrap justify-end gap-2">
+                                {isPending && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingRequest(claim)}
+                                      disabled={isSubmittingChange}
+                                      className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteRequest(claim)}
+                                      disabled={isSubmittingChange}
+                                      className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:border-red-950 dark:bg-neutral-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                      Delete
+                                    </button>
+                                  </>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -513,6 +595,12 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onAddItem={handleAddItem}
+      />
+      <RequestEditDialog
+        request={editingRequest}
+        isSaving={updateClaim.isPending || updateReturnRequest.isPending}
+        onClose={() => setEditingRequest(null)}
+        onSave={handleSaveRequest}
       />
     </div>
   );
