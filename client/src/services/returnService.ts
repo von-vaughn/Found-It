@@ -14,6 +14,8 @@ export interface CreateReturnPayload {
   evidence?: string[];
 }
 
+export type UpdateReturnPayload = Omit<CreateReturnPayload, "itemId">;
+
 interface CreateReturnResponse {
   message: string;
   returnRequest: ServerClaim;
@@ -22,6 +24,11 @@ interface CreateReturnResponse {
 interface ListReturnsResponse {
   returns: ServerClaim[];
   count: number;
+}
+
+interface UpdateReturnResponse {
+  message: string;
+  returnRequest: ServerClaim;
 }
 
 /** POST /api/returns — report a found item on someone else's lost post. */
@@ -36,4 +43,21 @@ export async function createReturnRequest(
 export async function listMyReturns(): Promise<ServerClaim[]> {
   const { data } = await api.get<ListReturnsResponse>("/returns");
   return data.returns;
+}
+
+/** PATCH /api/returns/:id — update a pending found report. */
+export async function updateReturnRequest(
+  id: string,
+  payload: UpdateReturnPayload,
+): Promise<ServerClaim> {
+  const { data } = await api.patch<UpdateReturnResponse>(
+    `/returns/${id}`,
+    payload,
+  );
+  return data.returnRequest;
+}
+
+/** DELETE /api/returns/:id — delete a pending found report. */
+export async function deleteReturnRequest(id: string): Promise<void> {
+  await api.delete<{ message: string }>(`/returns/${id}`);
 }

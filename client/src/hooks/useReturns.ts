@@ -8,8 +8,11 @@ import { useAuth } from "@/context/useAuth";
 import type { ServerClaim } from "@/services/claimService";
 import {
   createReturnRequest,
+  deleteReturnRequest,
   listMyReturns,
   type CreateReturnPayload,
+  type UpdateReturnPayload,
+  updateReturnRequest,
 } from "@/services/returnService";
 
 export const returnKeys = {
@@ -57,5 +60,41 @@ export function useCreateReturnRequest() {
         queryClient.invalidateQueries({ queryKey: returnKeys.all });
       }
     },
+  });
+}
+
+/** Updates a pending found report and synchronizes every cached return list. */
+export function useUpdateReturnRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateReturnPayload }) =>
+      updateReturnRequest(id, payload),
+    onSuccess: (updated) => {
+      queryClient.setQueriesData<ServerClaim[]>(
+        { queryKey: returnKeys.all },
+        (current) =>
+          current?.map((request) =>
+            request.id === updated.id ? updated : request,
+          ),
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: returnKeys.all }),
+  });
+}
+
+/** Deletes a pending found report and synchronizes every cached return list. */
+export function useDeleteReturnRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteReturnRequest,
+    onSuccess: (_result, id) => {
+      queryClient.setQueriesData<ServerClaim[]>(
+        { queryKey: returnKeys.all },
+        (current) => current?.filter((request) => request.id !== id),
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: returnKeys.all }),
   });
 }

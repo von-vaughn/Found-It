@@ -7,8 +7,11 @@ import {
 import { useAuth } from "@/context/useAuth";
 import {
   createClaim,
+  deleteClaim,
   listMyClaims,
   type ServerClaim,
+  type UpdateClaimPayload,
+  updateClaim,
 } from "@/services/claimService";
 
 export const claimKeys = {
@@ -56,5 +59,39 @@ export function useCreateClaim() {
         queryClient.invalidateQueries({ queryKey: claimKeys.all });
       }
     },
+  });
+}
+
+/** Updates a pending claim and synchronizes every cached claim list. */
+export function useUpdateClaim() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateClaimPayload }) =>
+      updateClaim(id, payload),
+    onSuccess: (updated) => {
+      queryClient.setQueriesData<ServerClaim[]>(
+        { queryKey: claimKeys.all },
+        (current) =>
+          current?.map((claim) => (claim.id === updated.id ? updated : claim)),
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: claimKeys.all }),
+  });
+}
+
+/** Deletes a pending claim and synchronizes every cached claim list. */
+export function useDeleteClaim() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteClaim,
+    onSuccess: (_result, id) => {
+      queryClient.setQueriesData<ServerClaim[]>(
+        { queryKey: claimKeys.all },
+        (current) => current?.filter((claim) => claim.id !== id),
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: claimKeys.all }),
   });
 }
