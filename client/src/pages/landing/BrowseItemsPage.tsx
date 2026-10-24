@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Search, SearchX, SlidersHorizontal, Loader2 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -15,6 +15,8 @@ import {
 import { useBrowseFilters } from "./useBrowseFilters";
 import { useItems } from "@/hooks/useItems";
 import { toClientItems } from "@/lib/itemAdapter";
+import { useAuth } from "@/context/useAuth";
+import { paths } from "@/routes/paths";
 
 interface BrowseItemsPageProps {
   items: Item[];
@@ -26,8 +28,20 @@ type BrowseTab = "all" | "lost" | "found";
 export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
   items: exampleItems,
 }) => {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.role === "school_user") {
+      navigate(paths.dashboard, { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (user?.role === "school_user") {
+    return null;
+  }
+
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [visibleCategoryCount, setVisibleCategoryCount] = useState(0);
   const [filterModalOpen, setFilterModalOpen] = useState(false);

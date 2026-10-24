@@ -37,9 +37,13 @@ export const Navbar: React.FC<NavbarProps> = () => {
     return () => window.removeEventListener("foundit:open-auth", handleOpenAuth);
   }, []);
 
+  const isSchoolUser = user?.role === "school_user";
+
   const navLinks = [
     { name: "Home", path: "/", key: "home" },
-    { name: "Browse Items", path: "/browse", key: "browse" },
+    ...(isSchoolUser
+      ? []
+      : [{ name: "Browse Items", path: "/browse", key: "browse" }]),
     { name: "How It Works", path: "/#how-it-works", key: "how-it-works" },
   ];
 
@@ -73,7 +77,11 @@ export const Navbar: React.FC<NavbarProps> = () => {
       navigate("/");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (link.key === "browse") {
-      navigate("/browse?type=all");
+      if (isSchoolUser) {
+        navigate("/dashboard");
+      } else {
+        navigate("/browse?type=all");
+      }
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (link.key === "how-it-works") {
       if (location.pathname === "/") {

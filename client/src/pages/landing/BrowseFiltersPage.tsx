@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { FilterPaletteBody } from "@/components/FilterPaletteBody";
@@ -11,6 +11,8 @@ import type { Item } from "@/data/mockItems";
 import { useBrowseFilters } from "./useBrowseFilters";
 import { useItems } from "@/hooks/useItems";
 import { toClientItems } from "@/lib/itemAdapter";
+import { useAuth } from "@/context/useAuth";
+import { paths } from "@/routes/paths";
 
 interface BrowseFiltersPageProps {
   items: Item[];
@@ -19,7 +21,19 @@ interface BrowseFiltersPageProps {
 export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = ({
   items: exampleItems,
 }) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.role === "school_user") {
+      navigate(paths.dashboard, { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (user?.role === "school_user") {
+    return null;
+  }
+
   const [searchParams] = useSearchParams();
   const { filters, setFilters, selectedCategory } = useBrowseFilters();
 

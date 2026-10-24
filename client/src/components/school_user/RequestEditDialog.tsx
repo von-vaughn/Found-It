@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
+import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import type { ClaimRequest } from "@/types/claim";
 
 export interface EditableRequestPayload {
@@ -27,10 +28,13 @@ interface RequestEditFormProps
 }
 
 const inputClass =
-  "mt-1.5 h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 text-sm text-neutral-900 transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100";
+  "w-full h-11 px-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors";
 
 const labelClass =
-  "block text-xs font-bold text-neutral-700 dark:text-neutral-300";
+  "block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1.5";
+
+const textareaClass =
+  "w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none";
 
 function dateInputValue(value: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -155,82 +159,141 @@ function RequestEditForm({
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <label className={labelClass}>
-            What is it?
+          <div>
+            <label className={labelClass} htmlFor="edit-request-title-field">
+              What is it?
+            </label>
             <input
+              id="edit-request-title-field"
               required
               className={inputClass}
               value={claimantTitle}
               onChange={(event) => setClaimantTitle(event.target.value)}
+              placeholder="Black backpack, iPhone 13…"
+              autoComplete="off"
+              spellCheck={false}
             />
-          </label>
-          <label className={labelClass}>
-            Primary color
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="edit-request-color">
+              Primary color
+            </label>
+            <div className="relative">
+              <input
+                id="edit-request-color"
+                className={`${inputClass} pr-9`}
+                value={color}
+                onChange={(event) => setColor(event.target.value)}
+                placeholder="Black…"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <span
+                aria-hidden="true"
+                style={{ backgroundColor: color.trim() || "transparent" }}
+                className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-neutral-200 dark:border-neutral-800"
+              />
+            </div>
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="edit-request-date">
+              Date {isFoundReport ? "found" : "lost"}
+            </label>
             <input
-              className={inputClass}
-              value={color}
-              onChange={(event) => setColor(event.target.value)}
-            />
-          </label>
-          <label className={labelClass}>
-            Date {isFoundReport ? "found" : "lost"}
-            <input
+              id="edit-request-date"
               required
               type="date"
               className={`${inputClass} cursor-pointer`}
               value={dateLost}
               onChange={(event) => setDateLost(event.target.value)}
             />
-          </label>
-          <label className={labelClass}>
-            Approximate time {isFoundReport ? "found" : "lost"}
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="edit-request-time">
+              Approximate time {isFoundReport ? "found" : "lost"}
+            </label>
             <input
+              id="edit-request-time"
               required
               type="time"
               className={`${inputClass} cursor-pointer`}
               value={timeLost}
               onChange={(event) => setTimeLost(event.target.value)}
             />
-          </label>
-          <label className={labelClass}>
-            Location {isFoundReport ? "found" : "lost"}
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="edit-request-location">
+              Location {isFoundReport ? "found" : "lost"}
+            </label>
             <input
+              id="edit-request-location"
               required
               className={inputClass}
               value={location}
               onChange={(event) => setLocation(event.target.value)}
+              placeholder={
+                isFoundReport
+                  ? "Where did you find it?"
+                  : "Where do you think you lost it?"
+              }
+              autoComplete="off"
+              spellCheck={false}
             />
-          </label>
-          <label className={labelClass}>
-            Building
-            <input
-              className={inputClass}
-              value={building}
-              onChange={(event) => setBuilding(event.target.value)}
-            />
-          </label>
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="edit-request-building">
+              Building
+            </label>
+            <div className="relative">
+              <select
+                id="edit-request-building"
+                className={`${inputClass} appearance-none cursor-pointer pr-9`}
+                value={building}
+                onChange={(event) => setBuilding(event.target.value)}
+              >
+                <option value="">Select a building</option>
+                {ITEM_BUILDINGS.map((buildingOption) => (
+                  <option key={buildingOption} value={buildingOption}>
+                    {buildingOption}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                aria-hidden="true"
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
+              />
+            </div>
+          </div>
         </div>
 
-        <label className={`mt-4 ${labelClass}`}>
-          Description
+        <div className="mt-4">
+          <label className={labelClass} htmlFor="edit-request-description">
+            Description
+          </label>
           <textarea
+            id="edit-request-description"
             required
             rows={4}
-            className={`${inputClass} h-auto py-3`}
+            className={textareaClass}
             value={details}
             onChange={(event) => setDetails(event.target.value)}
+            placeholder="Describe the item's appearance"
           />
-        </label>
-        <label className={`mt-4 ${labelClass}`}>
-          Important details
+        </div>
+        <div className="mt-4">
+          <label className={labelClass} htmlFor="edit-request-important-details">
+            Important details
+          </label>
           <textarea
+            id="edit-request-important-details"
             required
             rows={3}
-            className={`${inputClass} h-auto py-3`}
+            className={textareaClass}
             value={importantDetails}
             onChange={(event) => setImportantDetails(event.target.value)}
+            placeholder="Unique mark only the owner would know…"
           />
-        </label>
+        </div>
 
         {error && (
           <p className="mt-4 text-sm font-medium text-red-700 dark:text-red-400" role="alert">

@@ -3,6 +3,7 @@ import { HomePage } from "@/pages/landing/HomePage";
 import { BrowseItemsPage } from "@/pages/landing/BrowseItemsPage";
 import { BrowseFiltersPage } from "@/pages/landing/BrowseFiltersPage";
 import { RedirectIfAuthenticated } from "@/components/auth/RedirectIfAuthenticated";
+import { RedirectIfSchoolUser } from "@/components/auth/RedirectIfSchoolUser";
 import { LegacyItemsRedirect } from "./LegacyItemsRedirect";
 import type { Item } from "@/data/mockItems";
 import { paths } from "./paths";
@@ -31,19 +32,35 @@ export function getPublicRoutes({
     },
     {
       path: paths.browse,
-      element: <BrowseItemsPage items={items} onAddItem={onAddItem} />,
+      element: (
+        <RedirectIfSchoolUser>
+          <BrowseItemsPage items={items} onAddItem={onAddItem} />
+        </RedirectIfSchoolUser>
+      ),
     },
     {
       path: paths.browseFilters,
-      element: <BrowseFiltersPage items={items} />,
+      element: (
+        <RedirectIfSchoolUser>
+          <BrowseFiltersPage items={items} />
+        </RedirectIfSchoolUser>
+      ),
     },
     {
       path: paths.lostItems,
-      element: <LegacyItemsRedirect type="lost" />,
+      element: (
+        <RedirectIfSchoolUser>
+          <LegacyItemsRedirect type="lost" />
+        </RedirectIfSchoolUser>
+      ),
     },
     {
       path: paths.foundItems,
-      element: <LegacyItemsRedirect type="found" />,
+      element: (
+        <RedirectIfSchoolUser>
+          <LegacyItemsRedirect type="found" />
+        </RedirectIfSchoolUser>
+      ),
     },
   ];
 }
