@@ -23,10 +23,6 @@ interface AppRoutesProps {
   onUpdateItem: (updatedItem: Item) => void;
   onDeleteItem: (id: string, reason?: string) => void;
   onSubmitReturnRequest: (request: NewReturnItemRequest) => void;
-  onUpdateReturnRequestStatus: (
-    requestId: string,
-    status: ReturnItemRequest["status"],
-  ) => void;
   onBrowseLost: () => void;
   onBrowseFound: () => void;
   filters: ItemFilters;
@@ -40,7 +36,6 @@ export function AppRoutes({
   onUpdateItem,
   onDeleteItem,
   onSubmitReturnRequest,
-  onUpdateReturnRequestStatus,
   onBrowseLost,
   onBrowseFound,
   filters,
@@ -105,7 +100,6 @@ export function AppRoutes({
     items,
     onAddItem,
     returnRequests,
-    onUpdateReturnRequestStatus,
   }).map((route) => ({
     ...route,
     element: (

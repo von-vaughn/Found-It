@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import type { ServerClaim } from "./claimService";
+import type { ServerClaim, ServerClaimStatus } from "./claimService";
 
 export interface CreateReturnPayload {
   itemId: string;
@@ -43,6 +43,24 @@ export async function createReturnRequest(
 export async function listMyReturns(): Promise<ServerClaim[]> {
   const { data } = await api.get<ListReturnsResponse>("/returns");
   return data.returns;
+}
+
+/** GET /api/returns/admin — every return request (admin+). */
+export async function listAllReturns(): Promise<ServerClaim[]> {
+  const { data } = await api.get<ListReturnsResponse>("/returns/admin");
+  return data.returns;
+}
+
+/** PATCH /api/returns/admin/:id/status — record an admin decision. */
+export async function updateReturnStatus(
+  id: string,
+  status: Exclude<ServerClaimStatus, "pending">,
+): Promise<ServerClaim> {
+  const { data } = await api.patch<UpdateReturnResponse>(
+    `/returns/admin/${id}/status`,
+    { status },
+  );
+  return data.returnRequest;
 }
 
 /** PATCH /api/returns/:id — update a pending found report. */

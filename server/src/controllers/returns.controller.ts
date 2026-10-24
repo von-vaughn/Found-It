@@ -6,8 +6,10 @@ import {
   findClaimableItem,
   findReturnForUserById,
   findReturnForUserAndItem,
+  listAllReturns,
   listReturnsByUser,
   updateReturnRequest,
+  updateReturnStatusById,
 } from "../repositories/request.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
 import { validateReturnTarget } from "../validation/returns";
@@ -25,6 +27,10 @@ function zodError(res: Response, error: z.ZodError): Response {
 function requestIdParam(req: Request): string | null {
   return typeof req.params.id === "string" ? req.params.id : null;
 }
+
+const adminReturnStatusSchema = z.object({
+  status: z.enum(["approved", "rejected", "claimed", "returned"]),
+});
 
 /** POST /api/returns — report a found item on someone else's lost post. */
 export async function submitReturn(req: Request, res: Response): Promise<void> {
@@ -69,6 +75,40 @@ export async function submitReturn(req: Request, res: Response): Promise<void> {
 export async function getMyReturns(req: Request, res: Response): Promise<void> {
   const returns = await listReturnsByUser(req.user!.sub);
   res.json({ returns, count: returns.length });
+}
+
+/** GET /api/returns/admin — every return request (admin+). */
+export async function getAllReturns(_req: Request, res: Response): Promise<void> {
+  const returns = await listAllReturns();
+  res.json({ returns, count: returns.length });
+}
+
+/** PATCH /api/returns/admin/:id/status — approve, reject, claim, or return (admin+). */
+export async function updateAdminReturnStatus(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const parsed = adminReturnStatusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+  const requestId = requestIdParam(req);
+  if (!requestId) {
+    res.status(400).json({ message: "Invalid return request ID." });
+    return;
+  }
+  const returnRequest = await updateReturnStatusById(
+    requestId,
+    parsed.data.status,
+  );
+  if (!returnRequest) {
+    res.status(409).json({
+      message: "This return request is no longer waiting for that decision.",
+    });
+    return;
+  }
+  res.json({ message: "Return status updated.", returnRequest });
 }
 
 /** PATCH /api/returns/:id — edit the signed-in user's pending found report. */

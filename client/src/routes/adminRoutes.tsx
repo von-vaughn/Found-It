@@ -16,17 +16,12 @@ interface AdminRoutesOptions {
   items: Item[];
   onAddItem: (newItem: Item) => void;
   returnRequests: ReturnItemRequest[];
-  onUpdateReturnRequestStatus: (
-    requestId: string,
-    status: ReturnItemRequest["status"],
-  ) => void;
 }
 
 export function getAdminRoutes({
   items,
   onAddItem,
   returnRequests,
-  onUpdateReturnRequestStatus,
 }: AdminRoutesOptions): RouteObject[] {
   return [
     { path: paths.admin, element: <OverviewPage items={items} returnRequests={returnRequests} /> },
@@ -42,13 +37,7 @@ export function getAdminRoutes({
     },
     {
       path: paths.adminReturns,
-      element: (
-        <ReturnItemsPage
-          items={items}
-          requests={returnRequests}
-          onStatusChange={onUpdateReturnRequestStatus}
-        />
-      ),
+      element: <ReturnItemsPage />,
     },
     {
       path: paths.adminUsers,

@@ -180,15 +180,25 @@ export function listReturnsByUser(userId: string): Promise<Claim[]> {
   return listRequestsByUser(userId, "return");
 }
 
-/** Every ownership claim, for the admin claims workspace. */
-export async function listAllClaims(): Promise<Claim[]> {
+async function listAllRequests(kind: "claim" | "return"): Promise<Claim[]> {
   const { rows } = await pool.query<ClaimRow>(
     `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
-     WHERE rq.kind = 'claim'
+     WHERE rq.kind = $1
      ORDER BY rq.created_at DESC
      LIMIT 500`,
+    [kind],
   );
   return rows.map(toClaim);
+}
+
+/** Every ownership claim, for the admin claims workspace. */
+export function listAllClaims(): Promise<Claim[]> {
+  return listAllRequests("claim");
+}
+
+/** Every found report filed on a lost post, for the admin returns workspace. */
+export function listAllReturns(): Promise<Claim[]> {
+  return listAllRequests("return");
 }
 
 /** A claim can only move forward from the status the UI is showing. */
@@ -202,16 +212,31 @@ const CLAIM_STATUS_PREDECESSOR: Record<
   returned: "approved",
 };
 
-export async function updateClaimStatusById(
+async function updateRequestStatusById(
+  kind: "claim" | "return",
   id: string,
   status: Exclude<ClaimStatus, "pending">,
 ): Promise<Claim | null> {
   const { rowCount } = await pool.query(
     `UPDATE request SET status = $2
-     WHERE id = $1 AND kind = 'claim' AND status = $3`,
-    [id, status, CLAIM_STATUS_PREDECESSOR[status]],
+     WHERE id = $1 AND kind = $3 AND status = $4`,
+    [id, status, kind, CLAIM_STATUS_PREDECESSOR[status]],
   );
   return rowCount === 1 ? findClaimById(id) : null;
+}
+
+export function updateClaimStatusById(
+  id: string,
+  status: Exclude<ClaimStatus, "pending">,
+): Promise<Claim | null> {
+  return updateRequestStatusById("claim", id, status);
+}
+
+export function updateReturnStatusById(
+  id: string,
+  status: Exclude<ClaimStatus, "pending">,
+): Promise<Claim | null> {
+  return updateRequestStatusById("return", id, status);
 }
 
 interface CreateRequestInput {

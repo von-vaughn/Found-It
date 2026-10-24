@@ -15,7 +15,7 @@ import {
   Tag,
   X,
 } from "lucide-react";
-import { itemToAdminReport } from "@/components/admin/adminData";
+import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { NoItemImage } from "@/components/NoItemImage";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -26,12 +26,24 @@ import {
 } from "@/components/admin/SensitiveDetails";
 import { useSensitiveUnlock } from "@/components/admin/useSensitiveUnlock";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
-import type { Item } from "@/data/mockItems";
-import type { ReturnItemRequest } from "@/types/claim";
+import type { ServerClaimStatus } from "@/services/claimService";
+import { toClaimRequests } from "@/lib/claimAdapter";
+import { useAdminReturns, useUpdateAdminReturnStatus } from "@/hooks/useReturns";
+import { useItems } from "@/hooks/useItems";
+import type { ClaimRequest } from "@/types/claim";
 import { AdminLayout } from "./AdminLayout";
 
 const PAGE_SIZE = 10;
-type ReturnStatus = ReturnItemRequest["status"];
+type ReturnStatus = ClaimRequest["status"];
+
+const ADMIN_RETURN_STATUS: Partial<
+  Record<ClaimRequest["status"], Exclude<ServerClaimStatus, "pending">>
+> = {
+  Approved: "approved",
+  Rejected: "rejected",
+  Claimed: "claimed",
+  Returned: "returned",
+};
 
 const RESOLVED_RETURN_STATUSES: ReturnStatus[] = [
   "Approved",
@@ -56,7 +68,7 @@ function ReturnRequestSection({
   unlocked,
   onRequestUnlock,
 }: {
-  request: ReturnItemRequest;
+  request: ClaimRequest;
   headingId: string;
   title?: string;
   onRequestStatus: (requestId: string, status: StatusDecision) => void;
@@ -157,7 +169,7 @@ function ReturnRequestSection({
                 Item name
               </dt>
               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                {request.lostItemTitle}
+                {request.item}
               </dd>
             </div>
             <div>
@@ -243,15 +255,7 @@ function ReturnRequestSection({
   );
 }
 
-export function ReturnItemsPage({
-  items,
-  requests,
-  onStatusChange,
-}: {
-  items: Item[];
-  requests: ReturnItemRequest[];
-  onStatusChange: (requestId: string, status: ReturnStatus) => void;
-}) {
+export function ReturnItemsPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Pending");
   const [page, setPage] = useState(1);
@@ -260,6 +264,28 @@ export function ReturnItemsPage({
     requestId: string;
     status: StatusDecision;
   } | null>(null);
+
+  const {
+    data: serverReturns = [],
+    isLoading: returnsLoading,
+    isError: returnsError,
+    refetch: refetchReturns,
+  } = useAdminReturns();
+  const {
+    data: serverItems = [],
+    isLoading: itemsLoading,
+    isError: itemsError,
+    refetch: refetchItems,
+  } = useItems();
+  const updateReturnStatus = useUpdateAdminReturnStatus();
+  const requests = useMemo(
+    () => toClaimRequests(serverReturns),
+    [serverReturns],
+  );
+  const reports = useMemo(
+    () => serverItems.map(serverItemToAdminReport),
+    [serverItems],
+  );
 
   const visibleRequests = useMemo(() => {
     const resolvedItemIds = new Set(
@@ -282,7 +308,6 @@ export function ReturnItemsPage({
       (request) =>
         request.status === statusFilter &&
         [
-          request.lostItemTitle,
           request.item,
           request.claimant,
           request.location,
@@ -304,11 +329,8 @@ export function ReturnItemsPage({
     filteredRequests.find((request) => request.id === selectedId) ??
     filteredRequests[0] ??
     null;
-  const selectedLostItem = selectedRequest
-    ? items.find((item) => item.id === selectedRequest.itemId)
-    : undefined;
-  const selectedLostReport = selectedLostItem
-    ? itemToAdminReport(selectedLostItem)
+  const selectedLostReport = selectedRequest
+    ? reports.find((report) => report.id === selectedRequest.itemId)
     : undefined;
   const rangeStart =
     filteredRequests.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
@@ -353,6 +375,26 @@ export function ReturnItemsPage({
     useSensitiveUnlock();
   const logDecision = useAuditDecision();
 
+  /** Persists a single status transition to the server. */
+  const persistStatusChange = (
+    requestId: string,
+    status: StatusDecision,
+    options?: { silent?: boolean },
+  ) => {
+    const serverStatus = ADMIN_RETURN_STATUS[status];
+    if (!serverStatus) return;
+    updateReturnStatus.mutate(
+      { id: requestId, status: serverStatus },
+      {
+        onError: () => {
+          if (!options?.silent) {
+            toast.error("Could not update this return request. Please try again.");
+          }
+        },
+      },
+    );
+  };
+
   const requestStatusChange = (requestId: string, status: StatusDecision) => {
     const target = requests.find((request) => request.id === requestId);
     if (!target) return;
@@ -364,25 +406,25 @@ export function ReturnItemsPage({
 
   const confirmStatusChange = () => {
     if (!confirmAction || !confirmTargetRequest) return;
-    onStatusChange(confirmAction.requestId, confirmAction.status);
+    persistStatusChange(confirmAction.requestId, confirmAction.status);
     logDecision({
       action: confirmAction.status === "Approved" ? "approved" : "rejected",
       entityType: "return_request",
       entityId: confirmAction.requestId,
-      itemTitle: confirmTargetRequest.lostItemTitle,
+      itemTitle: confirmTargetRequest.item,
       details: `${confirmAction.status} by super admin for return ${confirmAction.requestId} (${confirmTargetRequest.claimant}).`,
     });
     if (confirmAction.status === "Approved") {
       toast.success(
-        `Approved return of "${confirmTargetRequest.lostItemTitle}" for ${confirmTargetRequest.claimant}.`,
+        `Approved return of "${confirmTargetRequest.item}" for ${confirmTargetRequest.claimant}.`,
       );
     } else if (confirmAction.status === "Claimed") {
       toast.success(
-        `Marked "${confirmTargetRequest.lostItemTitle}" as claimed for ${confirmTargetRequest.claimant}.`,
+        `Marked "${confirmTargetRequest.item}" as claimed for ${confirmTargetRequest.claimant}.`,
       );
     } else {
       toast.success(
-        `Rejected return request for "${confirmTargetRequest.lostItemTitle}".`,
+        `Rejected return request for "${confirmTargetRequest.item}".`,
       );
     }
     if (
@@ -390,7 +432,7 @@ export function ReturnItemsPage({
       confirmAction.status === "Claimed"
     ) {
       for (const sibling of requestsToAutoReject) {
-        onStatusChange(sibling.id, "Rejected");
+        persistStatusChange(sibling.id, "Rejected", { silent: true });
       }
     }
     setConfirmAction(null);
@@ -412,6 +454,52 @@ export function ReturnItemsPage({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [confirmAction]);
+
+  // ── Loading state ──────────────────────────────────────────────────
+  if (returnsLoading || itemsLoading) {
+    return (
+      <AdminLayout
+        activeSection="returns"
+        showSearch
+        query={query}
+        onQueryChange={updateQuery}
+        searchPlaceholder="Search return requests…"
+      >
+        <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
+          Loading return requests…
+        </p>
+      </AdminLayout>
+    );
+  }
+
+  // ── Error state ────────────────────────────────────────────────────
+  if (returnsError || itemsError) {
+    return (
+      <AdminLayout
+        activeSection="returns"
+        showSearch
+        query={query}
+        onQueryChange={updateQuery}
+        searchPlaceholder="Search return requests…"
+      >
+        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-5 py-10">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            Could not load return requests.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void refetchReturns();
+              void refetchItems();
+            }}
+            className="inline-flex h-9 items-center rounded-lg border border-neutral-200 dark:border-neutral-700 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+          >
+            Retry
+          </button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout
@@ -449,10 +537,10 @@ export function ReturnItemsPage({
             <>
               <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {pageRequests.map((request) => {
-                  const lostItem = items.find(
-                    (item) => item.id === request.itemId,
+                  const lostReport = reports.find(
+                    (report) => report.id === request.itemId,
                   );
-                  const preview = lostItem?.image || request.evidence?.[0] || "";
+                  const preview = lostReport?.image || request.evidence?.[0] || "";
                   return (
                     <button
                       key={request.id}
@@ -468,7 +556,7 @@ export function ReturnItemsPage({
                       {preview ? (
                         <img
                           src={preview}
-                          alt={`${request.lostItemTitle} evidence`}
+                          alt={`${request.item} evidence`}
                           loading="lazy"
                           className="h-12 w-12 shrink-0 rounded-lg object-cover"
                         />
@@ -477,7 +565,7 @@ export function ReturnItemsPage({
                       )}
                       <span className="min-w-0 flex-1">
                         <span className="block break-normal text-sm font-bold leading-snug text-neutral-900 dark:text-neutral-100">
-                          {request.lostItemTitle}
+                          {request.item}
                         </span>
                         <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
                           {request.claimant}
@@ -550,7 +638,7 @@ export function ReturnItemsPage({
         </Panel>
 
         <Panel
-          title={selectedRequest?.lostItemTitle ?? "Return request details"}
+          title={selectedRequest?.item ?? "Return request details"}
           plain
         >
           {selectedRequest ? (
@@ -567,11 +655,11 @@ export function ReturnItemsPage({
                 </div>
                 <div className="grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                   <div className="flex min-h-48 items-center justify-center rounded-lg bg-neutral-50 dark:bg-neutral-800 p-3 text-center">
-                    {selectedLostItem?.image ? (
+                    {selectedLostReport?.image ? (
                       <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800">
                         <img
-                          src={selectedLostItem.image}
-                          alt={`${selectedRequest.lostItemTitle} item`}
+                          src={selectedLostReport.image}
+                          alt={`${selectedRequest.item} item`}
                           className="h-full max-w-full object-contain"
                         />
                       </div>
@@ -585,13 +673,13 @@ export function ReturnItemsPage({
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      {selectedLostItem?.contactName || "None"}
+                      {selectedLostReport?.reportedBy || "None"}
                     </p>
                     <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                       {selectedLostReport?.reporterEmail || "None"}
                     </p>
                     <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
-                      {selectedLostItem?.description || "None"}
+                      {selectedLostReport?.description || "None"}
                     </p>
                     <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 py-3 text-xs">
                       <div>
@@ -668,7 +756,7 @@ export function ReturnItemsPage({
                         </dt>
                         <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           <LockedValue
-                            value={selectedLostItem?.confidentialInfo}
+                            value={selectedLostReport?.confidentialInfo}
                             unlocked={unlocked}
                             onUnlock={requestUnlock}
                           />
@@ -748,10 +836,10 @@ export function ReturnItemsPage({
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
               {confirmAction.status === "Approved"
-                ? `"${confirmTargetRequest.lostItemTitle}" will be marked as approved for ${confirmTargetRequest.claimant}, and they will be notified to proceed with the return.`
+                ? `"${confirmTargetRequest.item}" will be marked as approved for ${confirmTargetRequest.claimant}, and they will be notified to proceed with the return.`
                 : confirmAction.status === "Claimed"
-                  ? `"${confirmTargetRequest.lostItemTitle}" will be marked as claimed for ${confirmTargetRequest.claimant}, confirming they have received the item.`
-                  : `The return request for "${confirmTargetRequest.lostItemTitle}" by ${confirmTargetRequest.claimant} will be marked as rejected.`}
+                  ? `"${confirmTargetRequest.item}" will be marked as claimed for ${confirmTargetRequest.claimant}, confirming they have received the item.`
+                  : `The return request for "${confirmTargetRequest.item}" by ${confirmTargetRequest.claimant} will be marked as rejected.`}
             </p>
             {isAcceptReturn && requestsToAutoReject.length > 0 && (
               <p className="mt-3 rounded-xl border border-amber-200 dark:border-amber-500/25 bg-amber-50 dark:bg-amber-500/10 px-3.5 py-2.5 text-xs leading-relaxed text-amber-800 dark:text-amber-300">

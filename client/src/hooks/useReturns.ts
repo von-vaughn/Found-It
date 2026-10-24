@@ -5,18 +5,21 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import { useAuth } from "@/context/useAuth";
-import type { ServerClaim } from "@/services/claimService";
+import type { ServerClaim, ServerClaimStatus } from "@/services/claimService";
 import {
   createReturnRequest,
   deleteReturnRequest,
+  listAllReturns,
   listMyReturns,
   type CreateReturnPayload,
   type UpdateReturnPayload,
   updateReturnRequest,
+  updateReturnStatus,
 } from "@/services/returnService";
 
 export const returnKeys = {
   all: ["returns"] as const,
+  admin: () => [...returnKeys.all, "admin"] as const,
   mine: (userId?: string) =>
     [...returnKeys.all, "mine", userId ?? "anonymous"] as const,
 };
@@ -35,6 +38,15 @@ export function useMyReturns(
     enabled: Boolean(user),
     staleTime: 30_000,
     ...options,
+  });
+}
+
+/** Every return request, for the admin returns workspace. */
+export function useAdminReturns() {
+  return useQuery<ServerClaim[], Error>({
+    queryKey: returnKeys.admin(),
+    queryFn: listAllReturns,
+    staleTime: 15_000,
   });
 }
 
@@ -60,6 +72,29 @@ export function useCreateReturnRequest() {
         queryClient.invalidateQueries({ queryKey: returnKeys.all });
       }
     },
+  });
+}
+
+/** Records an admin decision and refreshes every cached return list. */
+export function useUpdateAdminReturnStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: Exclude<ServerClaimStatus, "pending">;
+    }) => updateReturnStatus(id, status),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ServerClaim[]>(returnKeys.admin(), (current) =>
+        current?.map((request) =>
+          request.id === updated.id ? updated : request,
+        ),
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: returnKeys.all }),
   });
 }
 

@@ -112,16 +112,6 @@ function AppContent() {
     });
   };
 
-  const handleUpdateReturnRequestStatus = (
-    requestId: string,
-    status: ReturnItemRequest["status"],
-  ) => {
-    setReturnRequests((current) =>
-      current.map((request) =>
-        request.id === requestId ? { ...request, status } : request,
-      ),
-    );
-  };
 
   const handleBrowseLost = () => {
     navigate("/browse?type=lost");
@@ -174,7 +164,6 @@ function AppContent() {
             onDeleteItem={handleDeleteItem}
             returnRequests={returnRequests}
             onSubmitReturnRequest={handleSubmitReturnRequest}
-            onUpdateReturnRequestStatus={handleUpdateReturnRequestStatus}
             onBrowseLost={handleBrowseLost}
             onBrowseFound={handleBrowseFound}
             filters={filters}
