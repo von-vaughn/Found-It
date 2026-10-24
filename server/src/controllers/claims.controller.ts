@@ -6,8 +6,10 @@ import {
   findClaimForUserById,
   findClaimableItem,
   findClaimForUserAndItem,
+  listAllClaims,
   listClaimsByUser,
   updateClaim,
+  updateClaimStatusById,
 } from "../repositories/request.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
 
@@ -24,6 +26,10 @@ function zodError(res: Response, error: z.ZodError): Response {
 function requestIdParam(req: Request): string | null {
   return typeof req.params.id === "string" ? req.params.id : null;
 }
+
+const adminClaimStatusSchema = z.object({
+  status: z.enum(["approved", "rejected", "claimed", "returned"]),
+});
 
 /** POST /api/claims — submit an ownership claim on a found item. */
 export async function submitClaim(req: Request, res: Response): Promise<void> {
@@ -72,6 +78,37 @@ export async function submitClaim(req: Request, res: Response): Promise<void> {
 export async function getMyClaims(req: Request, res: Response): Promise<void> {
   const claims = await listClaimsByUser(req.user!.sub);
   res.json({ claims, count: claims.length });
+}
+
+/** GET /api/claims/admin — every ownership claim (admin+). */
+export async function getAllClaims(_req: Request, res: Response): Promise<void> {
+  const claims = await listAllClaims();
+  res.json({ claims, count: claims.length });
+}
+
+/** PATCH /api/claims/admin/:id/status — approve, reject, claim, or return (admin+). */
+export async function updateAdminClaimStatus(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const parsed = adminClaimStatusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+  const requestId = requestIdParam(req);
+  if (!requestId) {
+    res.status(400).json({ message: "Invalid claim request ID." });
+    return;
+  }
+  const claim = await updateClaimStatusById(requestId, parsed.data.status);
+  if (!claim) {
+    res.status(409).json({
+      message: "This claim is no longer waiting for that decision.",
+    });
+    return;
+  }
+  res.json({ message: "Claim status updated.", claim });
 }
 
 /** PATCH /api/claims/:id — edit the signed-in user's pending claim. */

@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import toast from "react-hot-toast";
 import { ItemTable } from "@/components/admin/ItemTable";
 import { Panel } from "@/components/admin/Panel";
 import { ItemDetailsDialog } from "@/components/admin/ItemDetailsDialog";
-import { itemToAdminReport } from "@/components/admin/adminData";
+import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import type { Item } from "@/data/mockItems";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
@@ -11,17 +12,14 @@ import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { AdminLayout } from "./AdminLayout";
 import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
+import { useDeleteItem, useItems } from "@/hooks/useItems";
 
 const PAGE_SIZE = 10;
 
 export function ReportsPage({
-  items,
   onAddItem,
-  onDeleteItem,
 }: {
-  items: Item[];
   onAddItem: (newItem: Item) => void;
-  onDeleteItem: (id: string, reason?: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
@@ -31,22 +29,31 @@ export function ReportsPage({
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
-  const reports = useMemo(() => items.map(itemToAdminReport), [items]);
+  const { data: items = [], isLoading, isError, refetch } = useItems();
+  const reports = useMemo(() => items.map(serverItemToAdminReport), [items]);
   const logDecision = useAuditDecision();
+  const deleteItem = useDeleteItem();
 
   const handleDelete = (id: string, reason?: string) => {
     const target = reports.find((report) => report.id === id);
-    logDecision({
-      action: "rejected",
-      entityType: "item",
-      entityId: id,
-      itemTitle: target?.title ?? id,
-      details: reason
-        ? `Report removed: ${reason}`
-        : "Report removed by super admin.",
+    deleteItem.mutate(id, {
+      onSuccess: () => {
+        logDecision({
+          action: "rejected",
+          entityType: "item",
+          entityId: id,
+          itemTitle: target?.title ?? id,
+          details: reason
+            ? `Report removed: ${reason}`
+            : "Report removed by super admin.",
+        });
+        toast.success("Item report deleted.");
+        setSelectedReport(null);
+      },
+      onError: () => {
+        toast.error("Could not delete this report. Please try again.");
+      },
     });
-    onDeleteItem(id, reason);
-    setSelectedReport(null);
   };
 
   const filteredRows = useMemo(() => {
@@ -199,11 +206,32 @@ export function ReportsPage({
           </div>
         </div>
 
-        <ItemTable
-          rows={pageRows}
-          onViewDetails={setSelectedReport}
-          wholeRowClickable
-        />
+        {isLoading ? (
+          <div className="flex min-h-[800px] items-center justify-center px-5 py-10">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              Loading reports…
+            </p>
+          </div>
+        ) : isError ? (
+          <div className="flex min-h-[800px] flex-col items-center justify-center gap-3 px-5 py-10">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              Could not load item reports.
+            </p>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              className="inline-flex h-9 items-center rounded-lg border border-neutral-200 dark:border-neutral-700 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <ItemTable
+            rows={pageRows}
+            onViewDetails={setSelectedReport}
+            wholeRowClickable
+          />
+        )}
 
         <div className="flex flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <p className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">

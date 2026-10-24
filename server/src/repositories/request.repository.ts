@@ -180,6 +180,40 @@ export function listReturnsByUser(userId: string): Promise<Claim[]> {
   return listRequestsByUser(userId, "return");
 }
 
+/** Every ownership claim, for the admin claims workspace. */
+export async function listAllClaims(): Promise<Claim[]> {
+  const { rows } = await pool.query<ClaimRow>(
+    `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
+     WHERE rq.kind = 'claim'
+     ORDER BY rq.created_at DESC
+     LIMIT 500`,
+  );
+  return rows.map(toClaim);
+}
+
+/** A claim can only move forward from the status the UI is showing. */
+const CLAIM_STATUS_PREDECESSOR: Record<
+  Exclude<ClaimStatus, "pending">,
+  ClaimStatus
+> = {
+  approved: "pending",
+  rejected: "pending",
+  claimed: "approved",
+  returned: "approved",
+};
+
+export async function updateClaimStatusById(
+  id: string,
+  status: Exclude<ClaimStatus, "pending">,
+): Promise<Claim | null> {
+  const { rowCount } = await pool.query(
+    `UPDATE request SET status = $2
+     WHERE id = $1 AND kind = 'claim' AND status = $3`,
+    [id, status, CLAIM_STATUS_PREDECESSOR[status]],
+  );
+  return rowCount === 1 ? findClaimById(id) : null;
+}
+
 interface CreateRequestInput {
   userId: string;
   itemId: string;

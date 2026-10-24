@@ -15,7 +15,6 @@ import {
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
 import type {
-  ClaimRequest,
   NewReturnItemRequest,
   ReturnItemRequest,
 } from "@/types/claim";
@@ -43,7 +42,6 @@ function AppContent() {
   // single JSON file and is fetched dynamically at startup instead of being
   // hardcoded: `public/data/examples.json`.
   const [items, setItems] = useState<Item[]>([]);
-  const [submittedClaims, setSubmittedClaims] = useState<ClaimRequest[]>([]);
   const [returnRequests, setReturnRequests] = useState<ReturnItemRequest[]>(
     [],
   );
@@ -67,8 +65,6 @@ function AppContent() {
       .then((data) => {
         if (cancelled) return;
         if (Array.isArray(data?.items)) setItems(data.items);
-        if (Array.isArray(data?.submittedClaims))
-          setSubmittedClaims(data.submittedClaims);
         if (Array.isArray(data?.returnRequests))
           setReturnRequests(data.returnRequests);
         setExamplesLoaded(true);
@@ -94,15 +90,6 @@ function AppContent() {
 
   const handleDeleteItem = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const handleUpdateClaimStatus = (
-    claimId: string,
-    status: ClaimRequest["status"],
-  ) => {
-    setSubmittedClaims((current) =>
-      current.map((claim) => (claim.id === claimId ? { ...claim, status } : claim)),
-    );
   };
 
   const handleSubmitReturnRequest = (request: NewReturnItemRequest) => {
@@ -182,11 +169,9 @@ function AppContent() {
         {examplesLoaded ? (
           <AppRoutes
             items={items}
-            submittedClaims={submittedClaims}
             onAddItem={handleAddItem}
             onUpdateItem={handleUpdateItem}
             onDeleteItem={handleDeleteItem}
-            onUpdateClaimStatus={handleUpdateClaimStatus}
             returnRequests={returnRequests}
             onSubmitReturnRequest={handleSubmitReturnRequest}
             onUpdateReturnRequestStatus={handleUpdateReturnRequestStatus}

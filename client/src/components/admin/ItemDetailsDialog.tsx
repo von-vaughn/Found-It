@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useEffect, useRef, type RefObject } from "react";
 import { Trash2, X } from "lucide-react";
-import toast from "react-hot-toast";
 import { NoItemImage } from "@/components/NoItemImage";
 import type { AdminReport } from "./types";
 
@@ -79,7 +78,6 @@ export function ItemDetailsDialog({
       return;
     }
     onDelete(report.id, reason);
-    toast.success("Item report deleted.");
   };
 
   return (

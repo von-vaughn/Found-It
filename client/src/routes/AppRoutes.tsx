@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Navigate, useRoutes } from "react-router-dom";
 import type { Item } from "@/data/mockItems";
 import type {
-  ClaimRequest,
   NewClaimRequest,
   NewReturnItemRequest,
   ReturnItemRequest,
@@ -19,13 +18,10 @@ import { toClaimRequests, toFoundReportClaims } from "@/lib/claimAdapter";
 
 interface AppRoutesProps {
   items: Item[];
-  /** Example claims used only by the admin demo views. */
-  submittedClaims: ClaimRequest[];
   returnRequests: ReturnItemRequest[];
   onAddItem: (newItem: Item) => void;
   onUpdateItem: (updatedItem: Item) => void;
   onDeleteItem: (id: string, reason?: string) => void;
-  onUpdateClaimStatus: (claimId: string, status: ClaimRequest["status"]) => void;
   onSubmitReturnRequest: (request: NewReturnItemRequest) => void;
   onUpdateReturnRequestStatus: (
     requestId: string,
@@ -39,12 +35,10 @@ interface AppRoutesProps {
 
 export function AppRoutes({
   items,
-  submittedClaims: exampleClaims,
   returnRequests,
   onAddItem,
   onUpdateItem,
   onDeleteItem,
-  onUpdateClaimStatus,
   onSubmitReturnRequest,
   onUpdateReturnRequestStatus,
   onBrowseLost,
@@ -95,7 +89,6 @@ export function AppRoutes({
     onUpdateItem,
     onDeleteItem,
     onSubmitClaim: handleSubmitClaim,
-    onUpdateClaimStatus,
     onSubmitReturnRequest,
     filters,
     onFiltersChange,
@@ -111,8 +104,6 @@ export function AppRoutes({
   const adminRoutes = getAdminRoutes({
     items,
     onAddItem,
-    onDeleteItem,
-    submittedClaims: exampleClaims,
     returnRequests,
     onUpdateReturnRequestStatus,
   }).map((route) => ({

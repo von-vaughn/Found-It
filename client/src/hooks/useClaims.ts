@@ -8,14 +8,18 @@ import { useAuth } from "@/context/useAuth";
 import {
   createClaim,
   deleteClaim,
+  listAllClaims,
   listMyClaims,
+  updateClaimStatus,
   type ServerClaim,
+  type ServerClaimStatus,
   type UpdateClaimPayload,
   updateClaim,
 } from "@/services/claimService";
 
 export const claimKeys = {
   all: ["claims"] as const,
+  admin: () => [...claimKeys.all, "admin"] as const,
   mine: (userId?: string) =>
     [...claimKeys.all, "mine", userId ?? "anonymous"] as const,
 };
@@ -34,6 +38,38 @@ export function useMyClaims(
     enabled: Boolean(user),
     staleTime: 30_000,
     ...options,
+  });
+}
+
+/** Every claim, for the admin claims workspace. */
+export function useAdminClaims() {
+  return useQuery<ServerClaim[], Error>({
+    queryKey: claimKeys.admin(),
+    queryFn: listAllClaims,
+    staleTime: 15_000,
+  });
+}
+
+/** Records an admin decision and refreshes every cached claim list. */
+export function useUpdateAdminClaimStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: Exclude<ServerClaimStatus, "pending">;
+    }) => updateClaimStatus(id, status),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ServerClaim[]>(claimKeys.admin(), (current) =>
+        current?.map((claim) =>
+          claim.id === updated.id ? updated : claim,
+        ),
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: claimKeys.all }),
   });
 }
 

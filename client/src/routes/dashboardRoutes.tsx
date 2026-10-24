@@ -27,7 +27,6 @@ interface DashboardRoutesOptions {
   onUpdateItem: (updatedItem: Item) => void;
   onDeleteItem: (id: string) => void;
   onSubmitClaim: (claim: NewClaimRequest) => void;
-  onUpdateClaimStatus: (claimId: string, status: ClaimRequest["status"]) => void;
   onSubmitReturnRequest: (request: NewReturnItemRequest) => void;
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
@@ -42,7 +41,6 @@ export function getDashboardRoutes({
   onUpdateItem,
   onDeleteItem,
   onSubmitClaim,
-  onUpdateClaimStatus,
   onSubmitReturnRequest,
   filters,
   onFiltersChange,
@@ -101,7 +99,6 @@ export function getDashboardRoutes({
           onUpdateItem={onUpdateItem}
           onDeleteItem={onDeleteItem}
           onSubmitClaim={onSubmitClaim}
-          onUpdateClaimStatus={onUpdateClaimStatus}
           submittedClaims={submittedClaims}
           foundReports={foundReports}
           returnRequests={returnRequests}

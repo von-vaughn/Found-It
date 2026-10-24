@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
-import type { AdminNotification, AdminSidebarItem } from "./AdminSidebar";
+import type { ServerItem } from "@/services/itemService";
+import type { AdminSidebarItem } from "./AdminSidebar";
 import type {
   AdminReport,
   AdminSection,
@@ -46,6 +47,30 @@ export const itemToAdminReport = (item: Item): AdminReport => ({
   date: item.date,
   eventDateTime: item.dateTime,
   confidentialInfo: item.confidentialInfo,
+});
+
+/** Maps a backend item report (including the admin-only reporter email) to an admin row. */
+export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
+  id: item.id,
+  title: item.name,
+  type: item.reportType === "lost" ? "Lost" : "Found",
+  image: item.image || item.images?.[0] || "",
+  category:
+    ITEM_CATEGORIES.find((category) => category.id === item.category)?.label ??
+    item.category,
+  description: item.description,
+  building: item.building || item.location || "",
+  buildingName: item.building ?? undefined,
+  specificLocation: item.location ?? "",
+  color: item.color ?? "",
+  reportedBy: item.user.name,
+  reporterEmail: item.user.email ?? "",
+  status: item.reportType === "lost" ? "Lost" : "Found",
+  date: item.itemDate,
+  eventDateTime: item.itemTime
+    ? `${item.itemDate}T${item.itemTime}`
+    : undefined,
+  confidentialInfo: item.importantDetails,
 });
 
 export const claims: AdminClaim[] = [
@@ -253,17 +278,6 @@ export const claims: AdminClaim[] = [
     submitted: "October 10, 2026, 11:20 AM",
   },
 ];
-
-export const initialNotifications: AdminNotification[] = claims.map(
-  (claim) => ({
-    id: claim.id,
-    title: "Ownership claim submitted",
-    description: `${claim.claimant} submitted a claim for the ${claim.item}.`,
-    time: claim.submitted,
-    claimId: claim.id,
-    read: false,
-  }),
-);
 
 export const navigation: AdminSidebarItem<AdminSection>[] = [
   {

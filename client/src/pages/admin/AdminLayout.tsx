@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut, Moon, Search, Sun } from "lucide-react";
@@ -8,8 +8,13 @@ import {
   AdminSidebar,
   type AdminNotification,
 } from "@/components/admin/AdminSidebar";
-import { getPageCopy, initialNotifications, navigationFor } from "@/components/admin/adminData";
+import {
+  getPageCopy,
+  navigationFor,
+} from "@/components/admin/adminData";
 import type { AdminSection } from "@/components/admin/types";
+import { useAdminClaims } from "@/hooks/useClaims";
+import { toClaimRequests } from "@/lib/claimAdapter";
 import { adminSectionPaths } from "./sectionPaths";
 
 function AdminAccountMenu() {
@@ -151,16 +156,31 @@ export function AdminLayout({
   const navigate = useNavigate();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
-  const [notifications, setNotifications] =
-    useState<AdminNotification[]>(initialNotifications);
+  const { data: serverClaims = [] } = useAdminClaims();
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+
+  const notifications = useMemo(
+    () =>
+      toClaimRequests(serverClaims)
+        .filter((claim) => claim.status === "Pending")
+        .map((claim) => ({
+          id: claim.id,
+          title: "Ownership claim submitted",
+          description: `${claim.claimant} submitted a claim for the ${claim.item}.`,
+          time: claim.submitted,
+          claimId: claim.id,
+          read: readNotificationIds.includes(claim.id),
+        })),
+    [readNotificationIds, serverClaims],
+  );
 
   const copy = getPageCopy(activeSection, isSuperAdmin);
 
   const handleNotificationSelect = (notification: AdminNotification) => {
-    setNotifications((current) =>
-      current.map((entry) =>
-        entry.id === notification.id ? { ...entry, read: true } : entry,
-      ),
+    setReadNotificationIds((current) =>
+      current.includes(notification.id)
+        ? current
+        : [...current, notification.id],
     );
     navigate(`${adminSectionPaths.claims}?claimId=${notification.claimId}`);
   };
@@ -176,9 +196,9 @@ export function AdminLayout({
         }}
         onNotificationSelect={handleNotificationSelect}
         onMarkAllRead={() =>
-          setNotifications((current) =>
-            current.map((notification) => ({ ...notification, read: true })),
-          )
+          setReadNotificationIds((current) => [
+            ...new Set([...current, ...notifications.map((entry) => entry.id)]),
+          ])
         }
       />
 

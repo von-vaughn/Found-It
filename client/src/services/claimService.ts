@@ -70,6 +70,24 @@ export async function listMyClaims(): Promise<ServerClaim[]> {
   return data.claims;
 }
 
+/** GET /api/claims/admin — every ownership claim (admin+). */
+export async function listAllClaims(): Promise<ServerClaim[]> {
+  const { data } = await api.get<ListClaimsResponse>("/claims/admin");
+  return data.claims;
+}
+
+/** PATCH /api/claims/admin/:id/status — record an admin decision. */
+export async function updateClaimStatus(
+  id: string,
+  status: Exclude<ServerClaimStatus, "pending">,
+): Promise<ServerClaim> {
+  const { data } = await api.patch<UpdateClaimResponse>(
+    `/claims/admin/${id}/status`,
+    { status },
+  );
+  return data.claim;
+}
+
 /** PATCH /api/claims/:id — update a pending ownership claim. */
 export async function updateClaim(
   id: string,

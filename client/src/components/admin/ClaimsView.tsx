@@ -12,7 +12,6 @@ import {
   Clock3,
   Lock,
   MapPin,
-  Package,
   Palette,
   Tag,
   X,
@@ -163,27 +162,16 @@ function ClaimRequestSection({
           </div>
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+          <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
             {claim.claimant}
           </p>
           <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
             {getClaimantEmail(claim)}
           </p>
-          <div className="mt-3 border-b border-neutral-100 dark:border-neutral-800 pb-3">
-            <p className="text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
-              {claim.details}
-            </p>
-          </div>
-          <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Package className="h-3 w-3" aria-hidden="true" />
-              Item name
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {claim.item}
-            </dd>
-          </div>
+          <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
+            {claim.details}
+          </p>
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 py-3 text-xs">
           <div>
             <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <CalendarDays className="h-3 w-3" aria-hidden="true" />
@@ -195,19 +183,10 @@ function ClaimRequestSection({
           </div>
           <div>
             <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Tag className="h-3 w-3" aria-hidden="true" />
-              What is it?
+              <Palette className="h-3 w-3" aria-hidden="true" />
+              Color
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {claim.claimantTitle?.trim() || claim.item}
-            </dd>
-          </div>
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Palette className="h-3 w-3" aria-hidden="true" />
-              Primary color
-            </dt>
-            <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
               {claim.color?.trim() || "None"}
             </dd>
           </div>
@@ -238,7 +217,7 @@ function ClaimRequestSection({
               {claim.location}
             </dd>
           </div>
-          <div className="col-span-2">
+          <div>
             <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <Building2 className="h-3 w-3" aria-hidden="true" />
               Building

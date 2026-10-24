@@ -1,46 +1,57 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import type { ClaimRequest } from "@/types/claim";
+import type { ServerClaimStatus } from "@/services/claimService";
 import type { RecordStatus } from "@/components/admin/types";
 import { ClaimsView } from "@/components/admin/ClaimsView";
-import { claims, itemToAdminReport } from "@/components/admin/adminData";
+import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
-import type { Item } from "@/data/mockItems";
+import { toClaimRequests } from "@/lib/claimAdapter";
+import { useAdminClaims, useUpdateAdminClaimStatus } from "@/hooks/useClaims";
+import { useItems } from "@/hooks/useItems";
 import { AdminLayout } from "./AdminLayout";
 
-export function ClaimsPage({
-  items,
-  additionalClaims = [],
-}: {
-  items: Item[];
-  additionalClaims?: ClaimRequest[];
-}) {
+const ADMIN_STATUS: Partial<
+  Record<ClaimRequest["status"], Exclude<ServerClaimStatus, "pending">>
+> = {
+  Approved: "approved",
+  Rejected: "rejected",
+  Claimed: "claimed",
+  Returned: "returned",
+};
+
+export function ClaimsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Pending");
   const [manualClaimId, setManualClaimId] = useState<string | null>(null);
-  const [claimStatuses, setClaimStatuses] = useState<
-    Record<string, ClaimRequest["status"]>
-  >({});
   const [itemStatuses, setItemStatuses] = useState<
     Record<string, RecordStatus>
   >({});
   const logDecision = useAuditDecision();
+  const {
+    data: serverClaims = [],
+    isLoading: claimsLoading,
+    isError: claimsError,
+    refetch: refetchClaims,
+  } = useAdminClaims();
+  const {
+    data: serverItems = [],
+    isLoading: itemsLoading,
+    isError: itemsError,
+    refetch: refetchItems,
+  } = useItems();
+  const updateClaimStatus = useUpdateAdminClaimStatus();
 
   const allClaims = useMemo(
-    () =>
-      [...additionalClaims, ...claims].map((claim) =>
-        {
-          const status = claimStatuses[claim.id] ?? claim.status;
-          return {
-            ...claim,
-            status: status === "Under review" ? "Pending" : status,
-          };
-        },
-      ),
-    [additionalClaims, claimStatuses],
+    () => toClaimRequests(serverClaims),
+    [serverClaims],
   );
-  const reports = useMemo(() => items.map(itemToAdminReport), [items]);
+  const reports = useMemo(
+    () => serverItems.map(serverItemToAdminReport),
+    [serverItems],
+  );
   const foundItemIds = useMemo(
     () =>
       new Set(
@@ -100,7 +111,9 @@ export function ClaimsPage({
     id: string,
     status: ClaimRequest["status"],
   ) => {
-    setClaimStatuses((current) => ({ ...current, [id]: status }));
+    const serverStatus = ADMIN_STATUS[status];
+    if (!serverStatus) return;
+    const claim = allClaims.find((entry) => entry.id === id);
     const action =
       status === "Approved"
         ? "approved"
@@ -111,17 +124,27 @@ export function ClaimsPage({
             : status === "Claimed"
               ? "claimed"
               : null;
-    if (!action) return;
-    const claim = allClaims.find((entry) => entry.id === id);
-    logDecision({
-      action,
-      entityType: "claim",
-      entityId: id,
-      itemTitle: claim?.item ?? id,
-      details: `${status} by super admin for claim ${id}${
-        claim ? ` (${claim.claimant})` : ""
-      }.`,
-    });
+
+    updateClaimStatus.mutate(
+      { id, status: serverStatus },
+      {
+        onSuccess: () => {
+          if (!action) return;
+          logDecision({
+            action,
+            entityType: "claim",
+            entityId: id,
+            itemTitle: claim?.item ?? id,
+            details: `${status} by super admin for claim ${id}${
+              claim ? ` (${claim.claimant})` : ""
+            }.`,
+          });
+        },
+        onError: () => {
+          toast.error("Could not update this claim. Please try again.");
+        },
+      },
+    );
   };
 
   const handleItemStatusChange = (itemId: string, status: RecordStatus) => {
@@ -131,6 +154,48 @@ export function ClaimsPage({
   const selectedClaim = foundItemClaims.find(
     (claim) => claim.id === selectedClaimId,
   );
+
+  if (claimsLoading || itemsLoading) {
+    return (
+      <AdminLayout
+        activeSection="claims"
+        showSearch
+        query={query}
+        onQueryChange={setQuery}
+      >
+        <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
+          Loading claims…
+        </p>
+      </AdminLayout>
+    );
+  }
+
+  if (claimsError || itemsError) {
+    return (
+      <AdminLayout
+        activeSection="claims"
+        showSearch
+        query={query}
+        onQueryChange={setQuery}
+      >
+        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-5 py-10">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            Could not load claims.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void refetchClaims();
+              void refetchItems();
+            }}
+            className="inline-flex h-9 items-center rounded-lg border border-neutral-200 dark:border-neutral-700 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+          >
+            Retry
+          </button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!selectedClaim) {
     return (
