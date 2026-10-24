@@ -9,6 +9,7 @@ import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import type { Item } from "@/data/mockItems";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import { useBuildings } from "@/hooks/useBuildings";
 import { AdminLayout } from "./AdminLayout";
 import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
@@ -30,6 +31,8 @@ export function ReportsPage({
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
   const { data: items = [], isLoading, isError, refetch } = useItems();
+  const { data: buildings } = useBuildings();
+  const buildingOptions = buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
   const reports = useMemo(() => items.map(serverItemToAdminReport), [items]);
   const logDecision = useAuditDecision();
   const deleteItem = useDeleteItem();
@@ -199,7 +202,7 @@ export function ReportsPage({
               className="h-9 max-w-48 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option value="All buildings">All buildings</option>
-              {ITEM_BUILDINGS.map((building) => (
+              {buildingOptions.map((building) => (
                 <option key={building}>{building}</option>
               ))}
             </select>

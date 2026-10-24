@@ -1,18 +1,28 @@
 import { useState, type FormEvent } from "react";
-import { Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Plus, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { Panel } from "@/components/admin/Panel";
 import { AdminLayout } from "./AdminLayout";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { useCategories, useDeleteCategory } from "@/hooks/useCategories";
+import { useBuildings, useDeleteBuilding } from "@/hooks/useBuildings";
 
 type OptionKind = "category" | "building";
 
 function OptionList({
   values,
   addedValues,
+  itemLabel,
+  onRemove,
+  isRemoving,
 }: {
   values: string[];
   addedValues: string[];
+  itemLabel: string;
+  onRemove?: (value: string, isAdded: boolean) => void;
+  isRemoving?: boolean;
 }) {
   if (values.length === 0) {
     return (
@@ -34,15 +44,25 @@ function OptionList({
             <span className="min-w-0 break-words text-xs font-medium text-neutral-800 dark:text-neutral-200">
               {value}
             </span>
-            <span
-              className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold ${
-                isAdded
-                  ? "bg-red-50 text-[#b81626] dark:bg-red-500/10 dark:text-red-300"
-                  : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-              }`}
-            >
-              {isAdded ? "This session" : "Default"}
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              {isAdded && (
+                <span className="rounded-md bg-red-50 px-2 py-1 text-[10px] font-semibold text-[#b81626] dark:bg-red-500/10 dark:text-red-300">
+                  This session
+                </span>
+              )}
+              {onRemove && (
+                <button
+                  type="button"
+                  aria-label={`Remove ${value} ${itemLabel}`}
+                  title={`Remove ${value}`}
+                  disabled={isRemoving && !isAdded}
+                  onClick={() => onRemove(value, isAdded)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 transition-colors hover:bg-red-50 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
+            </div>
           </li>
         );
       })}
@@ -125,13 +145,26 @@ function AddOptionForm({
 }
 
 export function FilterOptionsPage() {
+  const queryClient = useQueryClient();
+  const categoriesQuery = useCategories();
+  const buildingsQuery = useBuildings();
+  const deleteCategoryMutation = useDeleteCategory();
+  const deleteBuildingMutation = useDeleteBuilding();
   const [addedCategories, setAddedCategories] = useState<string[]>([]);
   const [addedBuildings, setAddedBuildings] = useState<string[]>([]);
+  const categoryRecords = categoriesQuery.data ?? [];
+  const getCategoryLabel = (name: string) =>
+    ITEM_CATEGORIES.find((category) => category.id === name)?.label ??
+    name.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
   const categoryNames = [
-    ...ITEM_CATEGORIES.map((category) => category.label),
+    ...categoryRecords.map((category) => getCategoryLabel(category.name)),
     ...addedCategories,
   ];
-  const buildingNames = [...ITEM_BUILDINGS, ...addedBuildings];
+  const buildingRecords = buildingsQuery.data ?? [];
+  const buildingNames = [
+    ...(buildingsQuery.data?.map((building) => building.name) ?? ITEM_BUILDINGS),
+    ...addedBuildings,
+  ];
 
   const addCategory = (value: string) => {
     if (categoryNames.some((name) => name.toLowerCase() === value.toLowerCase())) {
@@ -141,12 +174,80 @@ export function FilterOptionsPage() {
     return true;
   };
 
+  const removeCategory = async (value: string, isAdded: boolean) => {
+    if (isAdded) {
+      setAddedCategories((current) => current.filter((name) => name !== value));
+      return;
+    }
+
+    const category = categoryRecords.find(
+      (entry) => getCategoryLabel(entry.name) === value,
+    );
+    if (!category) {
+      toast.error("That category could not be found. Refresh and try again.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Remove "${value}" from category options? Existing reports will keep this category.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteCategoryMutation.mutateAsync(category.id);
+      toast.success(`${value} category removed.`);
+    } catch (error) {
+      const message = (
+        error as { response?: { data?: { message?: string } } }
+      )?.response?.data?.message;
+      toast.error(
+        message ?? "We couldn't remove this category. Please try again.",
+      );
+    }
+  };
+
   const addBuilding = (value: string) => {
     if (buildingNames.some((name) => name.toLowerCase() === value.toLowerCase())) {
       return false;
     }
     setAddedBuildings((current) => [...current, value]);
     return true;
+  };
+
+  const removeBuilding = async (value: string, isAdded: boolean) => {
+    if (isAdded) {
+      setAddedBuildings((current) => current.filter((name) => name !== value));
+      return;
+    }
+
+    const building = buildingRecords.find((entry) => entry.name === value);
+    if (!building) {
+      toast.error("That building could not be found. Refresh and try again.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Remove "${value}" from building options? Existing reports will keep this building.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteBuildingMutation.mutateAsync(building.id);
+      toast.success(`${value} building removed.`);
+    } catch (error) {
+      const message = (
+        error as { response?: { data?: { message?: string } } }
+      )?.response?.data?.message;
+      toast.error(
+        message ?? "We couldn't remove this building. Please try again.",
+      );
+    }
   };
 
   return (
@@ -165,10 +266,32 @@ export function FilterOptionsPage() {
           }
         >
           <AddOptionForm kind="category" onAdd={addCategory} />
-          <OptionList
-            values={categoryNames}
-            addedValues={addedCategories}
-          />
+          {categoriesQuery.isPending ? (
+            <p className="px-4 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400">
+              Loading categories…
+            </p>
+          ) : categoriesQuery.isError ? (
+            <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
+              <p className="text-xs text-red-700 dark:text-red-400" role="alert">
+                We couldn’t load categories.
+              </p>
+              <button
+                type="button"
+                onClick={() => void queryClient.invalidateQueries({ queryKey: ["categories"] })}
+                className="text-xs font-semibold text-neutral-700 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-neutral-300"
+              >
+                Try again
+              </button>
+            </div>
+          ) : (
+            <OptionList
+              values={categoryNames}
+              addedValues={addedCategories}
+              itemLabel="category"
+              onRemove={(value, isAdded) => void removeCategory(value, isAdded)}
+              isRemoving={deleteCategoryMutation.isPending}
+            />
+          )}
         </Panel>
 
         <Panel
@@ -180,7 +303,32 @@ export function FilterOptionsPage() {
           }
         >
           <AddOptionForm kind="building" onAdd={addBuilding} />
-          <OptionList values={buildingNames} addedValues={addedBuildings} />
+          {buildingsQuery.isPending ? (
+            <p className="px-4 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400">
+              Loading buildings…
+            </p>
+          ) : buildingsQuery.isError ? (
+            <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
+              <p className="text-xs text-red-700 dark:text-red-400" role="alert">
+                We couldn’t load buildings.
+              </p>
+              <button
+                type="button"
+                onClick={() => void queryClient.invalidateQueries({ queryKey: ["buildings"] })}
+                className="text-xs font-semibold text-neutral-700 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-neutral-300"
+              >
+                Try again
+              </button>
+            </div>
+          ) : (
+            <OptionList
+              values={buildingNames}
+              addedValues={addedBuildings}
+              itemLabel="building"
+              onRemove={(value, isAdded) => void removeBuilding(value, isAdded)}
+              isRemoving={deleteBuildingMutation.isPending}
+            />
+          )}
         </Panel>
       </div>
     </AdminLayout>

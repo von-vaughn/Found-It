@@ -251,7 +251,7 @@ export function AdminLayout({
           >
             Skip to main content
           </a>
-          {activeSection !== "items" && (
+          {activeSection !== "items" && activeSection !== "users" && (
             <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div className="min-w-0">
                 {isSuperAdmin && (
@@ -280,7 +280,7 @@ export function AdminLayout({
                 type="search"
                 value={query}
                 onChange={(event) => onQueryChange(event.target.value)}
-                placeholder={`Search ${copy.title.toLowerCase()}…`}
+                placeholder={searchPlaceholder}
                 autoComplete="off"
                 className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
               />

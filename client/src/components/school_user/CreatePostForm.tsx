@@ -6,6 +6,7 @@ import {
 } from "./createPostImages";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { useBuildings } from "@/hooks/useBuildings";
 import type { Item } from "@/data/mockItems";
 import { toClientItem } from "@/lib/itemAdapter";
 import { useCreateItem } from "@/hooks/useItems";
@@ -143,6 +144,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 }) => {
   const createItemMutation = useCreateItem();
   const categoryMap = useCategoryMap();
+  const { data: buildings } = useBuildings();
+  const buildingOptions = buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
   const isMobileView = useIsMobileView();
   const isEditing = initialItem !== null;
   const [type, setType] = useState<"lost" | "found">(initialItem?.type ?? initialType);
@@ -1018,7 +1021,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                     {...errorProps("report-building")}
                   >
                     <option value="">Select a building</option>
-                    {ITEM_BUILDINGS.map((buildingOption) => (
+                    {buildingOptions.map((buildingOption) => (
                       <option key={buildingOption} value={buildingOption}>
                         {buildingOption}
                       </option>

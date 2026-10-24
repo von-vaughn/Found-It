@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 
 export interface Category {
@@ -14,6 +14,10 @@ interface CategoriesResponse {
 export async function fetchCategories(): Promise<Category[]> {
   const { data } = await api.get<CategoriesResponse>("/categories");
   return data.categories;
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  await api.delete<{ message: string }>(`/categories/${id}`);
 }
 
 /** Helper to get a category UUID by slug, fetching if needed. */
@@ -36,6 +40,15 @@ export function useCategories() {
   });
 }
 
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCategory,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+  });
+}
+
 /**
  * Builds a slug → UUID lookup map from the categories array.
  * Returns `undefined` when categories haven't loaded yet.
@@ -45,4 +58,3 @@ export function useCategoryMap(): Map<string, string> | undefined {
   if (!data) return undefined;
   return new Map(data.map((c) => [c.name, c.id]));
 }
-

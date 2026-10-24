@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { useBuildings } from "@/hooks/useBuildings";
 import { uploadImages } from "@/services/itemService";
 import type { NewClaimRequest } from "@/types/claim";
 
@@ -36,6 +37,8 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
   onSubmitted,
   onCancel,
 }) => {
+  const { data: buildings } = useBuildings();
+  const buildingOptions = buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [importantDetails, setImportantDetails] = useState("");
   const [claimTitle, setClaimTitle] = useState("");
@@ -339,7 +342,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             className={`${inputClass} appearance-none pr-9 cursor-pointer`}
           >
             <option value="">Select a building</option>
-            {ITEM_BUILDINGS.map((buildingOption) => (
+            {buildingOptions.map((buildingOption) => (
               <option key={buildingOption} value={buildingOption}>
                 {buildingOption}
               </option>

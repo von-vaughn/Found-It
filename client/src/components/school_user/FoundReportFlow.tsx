@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { useBuildings } from "@/hooks/useBuildings";
 import { useCreateReturnRequest } from "@/hooks/useReturns";
 import { uploadImage } from "@/services/itemService";
 
@@ -72,6 +73,8 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   lostItemTitle,
 }) => {
   const isMobileView = useIsMobileView();
+  const { data: buildings } = useBuildings();
+  const buildingOptions = buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
   const createReturnRequest = useCreateReturnRequest();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -591,7 +594,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               className={inputClass}
             >
               <option value="">Select a building</option>
-              {ITEM_BUILDINGS.map((buildingOption) => (
+              {buildingOptions.map((buildingOption) => (
                 <option key={buildingOption} value={buildingOption}>
                   {buildingOption}
                 </option>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ImagePlus, X } from "lucide-react";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { useBuildings } from "@/hooks/useBuildings";
 import { uploadImages } from "@/services/itemService";
 import type { ClaimRequest } from "@/types/claim";
 
@@ -78,6 +79,8 @@ function RequestEditForm({
   onClose,
   onSave,
 }: RequestEditFormProps) {
+  const { data: buildings } = useBuildings();
+  const buildingOptions = buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
   const [claimantTitle, setClaimantTitle] = useState(
     () => request.claimantTitle ?? request.item,
   );
@@ -355,7 +358,7 @@ function RequestEditForm({
                 disabled={isBusy}
               >
                 <option value="">Select a building</option>
-                {ITEM_BUILDINGS.map((buildingOption) => (
+                {buildingOptions.map((buildingOption) => (
                   <option key={buildingOption} value={buildingOption}>
                     {buildingOption}
                   </option>

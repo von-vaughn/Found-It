@@ -204,7 +204,7 @@ export function UsersPage() {
               tab === "school" ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900" : "border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800"
             }`}
           >
-            Campus users ({schoolUsers.length})
+            User Management ({schoolUsers.length})
           </button>
           <button
             type="button"
@@ -221,7 +221,7 @@ export function UsersPage() {
       )}
 
       {usersQuery.isPending ? (
-        <Panel title={tab === "school" ? "Campus users" : "Admin accounts"}>
+        <Panel title={tab === "school" ? "User Management" : "Admin accounts"}>
           <div
             className="flex min-h-[400px] items-center justify-center px-5 py-10"
             role="status"
@@ -257,7 +257,7 @@ export function UsersPage() {
         </Panel>
       ) : tab === "school" ? (
         <Panel
-          title="Campus users"
+          title="User Management"
           action={<span className="text-xs text-neutral-500 dark:text-neutral-400">{filteredSchoolUsers.length} users</span>}
         >
           <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">

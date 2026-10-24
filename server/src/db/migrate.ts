@@ -55,7 +55,8 @@ export async function migrate(): Promise<void> {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS building (
       building_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      name VARCHAR(100) NOT NULL UNIQUE
+      name VARCHAR(100) NOT NULL UNIQUE,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE
     );
   `);
 
@@ -70,7 +71,8 @@ export async function migrate(): Promise<void> {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS category (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      name VARCHAR(50) NOT NULL UNIQUE
+      name VARCHAR(50) NOT NULL UNIQUE,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE
     );
   `);
 
@@ -169,6 +171,8 @@ export async function migrate(): Promise<void> {
     ALTER TABLE location ALTER COLUMN building_id DROP NOT NULL;
 
     ALTER TABLE image ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    ALTER TABLE category ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+    ALTER TABLE building ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
     -- Claim form details stored on the request row.
     ALTER TABLE request ADD COLUMN IF NOT EXISTS claimant_title VARCHAR(100);

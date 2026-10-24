@@ -90,7 +90,10 @@ function toItem(row: ItemRow, includeEmail: boolean, viewerId: string): Item {
 }
 
 export async function categoryExists(id: string): Promise<boolean> {
-  const { rowCount } = await pool.query(`SELECT 1 FROM category WHERE id = $1`, [id]);
+  const { rowCount } = await pool.query(
+    `SELECT 1 FROM category WHERE id = $1 AND is_active = TRUE`,
+    [id],
+  );
   return (rowCount ?? 0) > 0;
 }
 

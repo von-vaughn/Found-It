@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ITEM_CATEGORIES, type ItemCategory } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { useBuildings } from "@/hooks/useBuildings";
 import type { Item } from "@/data/mockItems";
 import {
   countActiveFilters,
@@ -32,13 +33,6 @@ export interface FilterPaletteBodyProps {
 }
 
 interface CategoryOption {
-  id: string;
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  baseCount: number;
-}
-
-interface BuildingOption {
   id: string;
   name: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -68,13 +62,6 @@ const CATEGORY_OPTIONS: CategoryOption[] = ITEM_CATEGORIES.map((category) => ({
   name: category.label,
   icon: category.icon,
   baseCount: CATEGORY_BASE_COUNTS[category.id],
-}));
-
-const BUILDING_OPTIONS: BuildingOption[] = ITEM_BUILDINGS.map((name) => ({
-  id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-  name,
-  icon: Building2,
-  baseCount: 0,
 }));
 
 interface TypeOption {
@@ -246,6 +233,22 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
   onClearFilters,
   filterResultCount,
 }) => {
+  const { data: buildings } = useBuildings();
+  const buildingOptions = useMemo(
+    () =>
+      (buildings?.map((building) => building.name) ?? ITEM_BUILDINGS).map(
+        (name) => ({
+          id: name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, ""),
+          name,
+          icon: Building2,
+          baseCount: 0,
+        }),
+      ),
+    [buildings],
+  );
   const [activeTab, setActiveTab] = useState<PaletteTab>("categories");
   const [query, setQuery] = useState(initialQuery);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -296,7 +299,7 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
 
   const buildingCounts = useMemo(() => {
     const map = new Map<string, number>();
-    BUILDING_OPTIONS.forEach((bld) => {
+    buildingOptions.forEach((bld) => {
       const liveCount = items?.filter(
         (item) => {
           const normalizedBuilding = bld.name.toLowerCase();
@@ -310,7 +313,7 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
       map.set(bld.id, liveCount !== undefined && liveCount > 0 ? liveCount : bld.baseCount);
     });
     return map;
-  }, [items]);
+  }, [buildingOptions, items]);
 
   const filterCount = filters ? countActiveFilters(filters) : 0;
   const tabOrder: Array<PaletteTab> = ["type", "categories", "building"];
@@ -324,9 +327,9 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
 
   const filteredBuildings = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return BUILDING_OPTIONS;
-    return BUILDING_OPTIONS.filter((b) => b.name.toLowerCase().includes(q));
-  }, [query]);
+    if (!q) return buildingOptions;
+    return buildingOptions.filter((b) => b.name.toLowerCase().includes(q));
+  }, [buildingOptions, query]);
 
   const filteredTypes = useMemo(() => {
     const q = query.trim().toLowerCase();
