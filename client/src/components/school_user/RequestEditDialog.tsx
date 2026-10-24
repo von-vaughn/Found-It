@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, ImagePlus, X } from "lucide-react";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { uploadImages } from "@/services/itemService";
 import type { ClaimRequest } from "@/types/claim";
 
 export interface EditableRequestPayload {
@@ -35,6 +36,14 @@ const labelClass =
 
 const textareaClass =
   "w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none";
+
+const MAX_EVIDENCE_IMAGES = 4;
+
+interface EvidencePhoto {
+  preview: string;
+  url?: string;
+  file?: File;
+}
 
 function dateInputValue(value: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -81,12 +90,75 @@ function RequestEditForm({
   const [importantDetails, setImportantDetails] = useState(
     () => request.importantDetails ?? "",
   );
+  const [evidencePhotos, setEvidencePhotos] = useState<EvidencePhoto[]>(() =>
+    (request.evidence ?? []).map((url) => ({ url, preview: url })),
+  );
   const [error, setError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const evidencePreviewUrls = useRef<string[]>([]);
 
   const isFoundReport = request.kind === "return";
+  const isBusy = isSaving || isUploading;
+
+  useEffect(
+    () => () => {
+      evidencePreviewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    },
+    [],
+  );
+
+  const handleEvidenceChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const selectedFiles = Array.from(event.target.files ?? []);
+    const imageFiles = selectedFiles.filter((file) =>
+      file.type.startsWith("image/"),
+    );
+    const remainingSlots = Math.max(
+      0,
+      MAX_EVIDENCE_IMAGES - evidencePhotos.length,
+    );
+    const filesToAdd = imageFiles.slice(0, remainingSlots);
+    const newPhotos = filesToAdd.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    evidencePreviewUrls.current.push(
+      ...newPhotos.map(({ preview }) => preview),
+    );
+    if (newPhotos.length > 0) {
+      setEvidencePhotos((current) => [...current, ...newPhotos]);
+    }
+
+    if (imageFiles.length !== selectedFiles.length) {
+      setError("Only image files can be used as picture evidence.");
+    } else if (filesToAdd.length < imageFiles.length) {
+      setError(`You can add up to ${MAX_EVIDENCE_IMAGES} pictures.`);
+    } else {
+      setError("");
+    }
+
+    event.target.value = "";
+  };
+
+  const handleRemoveEvidence = (indexToRemove: number) => {
+    const photo = evidencePhotos[indexToRemove];
+    if (photo?.file) {
+      URL.revokeObjectURL(photo.preview);
+      evidencePreviewUrls.current = evidencePreviewUrls.current.filter(
+        (url) => url !== photo.preview,
+      );
+    }
+    setEvidencePhotos((current) =>
+      current.filter((_, index) => index !== indexToRemove),
+    );
+    setError("");
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isBusy) return;
     if (
       !claimantTitle.trim() ||
       !dateLost ||
@@ -98,9 +170,32 @@ function RequestEditForm({
       setError("Complete each required field before saving.");
       return;
     }
+    if (evidencePhotos.length > MAX_EVIDENCE_IMAGES) {
+      setError(`Remove pictures until there are ${MAX_EVIDENCE_IMAGES} or fewer.`);
+      return;
+    }
 
     try {
       setError("");
+      setIsUploading(true);
+      const filesToUpload = evidencePhotos.flatMap((photo) =>
+        photo.file ? [photo.file] : [],
+      );
+      const uploadedUrls =
+        filesToUpload.length > 0 ? await uploadImages(filesToUpload) : [];
+      if (uploadedUrls.length !== filesToUpload.length) {
+        throw new Error("Some photos couldn't be uploaded. Please try again.");
+      }
+
+      let uploadedIndex = 0;
+      const evidence: string[] = [];
+      for (const photo of evidencePhotos) {
+        if (photo.url) {
+          evidence.push(photo.url);
+        } else if (photo.file) {
+          evidence.push(uploadedUrls[uploadedIndex++]);
+        }
+      }
       await onSave({
         claimantTitle: claimantTitle.trim(),
         color: color.trim() || undefined,
@@ -110,13 +205,15 @@ function RequestEditForm({
         location: location.trim(),
         details: details.trim(),
         importantDetails: importantDetails.trim(),
-        evidence: request.evidence,
+        evidence,
       });
     } catch (saveError) {
       const message = (
         saveError as { response?: { data?: { message?: string } } }
       )?.response?.data?.message;
       setError(message ?? "We couldn't save your changes. Please try again.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -125,7 +222,7 @@ function RequestEditForm({
       className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/45 p-4 backdrop-blur-[2px]"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !isSaving) onClose();
+        if (event.target === event.currentTarget && !isBusy) onClose();
       }}
     >
       <form
@@ -150,7 +247,7 @@ function RequestEditForm({
           <button
             aria-label="Close edit form"
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:opacity-50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-            disabled={isSaving}
+            disabled={isBusy}
             type="button"
             onClick={onClose}
           >
@@ -172,6 +269,7 @@ function RequestEditForm({
               placeholder="Black backpack, iPhone 13…"
               autoComplete="off"
               spellCheck={false}
+              disabled={isBusy}
             />
           </div>
           <div>
@@ -187,6 +285,7 @@ function RequestEditForm({
                 placeholder="Black…"
                 autoComplete="off"
                 spellCheck={false}
+                disabled={isBusy}
               />
               <span
                 aria-hidden="true"
@@ -206,6 +305,7 @@ function RequestEditForm({
               className={`${inputClass} cursor-pointer`}
               value={dateLost}
               onChange={(event) => setDateLost(event.target.value)}
+              disabled={isBusy}
             />
           </div>
           <div>
@@ -219,6 +319,7 @@ function RequestEditForm({
               className={`${inputClass} cursor-pointer`}
               value={timeLost}
               onChange={(event) => setTimeLost(event.target.value)}
+              disabled={isBusy}
             />
           </div>
           <div>
@@ -238,6 +339,7 @@ function RequestEditForm({
               }
               autoComplete="off"
               spellCheck={false}
+              disabled={isBusy}
             />
           </div>
           <div>
@@ -250,6 +352,7 @@ function RequestEditForm({
                 className={`${inputClass} appearance-none cursor-pointer pr-9`}
                 value={building}
                 onChange={(event) => setBuilding(event.target.value)}
+                disabled={isBusy}
               >
                 <option value="">Select a building</option>
                 {ITEM_BUILDINGS.map((buildingOption) => (
@@ -278,6 +381,7 @@ function RequestEditForm({
             value={details}
             onChange={(event) => setDetails(event.target.value)}
             placeholder="Describe the item's appearance"
+            disabled={isBusy}
           />
         </div>
         <div className="mt-4">
@@ -292,8 +396,74 @@ function RequestEditForm({
             value={importantDetails}
             onChange={(event) => setImportantDetails(event.target.value)}
             placeholder="Unique mark only the owner would know…"
+            disabled={isBusy}
           />
         </div>
+
+        <section
+          aria-labelledby="edit-request-evidence-label"
+          className="mt-5"
+        >
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <h3
+                id="edit-request-evidence-label"
+                className={labelClass}
+              >
+                Picture evidence
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                Replace or add photos. Up to {MAX_EVIDENCE_IMAGES} total.
+              </p>
+            </div>
+            <span className="shrink-0 text-xs font-semibold tabular-nums text-neutral-500 dark:text-neutral-400">
+              {evidencePhotos.length}/{MAX_EVIDENCE_IMAGES}
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-3">
+            {evidencePhotos.map((photo, index) => (
+              <div
+                key={`${photo.preview}-${index}`}
+                className="relative h-20 w-20 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700"
+              >
+                <img
+                  src={photo.preview}
+                  alt={`Picture evidence ${index + 1}`}
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  aria-label={`Remove picture evidence ${index + 1}`}
+                  disabled={isBusy}
+                  onClick={() => handleRemoveEvidence(index)}
+                  className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-950/75 text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
+                >
+                  <X aria-hidden="true" className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+
+            {evidencePhotos.length < MAX_EVIDENCE_IMAGES && (
+              <label
+                htmlFor="edit-request-evidence"
+                className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-neutral-300 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-neutral-50 focus-within:outline-none focus-within:ring-2 focus-within:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900"
+              >
+                <ImagePlus aria-hidden="true" className="h-5 w-5" />
+                <span className="text-[10px] font-bold">Add photo</span>
+                <input
+                  id="edit-request-evidence"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  disabled={isBusy}
+                  onChange={handleEvidenceChange}
+                />
+              </label>
+            )}
+          </div>
+        </section>
 
         {error && (
           <p className="mt-4 text-sm font-medium text-red-700 dark:text-red-400" role="alert">
@@ -304,7 +474,7 @@ function RequestEditForm({
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             className="h-11 rounded-xl px-4 text-sm font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:opacity-50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-            disabled={isSaving}
+            disabled={isBusy}
             type="button"
             onClick={onClose}
           >
@@ -312,10 +482,14 @@ function RequestEditForm({
           </button>
           <button
             className="h-11 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
-            disabled={isSaving}
+            disabled={isBusy}
             type="submit"
           >
-            {isSaving ? "Saving…" : "Save changes"}
+            {isUploading
+              ? "Uploading photos…"
+              : isSaving
+                ? "Saving…"
+                : "Save changes"}
           </button>
         </div>
       </form>
