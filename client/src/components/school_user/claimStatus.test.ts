@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { submissionStatusLabel } from "./claimStatus.ts";
 
-test("shows an approved found report as unclaimed", () => {
+test("shows an approved found report as unreturned", () => {
   assert.equal(
     submissionStatusLabel({ status: "Approved", kind: "return" }),
-    "Unclaimed",
+    "Unreturned",
   );
 });
 

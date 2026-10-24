@@ -251,7 +251,10 @@ export function AdminLayout({
           >
             Skip to main content
           </a>
-          {activeSection !== "items" && activeSection !== "users" && (
+          {activeSection !== "items" &&
+            activeSection !== "users" &&
+            activeSection !== "claims" &&
+            activeSection !== "returns" && (
             <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div className="min-w-0">
                 {isSuperAdmin && (

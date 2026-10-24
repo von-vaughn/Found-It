@@ -5,6 +5,8 @@ export interface Item {
   id: string;
   reporterId: string;
   reportType: ReportType;
+  isClaimed: boolean;
+  isReturned: boolean;
   name: string;
   description: string;
   /** Date the item was lost or found (YYYY-MM-DD). */

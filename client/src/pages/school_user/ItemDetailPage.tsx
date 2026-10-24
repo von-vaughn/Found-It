@@ -70,13 +70,16 @@ interface ItemDetailPageProps {
 
 const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
 
-const finderStatusStyles: Record<string, string> = {  Pending: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  "Pending admin approval": "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  "Under review": "bg-blue-50 text-blue-800",
-  Approved: "bg-emerald-50 text-emerald-700",
-  Claimed: "bg-emerald-50 text-emerald-700",
-  Returned: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400",
-  Rejected: "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
+const finderStatusStyles: Record<string, string> = {
+  Pending:
+    "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  "Pending admin approval":
+    "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  "Under review": "bg-violet-50 dark:bg-violet-500/10 text-violet-800 dark:text-violet-400",
+  Approved: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400",
+  Claimed: "bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400",
+  Returned: "bg-teal-50 dark:bg-teal-500/10 text-teal-800 dark:text-teal-400",
+  Rejected: "bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-400",
 };
 
 function keywordSet(value: string): Set<string> {
@@ -390,7 +393,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const foundReportStatusStyle =
     foundReportStatus !== null
       ? simplifiedClaimStatusStyles[
-          foundReportStatus === "Unclaimed" ? "Approved" : foundReportStatus
+          foundReportStatus === "Unreturned" ? "Approved" : foundReportStatus
         ]
       : "";
 

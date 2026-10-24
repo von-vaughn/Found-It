@@ -1,6 +1,11 @@
 import { getAccessToken } from "@/lib/api";
 
-export type AuditAction = "approved" | "rejected" | "returned" | "claimed";
+export type AuditAction =
+  | "approved"
+  | "rejected"
+  | "returned"
+  | "claimed"
+  | "cancelled";
 export type AuditEntityType = "claim" | "return_request" | "item";
 
 export interface AuditLogEntry {

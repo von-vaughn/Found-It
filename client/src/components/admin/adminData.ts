@@ -65,7 +65,13 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   color: item.color ?? "",
   reportedBy: item.user.name,
   reporterEmail: item.user.email ?? "",
-  status: item.reportType === "lost" ? "Lost" : "Found",
+  status: item.isReturned
+    ? "Returned"
+    : item.isClaimed
+      ? "Claimed"
+    : item.reportType === "lost"
+      ? "Lost"
+      : "Found",
   date: item.itemDate,
   eventDateTime: item.itemTime
     ? `${item.itemDate}T${item.itemTime}`
@@ -320,7 +326,7 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
 ];
 
 /** Sections only a super admin may reach; hidden from the sidebar and route-guarded. */
-export const superAdminOnlySections: AdminSection[] = ["audit"];
+export const superAdminOnlySections: AdminSection[] = ["options", "audit"];
 
 export function navigationFor(
   isSuperAdmin: boolean,
@@ -340,12 +346,12 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
     description: "Search, filter, and review all lost and found item reports.",
   },
   claims: {
-    title: "Ownership claims",
-    description: "Review the details submitted to verify an item claim.",
+    title: "Submitted Claims Request",
+    description: "",
   },
   returns: {
-    title: "Return item requests",
-    description: "Review ownership confirmations submitted by school users.",
+    title: "Return Item",
+    description: "",
   },
   users: {
     title: "User management",
@@ -373,14 +379,12 @@ export const superAdminPageCopy: Partial<
       "Full campus oversight — every admin workflow plus staff and audit control.",
   },
   claims: {
-    title: "Ownership claims",
-    description:
-      "Review the details submitted to verify an item claim. Decisions are audit-logged.",
+    title: "Submitted Claims Request",
+    description: "",
   },
   returns: {
-    title: "Return item requests",
-    description:
-      "Review ownership confirmations submitted by school users. Decisions are audit-logged.",
+    title: "Return Item",
+    description: "",
   },
   users: {
     title: "User management",

@@ -24,49 +24,49 @@ function OptionList({
   onRemove?: (value: string, isAdded: boolean) => void;
   isRemoving?: boolean;
 }) {
-  if (values.length === 0) {
-    return (
-      <p className="px-4 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400">
-        No options available.
-      </p>
-    );
-  }
-
   return (
-    <ul className="max-h-80 divide-y divide-neutral-100 overflow-y-auto dark:divide-neutral-800">
-      {values.map((value) => {
-        const isAdded = addedValues.includes(value);
-        return (
-          <li
-            key={value}
-            className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5"
-          >
-            <span className="min-w-0 break-words text-xs font-medium text-neutral-800 dark:text-neutral-200">
-              {value}
-            </span>
-            <div className="flex shrink-0 items-center gap-2">
-              {isAdded && (
-                <span className="rounded-md bg-red-50 px-2 py-1 text-[10px] font-semibold text-[#b81626] dark:bg-red-500/10 dark:text-red-300">
-                  This session
+    <div className="h-[28rem] overflow-y-auto">
+      {values.length === 0 ? (
+        <p className="flex h-full items-center justify-center px-4 text-center text-xs text-neutral-500 dark:text-neutral-400">
+          No options available.
+        </p>
+      ) : (
+        <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
+          {values.map((value) => {
+            const isAdded = addedValues.includes(value);
+            return (
+              <li
+                key={value}
+                className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5"
+              >
+                <span className="min-w-0 break-words text-xs font-medium text-neutral-800 dark:text-neutral-200">
+                  {value}
                 </span>
-              )}
-              {onRemove && (
-                <button
-                  type="button"
-                  aria-label={`Remove ${value} ${itemLabel}`}
-                  title={`Remove ${value}`}
-                  disabled={isRemoving && !isAdded}
-                  onClick={() => onRemove(value, isAdded)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 transition-colors hover:bg-red-50 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+                <div className="flex shrink-0 items-center gap-2">
+                  {isAdded && (
+                    <span className="rounded-md bg-red-50 px-2 py-1 text-[10px] font-semibold text-[#b81626] dark:bg-red-500/10 dark:text-red-300">
+                      This session
+                    </span>
+                  )}
+                  {onRemove && (
+                    <button
+                      type="button"
+                      aria-label={`Remove ${value} ${itemLabel}`}
+                      title={`Remove ${value}`}
+                      disabled={isRemoving && !isAdded}
+                      onClick={() => onRemove(value, isAdded)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 transition-colors hover:bg-red-50 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 

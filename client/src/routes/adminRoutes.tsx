@@ -45,7 +45,11 @@ export function getAdminRoutes({
     },
     {
       path: paths.adminFilterOptions,
-      element: <FilterOptionsPage />,
+      element: (
+        <ProtectedRoute allowedRoles={["super_admin"]}>
+          <FilterOptionsPage />
+        </ProtectedRoute>
+      ),
     },
     {
       // Audit logs are super-admin only; plain admins bounce back to the dashboard.

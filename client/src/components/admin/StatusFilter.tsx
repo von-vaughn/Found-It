@@ -23,7 +23,7 @@ export function StatusFilter({
         name="status"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+        className="box-border h-9 w-36 shrink-0 rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
       >
         {options.map((option) => (
           <option key={option}>{option}</option>

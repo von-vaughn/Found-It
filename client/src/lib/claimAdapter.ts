@@ -57,7 +57,12 @@ export function toClaimRequests(claims: ServerClaim[]): ClaimRequest[] {
 
 /** Converts a saved server return request into the shared school-user row. */
 export function toFoundReportClaim(claim: ServerClaim): ClaimRequest {
-  return { ...toClaimRequest(claim), kind: "return" };
+  const request = toClaimRequest(claim);
+  return {
+    ...request,
+    kind: "return",
+    status: request.status === "Claimed" ? "Returned" : request.status,
+  };
 }
 
 export function toFoundReportClaims(claims: ServerClaim[]): ClaimRequest[] {

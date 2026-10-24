@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Check, ChevronLeft, ChevronRight, Power } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Power, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Panel } from "@/components/admin/Panel";
@@ -182,6 +182,8 @@ export function UsersPage() {
 
   // Staff dialogs are rendered inside AdminAccountsManager; school-user dialog lives here.
   const showSchoolDialog = pendingUser !== null && !isStaffTarget(pendingUser) && tab === "school";
+  const showSchoolDeleteDialog =
+    deleteTarget !== null && !isStaffTarget(deleteTarget) && tab === "school";
 
   return (
     <AdminLayout
@@ -348,6 +350,16 @@ export function UsersPage() {
                               Activate
                             </button>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(user)}
+                            disabled={deleteUserMutation.isPending}
+                            aria-label={`Remove ${user.name}`}
+                            className="ml-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50"
+                          >
+                            <Trash2 className="h-3 w-3" aria-hidden="true" />
+                            Remove
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -475,6 +487,51 @@ export function UsersPage() {
                   : pendingUser.isActive
                     ? "Deactivate"
                     : "Activate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showSchoolDeleteDialog && deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-neutral-950/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setDeleteTarget(null);
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="user-delete-title"
+            aria-describedby="user-delete-description"
+            className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
+          >
+            <h2 id="user-delete-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+              Remove this account?
+            </h2>
+            <p id="user-delete-description" className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+              This permanently removes{" "}
+              <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                {deleteTarget.email}
+              </span>{" "}
+              from FoundIt. This action cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleteUserMutation.isPending}
+                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmDelete()}
+                disabled={deleteUserMutation.isPending}
+                className="h-9 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-50"
+              >
+                {deleteUserMutation.isPending ? "Removing…" : "Remove account"}
               </button>
             </div>
           </div>

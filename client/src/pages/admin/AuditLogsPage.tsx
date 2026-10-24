@@ -132,6 +132,7 @@ export function AuditLogsPage() {
               <option value="rejected">Rejected</option>
               <option value="returned">Returned</option>
               <option value="claimed">Claimed</option>
+              <option value="cancelled">Cancelled</option>
             </select>
             <label className="sr-only" htmlFor="audit-entity-filter">
               Filter by report type

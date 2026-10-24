@@ -41,10 +41,7 @@ export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = ({
   const { data: serverItems } = useItems(undefined, {
     staleTime: 30_000,
   });
-  const items =
-    serverItems && serverItems.length > 0
-      ? toClientItems(serverItems)
-      : exampleItems;
+  const items = serverItems ? toClientItems(serverItems) : exampleItems;
 
   const requestedType = searchParams.get("type");
   const searchQuery = searchParams.get("q") || "";

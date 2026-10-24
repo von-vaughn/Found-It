@@ -54,7 +54,7 @@ export async function listAllReturns(): Promise<ServerClaim[]> {
 /** PATCH /api/returns/admin/:id/status — record an admin decision. */
 export async function updateReturnStatus(
   id: string,
-  status: Exclude<ServerClaimStatus, "pending">,
+  status: Exclude<ServerClaimStatus, "claimed">,
 ): Promise<ServerClaim> {
   const { data } = await api.patch<UpdateReturnResponse>(
     `/returns/admin/${id}/status`,

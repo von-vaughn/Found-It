@@ -10,7 +10,6 @@ import {
   Clock3,
   Lock,
   MapPin,
-  Package,
   Palette,
   Tag,
   X,
@@ -27,7 +26,7 @@ import {
 import { useSensitiveUnlock } from "@/components/admin/useSensitiveUnlock";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import type { ServerClaimStatus } from "@/services/claimService";
-import { toClaimRequests } from "@/lib/claimAdapter";
+import { toFoundReportClaims } from "@/lib/claimAdapter";
 import { useAdminReturns, useUpdateAdminReturnStatus } from "@/hooks/useReturns";
 import { useItems } from "@/hooks/useItems";
 import type { ClaimRequest } from "@/types/claim";
@@ -37,19 +36,22 @@ const PAGE_SIZE = 10;
 type ReturnStatus = ClaimRequest["status"];
 
 const ADMIN_RETURN_STATUS: Partial<
-  Record<ClaimRequest["status"], Exclude<ServerClaimStatus, "pending">>
+  Record<
+    ClaimRequest["status"],
+    Exclude<ServerClaimStatus, "claimed">
+  >
 > = {
+  Pending: "pending",
   Approved: "approved",
   Rejected: "rejected",
-  Claimed: "claimed",
   Returned: "returned",
 };
 
-const RESOLVED_RETURN_STATUSES: ReturnStatus[] = [
-  "Approved",
-  "Claimed",
-  "Returned",
-];
+const RESOLVED_RETURN_STATUSES: ReturnStatus[] = ["Approved", "Returned"];
+
+function returnStatusLabel(status: ReturnStatus): string {
+  return status === "Approved" ? "Unreturned" : status;
+}
 
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -58,7 +60,7 @@ function formatDate(value: string): string {
     : new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(date);
 }
 
-type StatusDecision = "Approved" | "Rejected" | "Claimed";
+type StatusDecision = "Approved" | "Rejected" | "Pending" | "Returned";
 
 function ReturnRequestSection({
   request,
@@ -89,7 +91,7 @@ function ReturnRequestSection({
           </h2>
         )}
         <span className={title ? "" : "ml-auto"}>
-          <StatusBadge status={request.status} />
+          <StatusBadge status={returnStatusLabel(request.status)} />
         </span>
       </div>
       <div className="grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
@@ -127,7 +129,7 @@ function ReturnRequestSection({
                 className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
               >
                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                Approve return
+                Approve
               </button>
               <button
                 type="button"
@@ -140,14 +142,21 @@ function ReturnRequestSection({
             </div>
           )}
           {request.status === "Approved" && (
-            <div className="mt-4 border-t border-neutral-100 dark:border-neutral-800 pt-4">
+            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
               <button
                 type="button"
-                onClick={() => onRequestStatus(request.id, "Claimed")}
+                onClick={() => onRequestStatus(request.id, "Returned")}
                 className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
               >
                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                Mark as claimed
+                Mark as returned
+              </button>
+              <button
+                type="button"
+                onClick={() => onRequestStatus(request.id, "Pending")}
+                className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              >
+                Cancel
               </button>
             </div>
           )}
@@ -165,29 +174,11 @@ function ReturnRequestSection({
           <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 pt-3 text-xs">
             <div>
               <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                <Package className="h-3 w-3" aria-hidden="true" />
-                Item name
-              </dt>
-              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                {request.item}
-              </dd>
-            </div>
-            <div>
-              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                 <CalendarDays className="h-3 w-3" aria-hidden="true" />
                 Submitted
               </dt>
               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                 {request.submitted || "None"}
-              </dd>
-            </div>
-            <div>
-              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                <Tag className="h-3 w-3" aria-hidden="true" />
-                What is it?
-              </dt>
-              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                {request.claimantTitle?.trim() || request.item}
               </dd>
             </div>
             <div>
@@ -226,7 +217,7 @@ function ReturnRequestSection({
                 {request.location || "None"}
               </dd>
             </div>
-            <div className="col-span-2">
+            <div>
               <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                 <Building2 className="h-3 w-3" aria-hidden="true" />
                 Building
@@ -279,7 +270,7 @@ export function ReturnItemsPage() {
   } = useItems();
   const updateReturnStatus = useUpdateAdminReturnStatus();
   const requests = useMemo(
-    () => toClaimRequests(serverReturns),
+    () => toFoundReportClaims(serverReturns),
     [serverReturns],
   );
   const reports = useMemo(
@@ -306,7 +297,7 @@ export function ReturnItemsPage() {
     const normalizedQuery = query.trim().toLowerCase();
     return visibleRequests.filter(
       (request) =>
-        request.status === statusFilter &&
+        returnStatusLabel(request.status) === statusFilter &&
         [
           request.item,
           request.claimant,
@@ -348,7 +339,7 @@ export function ReturnItemsPage() {
     ? (requests.find((request) => request.id === confirmAction.requestId) ??
       null)
     : null;
-  // Other pending requests for the same item: approving/claiming one
+  // Other pending requests for the same item: approving one
   // resolves the item, so the rest are rejected automatically on confirm.
   const requestsToAutoReject = confirmTargetRequest
     ? requests.filter(
@@ -358,9 +349,7 @@ export function ReturnItemsPage() {
           request.status === "Pending",
       )
     : [];
-  const isAcceptReturn =
-    confirmAction?.status === "Approved" ||
-    confirmAction?.status === "Claimed";
+  const isAcceptReturn = confirmAction?.status === "Approved";
 
   const updateQuery = (value: string) => {
     setQuery(value);
@@ -398,7 +387,7 @@ export function ReturnItemsPage() {
   const requestStatusChange = (requestId: string, status: StatusDecision) => {
     const target = requests.find((request) => request.id === requestId);
     if (!target) return;
-    if (status === "Claimed") {
+    if (status === "Pending" || status === "Returned") {
       if (target.status !== "Approved") return;
     } else if (target.status !== "Pending") return;
     setConfirmAction({ requestId, status });
@@ -408,29 +397,41 @@ export function ReturnItemsPage() {
     if (!confirmAction || !confirmTargetRequest) return;
     persistStatusChange(confirmAction.requestId, confirmAction.status);
     logDecision({
-      action: confirmAction.status === "Approved" ? "approved" : "rejected",
+      action:
+        confirmAction.status === "Pending"
+          ? "cancelled"
+          : confirmAction.status === "Approved"
+            ? "approved"
+            : confirmAction.status === "Returned"
+              ? "returned"
+              : "rejected",
       entityType: "return_request",
       entityId: confirmAction.requestId,
       itemTitle: confirmTargetRequest.item,
-      details: `${confirmAction.status} by super admin for return ${confirmAction.requestId} (${confirmTargetRequest.claimant}).`,
+      details: `${
+        confirmAction.status === "Pending"
+          ? "Approval cancelled; request returned to pending"
+          : confirmAction.status
+      } by super admin for return ${confirmAction.requestId} (${confirmTargetRequest.claimant}).`,
     });
     if (confirmAction.status === "Approved") {
       toast.success(
         `Approved return of "${confirmTargetRequest.item}" for ${confirmTargetRequest.claimant}.`,
       );
-    } else if (confirmAction.status === "Claimed") {
+    } else if (confirmAction.status === "Pending") {
       toast.success(
-        `Marked "${confirmTargetRequest.item}" as claimed for ${confirmTargetRequest.claimant}.`,
+        `Approval cancelled. "${confirmTargetRequest.item}" is pending review again.`,
+      );
+    } else if (confirmAction.status === "Returned") {
+      toast.success(
+        `Marked "${confirmTargetRequest.item}" as returned to ${confirmTargetRequest.claimant}.`,
       );
     } else {
       toast.success(
         `Rejected return request for "${confirmTargetRequest.item}".`,
       );
     }
-    if (
-      confirmAction.status === "Approved" ||
-      confirmAction.status === "Claimed"
-    ) {
+    if (confirmAction.status === "Approved") {
       for (const sibling of requestsToAutoReject) {
         persistStatusChange(sibling.id, "Rejected", { silent: true });
       }
@@ -509,14 +510,14 @@ export function ReturnItemsPage() {
       onQueryChange={updateQuery}
       searchPlaceholder="Search return requests…"
     >
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          {filteredRequests.length} return requests
-        </p>
-      </div>
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.7fr)_minmax(360px,1.3fr)]">
         <Panel
-          title="Return requests"
+          title="Return Item"
+          titleAdornment={
+            <span className="shrink-0 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+              {filteredRequests.length}
+            </span>
+          }
           stickyHeader
           className="overflow-x-clip no-scrollbar xl:sticky xl:top-20 xl:flex xl:h-[min(53.5rem,calc(100dvh-6rem))] xl:flex-col xl:self-start xl:overflow-y-auto"
           action={
@@ -524,7 +525,7 @@ export function ReturnItemsPage() {
               <StatusFilter
                 value={statusFilter}
                 onChange={updateStatusFilter}
-                options={["Pending", "Approved", "Claimed", "Returned", "Rejected"]}
+                options={["Pending", "Unreturned", "Returned", "Rejected"]}
               />
             </div>
           }
@@ -638,8 +639,9 @@ export function ReturnItemsPage() {
         </Panel>
 
         <Panel
-          title={selectedRequest?.item ?? "Return request details"}
+          title={selectedRequest?.item ?? ""}
           plain
+          className="min-h-[min(36rem,calc(100dvh-8rem))] xl:min-h-[min(53.5rem,calc(100dvh-6rem))]"
         >
           {selectedRequest ? (
             <div className="space-y-4">
@@ -796,7 +798,7 @@ export function ReturnItemsPage() {
               )}
             </div>
           ) : (
-            <p className="py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="flex flex-1 items-center justify-center py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
               No selected return request matches this search.
             </p>
           )}
@@ -830,15 +832,19 @@ export function ReturnItemsPage() {
             >
               {confirmAction.status === "Approved"
                 ? "Approve this return?"
-                : confirmAction.status === "Claimed"
-                  ? "Mark as claimed?"
+                : confirmAction.status === "Pending"
+                  ? "Cancel this approval?"
+                  : confirmAction.status === "Returned"
+                    ? "Mark item as returned?"
                   : "Reject this return?"}
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
               {confirmAction.status === "Approved"
                 ? `"${confirmTargetRequest.item}" will be marked as approved for ${confirmTargetRequest.claimant}, and they will be notified to proceed with the return.`
-                : confirmAction.status === "Claimed"
-                  ? `"${confirmTargetRequest.item}" will be marked as claimed for ${confirmTargetRequest.claimant}, confirming they have received the item.`
+                : confirmAction.status === "Pending"
+                  ? `The approval for "${confirmTargetRequest.item}" will be cancelled and the request will return to Pending for review.`
+                  : confirmAction.status === "Returned"
+                    ? `"${confirmTargetRequest.item}" will be marked as returned to ${confirmTargetRequest.claimant}. Its item report will show Returned.`
                   : `The return request for "${confirmTargetRequest.item}" by ${confirmTargetRequest.claimant} will be marked as rejected.`}
             </p>
             {isAcceptReturn && requestsToAutoReject.length > 0 && (
@@ -864,16 +870,20 @@ export function ReturnItemsPage() {
                 className={`h-10 rounded-xl px-5 text-sm font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                   confirmAction.status === "Approved"
                     ? "bg-[#E5192D] hover:bg-[#c91424] focus-visible:ring-[#E5192D]"
-                    : confirmAction.status === "Claimed"
+                    : confirmAction.status === "Returned"
                       ? "bg-emerald-700 hover:bg-emerald-800 focus-visible:ring-emerald-700"
-                      : "bg-neutral-900 hover:bg-neutral-700 focus-visible:ring-neutral-900"
+                    : confirmAction.status === "Pending"
+                      ? "bg-[#E5192D] text-white hover:bg-[#c91424] focus-visible:ring-[#E5192D]"
+                      : "bg-[#E5192D] hover:bg-[#c91424] focus-visible:ring-[#E5192D]"
                 }`}
               >
                 {confirmAction.status === "Approved"
                   ? "Approve return"
-                  : confirmAction.status === "Claimed"
-                    ? "Confirm claimed"
-                    : "Reject request"}
+                  : confirmAction.status === "Pending"
+                    ? "Cancel approval"
+                    : confirmAction.status === "Returned"
+                      ? "Mark as returned"
+                    : "Reject"}
               </button>
             </div>
           </div>

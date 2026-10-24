@@ -6,6 +6,8 @@ interface ItemRow {
   id: string;
   reporter_id: string;
   report_type: ReportType;
+  is_claimed: boolean;
+  is_returned: boolean;
   name: string;
   description: string;
   item_date: Date | string;
@@ -34,7 +36,20 @@ function toDateOnly(value: Date | string): string {
 
 // report is the parent of item: who reported, where, when.
 const ITEM_COLUMNS = `
-  i.id, r.user_id AS reporter_id, r.report_type, i.name, i.description, r.date AS item_date,
+  i.id, r.user_id AS reporter_id, r.report_type,
+  EXISTS (
+    SELECT 1 FROM request claim_request
+    WHERE claim_request.item_id = i.id
+      AND claim_request.kind = 'claim'
+      AND claim_request.status IN ('approved', 'claimed', 'returned')
+  ) AS is_claimed,
+  EXISTS (
+    SELECT 1 FROM request return_request
+    WHERE return_request.item_id = i.id
+      AND return_request.kind = 'return'
+      AND return_request.status = 'returned'
+  ) AS is_returned,
+  i.name, i.description, r.date AS item_date,
   r.time AS item_time, i.primary_color AS color,
   r.important_details,
   loc.description AS location, b.name AS building,
@@ -67,6 +82,8 @@ function toItem(row: ItemRow, includeEmail: boolean, viewerId: string): Item {
     id: row.id,
     reporterId: row.reporter_id,
     reportType: row.report_type,
+    isClaimed: row.is_claimed,
+    isReturned: row.is_returned,
     name: row.name,
     description: row.description,
     itemDate: toDateOnly(row.item_date),
@@ -234,6 +251,14 @@ export async function listItems(
     conditions.push(
       `(LOWER(i.name) LIKE $${params.length} OR LOWER(i.description) LIKE $${params.length})`,
     );
+  }
+  if (!includeEmail && !filter?.reporterId) {
+    conditions.push(`NOT EXISTS (
+      SELECT 1 FROM request claim_request
+      WHERE claim_request.item_id = i.id
+        AND claim_request.kind = 'claim'
+        AND claim_request.status IN ('approved', 'claimed', 'returned')
+    )`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   const { rows } = await pool.query<ItemRow>(

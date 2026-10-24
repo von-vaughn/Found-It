@@ -5,6 +5,7 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import { useAuth } from "@/context/useAuth";
+import { itemKeys } from "@/hooks/useItems";
 import type { ServerClaim, ServerClaimStatus } from "@/services/claimService";
 import {
   createReturnRequest,
@@ -85,7 +86,7 @@ export function useUpdateAdminReturnStatus() {
       status,
     }: {
       id: string;
-      status: Exclude<ServerClaimStatus, "pending">;
+      status: Exclude<ServerClaimStatus, "claimed">;
     }) => updateReturnStatus(id, status),
     onSuccess: (updated) => {
       queryClient.setQueryData<ServerClaim[]>(returnKeys.admin(), (current) =>
@@ -94,7 +95,10 @@ export function useUpdateAdminReturnStatus() {
         ),
       );
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: returnKeys.all }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: returnKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+    },
   });
 }
 

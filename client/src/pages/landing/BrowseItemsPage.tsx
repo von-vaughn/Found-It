@@ -65,10 +65,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
   const { data: serverItems, isLoading } = useItems(undefined, {
     staleTime: 30_000,
   });
-  const items =
-    serverItems && serverItems.length > 0
-      ? toClientItems(serverItems)
-      : exampleItems;
+  const items = serverItems ? toClientItems(serverItems) : exampleItems;
 
   const updateParams = (patch: { type?: BrowseTab; q?: string }) => {
     const nextParams = new URLSearchParams(searchParams);

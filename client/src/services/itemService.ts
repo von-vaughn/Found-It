@@ -5,6 +5,8 @@ export interface ServerItem {
   id: string;
   reporterId: string;
   reportType: "lost" | "found";
+  isClaimed: boolean;
+  isReturned: boolean;
   name: string;
   description: string;
   itemDate: string;
@@ -180,4 +182,3 @@ export default {
   uploadImage,
   uploadImages,
 };
-

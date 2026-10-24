@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { ItemTable } from "@/components/admin/ItemTable";
@@ -15,8 +15,6 @@ import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import { useDeleteItem, useItems } from "@/hooks/useItems";
 
-const PAGE_SIZE = 10;
-
 export function ReportsPage({
   onAddItem,
 }: {
@@ -27,6 +25,7 @@ export function ReportsPage({
   const [categoryFilter, setCategoryFilter] = useState("All categories");
   const [buildingFilter, setBuildingFilter] = useState("All buildings");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
@@ -98,15 +97,18 @@ export function ReportsPage({
     });
   }, [buildingFilter, categoryFilter, query, reports, statusFilter]);
 
-  const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  useEffect(() => {
+    setCurrentPage((value) => Math.min(value, pageCount));
+  }, [pageCount]);
   const page = Math.min(currentPage, pageCount);
   const pageRows = filteredRows.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
+    (page - 1) * pageSize,
+    page * pageSize,
   );
   const rangeStart =
-    filteredRows.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const rangeEnd = Math.min(page * PAGE_SIZE, filteredRows.length);
+    filteredRows.length === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = Math.min(page * pageSize, filteredRows.length);
 
   const updateQuery = (value: string) => {
     setQuery(value);
@@ -138,6 +140,7 @@ export function ReportsPage({
     >
       <Panel
         title="Item reports"
+        className="flex h-[calc(100dvh-11.5rem)] flex-col overflow-hidden sm:h-[calc(100dvh-8rem)]"
         action={
           <div className="flex flex-wrap items-center justify-end gap-2">
             <span className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -154,7 +157,7 @@ export function ReportsPage({
           </div>
         }
       >
-        <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5">
+        <div className="flex shrink-0 flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5">
           <div className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="report-status-filter">
               Filter by status
@@ -210,13 +213,13 @@ export function ReportsPage({
         </div>
 
         {isLoading ? (
-          <div className="flex min-h-[800px] items-center justify-center px-5 py-10">
+          <div className="flex min-h-0 flex-1 items-center justify-center px-5 py-10">
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
               Loading reports…
             </p>
           </div>
         ) : isError ? (
-          <div className="flex min-h-[800px] flex-col items-center justify-center gap-3 px-5 py-10">
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-5 py-10">
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
               Could not load item reports.
             </p>
@@ -233,10 +236,12 @@ export function ReportsPage({
             rows={pageRows}
             onViewDetails={setSelectedReport}
             wholeRowClickable
+            fitViewport
+            onVisibleRowsChange={setPageSize}
           />
         )}
 
-        <div className="flex flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <p className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">
             Showing {rangeStart}–{rangeEnd} of {filteredRows.length}
           </p>

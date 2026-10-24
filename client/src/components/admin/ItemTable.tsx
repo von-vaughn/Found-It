@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { StatusBadge } from "./StatusBadge";
 import { NoItemImage } from "@/components/NoItemImage";
 import type { AdminReport } from "./types";
@@ -7,15 +8,49 @@ export function ItemTable({
   onViewDetails,
   wholeRowClickable = false,
   showColumnHeadings = true,
+  fitViewport = false,
+  onVisibleRowsChange,
 }: {
   rows: AdminReport[];
   onViewDetails: (report: AdminReport) => void;
   wholeRowClickable?: boolean;
   showColumnHeadings?: boolean;
+  fitViewport?: boolean;
+  onVisibleRowsChange?: (count: number) => void;
 }) {
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!fitViewport || !onVisibleRowsChange) return;
+    const container = tableContainerRef.current;
+    if (!container) return;
+
+    const updateVisibleRows = () => {
+      const headerHeight =
+        container.querySelector("thead")?.getBoundingClientRect().height ?? 40;
+      const rowHeight =
+        container.querySelector("tbody tr")?.getBoundingClientRect().height ??
+        76;
+      const availableRows = Math.max(
+        1,
+        Math.floor((container.clientHeight - headerHeight) / rowHeight),
+      );
+      onVisibleRowsChange(availableRows);
+    };
+
+    updateVisibleRows();
+    const observer = new ResizeObserver(updateVisibleRows);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [fitViewport, onVisibleRowsChange, rows.length]);
+
   if (rows.length === 0) {
     return (
-      <div className="flex min-h-[800px] items-center justify-center px-5 py-10">
+      <div
+        className={`flex items-center justify-center px-5 py-10 ${
+          fitViewport ? "min-h-0 flex-1" : "min-h-[800px]"
+        }`}
+      >
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
           No reports match these filters.
         </p>
@@ -24,7 +59,12 @@ export function ItemTable({
   }
 
   return (
-    <div className="min-h-[800px] overflow-x-auto">
+    <div
+      ref={tableContainerRef}
+      className={`overflow-x-auto ${
+        fitViewport ? "min-h-0 flex-1" : "min-h-[800px]"
+      }`}
+    >
       <table className="w-full min-w-[1120px] text-left text-xs">
         <thead
           className={

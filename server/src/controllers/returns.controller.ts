@@ -29,7 +29,7 @@ function requestIdParam(req: Request): string | null {
 }
 
 const adminReturnStatusSchema = z.object({
-  status: z.enum(["approved", "rejected", "claimed", "returned"]),
+  status: z.enum(["pending", "approved", "rejected", "returned"]),
 });
 
 /** POST /api/returns — report a found item on someone else's lost post. */

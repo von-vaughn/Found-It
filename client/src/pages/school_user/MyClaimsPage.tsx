@@ -55,15 +55,15 @@ interface MyClaimsPageProps {
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
-type StatusFilter = SimplifiedClaimStatus | "Unclaimed";
+type StatusFilter = SimplifiedClaimStatus | "Unreturned";
 
 const FILTER_TABS: { id: StatusFilter; label: string }[] = [
   { id: "Pending", label: "Pending" },
   { id: "Approved", label: "Approved" },
-  { id: "Unclaimed", label: "Unclaimed" },
   { id: "Claimed", label: "Claimed" },
-  { id: "Rejected", label: "Rejected" },
+  { id: "Unreturned", label: "Unreturned" },
   { id: "Returned", label: "Returned" },
+  { id: "Rejected", label: "Rejected" },
 ];
 
 function ClaimPhotosCarousel({
@@ -191,7 +191,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
     const byStatus: Record<StatusFilter, number> = {
       Pending: 0,
       Approved: 0,
-      Unclaimed: 0,
+      Unreturned: 0,
       Claimed: 0,
       Returned: 0,
       Rejected: 0,
@@ -352,16 +352,29 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
             </nav>
 
             {groupedByPost.length > 0 ? (
-              <StaggerGrid key={statusFilter} className="mt-6 space-y-6">
-                {groupedByPost.map(([itemId, claims]) => {
-                  const item = itemById.get(itemId);
-                  const statusLabel = submissionStatusLabel(claims[0]);
-                  const statusStyle =
-                    simplifiedClaimStatusStyles[
-                      statusLabel === "Unclaimed" ? "Approved" : statusLabel
-                    ];
-                  return (
-                    <StaggerItem key={itemId}>
+              <>
+                {statusFilter === "Approved" && (
+                  <div
+                    role="status"
+                    className="mt-6 flex items-start gap-2.5 rounded-xl bg-emerald-50 px-3.5 py-3 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200"
+                  >
+                    <ClipboardList
+                      className="mt-0.5 h-4 w-4 shrink-0"
+                      aria-hidden="true"
+                    />
+                    <p className="text-sm leading-relaxed">
+                      Your claim has been approved. Please visit the Office of
+                      Student Affairs (OSA) to claim your item.
+                    </p>
+                  </div>
+                )}
+                <StaggerGrid key={statusFilter} className="mt-6 space-y-6">
+                  {groupedByPost.map(([itemId, claims]) => {
+                    const item = itemById.get(itemId);
+                    const statusLabel = submissionStatusLabel(claims[0]);
+                    const statusStyle = simplifiedClaimStatusStyles[statusLabel];
+                    return (
+                      <StaggerItem key={itemId}>
                     <section
                       aria-label={`Requests for ${claims[0]?.item ?? "post"}`}
                       className="overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800"
@@ -543,10 +556,11 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                         })}
                       </ul>
                     </section>
-                    </StaggerItem>
-                  );
-                })}
-              </StaggerGrid>
+                      </StaggerItem>
+                    );
+                  })}
+                </StaggerGrid>
+              </>
             ) : (
               <div className="flex min-h-[60dvh] flex-col items-center justify-center px-4 py-16 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500">

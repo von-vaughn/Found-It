@@ -86,6 +86,12 @@ export async function findClaimableItem(
      FROM item i
      JOIN report r ON r.id = i.report_id
      WHERE i.id = $1
+       AND NOT EXISTS (
+         SELECT 1 FROM request approved_claim
+         WHERE approved_claim.item_id = i.id
+           AND approved_claim.kind = 'claim'
+           AND approved_claim.status IN ('approved', 'claimed', 'returned')
+       )
      LIMIT 1`,
     [itemId],
   );
@@ -201,11 +207,9 @@ export function listAllReturns(): Promise<Claim[]> {
   return listAllRequests("return");
 }
 
-/** A claim can only move forward from the status the UI is showing. */
-const CLAIM_STATUS_PREDECESSOR: Record<
-  Exclude<ClaimStatus, "pending">,
-  ClaimStatus
-> = {
+/** Admin decisions require the request's current status to match this predecessor. */
+const CLAIM_STATUS_PREDECESSOR: Record<ClaimStatus, ClaimStatus> = {
+  pending: "approved",
   approved: "pending",
   rejected: "pending",
   claimed: "approved",
@@ -215,7 +219,7 @@ const CLAIM_STATUS_PREDECESSOR: Record<
 async function updateRequestStatusById(
   kind: "claim" | "return",
   id: string,
-  status: Exclude<ClaimStatus, "pending">,
+  status: ClaimStatus,
 ): Promise<Claim | null> {
   const { rowCount } = await pool.query(
     `UPDATE request SET status = $2
@@ -234,7 +238,7 @@ export function updateClaimStatusById(
 
 export function updateReturnStatusById(
   id: string,
-  status: Exclude<ClaimStatus, "pending">,
+  status: Exclude<ClaimStatus, "claimed">,
 ): Promise<Claim | null> {
   return updateRequestStatusById("return", id, status);
 }

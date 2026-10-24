@@ -113,53 +113,53 @@ function ClaimRequestSection({
               className="mt-2 h-72"
             />
           )}
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={
-                claim.status === "Returned" ||
-                claim.status === "Claimed" ||
-                claim.status === "Rejected" ||
-                (!isLostItem && itemClaimed)
-              }
-              onClick={() =>
-                onRequestStatus(
-                  claim.id,
-                  !isLostItem && claim.status === "Approved"
-                    ? "ItemClaimed"
-                    : isLostItem
-                      ? "Returned"
-                      : "Approved",
-                )
-              }
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-default disabled:bg-[#E5192D]"
-            >
-              <Check className="h-3.5 w-3.5" aria-hidden="true" />
-              {claim.status === "Returned"
-                ? "Returned"
-                : claim.status === "Rejected"
-                  ? "Rejected"
-                  : claim.status === "Claimed" ||
-                      (claim.status === "Approved" && !isLostItem)
-                    ? "Claimed"
-                    : isLostItem
-                    ? "Mark as returned"
-                    : "Approve request"}
-            </button>
-            <button
-              type="button"
-              disabled={claim.status !== "Pending"}
-              onClick={() => onRequestStatus(claim.id, "Rejected")}
-              className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default ${
-                claim.status === "Pending"
-                  ? "border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
-                  : "border-neutral-200 dark:border-neutral-800 text-neutral-400 dark:text-neutral-500"
-              }`}
-            >
-              <X className="h-3.5 w-3.5" aria-hidden="true" />
-              Reject
-            </button>
-          </div>
+          {claim.status !== "Claimed" && (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={
+                  claim.status === "Returned" ||
+                  claim.status === "Rejected" ||
+                  (!isLostItem && itemClaimed)
+                }
+                onClick={() =>
+                  onRequestStatus(
+                    claim.id,
+                    !isLostItem && claim.status === "Approved"
+                      ? "ItemClaimed"
+                      : isLostItem
+                        ? "Returned"
+                        : "Approved",
+                  )
+                }
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-default disabled:bg-[#E5192D]"
+              >
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                {claim.status === "Returned"
+                  ? "Returned"
+                  : claim.status === "Rejected"
+                    ? "Rejected"
+                    : claim.status === "Approved" && !isLostItem
+                      ? "Claimed"
+                      : isLostItem
+                        ? "Mark as returned"
+                        : "Approve request"}
+              </button>
+              <button
+                type="button"
+                disabled={claim.status !== "Pending"}
+                onClick={() => onRequestStatus(claim.id, "Rejected")}
+                className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default ${
+                  claim.status === "Pending"
+                    ? "border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+                    : "border-neutral-200 dark:border-neutral-800 text-neutral-400 dark:text-neutral-500"
+                }`}
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+                Reject
+              </button>
+            </div>
+          )}
         </div>
         <div className="min-w-0">
           <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
@@ -498,18 +498,18 @@ export function ClaimsView({
           </div>
         </dialog>
       )}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          {filteredClaims.length} claims
-        </p>
-      </div>
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.7fr)_minmax(360px,1.3fr)]">
         <Panel
-          title="Submitted claims"
+          title="Submitted Claims Request"
+          titleAdornment={
+            <span className="shrink-0 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+              {filteredClaims.length}
+            </span>
+          }
           stickyHeader
           className="overflow-x-clip no-scrollbar xl:sticky xl:top-20 xl:flex xl:h-[min(53.5rem,calc(100dvh-6rem))] xl:flex-col xl:self-start xl:overflow-y-auto"
           action={
-            <div className="flex">
+            <div className="flex items-center">
               <StatusFilter
                 value={statusFilter}
                 onChange={onStatusFilterChange}
@@ -627,10 +627,15 @@ export function ClaimsView({
         </Panel>
 
         <Panel
-          title={visibleSelectedClaim?.item ?? "Claim details"}
+          title={visibleSelectedClaim?.item ?? ""}
           titleSize="large"
           borderless
           plain={plainDetails}
+          className={
+            plainDetails
+              ? "min-h-[min(36rem,calc(100dvh-8rem))] xl:min-h-[min(53.5rem,calc(100dvh-6rem))]"
+              : ""
+          }
         >
           {visibleSelectedClaim ? (
             <div
@@ -817,7 +822,7 @@ export function ClaimsView({
             <p
               className={
                 plainDetails
-                  ? "py-10 text-center text-sm text-neutral-500 dark:text-neutral-400"
+                  ? "flex flex-1 items-center justify-center py-10 text-center text-sm text-neutral-500 dark:text-neutral-400"
                   : "px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400"
               }
             >

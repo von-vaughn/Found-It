@@ -42,6 +42,12 @@ test("maps a saved server return into a found-report submission", () => {
   assert.equal(report.status, "Pending");
 });
 
+test("maps legacy claimed return requests to returned", () => {
+  const report = toFoundReportClaim({ ...serverClaim, status: "claimed" });
+
+  assert.equal(report.status, "Returned");
+});
+
 test("maps every server status to its school-user badge", () => {
   const statuses = {
     pending: "Pending",
