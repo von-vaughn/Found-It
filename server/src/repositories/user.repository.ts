@@ -13,6 +13,10 @@ interface SafeUserRow {
   updated_at: Date;
 }
 
+interface UserListRow extends SafeUserRow {
+  report_count: number;
+}
+
 interface UserWithHashRow extends SafeUserRow {
   password_hash: string;
 }
@@ -114,7 +118,9 @@ export async function updateUserRegistration(
   return rows[0] ? toSafeUser(rows[0]) : null;
 }
 
-export async function listUsers(filter?: { role?: Role; search?: string }): Promise<SafeUser[]> {
+export async function listUsers(
+  filter?: { role?: Role; search?: string },
+): Promise<Array<SafeUser & { reportCount: number }>> {
   const conditions: string[] = [];
   const params: unknown[] = [];
   if (filter?.role) {
@@ -126,11 +132,16 @@ export async function listUsers(filter?: { role?: Role; search?: string }): Prom
     conditions.push(`(LOWER(first_name || ' ' || last_name) LIKE $${params.length} OR LOWER(email) LIKE $${params.length})`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-  const { rows } = await pool.query<SafeUserRow>(
-    `SELECT ${SAFE_USER_COLUMNS} FROM "user" ${where} ORDER BY created_at DESC LIMIT 200`,
+  const { rows } = await pool.query<UserListRow>(
+    `SELECT ${SAFE_USER_COLUMNS},
+       (SELECT COUNT(*)::int FROM report WHERE report.user_id = "user".id) AS report_count
+     FROM "user" ${where} ORDER BY created_at DESC LIMIT 200`,
     params,
   );
-  return rows.map(toSafeUser);
+  return rows.map((row) => ({
+    ...toSafeUser(row),
+    reportCount: row.report_count,
+  }));
 }
 
 export async function updateUserRole(id: string, role: Role): Promise<SafeUser | null> {

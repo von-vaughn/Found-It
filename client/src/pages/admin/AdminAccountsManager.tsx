@@ -7,14 +7,29 @@ import { z } from "zod";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { AdminUser, AdminUserRole } from "@/components/admin/types";
-import { getAccessToken } from "@/lib/api";
+import type { CreateAdminUserPayload } from "@/services/adminUserService";
 
 const PAGE_SIZE = 10;
 
 const createAdminSchema = z.object({
-  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .max(100)
+    .refine((name) => {
+      const [firstName, ...lastNameParts] = name.split(/\s+/);
+      return firstName.length <= 50 && (lastNameParts.join(" ") || firstName).length <= 50;
+    }, "Each part of the name must be at most 50 characters"),
   email: z.string().trim().toLowerCase().email("Enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(128),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128)
+    .refine(
+      (password) => new TextEncoder().encode(password).length <= 72,
+      "Password cannot exceed 72 bytes",
+    ),
   role: z.enum(["admin", "super_admin"]),
 });
 
@@ -38,7 +53,7 @@ export function roleLabel(role: AdminUserRole): string {
 interface AdminAccountsManagerProps {
   staff: AdminUser[];
   query: string;
-  onCreateStaff: (entry: AdminUser, values: CreateAdminValues) => void;
+  onCreateStaff: (values: CreateAdminUserPayload) => Promise<void>;
   onStatusChange: (user: AdminUser) => void;
   onDelete: (user: AdminUser) => void;
   onToggleRole: (user: AdminUser) => void;
@@ -48,6 +63,9 @@ interface AdminAccountsManagerProps {
   onDeleteTargetChange: (user: AdminUser | null) => void;
   onConfirmStatusChange: () => void;
   onConfirmDelete: () => void;
+  isSavingStatus: boolean;
+  isSavingRole: boolean;
+  isSavingDelete: boolean;
 }
 
 export function AdminAccountsManager({
@@ -63,6 +81,9 @@ export function AdminAccountsManager({
   onStatusChange,
   onDelete,
   onToggleRole,
+  isSavingStatus,
+  isSavingRole,
+  isSavingDelete,
 }: AdminAccountsManagerProps) {
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [roleFilter, setRoleFilter] = useState("All roles");
@@ -102,7 +123,8 @@ export function AdminAccountsManager({
   const rangeStart = filteredStaff.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(page * PAGE_SIZE, filteredStaff.length);
 
-  const onCreate = (rawValues: CreateAdminValues) => {
+  const onCreate = async (rawValues: CreateAdminValues) => {
+    setError("root.server", { message: "" });
     const parsed = createAdminSchema.safeParse(rawValues);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
@@ -115,26 +137,49 @@ export function AdminAccountsManager({
       setError("email", { message: "An account with this email already exists." });
       return;
     }
-    const entry: AdminUser = {
-      // eslint-disable-next-line react-hooks/purity -- event handler, not render
-      id: `USR-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString().slice(-4)}`,
-      name: values.name.trim(),
-      email: values.email.trim().toLowerCase(),
-      role: values.role,
-      isActive: true,
-      joined: new Intl.DateTimeFormat("en", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }).format(new Date()),
-      reportCount: 0,
-    };
-    onCreateStaff(entry, values);
-    void createStaffOnServer(values).catch(() => undefined);
-    toast.success(`${entry.name} created as ${roleLabel(entry.role).toLowerCase()}.`);
-    reset();
-    setCreateOpen(false);
-    setCurrentPage(1);
+    try {
+      await onCreateStaff({
+        ...values,
+        name: values.name.trim(),
+        email: values.email.trim().toLowerCase(),
+      });
+      toast.success(
+        `${values.name} created as ${roleLabel(values.role).toLowerCase()}.`,
+      );
+      reset();
+      setCreateOpen(false);
+      setCurrentPage(1);
+    } catch (error) {
+      const responseData = (
+        error as {
+          response?: {
+            data?: {
+              message?: string;
+              errors?: Array<{ field?: string; message?: string }>;
+            };
+          };
+        }
+      )?.response?.data;
+      for (const fieldError of responseData?.errors ?? []) {
+        if (
+          (fieldError.field === "name" ||
+            fieldError.field === "email" ||
+            fieldError.field === "password" ||
+            fieldError.field === "role") &&
+          fieldError.message
+        ) {
+          setError(fieldError.field, { message: fieldError.message });
+        }
+      }
+      setError("root.server", {
+        message:
+          responseData?.message && responseData.message !== "Validation failed."
+            ? responseData.message
+            : responseData?.errors?.length
+              ? "Check the account details and try again."
+              : "We couldn't create this account. Please try again.",
+      });
+    }
   };
 
   return (
@@ -237,6 +282,7 @@ export function AdminAccountsManager({
                         type="button"
                         title="Toggle admin / super admin role"
                         onClick={() => onToggleRole(admin)}
+                        disabled={isSavingRole}
                         className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                       >
                         <StatusBadge status={roleLabel(admin.role)} />
@@ -253,6 +299,7 @@ export function AdminAccountsManager({
                           <button
                             type="button"
                             onClick={() => onStatusChange(admin)}
+                            disabled={isSavingStatus}
                             aria-label={`Deactivate ${admin.name}`}
                             className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                           >
@@ -263,6 +310,7 @@ export function AdminAccountsManager({
                           <button
                             type="button"
                             onClick={() => onStatusChange(admin)}
+                            disabled={isSavingStatus}
                             aria-label={`Activate ${admin.name}`}
                             className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 dark:border-neutral-800 px-3 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                           >
@@ -273,8 +321,9 @@ export function AdminAccountsManager({
                         <button
                           type="button"
                           onClick={() => onDelete(admin)}
+                          disabled={isSavingDelete}
                           aria-label={`Remove ${admin.name}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-neutral-200 dark:border-neutral-800 text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 hover:text-red-800 dark:hover:bg-red-950/30 dark:hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                         >
                           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
@@ -336,7 +385,9 @@ export function AdminAccountsManager({
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-neutral-950/50 p-4"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setCreateOpen(false);
+            if (event.target === event.currentTarget && !isSubmitting) {
+              setCreateOpen(false);
+            }
           }}
         >
           <form
@@ -348,6 +399,11 @@ export function AdminAccountsManager({
               New admins are active immediately and can review claims and returns.
             </p>
             <div className="mt-4 space-y-3">
+              {errors.root?.server?.message && (
+                <p className="text-xs text-red-600" role="alert">
+                  {errors.root.server.message}
+                </p>
+              )}
               <div>
                 <label htmlFor="staff-name" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   Full name
@@ -359,6 +415,7 @@ export function AdminAccountsManager({
                   placeholder="e.g. OSA Officer"
                   {...register("name")}
                   className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  disabled={isSubmitting}
                 />
                 {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
               </div>
@@ -373,6 +430,7 @@ export function AdminAccountsManager({
                   placeholder="admin@wmsu.edu.ph"
                   {...register("email")}
                   className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  disabled={isSubmitting}
                 />
                 {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
               </div>
@@ -388,6 +446,7 @@ export function AdminAccountsManager({
                     placeholder="Min. 8 characters"
                     {...register("password")}
                     className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    disabled={isSubmitting}
                   />
                   {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
                 </div>
@@ -399,6 +458,7 @@ export function AdminAccountsManager({
                     id="staff-role"
                     {...register("role")}
                     className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    disabled={isSubmitting}
                   >
                     <option value="admin">Admin</option>
                     <option value="super_admin">Super admin</option>
@@ -409,6 +469,7 @@ export function AdminAccountsManager({
             <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
+                disabled={isSubmitting}
                 onClick={() => {
                   setCreateOpen(false);
                   reset();
@@ -455,6 +516,7 @@ export function AdminAccountsManager({
               <button
                 type="button"
                 onClick={() => onPendingChange(null)}
+                disabled={isSavingStatus}
                 className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Cancel
@@ -462,13 +524,18 @@ export function AdminAccountsManager({
               <button
                 type="button"
                 onClick={onConfirmStatusChange}
+                disabled={isSavingStatus}
                 className={`h-9 rounded-lg px-3.5 text-xs font-semibold text-white ${
                   pendingUser.isActive
                     ? "bg-[#E5192D] hover:bg-[#c81424]"
                     : "bg-neutral-900 hover:bg-neutral-700"
                 }`}
               >
-                {pendingUser.isActive ? "Deactivate" : "Activate"}
+                {isSavingStatus
+                  ? "Saving…"
+                  : pendingUser.isActive
+                    ? "Deactivate"
+                    : "Activate"}
               </button>
             </div>
           </div>
@@ -499,6 +566,7 @@ export function AdminAccountsManager({
               <button
                 type="button"
                 onClick={() => onDeleteTargetChange(null)}
+                disabled={isSavingDelete}
                 className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Cancel
@@ -506,9 +574,10 @@ export function AdminAccountsManager({
               <button
                 type="button"
                 onClick={onConfirmDelete}
+                disabled={isSavingDelete}
                 className="h-9 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white hover:bg-[#c81424]"
               >
-                Remove
+                {isSavingDelete ? "Removing…" : "Remove"}
               </button>
             </div>
           </div>
@@ -516,23 +585,4 @@ export function AdminAccountsManager({
       )}
     </>
   );
-}
-
-async function createStaffOnServer(values: CreateAdminValues): Promise<void> {
-  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
-  const baseUrl = env?.VITE_API_URL ?? "";
-  const token = getAccessToken();
-  if (!baseUrl || !token) return;
-  const res = await fetch(`${baseUrl.replace(/\/$/, "")}/api/users`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(values),
-  });
-  if (!res.ok) {
-    const data = (await res.json().catch(() => null)) as { message?: string } | null;
-    throw new Error(data?.message ?? "Failed to create admin on server.");
-  }
 }

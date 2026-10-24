@@ -2,7 +2,9 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
   countSuperAdmins,
+  createUser,
   deleteUser,
+  findUserByEmail,
   findUserById,
   listUsers,
   setUserActive,
@@ -10,9 +12,31 @@ import {
 } from '../repositories/user.repository';
 import { revokeAllUserTokens } from '../repositories/refresh-token.repository';
 import { ROLES, type Role } from '../types/roles';
+import { hashPassword } from '../utils/password';
 
 const roleSchema = z.object({ role: z.enum(ROLES) });
 const activeSchema = z.object({ isActive: z.boolean() });
+const createAdminSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100)
+    .refine((name) => {
+      const [firstName, ...lastNameParts] = name.split(/\s+/);
+      const lastName = lastNameParts.join(' ') || firstName;
+      return firstName.length <= 50 && lastName.length <= 50;
+    }, 'Each part of the name must be at most 50 characters'),
+  email: z.string().trim().toLowerCase().email('Enter a valid email address').max(255),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(72, 'Password cannot exceed 72 bytes')
+    .refine((password) => Buffer.byteLength(password, 'utf8') <= 72, {
+      message: 'Password cannot exceed 72 bytes',
+    }),
+  role: z.enum(['admin', 'super_admin']),
+}).strict();
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -27,6 +51,57 @@ function invalidId(res: Response, id: string): boolean {
     return true;
   }
   return false;
+}
+
+/** POST /api/users — super_admin only */
+export async function createAdminUser(req: Request, res: Response): Promise<void> {
+  const parsed = createAdminSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      message: 'Validation failed.',
+      errors: parsed.error.issues.map((issue) => ({
+        field: issue.path.join('.'),
+        message: issue.message,
+      })),
+    });
+    return;
+  }
+
+  const { name, email, password, role } = parsed.data;
+  if (await findUserByEmail(email)) {
+    res.status(409).json({ message: 'An account with this email already exists.' });
+    return;
+  }
+
+  const [firstName, ...lastNameParts] = name.split(/\s+/);
+  const lastName = lastNameParts.join(' ') || firstName;
+  let created: Awaited<ReturnType<typeof createUser>>;
+  try {
+    created = await createUser({
+      firstName,
+      lastName,
+      email,
+      passwordHash: await hashPassword(password),
+      role,
+      isVerified: true,
+    });
+  } catch (error) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === '23505'
+    ) {
+      res.status(409).json({ message: 'An account with this email already exists.' });
+      return;
+    }
+    throw error;
+  }
+
+  res.status(201).json({
+    message: 'Admin account created.',
+    user: { ...created, reportCount: 0 },
+  });
 }
 
 /** GET /api/users — admin + super_admin */

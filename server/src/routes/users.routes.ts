@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   changeUserRole,
   changeUserStatus,
+  createAdminUser,
   getAllUsers,
   getUserById,
   removeUser,
@@ -21,6 +22,7 @@ router.patch('/:id/status', requireAdmin, changeUserStatus);
 router.delete('/:id', requireAdmin, removeUser);
 
 // Super_admin only
+router.post('/', requireSuperAdmin, createAdminUser);
 router.patch('/:id/role', requireSuperAdmin, changeUserRole);
 
 export default router;

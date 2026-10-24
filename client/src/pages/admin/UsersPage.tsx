@@ -2,16 +2,23 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Check, ChevronLeft, ChevronRight, Power } from "lucide-react";
 import toast from "react-hot-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { adminUsers } from "@/components/admin/adminData";
 import type { AdminUser, AdminUserRole } from "@/components/admin/types";
 import { useAuth } from "@/context/useAuth";
+import {
+  createAdminUser,
+  deleteAdminUser,
+  listAdminUsers,
+  updateAdminUserRole,
+  updateAdminUserStatus,
+} from "@/services/adminUserService";
 import { AdminLayout } from "./AdminLayout";
 import { AdminAccountsManager, roleLabel } from "./AdminAccountsManager";
 
 const PAGE_SIZE = 10;
-const STAFF_STORAGE_KEY = "foundit_staff_accounts_v1";
+const ADMIN_USERS_QUERY_KEY = ["admin-users"] as const;
 
 type UsersTab = "school" | "admins";
 
@@ -24,39 +31,51 @@ function initials(name: string): string {
     .join("");
 }
 
-function loadAllUsers(): AdminUser[] {
-  try {
-    const raw = localStorage.getItem(STAFF_STORAGE_KEY);
-    if (!raw) return adminUsers;
-    const parsed = JSON.parse(raw) as AdminUser[];
-    if (!Array.isArray(parsed)) return adminUsers;
-    const ids = new Set(adminUsers.map((u) => u.id));
-    return [...parsed.filter((u) => !ids.has(u.id)), ...adminUsers];
-  } catch {
-    return adminUsers;
-  }
-}
-
-function persistStaff(allUsers: AdminUser[]) {
-  try {
-    localStorage.setItem(
-      STAFF_STORAGE_KEY,
-      JSON.stringify(allUsers.filter((u) => u.role !== "school_user").slice(0, 200)),
-    );
-  } catch {
-    /* ignore */
-  }
+function errorMessage(error: unknown, fallback: string): string {
+  const responseMessage = (
+    error as { response?: { data?: { message?: string } } }
+  )?.response?.data?.message;
+  return responseMessage ?? (error instanceof Error ? error.message : fallback);
 }
 
 export function UsersPage() {
+  const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.role === "super_admin";
+  const usersQuery = useQuery({
+    queryKey: ADMIN_USERS_QUERY_KEY,
+    queryFn: listAdminUsers,
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const createUserMutation = useMutation({
+    mutationFn: createAdminUser,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
+  });
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      updateAdminUserStatus(id, isActive),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
+  });
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ id, role }: { id: string; role: AdminUserRole }) =>
+      updateAdminUserRole(id, role),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
+  });
+  const deleteUserMutation = useMutation({
+    mutationFn: deleteAdminUser,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   // Tab is derived from the URL so deep links (e.g. /admin/admins redirect) work.
   // Only a super admin can open the staff tab; anyone else is pinned to campus users.
   const tab: UsersTab =
     isSuperAdmin && searchParams.get("tab") === "admins" ? "admins" : "school";
-  const [allUsers, setAllUsers] = useState<AdminUser[]>(loadAllUsers);
+  const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,11 +87,6 @@ export function UsersPage() {
     setPendingUser(null);
     setDeleteTarget(null);
     setSearchParams(next === "admins" ? { tab: "admins" } : {}, { replace: true });
-  };
-
-  const updateAllUsers = (next: AdminUser[]) => {
-    setAllUsers(next);
-    persistStaff(next);
   };
 
   const schoolUsers = useMemo(() => allUsers.filter((u) => u.role === "school_user"), [allUsers]);
@@ -104,7 +118,7 @@ export function UsersPage() {
 
   const handleStatusClick = (user: AdminUser) => setPendingUser(user);
 
-  const confirmStatusChange = () => {
+  const confirmStatusChange = async () => {
     if (!pendingUser) return;
     if (
       pendingUser.role === "super_admin" &&
@@ -116,39 +130,54 @@ export function UsersPage() {
       return;
     }
     const activating = !pendingUser.isActive;
-    updateAllUsers(
-      allUsers.map((user) => (user.id === pendingUser.id ? { ...user, isActive: activating } : user)),
-    );
-    toast.success(
-      activating ? `${pendingUser.name} has been activated.` : `${pendingUser.name} has been deactivated.`,
-    );
-    setPendingUser(null);
+    try {
+      await updateStatusMutation.mutateAsync({
+        id: pendingUser.id,
+        isActive: activating,
+      });
+      toast.success(
+        activating
+          ? `${pendingUser.name} has been activated.`
+          : `${pendingUser.name} has been deactivated.`,
+      );
+      setPendingUser(null);
+    } catch (error) {
+      toast.error(errorMessage(error, "We couldn't update this account."));
+    }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteTarget) return;
     if (deleteTarget.role === "super_admin" && allUsers.filter((u) => u.role === "super_admin").length <= 1) {
       toast.error("Cannot delete the last super admin.");
       setDeleteTarget(null);
       return;
     }
-    updateAllUsers(allUsers.filter((user) => user.id !== deleteTarget.id));
-    toast.success(`${deleteTarget.name} has been removed.`);
-    setDeleteTarget(null);
+    try {
+      await deleteUserMutation.mutateAsync(deleteTarget.id);
+      toast.success(`${deleteTarget.name} has been removed.`);
+      setDeleteTarget(null);
+    } catch (error) {
+      toast.error(errorMessage(error, "We couldn't remove this account."));
+    }
   };
 
-  const handleToggleRole = (target: AdminUser) => {
+  const handleToggleRole = async (target: AdminUser) => {
     if (target.role === "super_admin" && allUsers.filter((u) => u.role === "super_admin").length <= 1) {
       toast.error("Cannot demote the last super admin.");
       return;
     }
     const nextRole: AdminUserRole = target.role === "admin" ? "super_admin" : "admin";
-    updateAllUsers(allUsers.map((user) => (user.id === target.id ? { ...user, role: nextRole } : user)));
-    toast.success(`${target.name} is now ${roleLabel(nextRole).toLowerCase()}.`);
+    try {
+      await updateRoleMutation.mutateAsync({ id: target.id, role: nextRole });
+      toast.success(`${target.name} is now ${roleLabel(nextRole).toLowerCase()}.`);
+    } catch (error) {
+      toast.error(errorMessage(error, "We couldn't change this account's role."));
+    }
   };
 
-  const handleCreateStaff = (entry: AdminUser) => {
-    updateAllUsers([entry, ...allUsers]);
+  const handleCreateStaff = async (values: Parameters<typeof createAdminUser>[0]) => {
+    await createUserMutation.mutateAsync(values);
   };
 
   // Staff dialogs are rendered inside AdminAccountsManager; school-user dialog lives here.
@@ -191,7 +220,42 @@ export function UsersPage() {
         </div>
       )}
 
-      {tab === "school" ? (
+      {usersQuery.isPending ? (
+        <Panel title={tab === "school" ? "Campus users" : "Admin accounts"}>
+          <div
+            className="flex min-h-[400px] items-center justify-center px-5 py-10"
+            role="status"
+            aria-label="Loading accounts"
+          >
+            <div className="w-full max-w-2xl space-y-4" aria-hidden="true">
+              <div className="h-4 w-40 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+              <div className="space-y-3">
+                {Array.from({ length: 5 }, (_, index) => (
+                  <div
+                    key={index}
+                    className="h-10 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-900"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </Panel>
+      ) : usersQuery.isError ? (
+        <Panel title="Unable to load accounts">
+          <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-5 py-10 text-center">
+            <p className="text-sm text-red-700 dark:text-red-400" role="alert">
+              {errorMessage(usersQuery.error, "We couldn't load accounts.")}
+            </p>
+            <button
+              type="button"
+              onClick={() => void usersQuery.refetch()}
+              className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+            >
+              Try again
+            </button>
+          </div>
+        </Panel>
+      ) : tab === "school" ? (
         <Panel
           title="Campus users"
           action={<span className="text-xs text-neutral-500 dark:text-neutral-400">{filteredSchoolUsers.length} users</span>}
@@ -265,6 +329,7 @@ export function UsersPage() {
                             <button
                               type="button"
                               onClick={() => handleStatusClick(user)}
+                              disabled={updateStatusMutation.isPending}
                               aria-label={`Deactivate ${user.name}`}
                               className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                             >
@@ -275,6 +340,7 @@ export function UsersPage() {
                             <button
                               type="button"
                               onClick={() => handleStatusClick(user)}
+                              disabled={updateStatusMutation.isPending}
                               aria-label={`Activate ${user.name}`}
                               className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 dark:border-neutral-800 px-3 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                             >
@@ -349,6 +415,9 @@ export function UsersPage() {
           onDeleteTargetChange={setDeleteTarget}
           onConfirmStatusChange={confirmStatusChange}
           onConfirmDelete={confirmDelete}
+          isSavingStatus={updateStatusMutation.isPending}
+          isSavingRole={updateRoleMutation.isPending}
+          isSavingDelete={deleteUserMutation.isPending}
         />
       )}
 
@@ -386,6 +455,7 @@ export function UsersPage() {
               <button
                 type="button"
                 onClick={() => setPendingUser(null)}
+                disabled={updateStatusMutation.isPending}
                 className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
               >
                 Cancel
@@ -393,13 +463,18 @@ export function UsersPage() {
               <button
                 type="button"
                 onClick={confirmStatusChange}
+                disabled={updateStatusMutation.isPending}
                 className={`h-9 rounded-lg px-3.5 text-xs font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                   pendingUser.isActive
                     ? "bg-[#E5192D] hover:bg-[#c81424] focus-visible:ring-[#E5192D]"
                     : "bg-neutral-900 hover:bg-neutral-700 focus-visible:ring-neutral-900"
                 }`}
               >
-                {pendingUser.isActive ? "Deactivate" : "Activate"}
+                {updateStatusMutation.isPending
+                  ? "Saving…"
+                  : pendingUser.isActive
+                    ? "Deactivate"
+                    : "Activate"}
               </button>
             </div>
           </div>
