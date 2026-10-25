@@ -130,10 +130,16 @@ export async function uploadImage(file: File | Blob, filename?: string): Promise
   } else {
     formData.append("file", file, filename || "capture.jpg");
   }
-  const { data } = await api.post<UploadImageResponse>("/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return data.url;
+  try {
+    const { data } = await api.post<UploadImageResponse>("/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data.url;
+  } catch (error: unknown) {
+    throw new Error("The image couldn't be uploaded. Please try again.", {
+      cause: error,
+    });
+  }
 }
 
 /**
@@ -149,10 +155,16 @@ export async function uploadImages(files: (File | Blob)[]): Promise<string[]> {
       formData.append("files", f, `image-${index + 1}.jpg`);
     }
   });
-  const { data } = await api.post<UploadImageResponse>("/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return data.urls;
+  try {
+    const { data } = await api.post<UploadImageResponse>("/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data.urls;
+  } catch (error: unknown) {
+    throw new Error("The image couldn't be uploaded. Please try again.", {
+      cause: error,
+    });
+  }
 }
 
 /** PATCH /api/items/:id — update an existing item report. */

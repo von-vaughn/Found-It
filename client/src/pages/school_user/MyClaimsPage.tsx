@@ -4,8 +4,6 @@ import {
   ArrowRight,
   Building2,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   ClipboardList,
   Clock3,
   MapPin,
@@ -84,70 +82,37 @@ function ClaimPhotosCarousel({
       alt: `Evidence ${index + 1} for request ${claimId}`,
     })),
   ];
-  const [index, setIndex] = useState(0);
-  const total = photos.length;
-  if (total === 0) {
+  if (photos.length === 0) {
     return (
       <NoItemImage
-        title="No photo on this post"
-        className="aspect-[16/10] w-full rounded-xl"
+        title="No photo evidence provided"
+        subtitle="The claimant did not attach any photos to this request."
+        className="mt-2 h-72"
       />
     );
   }
-  const safeIndex = index % total;
-  const current = photos[safeIndex];
 
   return (
-    <div className="min-w-0">
-      <div className="relative overflow-hidden rounded-xl border border-neutral-200/80 dark:border-neutral-800">
-        <img
-          key={current.src}
-          src={current.src}
-          alt={current.alt}
-          loading="lazy"
-          className="aspect-[16/10] w-full object-cover"
-        />
-        {total > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={() => setIndex((i) => (i - 1 + total) % total)}
-              aria-label="Previous photo"
-              className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-transparent text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)] transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-            >
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIndex((i) => (i + 1) % total)}
-              aria-label="Next photo"
-              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-transparent text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)] transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-            >
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-bold tabular-nums text-white">
-              {safeIndex + 1} / {total}
-            </span>
-          </>
-        )}
-      </div>
-      {total > 1 && (
-        <div className="mt-2 flex items-center justify-center gap-1.5">
-          {photos.map((_, dotIndex) => (
-            <button
-              key={`${claimId}-photo-dot-${dotIndex}`}
-              type="button"
-              onClick={() => setIndex(dotIndex)}
-              aria-label={`Go to photo ${dotIndex + 1}`}
-              className={`h-1.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-                dotIndex === safeIndex
-                  ? "w-5 bg-neutral-900"
-                  : "w-1.5 bg-neutral-300 hover:bg-neutral-400"
-              }`}
-            />
-          ))}
+    <div
+      className={`mt-2 grid gap-2 ${
+        photos.length > 1 ? "grid-cols-2" : "grid-cols-1"
+      }`}
+    >
+      {photos.map((photo, photoIndex) => (
+        <div
+          key={`${claimId}-evidence-${photoIndex}`}
+          className={`flex ${
+            photos.length > 1 ? "h-48" : "h-72"
+          } w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800`}
+        >
+          <img
+            src={photo.src}
+            alt={photo.alt}
+            loading="lazy"
+            className="h-full max-w-full object-contain"
+          />
         </div>
-      )}
+      ))}
     </div>
   );
 }

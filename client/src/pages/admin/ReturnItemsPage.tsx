@@ -656,23 +656,24 @@ export function ReturnItemsPage() {
                   <StatusBadge status="Lost" />
                 </div>
                 <div className="grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                  <div className="flex min-h-48 items-center justify-center rounded-lg bg-neutral-50 dark:bg-neutral-800 p-3 text-center">
-                    {selectedLostReport?.image ? (
+                  {selectedLostReport?.image ? (
+                    <div className="mt-2 grid grid-cols-1 gap-2">
                       <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800">
                         <img
                           src={selectedLostReport.image}
                           alt={`${selectedRequest.item} item`}
+                          loading="lazy"
                           className="h-full max-w-full object-contain"
                         />
                       </div>
-                    ) : (
-                      <NoItemImage
-                        title="No item photo provided"
-                        subtitle="This report did not include any photos of the item."
-                        className="h-72 w-full"
-                      />
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <NoItemImage
+                      title="No item photo provided"
+                      subtitle="This report did not include any photos of the item."
+                      className="mt-2 h-72 w-full"
+                    />
+                  )}
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
                       {selectedLostReport?.reportedBy || "None"}

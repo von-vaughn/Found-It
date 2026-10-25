@@ -9,7 +9,7 @@ import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
 import type { Item } from "@/data/mockItems";
 import { toClientItem } from "@/lib/itemAdapter";
-import { useCreateItem } from "@/hooks/useItems";
+import { useCreateItem, useUpdateItem } from "@/hooks/useItems";
 import { useCategoryMap, getCategoryUuid } from "@/hooks/useCategories";
 import { uploadImage, uploadImages } from "@/services/itemService";
 import toast from "react-hot-toast";
@@ -143,6 +143,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   initialItem = null,
 }) => {
   const createItemMutation = useCreateItem();
+  const updateItemMutation = useUpdateItem();
   const categoryMap = useCategoryMap();
   const { data: buildings } = useBuildings();
   const buildingOptions = buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
@@ -535,21 +536,19 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       try {
         // Resolve the category before uploading anything, so a failed lookup
         // can never leave an orphaned Drive image with no published post.
-        let categoryUuid: string | undefined;
-        if (!isEditing) {
-          categoryUuid = categoryMap?.get(category);
-          if (!categoryUuid) {
-            try {
-              categoryUuid = await getCategoryUuid(category);
-            } catch {
-              categoryUuid = undefined;
-            }
+        // Validation already ensured category is a chosen option id.
+        let categoryId = categoryMap?.get(category);
+        if (!categoryId) {
+          try {
+            categoryId = await getCategoryUuid(category);
+          } catch {
+            // The check below surfaces the fallback error.
           }
-          if (!categoryUuid) {
-            throw new Error(
-              "Could not resolve the selected category. Check your connection and try again.",
-            );
-          }
+        }
+        if (!categoryId) {
+          throw new Error(
+            "Could not resolve the selected category. Check your connection and try again.",
+          );
         }
 
         let finalImageUrl = "";
@@ -588,30 +587,24 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         }
 
         if (isEditing && initialItem) {
-          const updatedItem: Item = {
-            ...initialItem,
-            title: title.trim(),
-            type,
-            category,
-            building: building.trim() || undefined,
-            location: location.trim(),
-            date: dateValue,
-            dateTime: new Date(`${dateValue}T${timeValue}`).toISOString(),
-            image: finalImageUrl || (type === "lost" ? (lostImages[0] ?? "") : (previewImage ?? "")),
-            images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
-            description: description.trim() || DEFAULT_DESCRIPTION_PLACEHOLDER,
-          };
-          if (color.trim()) {
-            updatedItem.color = color.trim();
-          } else {
-            delete updatedItem.color;
-          }
-          if (importantDetails.trim()) {
-            updatedItem.confidentialInfo = importantDetails.trim();
-          } else {
-            delete updatedItem.confidentialInfo;
-          }
-          onUpdateItem?.(updatedItem);
+          // PATCH /api/items/:id — server-side update so the edit persists for
+          // everyone; the empty images array also clears removed photos.
+          const updated = await updateItemMutation.mutateAsync({
+            id: initialItem.id,
+            payload: {
+              name: title.trim(),
+              description: description.trim() || "No additional description provided.",
+              itemDate: dateValue,
+              itemTime: timeValue,
+              categoryId,
+              color: color.trim() || undefined,
+              building: building.trim() || undefined,
+              location: location.trim(),
+              importantDetails: importantDetails.trim(),
+              images: finalImageUrls.length > 0 ? finalImageUrls : [],
+            },
+          });
+          onUpdateItem?.(toClientItem(updated));
           toast.success("Your report was updated.");
           onSubmitted();
           return;
@@ -619,18 +612,13 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
         // Submit to the API and wait for the server-confirmed item before
         // showing a success message or adding anything to the dashboard.
-        if (!categoryUuid) {
-          throw new Error(
-            "Could not resolve the selected category. Check your connection and try again.",
-          );
-        }
         const created = await createItemMutation.mutateAsync({
           reportType: type,
           name: title.trim(),
           description: description.trim() || "No additional description provided.",
           itemDate: dateValue,
           itemTime: timeValue || undefined,
-          categoryId: categoryUuid,
+          categoryId,
           color: color.trim() || undefined,
           building: building.trim() || undefined,
           location: location.trim() || undefined,
