@@ -8,6 +8,7 @@ interface ItemRow {
   report_type: ReportType;
   is_claimed: boolean;
   is_returned: boolean;
+  received_by_osa: boolean;
   name: string;
   description: string;
   item_date: Date | string;
@@ -37,6 +38,7 @@ function toDateOnly(value: Date | string): string {
 // report is the parent of item: who reported, where, when.
 const ITEM_COLUMNS = `
   i.id, r.user_id AS reporter_id, r.report_type,
+  i.received_by_osa,
   EXISTS (
     SELECT 1 FROM request claim_request
     WHERE claim_request.item_id = i.id
@@ -111,6 +113,7 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
     reportType: row.report_type,
     isClaimed: row.is_claimed,
     isReturned: row.is_returned,
+    ...(isAdmin ? { receivedByOsa: row.received_by_osa } : {}),
     name: row.name,
     description: row.description,
     itemDate: toDateOnly(row.item_date),
@@ -403,6 +406,24 @@ export async function updateItem(
     client.release();
   }
   return findItemById(id, isAdmin, viewerId);
+}
+
+export async function updateOsaReceipt(
+  id: string,
+  receivedByOsa: boolean,
+  viewerId: string,
+): Promise<Item | null> {
+  const { rowCount } = await pool.query(
+    `UPDATE item AS i
+     SET received_by_osa = $2, updated_at = NOW()
+     WHERE i.id = $1
+       AND EXISTS (
+         SELECT 1 FROM report r
+         WHERE r.id = i.report_id AND r.report_type = 'found'
+       )`,
+    [id, receivedByOsa],
+  );
+  return (rowCount ?? 0) > 0 ? findItemById(id, true, viewerId) : null;
 }
 
 /** Deletes the parent report; the item row cascades. */

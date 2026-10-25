@@ -13,6 +13,7 @@ import {
   Clock3,
   Lock,
   MapPin,
+  Package,
   Palette,
   Tag,
   X,
@@ -25,6 +26,7 @@ import {
 } from "./SensitiveDetails";
 import { useSensitiveUnlock } from "./useSensitiveUnlock";
 import { StatusBadge } from "./StatusBadge";
+import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import { StatusFilter } from "./StatusFilter";
 import type { AdminReport } from "./types";
 import type { ClaimRequest } from "@/types/claim";
@@ -188,7 +190,7 @@ function ClaimRequestSection({
           <div>
             <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <Palette className="h-3 w-3" aria-hidden="true" />
-              Color
+              Primary color
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
               {claim.color?.trim() || "None"}
@@ -751,7 +753,7 @@ export function ClaimsView({
                       <div>
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Clock3 className="h-3 w-3" aria-hidden="true" />
-                          Time found
+                          {selectedItemPost.type === "Found" ? "Time found" : "Time lost"}
                         </dt>
                         <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
                           {formatEventTime(selectedItemPost.eventDateTime)}
@@ -777,7 +779,7 @@ export function ClaimsView({
                           {selectedItemPost.buildingName?.trim() || "None"}
                         </dd>
                       </div>
-                      <div className="col-span-2">
+                      <div>
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Palette className="h-3 w-3" aria-hidden="true" />
                           Color
@@ -786,6 +788,17 @@ export function ClaimsView({
                           {selectedItemPost.color?.trim() || "None"}
                         </dd>
                       </div>
+                      {selectedItemPost.type === "Found" && (
+                        <div>
+                          <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                            <Package className="h-3 w-3" aria-hidden="true" />
+                            Physical Item
+                          </dt>
+                          <dd className="mt-1">
+                            <OsaReceiptStatus received={selectedItemPost.receivedByOsa} />
+                          </dd>
+                        </div>
+                      )}
                       <div className="col-span-2">
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Lock className="h-3 w-3" aria-hidden="true" />

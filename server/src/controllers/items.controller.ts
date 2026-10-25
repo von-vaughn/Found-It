@@ -10,6 +10,7 @@ import {
   listItems,
   saveBlurredImageUrl,
   updateItem,
+  updateOsaReceipt,
 } from '../repositories/item.repository';
 import { REPORT_TYPES, type ReportType } from '../types/items';
 import { fetchRemoteImageBuffer, generateBlurredImage } from '../utils/image-blur';
@@ -58,6 +59,10 @@ const updateItemSchema = z.object({
   images: z.array(z.string().trim().min(1)).max(10).optional(),
   blurredImage: z.string().trim().min(1).optional(),
   blurredImages: z.array(z.string().trim().min(1)).max(10).optional(),
+});
+
+const updateOsaReceiptSchema = z.object({
+  receivedByOsa: z.boolean(),
 });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -200,6 +205,23 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
     req.user!.sub,
   );
   res.json({ message: 'Item report updated.', item: updated });
+}
+
+/** PATCH /api/items/:id/osa-receipt — admin-only found-item custody update. */
+export async function updateItemOsaReceipt(req: Request, res: Response): Promise<void> {
+  const id = getId(req);
+  if (invalidId(res, id)) return;
+  const parsed = updateOsaReceiptSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+  const updated = await updateOsaReceipt(id, parsed.data.receivedByOsa, req.user!.sub);
+  if (!updated) {
+    res.status(404).json({ message: 'Found item report not found.' });
+    return;
+  }
+  res.json({ message: 'OSA receipt status updated.', item: updated });
 }
 
 /** DELETE /api/items/:id — owner or admin+ */

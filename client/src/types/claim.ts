@@ -17,6 +17,7 @@ export interface ClaimRequest {
   claimantTitle?: string;
   color?: string;
   building?: string;
+  receivedByOsa?: boolean;
 }
 
 export type NewClaimRequest = Omit<

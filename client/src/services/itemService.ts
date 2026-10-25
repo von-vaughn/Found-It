@@ -7,6 +7,7 @@ export interface ServerItem {
   reportType: "lost" | "found";
   isClaimed: boolean;
   isReturned: boolean;
+  receivedByOsa?: boolean;
   name: string;
   description: string;
   itemDate: string;
@@ -232,6 +233,18 @@ export async function updateItem(
   const { data } = await api.patch<{ message: string; item: ServerItem }>(
     `/items/${id}`,
     payload,
+  );
+  return data.item;
+}
+
+/** PATCH /api/items/:id/osa-receipt — admin-only found-item custody update. */
+export async function updateOsaReceipt(
+  id: string,
+  receivedByOsa: boolean,
+): Promise<ServerItem> {
+  const { data } = await api.patch<{ message: string; item: ServerItem }>(
+    `/items/${id}/osa-receipt`,
+    { receivedByOsa },
   );
   return data.item;
 }

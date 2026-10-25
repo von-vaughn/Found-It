@@ -9,6 +9,7 @@ import {
   listAllReturns,
   listReturnsByUser,
   updateReturnRequest,
+  updateReturnOsaReceipt,
   updateReturnStatusById,
 } from "../repositories/request.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
@@ -30,6 +31,9 @@ function requestIdParam(req: Request): string | null {
 
 const adminReturnStatusSchema = z.object({
   status: z.enum(["pending", "approved", "rejected", "returned"]),
+});
+const adminOsaReceiptSchema = z.object({
+  receivedByOsa: z.boolean(),
 });
 
 /** POST /api/returns — report a found item on someone else's lost post. */
@@ -109,6 +113,32 @@ export async function updateAdminReturnStatus(
     return;
   }
   res.json({ message: "Return status updated.", returnRequest });
+}
+
+/** PATCH /api/returns/admin/:id/osa-receipt — update found-item custody. */
+export async function updateAdminReturnOsaReceipt(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const parsed = adminOsaReceiptSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+  const requestId = requestIdParam(req);
+  if (!requestId) {
+    res.status(400).json({ message: "Invalid return request ID." });
+    return;
+  }
+  const returnRequest = await updateReturnOsaReceipt(
+    requestId,
+    parsed.data.receivedByOsa,
+  );
+  if (!returnRequest) {
+    res.status(404).json({ message: "Found report not found." });
+    return;
+  }
+  res.json({ message: "Physical item status updated.", returnRequest });
 }
 
 /** PATCH /api/returns/:id — edit the signed-in user's pending found report. */

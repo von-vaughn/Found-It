@@ -4,6 +4,7 @@ import {
   getAllReturns,
   getMyReturns,
   submitReturn,
+  updateAdminReturnOsaReceipt,
   updateAdminReturnStatus,
   updateMyReturn,
 } from "../controllers/returns.controller";
@@ -17,6 +18,7 @@ router.use(authenticate);
 // Admin returns workspace
 router.get("/admin", requireAdmin, getAllReturns);
 router.patch("/admin/:id/status", requireAdmin, updateAdminReturnStatus);
+router.patch("/admin/:id/osa-receipt", requireAdmin, updateAdminReturnOsaReceipt);
 
 router.get("/", getMyReturns);
 router.post("/", submitReturn);

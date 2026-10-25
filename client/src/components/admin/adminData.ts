@@ -22,6 +22,7 @@ export const itemToAdminReport = (item: Item): AdminReport => ({
   id: item.id,
   title: item.title,
   type: item.type === "lost" ? "Lost" : "Found",
+  receivedByOsa: false,
   image: item.image,
   category:
     ITEM_CATEGORIES.find((category) => category.id === item.category)?.label ??
@@ -54,6 +55,7 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   id: item.id,
   title: item.name,
   type: item.reportType === "lost" ? "Lost" : "Found",
+  receivedByOsa: item.receivedByOsa ?? false,
   image: item.image || item.images?.[0] || "",
   category:
     ITEM_CATEGORIES.find((category) => category.id === item.category)?.label ??

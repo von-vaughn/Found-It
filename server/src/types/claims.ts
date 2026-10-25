@@ -23,6 +23,7 @@ export interface Claim {
   claimantTitle: string | null;
   color: string | null;
   building: string | null;
+  receivedByOsa?: boolean;
   status: ClaimStatus;
   submitted: string;
 }

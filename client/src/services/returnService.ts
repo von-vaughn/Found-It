@@ -63,6 +63,18 @@ export async function updateReturnStatus(
   return data.returnRequest;
 }
 
+/** PATCH /api/returns/admin/:id/osa-receipt — record found-item custody. */
+export async function updateReturnOsaReceipt(
+  id: string,
+  receivedByOsa: boolean,
+): Promise<ServerClaim> {
+  const { data } = await api.patch<UpdateReturnResponse>(
+    `/returns/admin/${id}/osa-receipt`,
+    { receivedByOsa },
+  );
+  return data.returnRequest;
+}
+
 /** PATCH /api/returns/:id — update a pending found report. */
 export async function updateReturnRequest(
   id: string,

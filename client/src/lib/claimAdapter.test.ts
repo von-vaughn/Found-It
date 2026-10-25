@@ -45,6 +45,16 @@ test("maps a saved server return into a found-report submission", () => {
   assert.equal(report.kind, "return");
   assert.equal(report.item, "iPhone 13");
   assert.equal(report.status, "Pending");
+  assert.equal(report.receivedByOsa, false);
+});
+
+test("preserves the saved OSA receipt status for an admin return report", () => {
+  const report = toFoundReportClaim({
+    ...serverClaim,
+    receivedByOsa: true,
+  });
+
+  assert.equal(report.receivedByOsa, true);
 });
 
 test("maps legacy claimed return requests to returned", () => {

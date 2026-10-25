@@ -7,6 +7,7 @@ export interface Item {
   reportType: ReportType;
   isClaimed: boolean;
   isReturned: boolean;
+  receivedByOsa?: boolean;
   name: string;
   description: string;
   /** Date the item was lost or found (YYYY-MM-DD). */

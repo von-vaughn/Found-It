@@ -47,6 +47,7 @@ export function toClaimRequest(claim: ServerClaim): ClaimRequest {
     claimantTitle: claim.claimantTitle ?? undefined,
     color: claim.color ?? undefined,
     building: claim.building ?? undefined,
+    receivedByOsa: claim.receivedByOsa ?? false,
     status: statusMap[claim.status],
     submitted: formatSubmitted(claim.submitted),
   };

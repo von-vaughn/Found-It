@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreHorizontal, Award, Package, ShieldCheck } from "lucide-react";
+import { MoreHorizontal, Award, Package } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import type { Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
@@ -143,13 +143,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           </div>
         )}
 
-        {/* Found item blur security indicator */}
-        {item.type === "found" && item.image && (
-          <div className="absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[10px] font-medium text-white shadow-sm pointer-events-none">
-            <ShieldCheck className="h-3 w-3 text-emerald-400 shrink-0" aria-hidden="true" />
-            <span>Photo blurred for verification</span>
-          </div>
-        )}
       </div>
 
       {/* More Menu — top right of the media */}

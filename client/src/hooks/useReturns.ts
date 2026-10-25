@@ -15,6 +15,7 @@ import {
   type CreateReturnPayload,
   type UpdateReturnPayload,
   updateReturnRequest,
+  updateReturnOsaReceipt,
   updateReturnStatus,
 } from "@/services/returnService";
 
@@ -98,6 +99,30 @@ export function useUpdateAdminReturnStatus() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
+    },
+  });
+}
+
+export function useUpdateAdminReturnOsaReceipt() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      receivedByOsa,
+    }: {
+      id: string;
+      receivedByOsa: boolean;
+    }) => updateReturnOsaReceipt(id, receivedByOsa),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ServerClaim[]>(returnKeys.admin(), (current) =>
+        current?.map((request) =>
+          request.id === updated.id ? updated : request,
+        ),
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: returnKeys.all });
     },
   });
 }

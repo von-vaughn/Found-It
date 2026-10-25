@@ -13,7 +13,11 @@ import { useBuildings } from "@/hooks/useBuildings";
 import { AdminLayout } from "./AdminLayout";
 import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
-import { useDeleteItem, useItems } from "@/hooks/useItems";
+import {
+  useDeleteItem,
+  useItems,
+  useUpdateOsaReceipt,
+} from "@/hooks/useItems";
 
 export function ReportsPage({
   onAddItem,
@@ -22,6 +26,7 @@ export function ReportsPage({
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
+  const [osaReceiptFilter, setOsaReceiptFilter] = useState("All found items");
   const [categoryFilter, setCategoryFilter] = useState("All categories");
   const [buildingFilter, setBuildingFilter] = useState("All buildings");
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,6 +40,30 @@ export function ReportsPage({
   const reports = useMemo(() => items.map(serverItemToAdminReport), [items]);
   const logDecision = useAuditDecision();
   const deleteItem = useDeleteItem();
+  const updateOsaReceipt = useUpdateOsaReceipt();
+
+  const handleOsaReceiptChange = (id: string, receivedByOsa: boolean) => {
+    updateOsaReceipt.mutate(
+      { id, receivedByOsa },
+      {
+        onSuccess: (updatedItem) => {
+          setSelectedReport((current) =>
+            current?.id === updatedItem.id
+              ? { ...current, receivedByOsa: updatedItem.receivedByOsa ?? false }
+              : current,
+          );
+          toast.success(
+            receivedByOsa
+              ? "Item marked received by OSA."
+              : "Item marked not yet received.",
+          );
+        },
+        onError: () => {
+          toast.error("Could not update the OSA receipt status. Please try again.");
+        },
+      },
+    );
+  };
 
   const handleDelete = (id: string, reason?: string) => {
     const target = reports.find((report) => report.id === id);
@@ -63,6 +92,13 @@ export function ReportsPage({
 
     return reports.filter((report) => {
       if (statusFilter !== "All statuses" && report.status !== statusFilter) {
+        return false;
+      }
+      if (
+        osaReceiptFilter !== "All found items" &&
+        (report.type !== "Found" ||
+          report.receivedByOsa !== (osaReceiptFilter === "Received by OSA"))
+      ) {
         return false;
       }
       if (
@@ -95,7 +131,7 @@ export function ReportsPage({
         report.id,
       ].some((value) => value.toLowerCase().includes(normalizedQuery));
     });
-  }, [buildingFilter, categoryFilter, query, reports, statusFilter]);
+  }, [buildingFilter, categoryFilter, osaReceiptFilter, query, reports, statusFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   useEffect(() => {
@@ -117,6 +153,11 @@ export function ReportsPage({
 
   const updateStatusFilter = (value: string) => {
     setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const updateOsaReceiptFilter = (value: string) => {
+    setOsaReceiptFilter(value);
     setCurrentPage(1);
   };
 
@@ -174,6 +215,21 @@ export function ReportsPage({
               <option>Found</option>
               <option>Returned</option>
               <option>Claimed</option>
+            </select>
+
+            <label className="sr-only" htmlFor="report-osa-receipt-filter">
+              Filter by OSA receipt
+            </label>
+            <select
+              id="report-osa-receipt-filter"
+              name="report-osa-receipt"
+              value={osaReceiptFilter}
+              onChange={(event) => updateOsaReceiptFilter(event.target.value)}
+              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+            >
+              <option>All found items</option>
+              <option>Received by OSA</option>
+              <option>Not Yet Received</option>
             </select>
 
             <label className="sr-only" htmlFor="report-category-filter">
@@ -295,6 +351,8 @@ export function ReportsPage({
           dialogRef={dialogRef}
           onClose={() => setSelectedReport(null)}
           onDelete={handleDelete}
+          onOsaReceiptChange={handleOsaReceiptChange}
+          isUpdatingOsaReceipt={updateOsaReceipt.isPending}
         />
       )}
       <CreatePostModal

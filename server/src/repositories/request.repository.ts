@@ -21,6 +21,7 @@ interface ClaimRow {
   claimant_title: string | null;
   primary_color: string | null;
   building: string | null;
+  received_by_osa: boolean;
   status: ClaimStatus;
   created_at: Date | string;
 }
@@ -30,7 +31,7 @@ const CLAIM_COLUMNS = `
   u.first_name || ' ' || u.last_name AS claimant, u.email,
   rq.date_lost, rq.time_lost, rq.location_lost, rq.details,
   rq.important_details, rq.evidence, rq.claimant_title,
-  rq.primary_color, rq.building, rq.status, rq.created_at
+  rq.primary_color, rq.building, rq.received_by_osa, rq.status, rq.created_at
 `;
 const CLAIM_JOIN = `
   FROM request rq
@@ -59,7 +60,7 @@ function parseEvidence(value: string | null): string[] {
   }
 }
 
-function toClaim(row: ClaimRow): Claim {
+function toClaim(row: ClaimRow, includeOsaReceipt = false): Claim {
   return {
     id: row.id,
     itemId: row.item_id,
@@ -75,6 +76,7 @@ function toClaim(row: ClaimRow): Claim {
     claimantTitle: row.claimant_title,
     color: row.primary_color,
     building: row.building,
+    ...(includeOsaReceipt ? { receivedByOsa: row.received_by_osa } : {}),
     status: row.status,
     submitted: new Date(row.created_at).toISOString(),
   };
@@ -105,12 +107,15 @@ export async function findClaimableItem(
     : null;
 }
 
-export async function findClaimById(id: string): Promise<Claim | null> {
+export async function findClaimById(
+  id: string,
+  includeOsaReceipt = false,
+): Promise<Claim | null> {
   const { rows } = await pool.query<ClaimRow>(
     `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN} WHERE rq.id = $1 LIMIT 1`,
     [id],
   );
-  return rows[0] ? toClaim(rows[0]) : null;
+  return rows[0] ? toClaim(rows[0], includeOsaReceipt) : null;
 }
 
 async function findRequestForUserAndItem(
@@ -180,7 +185,7 @@ async function listRequestsByUser(
      LIMIT 200`,
     [userId, kind],
   );
-  return rows.map(toClaim);
+  return rows.map((row) => toClaim(row, true));
 }
 
 export function listClaimsByUser(userId: string): Promise<Claim[]> {
@@ -199,7 +204,7 @@ async function listAllRequests(kind: "claim" | "return"): Promise<Claim[]> {
      LIMIT 500`,
     [kind],
   );
-  return rows.map(toClaim);
+  return rows.map((row) => toClaim(row));
 }
 
 /** Every ownership claim, for the admin claims workspace. */
@@ -210,6 +215,20 @@ export function listAllClaims(): Promise<Claim[]> {
 /** Every found report filed on a lost post, for the admin returns workspace. */
 export function listAllReturns(): Promise<Claim[]> {
   return listAllRequests("return");
+}
+
+export async function updateReturnOsaReceipt(
+  requestId: string,
+  receivedByOsa: boolean,
+): Promise<Claim | null> {
+  const { rows } = await pool.query<{ id: string }>(
+    `UPDATE request
+     SET received_by_osa = $2
+     WHERE id = $1 AND kind = 'return'
+     RETURNING id`,
+    [requestId, receivedByOsa],
+  );
+  return rows[0] ? findClaimById(rows[0].id, true) : null;
 }
 
 function allowedStatusPredecessors(
@@ -297,7 +316,7 @@ async function updateRequestStatusById(
   } finally {
     client.release();
   }
-  return findClaimById(id);
+  return findClaimById(id, true);
 }
 
 export function updateClaimStatusById(

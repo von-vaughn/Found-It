@@ -11,6 +11,7 @@ import {
   Clock3,
   Lock,
   MapPin,
+  Package,
   Palette,
   Tag,
   X,
@@ -19,6 +20,7 @@ import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { NoItemImage } from "@/components/NoItemImage";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { OsaReceiptStatus } from "@/components/admin/OsaReceiptStatus";
 import { StatusFilter } from "@/components/admin/StatusFilter";
 import {
   AdminPasswordModal,
@@ -28,7 +30,11 @@ import { useSensitiveUnlock } from "@/components/admin/useSensitiveUnlock";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import type { ServerClaimStatus } from "@/services/claimService";
 import { toFoundReportClaims } from "@/lib/claimAdapter";
-import { useAdminReturns, useUpdateAdminReturnStatus } from "@/hooks/useReturns";
+import {
+  useAdminReturns,
+  useUpdateAdminReturnOsaReceipt,
+  useUpdateAdminReturnStatus,
+} from "@/hooks/useReturns";
 import { useItems } from "@/hooks/useItems";
 import type { ClaimRequest } from "@/types/claim";
 import { AdminLayout } from "./AdminLayout";
@@ -68,6 +74,8 @@ function ReturnRequestSection({
   headingId,
   title,
   onRequestStatus,
+  onOsaReceiptChange,
+  isUpdatingOsaReceipt,
   unlocked,
   onRequestUnlock,
 }: {
@@ -75,6 +83,8 @@ function ReturnRequestSection({
   headingId: string;
   title?: string;
   onRequestStatus: (requestId: string, status: StatusDecision) => void;
+  onOsaReceiptChange: (requestId: string, receivedByOsa: boolean) => void;
+  isUpdatingOsaReceipt: boolean;
   unlocked: boolean;
   onRequestUnlock: () => void;
 }) {
@@ -193,6 +203,29 @@ function ReturnRequestSection({
             </div>
             <div>
               <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                <Package className="h-3 w-3" aria-hidden="true" />
+                Physical Item
+              </dt>
+              <dd className="mt-1 space-y-2">
+                <OsaReceiptStatus received={request.receivedByOsa ?? false} />
+                <button
+                  type="button"
+                  disabled={isUpdatingOsaReceipt}
+                  onClick={() =>
+                    onOsaReceiptChange(request.id, !(request.receivedByOsa ?? false))
+                  }
+                  className="inline-flex h-8 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 px-2.5 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60"
+                >
+                  {isUpdatingOsaReceipt
+                    ? "Updating…"
+                    : request.receivedByOsa
+                      ? "Mark not yet received"
+                      : "Mark received by OSA"}
+                </button>
+              </dd>
+            </div>
+            <div>
+              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                 <CalendarDays className="h-3 w-3" aria-hidden="true" />
                 Date found
               </dt>
@@ -271,6 +304,7 @@ export function ReturnItemsPage() {
     refetch: refetchItems,
   } = useItems();
   const updateReturnStatus = useUpdateAdminReturnStatus();
+  const updateOsaReceipt = useUpdateAdminReturnOsaReceipt();
   const requests = useMemo(
     () => toFoundReportClaims(serverReturns),
     [serverReturns],
@@ -412,6 +446,27 @@ export function ReturnItemsPage() {
       if (target.status !== "Approved") return;
     } else if (target.status !== "Pending") return;
     setConfirmAction({ requestId, status });
+  };
+
+  const handleOsaReceiptChange = (
+    requestId: string,
+    receivedByOsa: boolean,
+  ) => {
+    updateOsaReceipt.mutate(
+      { id: requestId, receivedByOsa },
+      {
+        onSuccess: () => {
+          toast.success(
+            receivedByOsa
+              ? "Item marked received by OSA."
+              : "Item marked not yet received.",
+          );
+        },
+        onError: () => {
+          toast.error("Could not update the physical item status. Please try again.");
+        },
+      },
+    );
   };
 
   const confirmStatusChange = () => {
@@ -812,6 +867,8 @@ export function ReturnItemsPage() {
                     : "Return evidence"
                 }
                 onRequestStatus={requestStatusChange}
+                onOsaReceiptChange={handleOsaReceiptChange}
+                isUpdatingOsaReceipt={updateOsaReceipt.isPending}
                 unlocked={unlocked}
                 onRequestUnlock={requestUnlock}
               />
@@ -824,6 +881,8 @@ export function ReturnItemsPage() {
                         request={sibling}
                         headingId={`return-request-${sibling.id}`}
                         onRequestStatus={requestStatusChange}
+                        onOsaReceiptChange={handleOsaReceiptChange}
+                        isUpdatingOsaReceipt={updateOsaReceipt.isPending}
                         unlocked={unlocked}
                         onRequestUnlock={requestUnlock}
                       />

@@ -27,6 +27,7 @@ export interface AdminReport {
   id: string;
   title: string;
   type: "Lost" | "Found";
+  receivedByOsa: boolean;
   image: string;
   category: string;
   description: string;

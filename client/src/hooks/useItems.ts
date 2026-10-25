@@ -10,6 +10,7 @@ import {
   listMyItems,
   getItemById,
   updateItem,
+  updateOsaReceipt,
   deleteItem,
   UUID_RE,
   type CreateItemPayload,
@@ -114,6 +115,20 @@ export function useUpdateItem() {
   });
 }
 
+export function useUpdateOsaReceipt() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, receivedByOsa }: { id: string; receivedByOsa: boolean }) =>
+      updateOsaReceipt(id, receivedByOsa),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: itemKeys.mine() });
+      queryClient.invalidateQueries({ queryKey: itemKeys.detail(data.id) });
+    },
+  });
+}
+
 // ─── DELETE /api/items/:id (delete an item report) ───────────────────────────
 
 export function useDeleteItem() {
@@ -128,4 +143,3 @@ export function useDeleteItem() {
     },
   });
 }
-

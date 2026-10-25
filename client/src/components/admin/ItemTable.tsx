@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { StatusBadge } from "./StatusBadge";
+import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import { NoItemImage } from "@/components/NoItemImage";
 import type { AdminReport } from "./types";
 
@@ -65,7 +66,7 @@ export function ItemTable({
         fitViewport ? "min-h-0 flex-1" : "min-h-[800px]"
       }`}
     >
-      <table className="w-full min-w-[1120px] text-left text-xs">
+      <table className="w-full min-w-[1260px] text-left text-xs">
         <thead
           className={
             showColumnHeadings
@@ -76,6 +77,9 @@ export function ItemTable({
           <tr>
             <th scope="col" className="px-5 py-3">
               Item name
+            </th>
+            <th scope="col" className="px-4 py-3">
+              Physical Item
             </th>
             <th scope="col" className="max-w-72 px-4 py-3">
               Description
@@ -151,11 +155,15 @@ export function ItemTable({
                     <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">
                       {row.title}
                     </span>
-                    <span className="mt-0.5 block text-[10px] text-neutral-400 dark:text-neutral-500">
-                      {row.id}
-                    </span>
                   </span>
                 </div>
+              </td>
+              <td className="px-4 py-3.5">
+                {row.type === "Found" ? (
+                  <OsaReceiptStatus received={row.receivedByOsa} />
+                ) : (
+                  <span className="text-neutral-400 dark:text-neutral-500">—</span>
+                )}
               </td>
               <td className="max-w-72 px-4 py-3.5">
                 <span className="line-clamp-2 leading-relaxed">
