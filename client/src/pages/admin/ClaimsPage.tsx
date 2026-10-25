@@ -1,9 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import toast from "react-hot-toast";
 import type { ClaimRequest } from "@/types/claim";
 import type { ServerClaimStatus } from "@/services/claimService";
-import type { RecordStatus } from "@/components/admin/types";
 import { ClaimsView } from "@/components/admin/ClaimsView";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
@@ -26,9 +24,6 @@ export function ClaimsPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Pending");
   const [manualClaimId, setManualClaimId] = useState<string | null>(null);
-  const [itemStatuses, setItemStatuses] = useState<
-    Record<string, RecordStatus>
-  >({});
   const logDecision = useAuditDecision();
   const {
     data: serverClaims = [],
@@ -107,10 +102,10 @@ export function ClaimsPage() {
     );
   };
 
-  const handleClaimStatusChange = (
+  const handleClaimStatusChange = async (
     id: string,
     status: ClaimRequest["status"],
-  ) => {
+  ): Promise<void> => {
     const serverStatus = ADMIN_STATUS[status];
     if (!serverStatus) return;
     const claim = allClaims.find((entry) => entry.id === id);
@@ -125,30 +120,17 @@ export function ClaimsPage() {
               ? "claimed"
               : null;
 
-    updateClaimStatus.mutate(
-      { id, status: serverStatus },
-      {
-        onSuccess: () => {
-          if (!action) return;
-          logDecision({
-            action,
-            entityType: "claim",
-            entityId: id,
-            itemTitle: claim?.item ?? id,
-            details: `${status} by super admin for claim ${id}${
-              claim ? ` (${claim.claimant})` : ""
-            }.`,
-          });
-        },
-        onError: () => {
-          toast.error("Could not update this claim. Please try again.");
-        },
-      },
-    );
-  };
-
-  const handleItemStatusChange = (itemId: string, status: RecordStatus) => {
-    setItemStatuses((current) => ({ ...current, [itemId]: status }));
+    await updateClaimStatus.mutateAsync({ id, status: serverStatus });
+    if (!action) return;
+    logDecision({
+      action,
+      entityType: "claim",
+      entityId: id,
+      itemTitle: claim?.item ?? id,
+      details: `${status} by super admin for claim ${id}${
+        claim ? ` (${claim.claimant})` : ""
+      }.`,
+    });
   };
 
   const selectedClaim = foundItemClaims.find(
@@ -230,8 +212,6 @@ export function ClaimsPage() {
         onStatusFilterChange={setStatusFilter}
         statusOptions={["Pending", "Approved", "Claimed", "Rejected"]}
         onClaimStatusChange={handleClaimStatusChange}
-        onItemStatusChange={handleItemStatusChange}
-        itemStatusOverrides={itemStatuses}
         plainDetails
       />
     </AdminLayout>

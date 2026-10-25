@@ -1,7 +1,6 @@
 import React, {
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -16,6 +15,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "@/context/useAuth";
 import { type Item } from "@/data/mockItems";
 import {
@@ -23,9 +23,15 @@ import {
   takeSchoolSidebarExpanded,
 } from "./sidebarExpandedState";
 import {
-  FALLBACK_PROFILE_NAME,
-  buildNotifications,
-} from "./notifications";
+  useDeleteReadNotifications,
+  useDeleteNotification,
+  useMarkNotificationRead,
+  useNotifications,
+} from "@/hooks/useNotifications";
+import {
+  formatNotificationTime,
+  notificationStatusLabel,
+} from "@/services/notificationService";
 import type { ClaimRequest } from "@/types/claim";
 
 interface SidebarProps {
@@ -42,11 +48,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
   onOpenCreateModal,
   hideMobileNav = false,
-  items: propItems,
-  submittedClaims = [],
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { data: notifications = [] } = useNotifications();
+  const deleteReadNotifications = useDeleteReadNotifications();
+  const deleteNotification = useDeleteNotification();
+  const markNotificationRead = useMarkNotificationRead();
   const asideRef = useRef<HTMLElement>(null);
   const notificationsPanelRef = useRef<HTMLElement>(null);
   const notificationsButtonRef = useRef<HTMLButtonElement>(null);
@@ -63,12 +71,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     window.matchMedia("(min-width: 768px)").matches,
   );
 
-  const profileName = user?.name || FALLBACK_PROFILE_NAME;
+  const unreadCount = notifications.filter(
+    (notification) => !notification.isRead,
+  ).length;
 
-  const notifications = useMemo(
-    () => buildNotifications(propItems, submittedClaims, profileName),
-    [propItems, submittedClaims, profileName],
-  );
+  const selectNotification = (notification: (typeof notifications)[number]) => {
+    if (!notification.isRead) {
+      markNotificationRead.mutate(notification.id, {
+        onError: () =>
+          toast.error("Could not update this notification. Please try again."),
+      });
+    }
+    setNotificationsOpen(false);
+    if (notification.itemId) {
+      navigate(`/dashboard/items/${notification.itemId}`);
+    }
+  };
 
   // When navigation remounts the sidebar (e.g. Profile -> Dashboard via the
   // home icon) while the pointer stays still over it, no new `mouseenter`
@@ -288,9 +306,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   />
                 </span>
 
-                {item.id === "notifications" && (
+                {item.id === "notifications" && unreadCount > 0 && (
                   <Badge variant="notification" className="absolute top-1 right-1 min-w-4 h-4 rounded-md px-0.5 text-[9px] leading-none border-2 border-white dark:border-neutral-900">
-                    {notifications.length > 9 ? "9+" : notifications.length}
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </Badge>
                 )}
 
@@ -357,9 +375,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     isActive ? "stroke-[2.3]" : "stroke-[1.8]"
                   }`}
                 />
-                {item.id === "notifications" && (
+                {item.id === "notifications" && unreadCount > 0 && (
                   <Badge variant="notification" className="absolute -top-1.5 -right-2.5 min-w-5 h-5 rounded-md px-1 text-[10px] leading-none border-2 border-white dark:border-neutral-900">
-                    <span className="translate-y-[0.5px]">{notifications.length > 9 ? "9+" : notifications.length}</span>
+                    <span className="translate-y-[0.5px]">{unreadCount > 9 ? "9+" : unreadCount}</span>
                   </Badge>
                 )}
               </span>
@@ -423,44 +441,77 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="p-3 space-y-1">
-            {notifications.map((notification) =>
-              notification.itemId ? (
+          <div className="flex items-center justify-between gap-3 px-5 py-2.5">
+            <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+              {unreadCount} unread
+            </p>
+            {unreadCount === 0 && notifications.length > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  deleteReadNotifications.mutate(undefined, {
+                    onError: () =>
+                      toast.error(
+                        "Could not clear read notifications. Please try again.",
+                      ),
+                  })
+                }
+                className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+          <div className="space-y-1 p-3">
+            {notifications.slice(0, 4).map((notification) => (
+              <div
+                key={notification.id}
+                className={`flex w-full items-start gap-2 rounded-xl p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
+                  notification.isRead ? "" : "bg-red-50/60 dark:bg-red-500/10"
+                }`}
+              >
                 <button
-                  key={notification.id}
                   type="button"
-                  onClick={() => {
-                    setNotificationsOpen(false);
-                    navigate(`/dashboard/items/${notification.itemId}`);
-                  }}
-                  className="block w-full p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
+                  onClick={() => selectNotification(notification)}
+                  className="min-w-0 flex-1 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
                 >
-                  <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                    {notification.title}
+                  <span className="flex min-w-0 items-center justify-between gap-2">
+                    <span className="min-w-0 truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                      {notification.title}
+                    </span>
+                    <span className="shrink-0 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                      {notificationStatusLabel(notification.event)}
+                    </span>
+                  </span>
+                  <p className="mt-1 line-clamp-2 text-xs text-neutral-500 dark:text-neutral-400">
+                    {notification.message}
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
-                    {notification.desc}
-                  </p>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1.5 block">
-                    {notification.time}
+                  <span className="mt-1.5 block text-[10px] text-neutral-400 dark:text-neutral-500">
+                    {formatNotificationTime(notification.createdAt)}
                   </span>
                 </button>
-              ) : (
-                <div
-                  key={notification.id}
-                  className="p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
+                <button
+                  type="button"
+                  aria-label={`Clear notification: ${notification.title}`}
+                  title="Clear notification"
+                  onClick={() =>
+                    deleteNotification.mutate(notification.id, {
+                      onError: () =>
+                        toast.error(
+                          "Could not clear this notification. Please try again.",
+                        ),
+                    })
+                  }
+                  className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:hover:bg-neutral-700 dark:hover:text-neutral-100"
                 >
-                  <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                    {notification.title}
-                  </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
-                    {notification.desc}
-                  </p>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1.5 block">
-                    {notification.time}
-                  </span>
-                </div>
-              ),
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            ))}
+            {notifications.length === 0 && (
+              <p className="px-5 py-8 text-center text-xs text-neutral-500 dark:text-neutral-400">
+                You’re all caught up.
+              </p>
             )}
           </div>
         </motion.aside>

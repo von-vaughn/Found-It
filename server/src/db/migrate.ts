@@ -137,6 +137,24 @@ export async function migrate(): Promise<void> {
     );
   `);
 
+  // Per-user notifications are persisted independently of their source item
+  // and request so deleting either does not erase notification history.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notification (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      item_id UUID REFERENCES item(id) ON DELETE SET NULL,
+      request_id UUID REFERENCES request(id) ON DELETE SET NULL,
+      kind VARCHAR(10) NOT NULL CHECK (kind IN ('claim', 'return')),
+      event VARCHAR(20) NOT NULL
+        CHECK (event IN ('submitted', 'approved', 'rejected', 'returned')),
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      is_read BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_user_email_lower ON "user" (LOWER(email));
     CREATE INDEX IF NOT EXISTS idx_user_role ON "user"(role);
@@ -150,6 +168,7 @@ export async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_image_item_id ON image(item_id);
     CREATE INDEX IF NOT EXISTS idx_request_item_id ON request(item_id);
     CREATE INDEX IF NOT EXISTS idx_request_user_id ON request(user_id);
+    CREATE INDEX IF NOT EXISTS idx_notification_user_id ON notification(user_id);
     -- One ownership claim per user per item; return requests are unaffected.
     CREATE UNIQUE INDEX IF NOT EXISTS idx_request_claim_unique
       ON request(item_id, user_id) WHERE kind = 'claim';

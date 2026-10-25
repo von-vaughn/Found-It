@@ -13,7 +13,9 @@ export interface AdminNotification {
   title: string;
   description: string;
   time: string;
-  claimId: string;
+  requestId: string | null;
+  kind: "claim" | "return";
+  status: string;
   read: boolean;
 }
 
@@ -30,6 +32,8 @@ interface AdminSidebarProps<TSection extends string> {
   notifications: AdminNotification[];
   onSectionChange: (section: TSection) => void;
   onNotificationSelect: (notification: AdminNotification) => void;
+  onClearNotification: (notificationId: string) => void;
+  onClearAllRead: () => void;
   onMarkAllRead: () => void;
 }
 
@@ -39,6 +43,8 @@ export function AdminSidebar<TSection extends string>({
   notifications,
   onSectionChange,
   onNotificationSelect,
+  onClearNotification,
+  onClearAllRead,
   onMarkAllRead,
 }: AdminSidebarProps<TSection>) {
   const asideRef = useRef<HTMLElement>(null);
@@ -306,45 +312,72 @@ export function AdminSidebar<TSection extends string>({
                   Mark all as read
                 </button>
               )}
+              {unreadCount === 0 && notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onClearAllRead}
+                  className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                >
+                  Clear all
+                </button>
+              )}
             </div>
             {notifications.length > 0 ? (
               <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 pt-0">
                 {notifications.slice(0, 4).map((notification) => (
-                  <button
+                  <div
                     key={notification.id}
-                    type="button"
-                    onClick={() => {
-                      onNotificationSelect(notification);
-                      setPanelOpen(false);
-                    }}
-                    className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
+                    className={`flex w-full items-start gap-2 rounded-xl p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
                       notification.read ? "" : "bg-red-50/60 dark:bg-red-500/10"
                     }`}
                   >
-                    <span
-                      aria-hidden="true"
-                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                        notification.read ? "bg-transparent" : "bg-[#E5192D]"
-                      }`}
-                    />
-                    <span className="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onNotificationSelect(notification);
+                        setPanelOpen(false);
+                      }}
+                      className="flex min-w-0 flex-1 items-start gap-3 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
+                    >
                       <span
-                        className={`block text-xs ${
-                          notification.read
-                            ? "font-medium text-neutral-700 dark:text-neutral-300"
-                            : "font-bold text-neutral-900 dark:text-neutral-100"
+                        aria-hidden="true"
+                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                          notification.read ? "bg-transparent" : "bg-[#E5192D]"
                         }`}
-                      >
-                        {notification.title}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex min-w-0 items-center justify-between gap-2">
+                          <span
+                            className={`min-w-0 truncate text-xs ${
+                              notification.read
+                                ? "font-medium text-neutral-700 dark:text-neutral-300"
+                                : "font-bold text-neutral-900 dark:text-neutral-100"
+                            }`}
+                          >
+                            {notification.title}
+                          </span>
+                          <span className="shrink-0 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                            {notification.status}
+                          </span>
+                        </span>
+                        <span className="mt-1 line-clamp-2 block text-xs text-neutral-500 dark:text-neutral-400">
+                          {notification.description}
+                        </span>
+                        <span className="mt-1.5 block text-[10px] text-neutral-400 dark:text-neutral-500">
+                          {notification.time}
+                        </span>
                       </span>
-                      <span className="mt-1 line-clamp-2 block text-xs text-neutral-500 dark:text-neutral-400">
-                        {notification.description}
-                      </span>
-                      <span className="mt-1.5 block text-[10px] text-neutral-400 dark:text-neutral-500">
-                        {notification.time}
-                      </span>
-                    </span>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Clear notification: ${notification.title}`}
+                      title="Clear notification"
+                      onClick={() => onClearNotification(notification.id)}
+                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:hover:bg-neutral-700 dark:hover:text-neutral-100"
+                    >
+                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  </div>
                 ))}
               </div>
             ) : (

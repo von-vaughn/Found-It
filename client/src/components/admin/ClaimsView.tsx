@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import axios from "axios";
 import toast from "react-hot-toast";
 
 const PAGE_SIZE = 10;
@@ -25,7 +26,7 @@ import {
 import { useSensitiveUnlock } from "./useSensitiveUnlock";
 import { StatusBadge } from "./StatusBadge";
 import { StatusFilter } from "./StatusFilter";
-import type { AdminReport, RecordStatus } from "./types";
+import type { AdminReport } from "./types";
 import type { ClaimRequest } from "@/types/claim";
 import { getClaimantEmail } from "@/types/claim";
 
@@ -43,7 +44,11 @@ function formatEventTime(value: string | undefined): string {
   return new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(date);
 }
 
-type StatusDecision = "Approved" | "Returned" | "ItemClaimed" | "Rejected";
+type StatusDecision =
+  | "Approved"
+  | "Returned"
+  | "ItemClaimed"
+  | "Rejected";
 
 function ClaimRequestSection({
   claim,
@@ -113,14 +118,13 @@ function ClaimRequestSection({
               className="mt-2 h-72"
             />
           )}
-          {claim.status !== "Claimed" && (
+          {claim.status !== "Claimed" && claim.status !== "Rejected" && (
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button
                 type="button"
                 disabled={
                   claim.status === "Returned" ||
-                  claim.status === "Rejected" ||
-                  (!isLostItem && itemClaimed)
+                  (!isLostItem && itemClaimed && claim.status !== "Approved")
                 }
                 onClick={() =>
                   onRequestStatus(
@@ -137,20 +141,20 @@ function ClaimRequestSection({
                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
                 {claim.status === "Returned"
                   ? "Returned"
-                  : claim.status === "Rejected"
-                    ? "Rejected"
-                    : claim.status === "Approved" && !isLostItem
-                      ? "Claimed"
-                      : isLostItem
-                        ? "Mark as returned"
-                        : "Approve request"}
+                  : claim.status === "Approved" && !isLostItem
+                    ? "Claimed"
+                    : isLostItem
+                      ? "Mark as returned"
+                      : "Approve request"}
               </button>
               <button
                 type="button"
-                disabled={claim.status !== "Pending"}
+                disabled={
+                  claim.status !== "Pending" && claim.status !== "Approved"
+                }
                 onClick={() => onRequestStatus(claim.id, "Rejected")}
                 className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default ${
-                  claim.status === "Pending"
+                  claim.status === "Pending" || claim.status === "Approved"
                     ? "border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                     : "border-neutral-200 dark:border-neutral-800 text-neutral-400 dark:text-neutral-500"
                 }`}
@@ -250,8 +254,6 @@ export function ClaimsView({
   claims: claimRequests,
   reports,
   onClaimStatusChange,
-  onItemStatusChange,
-  itemStatusOverrides,
   query,
   selectedClaim,
   selectedClaimId,
@@ -263,9 +265,10 @@ export function ClaimsView({
 }: {
   claims: ClaimRequest[];
   reports: AdminReport[];
-  onClaimStatusChange: (id: string, status: ClaimRequest["status"]) => void;
-  onItemStatusChange: (itemId: string, status: RecordStatus) => void;
-  itemStatusOverrides: Record<string, RecordStatus>;
+  onClaimStatusChange: (
+    id: string,
+    status: ClaimRequest["status"],
+  ) => Promise<void>;
   query: string;
   selectedClaim: ClaimRequest;
   selectedClaimId: string;
@@ -280,6 +283,7 @@ export function ClaimsView({
     claimId: string;
     status: StatusDecision;
   } | null>(null);
+  const [savingStatusChange, setSavingStatusChange] = useState(false);
   const approvalDialogRef = useRef<HTMLDialogElement>(null);
   const claimForStatusChange = claimRequests.find(
     (claim) => claim.id === pendingStatusChange?.claimId,
@@ -353,10 +357,7 @@ export function ClaimsView({
   const baseItemPost = visibleSelectedClaim
     ? reports.find((report) => report.id === visibleSelectedClaim.itemId)
     : undefined;
-  const selectedItemPost =
-    baseItemPost && itemStatusOverrides[baseItemPost.id]
-      ? { ...baseItemPost, status: itemStatusOverrides[baseItemPost.id] }
-      : baseItemPost;
+  const selectedItemPost = baseItemPost;
   const selectedItemImage = selectedItemPost?.image ?? "";
 
   const { unlocked, promptOpen, requestUnlock, submitPassword, setPromptOpen } =
@@ -389,20 +390,26 @@ export function ClaimsView({
     pendingStatusChange?.status === "ItemClaimed" ||
     pendingStatusChange?.status === "Returned";
 
-  const confirmStatusChange = () => {
-    if (!pendingStatusChange || !claimForStatusChange) return;
-    if (pendingStatusChange.status === "ItemClaimed") {
-      onItemStatusChange(claimForStatusChange.itemId, "Claimed");
-      onClaimStatusChange(pendingStatusChange.claimId, "Claimed");
-      toast.success(
-        `Marked "${claimForStatusChange.item}" as claimed for ${claimForStatusChange.claimant}.`,
-      );
-    } else {
-      onClaimStatusChange(
+  const confirmStatusChange = async () => {
+    if (!pendingStatusChange || !claimForStatusChange || savingStatusChange) {
+      return;
+    }
+    setSavingStatusChange(true);
+    try {
+      const confirmedStatus =
+        pendingStatusChange.status === "ItemClaimed"
+          ? "Claimed"
+          : pendingStatusChange.status;
+      await onClaimStatusChange(
         pendingStatusChange.claimId,
-        pendingStatusChange.status,
+        confirmedStatus,
       );
-      if (pendingStatusChange.status === "Approved") {
+
+      if (pendingStatusChange.status === "ItemClaimed") {
+        toast.success(
+          `Marked "${claimForStatusChange.item}" as claimed for ${claimForStatusChange.claimant}.`,
+        );
+      } else if (pendingStatusChange.status === "Approved") {
         toast.success(
           `Approved ${claimForStatusChange.claimant}'s claim for "${claimForStatusChange.item}".`,
         );
@@ -415,13 +422,32 @@ export function ClaimsView({
           `Marked "${claimForStatusChange.item}" as returned for ${claimForStatusChange.claimant}.`,
         );
       }
-    }
-    if (isAcceptDecision) {
-      for (const sibling of claimsToAutoReject) {
-        onClaimStatusChange(sibling.id, "Rejected");
+
+      if (isAcceptDecision && claimsToAutoReject.length > 0) {
+        const results = await Promise.allSettled(
+          claimsToAutoReject.map((sibling) =>
+            onClaimStatusChange(sibling.id, "Rejected"),
+          ),
+        );
+        if (results.some((result) => result.status === "rejected")) {
+          toast.error(
+            "The claim was updated, but one or more competing requests could not be rejected.",
+          );
+        }
       }
+      closeApprovalDialog();
+    } catch (error) {
+      const message = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : null;
+      toast.error(
+        typeof message === "string"
+          ? message
+          : "Could not update this claim. Please try again.",
+      );
+    } finally {
+      setSavingStatusChange(false);
     }
-    closeApprovalDialog();
   };
 
   return (
@@ -431,6 +457,9 @@ export function ClaimsView({
           ref={approvalDialogRef}
           aria-labelledby="claim-status-title"
           aria-describedby="claim-status-description"
+          onCancel={(event) => {
+            if (savingStatusChange) event.preventDefault();
+          }}
           onClose={() => setPendingStatusChange(null)}
           className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0 text-neutral-900 dark:text-neutral-100 shadow-xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
         >
@@ -477,16 +506,20 @@ export function ClaimsView({
               <button
                 type="button"
                 onClick={closeApprovalDialog}
-                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                disabled={savingStatusChange}
+                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={confirmStatusChange}
-                className="h-9 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                disabled={savingStatusChange}
+                className="h-9 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
               >
-                {pendingStatusChange.status === "Approved"
+                {savingStatusChange
+                  ? "Saving…"
+                  : pendingStatusChange.status === "Approved"
                   ? "Confirm"
                   : pendingStatusChange.status === "ItemClaimed"
                     ? "Confirm claimed"

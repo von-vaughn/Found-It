@@ -86,7 +86,7 @@ export async function getAllClaims(_req: Request, res: Response): Promise<void> 
   res.json({ claims, count: claims.length });
 }
 
-/** PATCH /api/claims/admin/:id/status — approve, reject, claim, or return (admin+). */
+/** PATCH /api/claims/admin/:id/status — update a claim decision (admin+). */
 export async function updateAdminClaimStatus(
   req: Request,
   res: Response,

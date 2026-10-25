@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   Building2,
@@ -247,6 +248,7 @@ function ReturnRequestSection({
 }
 
 export function ReturnItemsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Pending");
   const [page, setPage] = useState(1);
@@ -310,13 +312,23 @@ export function ReturnItemsPage() {
     );
   }, [query, visibleRequests, statusFilter]);
 
+  const requestedReturnIndex = filteredRequests.findIndex(
+    (request) => request.id === searchParams.get("returnId"),
+  );
   const totalPages = Math.max(1, Math.ceil(filteredRequests.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
+  const visiblePage =
+    requestedReturnIndex >= 0
+      ? Math.floor(requestedReturnIndex / PAGE_SIZE) + 1
+      : safePage;
   const pageRequests = filteredRequests.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE,
+    (visiblePage - 1) * PAGE_SIZE,
+    visiblePage * PAGE_SIZE,
   );
   const selectedRequest =
+    (requestedReturnIndex >= 0
+      ? filteredRequests[requestedReturnIndex]
+      : undefined) ??
     filteredRequests.find((request) => request.id === selectedId) ??
     filteredRequests[0] ??
     null;
@@ -324,8 +336,8 @@ export function ReturnItemsPage() {
     ? reports.find((report) => report.id === selectedRequest.itemId)
     : undefined;
   const rangeStart =
-    filteredRequests.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
-  const rangeEnd = Math.min(safePage * PAGE_SIZE, filteredRequests.length);
+    filteredRequests.length === 0 ? 0 : (visiblePage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(visiblePage * PAGE_SIZE, filteredRequests.length);
   // Other requests filed for the same lost item, so competing return
   // requests can be compared side by side before approving one.
   const siblingRequests = selectedRequest
@@ -358,6 +370,14 @@ export function ReturnItemsPage() {
   const updateStatusFilter = (value: string) => {
     setStatusFilter(value);
     setPage(1);
+  };
+  const changePage = (nextPage: number) => {
+    setPage(nextPage);
+    if (searchParams.has("returnId")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("returnId");
+      setSearchParams(next, { replace: true });
+    }
   };
 
   const { unlocked, promptOpen, requestUnlock, submitPassword, setPromptOpen } =
@@ -547,7 +567,14 @@ export function ReturnItemsPage() {
                       key={request.id}
                       type="button"
                       aria-pressed={selectedRequest?.id === request.id}
-                      onClick={() => setSelectedId(request.id)}
+                      onClick={() => {
+                        setSelectedId(request.id);
+                        if (searchParams.has("returnId")) {
+                          const next = new URLSearchParams(searchParams);
+                          next.delete("returnId");
+                          setSearchParams(next, { replace: true });
+                        }
+                      }}
                       className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5 ${
                         selectedRequest?.id === request.id
                           ? "bg-neutral-50 dark:bg-neutral-800"
@@ -597,8 +624,8 @@ export function ReturnItemsPage() {
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
-                      onClick={() => setPage(safePage - 1)}
-                      disabled={safePage <= 1}
+                      onClick={() => changePage(visiblePage - 1)}
+                      disabled={visiblePage <= 1}
                       aria-label="Previous page"
  className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
                     >
@@ -608,13 +635,13 @@ export function ReturnItemsPage() {
                       <button
                         key={index + 1}
                         type="button"
-                        onClick={() => setPage(index + 1)}
+                        onClick={() => changePage(index + 1)}
                         aria-label={`Page ${index + 1}`}
                         aria-current={
-                          safePage === index + 1 ? "page" : undefined
+                          visiblePage === index + 1 ? "page" : undefined
                         }
                         className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors ${
-                          safePage === index + 1
+                          visiblePage === index + 1
                             ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
                             : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                         }`}
@@ -624,8 +651,8 @@ export function ReturnItemsPage() {
                     ))}
                     <button
                       type="button"
-                      onClick={() => setPage(safePage + 1)}
-                      disabled={safePage >= totalPages}
+                      onClick={() => changePage(visiblePage + 1)}
+                      disabled={visiblePage >= totalPages}
                       aria-label="Next page"
  className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
                     >
@@ -841,7 +868,7 @@ export function ReturnItemsPage() {
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
               {confirmAction.status === "Approved"
-                ? `"${confirmTargetRequest.item}" will be marked as approved for ${confirmTargetRequest.claimant}, and they will be notified to proceed with the return.`
+                ? `"${confirmTargetRequest.item}" should only be approved after it has been turned over to the OSA office.`
                 : confirmAction.status === "Pending"
                   ? `The approval for "${confirmTargetRequest.item}" will be cancelled and the request will return to Pending for review.`
                   : confirmAction.status === "Returned"

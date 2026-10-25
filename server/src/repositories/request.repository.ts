@@ -1,4 +1,8 @@
 import { pool } from "../config/db";
+import {
+  createAdminSubmissionNotifications,
+  createRequestStatusNotification,
+} from "./notification.repository";
 import type { Claim, ClaimStatus } from "../types/claims";
 
 interface ClaimRow {
@@ -207,26 +211,84 @@ export function listAllReturns(): Promise<Claim[]> {
   return listAllRequests("return");
 }
 
-/** Admin decisions require the request's current status to match this predecessor. */
-const CLAIM_STATUS_PREDECESSOR: Record<ClaimStatus, ClaimStatus> = {
-  pending: "approved",
-  approved: "pending",
-  rejected: "pending",
-  claimed: "approved",
-  returned: "approved",
-};
+function allowedStatusPredecessors(
+  kind: "claim" | "return",
+  status: ClaimStatus,
+): ClaimStatus[] {
+  if (status === "rejected") {
+    return kind === "claim" ? ["pending", "approved"] : ["pending"];
+  }
+  if (status === "approved" || status === "claimed" || status === "returned") {
+    return status === "approved" ? ["pending"] : ["approved"];
+  }
+  return ["pending"];
+}
 
 async function updateRequestStatusById(
   kind: "claim" | "return",
   id: string,
   status: ClaimStatus,
 ): Promise<Claim | null> {
-  const { rowCount } = await pool.query(
-    `UPDATE request SET status = $2
-     WHERE id = $1 AND kind = $3 AND status = $4`,
-    [id, status, kind, CLAIM_STATUS_PREDECESSOR[status]],
-  );
-  return rowCount === 1 ? findClaimById(id) : null;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const predecessors = allowedStatusPredecessors(kind, status);
+    const { rows } = await client.query<{
+      user_id: string;
+      item_id: string;
+      item_name: string;
+      item_owner_id: string;
+      status: ClaimStatus;
+    }>(
+      `SELECT rq.user_id, rq.item_id, item.name AS item_name,
+              report.user_id AS item_owner_id, rq.status
+       FROM request rq
+       JOIN item ON item.id = rq.item_id
+       JOIN report ON report.id = item.report_id
+       WHERE rq.id = $1 AND rq.kind = $2
+       FOR UPDATE OF rq`,
+      [id, kind],
+    );
+    const current = rows[0];
+    if (!current || !predecessors.includes(current.status)) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    const { rowCount } = await client.query(
+      `UPDATE request SET status = $2
+       WHERE id = $1 AND kind = $3 AND status = $4`,
+      [id, status, kind, current.status],
+    );
+    if (rowCount !== 1) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    if (
+      status === "approved" ||
+      status === "rejected" ||
+      status === "returned"
+    ) {
+      await createRequestStatusNotification(client, {
+        requestId: id,
+        itemId: current.item_id,
+        itemName: current.item_name,
+        kind,
+        status,
+        requesterId: current.user_id,
+        itemOwnerId: current.item_owner_id,
+      });
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return findClaimById(id);
 }
 
 export function updateClaimStatusById(
@@ -263,8 +325,11 @@ async function createRequest(
   kind: "claim" | "return",
   input: CreateRequestInput,
 ): Promise<Claim | null> {
-  const result = await pool
-    .query<{ id: string }>(
+  const client = await pool.connect();
+  let requestId: string;
+  try {
+    await client.query("BEGIN");
+    const { rows } = await client.query<{ id: string }>(
       `INSERT INTO request (
          item_id, user_id, kind, status, evidence, claimant_title,
          primary_color, building, date_lost, time_lost, location_lost,
@@ -286,16 +351,20 @@ async function createRequest(
         input.details,
         input.importantDetails,
       ],
-    )
-    .catch((error: unknown) => {
-      // The partial unique index is the final guard against a concurrent duplicate.
-      if ((error as { code?: string }).code === "23505") return null;
-      throw error;
-    });
+    );
+    requestId = rows[0].id;
+    await createAdminSubmissionNotifications(client, requestId);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    // The partial unique index is the final guard against concurrent duplicates.
+    if ((error as { code?: string }).code === "23505") return null;
+    throw error;
+  } finally {
+    client.release();
+  }
 
-  if (!result) return null;
-
-  const request = await findClaimById(result.rows[0].id);
+  const request = await findClaimById(requestId);
   if (!request) throw new Error("Created request could not be read back.");
   return request;
 }

@@ -16,6 +16,7 @@ import buildingsRoutes from './routes/buildings.routes';
 import claimsRoutes from './routes/claims.routes';
 import returnsRoutes from './routes/returns.routes';
 import uploadRoutes from './routes/upload.routes';
+import notificationsRoutes from './routes/notifications.routes';
 import { errorHandler, notFound } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
 import { assertMailConfigured } from './utils/mailer';
@@ -82,6 +83,7 @@ app.use('/api/buildings', buildingsRoutes);
 app.use('/api/claims', claimsRoutes);
 app.use('/api/returns', returnsRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

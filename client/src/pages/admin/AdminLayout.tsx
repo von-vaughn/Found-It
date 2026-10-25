@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut, Moon, Search, Sun } from "lucide-react";
+import toast from "react-hot-toast";
 import { useTheme } from "@/context/useTheme";
 import { useAuth } from "@/context/useAuth";
 import {
@@ -13,8 +14,17 @@ import {
   navigationFor,
 } from "@/components/admin/adminData";
 import type { AdminSection } from "@/components/admin/types";
-import { useAdminClaims } from "@/hooks/useClaims";
-import { toClaimRequests } from "@/lib/claimAdapter";
+import {
+  useDeleteReadNotifications,
+  useDeleteNotification,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+} from "@/hooks/useNotifications";
+import {
+  formatNotificationTime,
+  notificationStatusLabel,
+} from "@/services/notificationService";
 import { adminSectionPaths } from "./sectionPaths";
 
 function AdminAccountMenu() {
@@ -156,33 +166,42 @@ export function AdminLayout({
   const navigate = useNavigate();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
-  const { data: serverClaims = [] } = useAdminClaims();
-  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+  const { data: serverNotifications = [] } = useNotifications();
+  const deleteReadNotifications = useDeleteReadNotifications();
+  const deleteNotification = useDeleteNotification();
+  const markNotificationRead = useMarkNotificationRead();
+  const markAllNotificationsRead = useMarkAllNotificationsRead();
 
   const notifications = useMemo(
     () =>
-      toClaimRequests(serverClaims)
-        .filter((claim) => claim.status === "Pending")
-        .map((claim) => ({
-          id: claim.id,
-          title: "Ownership claim submitted",
-          description: `${claim.claimant} submitted a claim for the ${claim.item}.`,
-          time: claim.submitted,
-          claimId: claim.id,
-          read: readNotificationIds.includes(claim.id),
+      serverNotifications.map((notification) => ({
+          id: notification.id,
+          title: notification.title,
+          description: notification.message,
+          time: formatNotificationTime(notification.createdAt),
+          requestId: notification.requestId,
+          kind: notification.kind,
+          status: notificationStatusLabel(notification.event),
+          read: notification.isRead,
         })),
-    [readNotificationIds, serverClaims],
+    [serverNotifications],
   );
 
   const copy = getPageCopy(activeSection, isSuperAdmin);
 
   const handleNotificationSelect = (notification: AdminNotification) => {
-    setReadNotificationIds((current) =>
-      current.includes(notification.id)
-        ? current
-        : [...current, notification.id],
-    );
-    navigate(`${adminSectionPaths.claims}?claimId=${notification.claimId}`);
+    if (!notification.read) {
+      markNotificationRead.mutate(notification.id, {
+        onError: () =>
+          toast.error("Could not update this notification. Please try again."),
+      });
+    }
+    const section = notification.kind === "claim" ? "claims" : "returns";
+    const parameter = notification.kind === "claim" ? "claimId" : "returnId";
+    const suffix = notification.requestId
+      ? `?${parameter}=${encodeURIComponent(notification.requestId)}`
+      : "";
+    navigate(`${adminSectionPaths[section]}${suffix}`);
   };
 
   return (
@@ -195,10 +214,25 @@ export function AdminLayout({
           navigate(adminSectionPaths[newSection]);
         }}
         onNotificationSelect={handleNotificationSelect}
+        onClearNotification={(notificationId) =>
+          deleteNotification.mutate(notificationId, {
+            onError: () =>
+              toast.error("Could not clear this notification. Please try again."),
+          })
+        }
+        onClearAllRead={() =>
+          deleteReadNotifications.mutate(undefined, {
+            onError: () =>
+              toast.error("Could not clear read notifications. Please try again."),
+          })
+        }
         onMarkAllRead={() =>
-          setReadNotificationIds((current) => [
-            ...new Set([...current, ...notifications.map((entry) => entry.id)]),
-          ])
+          markAllNotificationsRead.mutate(undefined, {
+            onError: () =>
+              toast.error(
+                "Could not update notifications. Please try again.",
+              ),
+          })
         }
       />
 
