@@ -176,6 +176,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const preFiltered = items.filter((item) => {
+      if (item.type === "found" && item.isClaimed) {
+        return false;
+      }
+
       // Category filter
       if (selectedCategory !== "all" && item.category !== selectedCategory) {
         return false;

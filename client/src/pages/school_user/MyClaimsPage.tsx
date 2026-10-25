@@ -29,13 +29,14 @@ import {
 import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
-import { useItems } from "@/hooks/useItems";
+import { useItems, useMyItems } from "@/hooks/useItems";
 import { useDeleteClaim, useUpdateClaim } from "@/hooks/useClaims";
 import {
   useDeleteReturnRequest,
   useUpdateReturnRequest,
 } from "@/hooks/useReturns";
 import { toClientItems } from "@/lib/itemAdapter";
+import { toReturnedFoundReportClaim } from "@/lib/claimAdapter";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -130,10 +131,21 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
     staleTime: 30_000,
     retry: 1,
   });
+  const { data: serverMyItems = [] } = useMyItems({
+    staleTime: 30_000,
+    retry: 1,
+  });
   const items = useMemo(
     () =>
-      serverItems ? toClientItems(serverItems) : (propItems ?? EMPTY_ITEMS),
-    [serverItems, propItems],
+      serverItems
+        ? toClientItems([
+            ...serverItems,
+            ...serverMyItems.filter(
+              (mine) => !serverItems.some((item) => item.id === mine.id),
+            ),
+          ])
+        : (propItems ?? EMPTY_ITEMS),
+    [serverItems, serverMyItems, propItems],
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -148,8 +160,14 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   const deleteReturnRequest = useDeleteReturnRequest();
 
   const myClaims = useMemo(
-    () => [...submittedClaims, ...foundReports],
-    [submittedClaims, foundReports],
+    () => [
+      ...submittedClaims,
+      ...foundReports,
+      ...serverMyItems
+        .map(toReturnedFoundReportClaim)
+        .filter((claim): claim is ClaimRequest => claim !== null),
+    ],
+    [submittedClaims, foundReports, serverMyItems],
   );
 
   const counts = useMemo(() => {
@@ -391,6 +409,14 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       {claim.details}
                                     </p>
                                   </div>
+                                  {isFoundReport && claim.status === "Returned" && (
+                                    <p
+                                      role="status"
+                                      className="mt-3 rounded-xl bg-teal-50 px-3.5 py-3 text-sm font-semibold text-teal-800 dark:bg-teal-500/10 dark:text-teal-200"
+                                    >
+                                      This item has already been returned.
+                                    </p>
+                                  )}
                                   <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:grid-cols-3">
                                 <div>
                                   <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
@@ -475,7 +501,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   </p>
                                 </div>
                               )}
-                              <div className="mt-3 flex flex-wrap justify-end gap-2">
+                              <div className="mt-auto flex flex-wrap justify-end gap-2 pt-3">
                                 {isPending && (
                                   <>
                                     <button

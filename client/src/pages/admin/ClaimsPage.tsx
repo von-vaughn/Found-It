@@ -133,10 +133,6 @@ export function ClaimsPage() {
     });
   };
 
-  const selectedClaim = foundItemClaims.find(
-    (claim) => claim.id === selectedClaimId,
-  );
-
   if (claimsLoading || itemsLoading) {
     return (
       <AdminLayout
@@ -179,21 +175,6 @@ export function ClaimsPage() {
     );
   }
 
-  if (!selectedClaim) {
-    return (
-      <AdminLayout
-        activeSection="claims"
-        showSearch
-        query={query}
-        onQueryChange={setQuery}
-      >
-        <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
-          No claims found.
-        </p>
-      </AdminLayout>
-    );
-  }
-
   return (
     <AdminLayout
       activeSection="claims"
@@ -205,7 +186,6 @@ export function ClaimsPage() {
         claims={foundItemClaims}
         reports={reports}
         query={query.trim().toLowerCase()}
-        selectedClaim={selectedClaim}
         selectedClaimId={selectedClaimId}
         onSelectClaim={handleSelectClaim}
         statusFilter={statusFilter}

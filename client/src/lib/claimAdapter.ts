@@ -3,6 +3,7 @@ import type {
   ServerClaim,
   ServerClaimStatus,
 } from "@/services/claimService";
+import type { ServerItem } from "@/services/itemService";
 
 const dateFormatter = new Intl.DateTimeFormat("en", { dateStyle: "medium" });
 const submittedFormatter = new Intl.DateTimeFormat("en", {
@@ -67,4 +68,29 @@ export function toFoundReportClaim(claim: ServerClaim): ClaimRequest {
 
 export function toFoundReportClaims(claims: ServerClaim[]): ClaimRequest[] {
   return claims.map(toFoundReportClaim);
+}
+
+/** Shows the found-post owner that another user has received the item. */
+export function toReturnedFoundReportClaim(
+  item: ServerItem,
+): ClaimRequest | null {
+  if (item.reportType !== "found" || !item.isReturned) return null;
+
+  return {
+    id: `returned-found-${item.id}`,
+    itemId: item.id,
+    item: item.name,
+    claimant: item.user.name,
+    dateLost: formatDateOnly(item.itemDate),
+    timeLost: item.itemTime ?? "",
+    location: item.location ?? "",
+    details: item.description,
+    evidence: item.images ?? (item.image ? [item.image] : []),
+    claimantTitle: item.name,
+    color: item.color ?? undefined,
+    building: item.building ?? undefined,
+    status: "Returned",
+    kind: "return",
+    submitted: formatSubmitted(item.createdAt),
+  };
 }

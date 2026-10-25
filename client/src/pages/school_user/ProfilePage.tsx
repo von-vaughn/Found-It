@@ -97,7 +97,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       ),
     [items, name, profileUsername],
   );
-  const userItems = apiMyItems ?? clientUserItems;
+  const userItems = (apiMyItems ?? clientUserItems).filter(
+    (item) => item.type !== "found" || !item.isReturned,
+  );
   const lostItems = userItems.filter((item) => item.type === "lost").length;
   const foundItems = userItems.length - lostItems;
   const filteredUserItems =

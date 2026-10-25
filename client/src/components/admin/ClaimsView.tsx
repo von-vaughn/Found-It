@@ -255,7 +255,6 @@ export function ClaimsView({
   reports,
   onClaimStatusChange,
   query,
-  selectedClaim,
   selectedClaimId,
   onSelectClaim,
   statusFilter,
@@ -270,7 +269,6 @@ export function ClaimsView({
     status: ClaimRequest["status"],
   ) => Promise<void>;
   query: string;
-  selectedClaim: ClaimRequest;
   selectedClaimId: string;
   onSelectClaim: (id: string) => void;
   statusFilter: string;
@@ -333,11 +331,8 @@ export function ClaimsView({
   const rangeStart =
     filteredClaims.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(safePage * PAGE_SIZE, filteredClaims.length);
-  const visibleSelectedClaim = filteredClaims.some(
-    (claim) => claim.id === selectedClaimId,
-  )
-    ? selectedClaim
-    : null;
+  const visibleSelectedClaim =
+    filteredClaims.find((claim) => claim.id === selectedClaimId) ?? null;
   // Other requests filed for the same item, so competing claims can be
   // compared side by side before approving one.
   const siblingClaims = visibleSelectedClaim
@@ -553,7 +548,7 @@ export function ClaimsView({
         >
           {filteredClaims.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              No claims match this search.
+              No claim requests match this search.
             </p>
           ) : (
             <>

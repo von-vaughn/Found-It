@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { toClaimRequest, toFoundReportClaim } from "./claimAdapter.ts";
+import {
+  toClaimRequest,
+  toFoundReportClaim,
+  toReturnedFoundReportClaim,
+} from "./claimAdapter.ts";
 import type { ServerClaim } from "@/services/claimService";
+import type { ServerItem } from "@/services/itemService";
 
 const serverClaim: ServerClaim = {
   id: "9d1f0e6a-2b3c-4d5e-8f90-1a2b3c4d5e6f",
@@ -46,6 +51,75 @@ test("maps legacy claimed return requests to returned", () => {
   const report = toFoundReportClaim({ ...serverClaim, status: "claimed" });
 
   assert.equal(report.status, "Returned");
+});
+
+test("maps a claimed found post to the reporter's returned history", () => {
+  const item: ServerItem = {
+    id: "found-item-id",
+    reporterId: "reporter-id",
+    reportType: "found",
+    isClaimed: true,
+    isReturned: true,
+    name: "Blue backpack",
+    description: "A blue backpack with a keychain.",
+    itemDate: "2026-10-10",
+    itemTime: "09:12",
+    categoryId: "bags",
+    category: "Bags",
+    color: "Blue",
+    building: "Library",
+    location: "Library",
+    image: "https://example.com/backpack.jpg",
+    images: ["https://example.com/backpack.jpg"],
+    user: { id: "reporter-id", name: "School User 1" },
+    createdAt: "2026-10-12T13:12:00",
+    updatedAt: "2026-10-12T13:12:00",
+  };
+
+  const report = toReturnedFoundReportClaim(item);
+
+  assert.equal(report?.kind, "return");
+  assert.equal(report?.status, "Returned");
+  assert.equal(report?.itemId, item.id);
+  assert.equal(report?.claimant, item.user.name);
+  assert.deepEqual(report?.evidence, item.images);
+});
+
+test("does not add an unclaimed or lost post to returned history", () => {
+  const item: ServerItem = {
+    id: "found-item-id",
+    reporterId: "reporter-id",
+    reportType: "found",
+    isClaimed: false,
+    isReturned: false,
+    name: "Blue backpack",
+    description: "A blue backpack with a keychain.",
+    itemDate: "2026-10-10",
+    itemTime: null,
+    categoryId: "bags",
+    category: "Bags",
+    color: null,
+    building: null,
+    location: null,
+    user: { id: "reporter-id", name: "School User 1" },
+    createdAt: "2026-10-12T13:12:00",
+    updatedAt: "2026-10-12T13:12:00",
+  };
+
+  assert.equal(toReturnedFoundReportClaim(item), null);
+  assert.equal(
+    toReturnedFoundReportClaim({ ...item, isClaimed: true }),
+    null,
+  );
+  assert.equal(
+    toReturnedFoundReportClaim({
+      ...item,
+      isClaimed: true,
+      isReturned: true,
+      reportType: "lost",
+    }),
+    null,
+  );
 });
 
 test("maps every server status to its school-user badge", () => {

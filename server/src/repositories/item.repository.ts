@@ -44,10 +44,14 @@ const ITEM_COLUMNS = `
       AND claim_request.status IN ('approved', 'claimed', 'returned')
   ) AS is_claimed,
   EXISTS (
-    SELECT 1 FROM request return_request
-    WHERE return_request.item_id = i.id
-      AND return_request.kind = 'return'
-      AND return_request.status = 'returned'
+    SELECT 1 FROM request completed_request
+    WHERE completed_request.item_id = i.id
+      AND (
+        (completed_request.kind = 'claim'
+          AND completed_request.status IN ('claimed', 'returned'))
+        OR (completed_request.kind = 'return'
+          AND completed_request.status = 'returned')
+      )
   ) AS is_returned,
   i.name, i.description, r.date AS item_date,
   r.time AS item_time, i.primary_color AS color,

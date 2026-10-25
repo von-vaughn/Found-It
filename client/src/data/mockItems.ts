@@ -5,6 +5,8 @@ export interface Item {
   reporterId?: string;
   title: string;
   type: 'lost' | 'found';
+  isClaimed?: boolean;
+  isReturned?: boolean;
   category: ItemCategory;
   building?: string;
   location: string;
