@@ -1,5 +1,6 @@
 import { useMyItems } from "@/hooks/useItems";
 import { toClientItems } from "@/lib/itemAdapter";
+import { extractIdNumberFromEmail } from "@/lib/idNumber";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut, PlusCircle } from "lucide-react";
@@ -27,8 +28,7 @@ interface ProfilePageProps {
 
 const DEFAULT_PROFILE = {
   name: "Vaughn Evangelista",
-  email: "vaughn@wmsu.edu.ph",
-  studentId: "STU-2021-00318",
+  email: "ve202100318@wmsu.edu.ph",
   avatar: "/images/avatars/vaughn_evangelista.svg",
 };
 
@@ -75,8 +75,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   const name = user?.name || DEFAULT_PROFILE.name;
   const email = user?.email || DEFAULT_PROFILE.email;
-  const studentId =
-    user?.studentId || DEFAULT_PROFILE.studentId || "STU-2021-00318";
+  const idNumber = extractIdNumberFromEmail(email);
   const avatar = user?.avatar || DEFAULT_PROFILE.avatar;
   const profileUsername = name.toLowerCase().replace(/\s+/g, "_");
 
@@ -213,7 +212,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   {email}
                 </p>
                 <p className="mt-0.5 break-all text-sm text-neutral-500 dark:text-neutral-400">
-                  Student ID: {studentId}
+                  ID Number: {idNumber || "N/A"}
                 </p>
               </div>
             </section>

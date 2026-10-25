@@ -305,7 +305,7 @@ function RequestEditForm({
               id="edit-request-date"
               required
               type="date"
-              className={`${inputClass} cursor-pointer`}
+              className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
               value={dateLost}
               onChange={(event) => setDateLost(event.target.value)}
               disabled={isBusy}
@@ -319,7 +319,7 @@ function RequestEditForm({
               id="edit-request-time"
               required
               type="time"
-              className={`${inputClass} cursor-pointer`}
+              className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
               value={timeLost}
               onChange={(event) => setTimeLost(event.target.value)}
               disabled={isBusy}

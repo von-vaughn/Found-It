@@ -31,6 +31,7 @@ import { StatusFilter } from "./StatusFilter";
 import type { AdminReport } from "./types";
 import type { ClaimRequest } from "@/types/claim";
 import { getClaimantEmail } from "@/types/claim";
+import { extractIdNumberFromEmail } from "@/lib/idNumber";
 
 function formatEventDate(value: string | undefined): string {
   if (!value) return "None";
@@ -58,6 +59,7 @@ function ClaimRequestSection({
   title,
   itemType,
   itemClaimed,
+  itemReceived,
   onRequestStatus,
   unlocked,
   onRequestUnlock,
@@ -67,6 +69,7 @@ function ClaimRequestSection({
   title?: string;
   itemType: "Lost" | "Found" | undefined;
   itemClaimed: boolean;
+  itemReceived: boolean;
   onRequestStatus: (claimId: string, status: StatusDecision) => void;
   unlocked: boolean;
   onRequestUnlock: () => void;
@@ -126,6 +129,9 @@ function ClaimRequestSection({
                 type="button"
                 disabled={
                   claim.status === "Returned" ||
+                  (!isLostItem &&
+                    claim.status !== "Approved" &&
+                    !itemReceived) ||
                   (!isLostItem && itemClaimed && claim.status !== "Approved")
                 }
                 onClick={() =>
@@ -166,13 +172,20 @@ function ClaimRequestSection({
               </button>
             </div>
           )}
+          {!isLostItem &&
+            claim.status === "Pending" &&
+            !itemReceived && (
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+                Approval is unavailable until the physical item is received by OSA.
+              </p>
+            )}
         </div>
         <div className="min-w-0">
           <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
             {claim.claimant}
           </p>
           <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-            {getClaimantEmail(claim)}
+            Id number: {extractIdNumberFromEmail(getClaimantEmail(claim)) || "N/A"}
           </p>
           <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
             {claim.details}
@@ -263,6 +276,8 @@ export function ClaimsView({
   onStatusFilterChange,
   statusOptions,
   plainDetails = false,
+  onOsaReceiptChange,
+  isUpdatingOsaReceipt = false,
 }: {
   claims: ClaimRequest[];
   reports: AdminReport[];
@@ -277,6 +292,8 @@ export function ClaimsView({
   onStatusFilterChange: (value: string) => void;
   statusOptions?: string[];
   plainDetails?: boolean;
+  onOsaReceiptChange: (id: string, receivedByOsa: boolean) => void;
+  isUpdatingOsaReceipt?: boolean;
 }) {
   const [page, setPage] = useState(1);
   const [pendingStatusChange, setPendingStatusChange] = useState<{
@@ -712,7 +729,7 @@ export function ClaimsView({
                           {selectedItemPost.reportedBy}
                         </p>
                         <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                          {selectedItemPost.reporterEmail}
+                          Id number: {extractIdNumberFromEmail(selectedItemPost.reporterEmail) || "N/A"}
                         </p>
                         <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                           {selectedItemPost.description}
@@ -796,6 +813,23 @@ export function ClaimsView({
                           </dt>
                           <dd className="mt-1">
                             <OsaReceiptStatus received={selectedItemPost.receivedByOsa} />
+                            <button
+                              type="button"
+                              disabled={isUpdatingOsaReceipt}
+                              onClick={() =>
+                                onOsaReceiptChange(
+                                  selectedItemPost.id,
+                                  !selectedItemPost.receivedByOsa,
+                                )
+                              }
+                              className="mt-2 inline-flex h-8 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 px-2.5 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60"
+                            >
+                              {isUpdatingOsaReceipt
+                                ? "Updating…"
+                                : selectedItemPost.receivedByOsa
+                                  ? "Mark not yet received"
+                                  : "Mark received"}
+                            </button>
                           </dd>
                         </div>
                       )}
@@ -832,6 +866,7 @@ export function ClaimsView({
                 }
                 itemType={selectedItemPost?.type}
                 itemClaimed={selectedItemPost?.status === "Claimed"}
+                itemReceived={selectedItemPost?.receivedByOsa ?? false}
                 onRequestStatus={(claimId, status) =>
                   setPendingStatusChange({ claimId, status })
                 }
@@ -848,6 +883,7 @@ export function ClaimsView({
                         headingId={`claim-request-${sibling.id}`}
                         itemType={selectedItemPost?.type}
                         itemClaimed={selectedItemPost?.status === "Claimed"}
+                        itemReceived={selectedItemPost?.receivedByOsa ?? false}
                         onRequestStatus={(claimId, status) =>
                           setPendingStatusChange({ claimId, status })
                         }

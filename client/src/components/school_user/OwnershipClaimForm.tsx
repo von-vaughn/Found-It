@@ -291,7 +291,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
               max={localDate()}
               value={dateLost}
               onChange={(event) => setDateLost(event.target.value)}
-              className={`${inputClass} cursor-pointer`}
+              className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
             />
           </div>
         </div>
@@ -308,7 +308,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
               required
               value={timeLost}
               onChange={(event) => setTimeLost(event.target.value)}
-              className={`${inputClass} cursor-pointer`}
+              className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
             />
           </div>
           <div className="min-w-0">

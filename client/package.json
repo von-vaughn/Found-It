@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "node --test src/lib/itemMatchTime.test.ts src/lib/claimAdapter.test.ts src/components/school_user/claimStatus.test.ts src/components/auth/schoolUserGuard.test.ts",
+    "test": "node --test src/lib/itemMatchTime.test.ts src/lib/claimAdapter.test.ts src/lib/idNumber.test.ts src/components/school_user/claimStatus.test.ts src/components/auth/schoolUserGuard.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

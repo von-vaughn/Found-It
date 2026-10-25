@@ -8,6 +8,7 @@ import {
   findClaimForUserAndItem,
   listAllClaims,
   listClaimsByUser,
+  PhysicalItemNotReceivedError,
   updateClaim,
   updateClaimStatusById,
 } from "../repositories/request.repository";
@@ -101,7 +102,16 @@ export async function updateAdminClaimStatus(
     res.status(400).json({ message: "Invalid claim request ID." });
     return;
   }
-  const claim = await updateClaimStatusById(requestId, parsed.data.status);
+  let claim;
+  try {
+    claim = await updateClaimStatusById(requestId, parsed.data.status);
+  } catch (error) {
+    if (error instanceof PhysicalItemNotReceivedError) {
+      res.status(409).json({ message: error.message });
+      return;
+    }
+    throw error;
+  }
   if (!claim) {
     res.status(409).json({
       message: "This claim is no longer waiting for that decision.",

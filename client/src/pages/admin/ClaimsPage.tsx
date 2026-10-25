@@ -7,7 +7,8 @@ import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import { toClaimRequests } from "@/lib/claimAdapter";
 import { useAdminClaims, useUpdateAdminClaimStatus } from "@/hooks/useClaims";
-import { useItems } from "@/hooks/useItems";
+import toast from "react-hot-toast";
+import { useItems, useUpdateOsaReceipt } from "@/hooks/useItems";
 import { AdminLayout } from "./AdminLayout";
 
 const ADMIN_STATUS: Partial<
@@ -38,6 +39,7 @@ export function ClaimsPage() {
     refetch: refetchItems,
   } = useItems();
   const updateClaimStatus = useUpdateAdminClaimStatus();
+  const updateOsaReceipt = useUpdateOsaReceipt();
 
   const allClaims = useMemo(
     () => toClaimRequests(serverClaims),
@@ -133,6 +135,24 @@ export function ClaimsPage() {
     });
   };
 
+  const handleOsaReceiptChange = (id: string, receivedByOsa: boolean) => {
+    updateOsaReceipt.mutate(
+      { id, receivedByOsa },
+      {
+        onSuccess: () => {
+          toast.success(
+            receivedByOsa
+              ? "Item marked received by OSA."
+              : "Item marked not yet received.",
+          );
+        },
+        onError: () => {
+          toast.error("Could not update the physical item status. Please try again.");
+        },
+      },
+    );
+  };
+
   if (claimsLoading || itemsLoading) {
     return (
       <AdminLayout
@@ -198,6 +218,8 @@ export function ClaimsPage() {
           "Rejected",
         ]}
         onClaimStatusChange={handleClaimStatusChange}
+        onOsaReceiptChange={handleOsaReceiptChange}
+        isUpdatingOsaReceipt={updateOsaReceipt.isPending}
         plainDetails
       />
     </AdminLayout>

@@ -30,6 +30,7 @@ import { useSensitiveUnlock } from "@/components/admin/useSensitiveUnlock";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import type { ServerClaimStatus } from "@/services/claimService";
 import { toFoundReportClaims } from "@/lib/claimAdapter";
+import { extractIdNumberFromEmail } from "@/lib/idNumber";
 import {
   useAdminReturns,
   useUpdateAdminReturnOsaReceipt,
@@ -136,8 +137,9 @@ function ReturnRequestSection({
             <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
               <button
                 type="button"
+                disabled={!request.receivedByOsa}
                 onClick={() => onRequestStatus(request.id, "Approved")}
-                className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
                 Approve
@@ -151,6 +153,11 @@ function ReturnRequestSection({
                 Reject
               </button>
             </div>
+          )}
+          {request.status === "Pending" && !request.receivedByOsa && (
+            <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+              Approval is unavailable until the physical item is received by OSA.
+            </p>
           )}
           {request.status === "Approved" && (
             <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
@@ -177,7 +184,7 @@ function ReturnRequestSection({
             {request.claimant}
           </p>
           <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-            {request.email || "None"}
+            Id number: {extractIdNumberFromEmail(request.email) || "N/A"}
           </p>
           <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
             {request.details || "None"}
@@ -220,7 +227,7 @@ function ReturnRequestSection({
                     ? "Updating…"
                     : request.receivedByOsa
                       ? "Mark not yet received"
-                      : "Mark received by OSA"}
+                        : "Mark received"}
                 </button>
               </dd>
             </div>
@@ -768,7 +775,7 @@ export function ReturnItemsPage() {
                       {selectedLostReport?.reportedBy || "None"}
                     </p>
                     <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                      {selectedLostReport?.reporterEmail || "None"}
+                      Id number: {extractIdNumberFromEmail(selectedLostReport?.reporterEmail) || "N/A"}
                     </p>
                     <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                       {selectedLostReport?.description || "None"}

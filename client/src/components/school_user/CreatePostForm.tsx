@@ -972,7 +972,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 value={dateValue}
                 max={localDateTime().slice(0, 10)}
                 onChange={(e) => setDateValue(e.target.value)}
-                className={`${inputClass} cursor-pointer`}
+                className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
                 {...errorProps("report-date")}
               />
               <FieldError
@@ -994,7 +994,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 required
                 value={timeValue}
                 onChange={(e) => setTimeValue(e.target.value)}
-                className={`${inputClass} cursor-pointer`}
+                className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
                 {...errorProps("report-time")}
               />
               <FieldError

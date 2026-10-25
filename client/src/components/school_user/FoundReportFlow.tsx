@@ -538,7 +538,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                   setDateFound(event.target.value);
                   setFormError(null);
                 }}
-                className={inputClass}
+                className={`${inputClass} dark:[color-scheme:dark]`}
               />
             </div>
           </div>
@@ -558,7 +558,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                   setTimeFound(event.target.value);
                   setFormError(null);
                 }}
-                className={inputClass}
+                className={`${inputClass} dark:[color-scheme:dark]`}
               />
             </div>
             <div>

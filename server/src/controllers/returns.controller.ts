@@ -8,6 +8,7 @@ import {
   findReturnForUserAndItem,
   listAllReturns,
   listReturnsByUser,
+  PhysicalItemNotReceivedError,
   updateReturnRequest,
   updateReturnOsaReceipt,
   updateReturnStatusById,
@@ -102,10 +103,19 @@ export async function updateAdminReturnStatus(
     res.status(400).json({ message: "Invalid return request ID." });
     return;
   }
-  const returnRequest = await updateReturnStatusById(
-    requestId,
-    parsed.data.status,
-  );
+  let returnRequest;
+  try {
+    returnRequest = await updateReturnStatusById(
+      requestId,
+      parsed.data.status,
+    );
+  } catch (error) {
+    if (error instanceof PhysicalItemNotReceivedError) {
+      res.status(409).json({ message: error.message });
+      return;
+    }
+    throw error;
+  }
   if (!returnRequest) {
     res.status(409).json({
       message: "This return request is no longer waiting for that decision.",

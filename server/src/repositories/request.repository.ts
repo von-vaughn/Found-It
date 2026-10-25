@@ -204,7 +204,7 @@ async function listAllRequests(kind: "claim" | "return"): Promise<Claim[]> {
      LIMIT 500`,
     [kind],
   );
-  return rows.map((row) => toClaim(row));
+  return rows.map((row) => toClaim(row, true));
 }
 
 /** Every ownership claim, for the admin claims workspace. */
@@ -244,6 +244,13 @@ function allowedStatusPredecessors(
   return ["pending"];
 }
 
+export class PhysicalItemNotReceivedError extends Error {
+  constructor() {
+    super("The physical item must be received by OSA before this request can be approved.");
+    this.name = "PhysicalItemNotReceivedError";
+  }
+}
+
 async function updateRequestStatusById(
   kind: "claim" | "return",
   id: string,
@@ -259,20 +266,33 @@ async function updateRequestStatusById(
       item_name: string;
       item_owner_id: string;
       status: ClaimStatus;
+      item_received_by_osa: boolean;
+      request_received_by_osa: boolean;
     }>(
       `SELECT rq.user_id, rq.item_id, item.name AS item_name,
-              report.user_id AS item_owner_id, rq.status
+              report.user_id AS item_owner_id, rq.status,
+              item.received_by_osa AS item_received_by_osa,
+              rq.received_by_osa AS request_received_by_osa
        FROM request rq
        JOIN item ON item.id = rq.item_id
        JOIN report ON report.id = item.report_id
        WHERE rq.id = $1 AND rq.kind = $2
-       FOR UPDATE OF rq`,
+       FOR UPDATE OF rq, item`,
       [id, kind],
     );
     const current = rows[0];
     if (!current || !predecessors.includes(current.status)) {
       await client.query("ROLLBACK");
       return null;
+    }
+    if (
+      status === "approved" &&
+      !(kind === "claim"
+        ? current.item_received_by_osa
+        : current.request_received_by_osa)
+    ) {
+      await client.query("ROLLBACK");
+      throw new PhysicalItemNotReceivedError();
     }
 
     const { rowCount } = await client.query(
