@@ -217,14 +217,13 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
     event.preventDefault();
     if (
       !itemTitle.trim() ||
-      !description.trim() ||
       !importantDetails.trim() ||
       !location.trim() ||
       !dateFound ||
       !timeFound
     ) {
       setFormError(
-        "Enter a title, description, important details, location found, date found, and approximate time found to continue.",
+        "Enter a title, important details, location found, date found, and approximate time found to continue.",
       );
       return;
     }
@@ -604,12 +603,11 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
 
           <div>
             <label htmlFor="found-item-description" className={labelClass}>
-              Description *
+              Description
             </label>
             <textarea
               id="found-item-description"
               name="description"
-              required
               rows={3}
               value={description}
               onChange={(event) => {

@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "@/context/useAuth";
 import { type Item } from "@/data/mockItems";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
   rememberSchoolSidebarExpanded,
   takeSchoolSidebarExpanded,
@@ -25,6 +26,7 @@ import {
 import {
   useDeleteReadNotifications,
   useDeleteNotification,
+  useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
 } from "@/hooks/useNotifications";
@@ -54,6 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { data: notifications = [] } = useNotifications();
   const deleteReadNotifications = useDeleteReadNotifications();
   const deleteNotification = useDeleteNotification();
+  const markAllNotificationsRead = useMarkAllNotificationsRead();
   const markNotificationRead = useMarkNotificationRead();
   const asideRef = useRef<HTMLElement>(null);
   const notificationsPanelRef = useRef<HTMLElement>(null);
@@ -445,6 +448,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
               {unreadCount} unread
             </p>
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  markAllNotificationsRead.mutate(undefined, {
+                    onError: () =>
+                      toast.error(
+                        "Could not mark notifications as read. Please try again.",
+                      ),
+                  })
+                }
+                disabled={markAllNotificationsRead.isPending}
+                className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Mark all as read
+              </button>
+            )}
             {unreadCount === 0 && notifications.length > 0 && (
               <button
                 type="button"
@@ -479,9 +499,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span className="min-w-0 truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
                       {notification.title}
                     </span>
-                    <span className="shrink-0 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                      {notificationStatusLabel(notification.event)}
-                    </span>
+                    <StatusBadge
+                      status={notificationStatusLabel(notification.event)}
+                    />
                   </span>
                   <p className="mt-1 line-clamp-2 text-xs text-neutral-500 dark:text-neutral-400">
                     {notification.message}

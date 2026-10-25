@@ -299,7 +299,8 @@ export function ReturnItemsPage() {
     const normalizedQuery = query.trim().toLowerCase();
     return visibleRequests.filter(
       (request) =>
-        returnStatusLabel(request.status) === statusFilter &&
+        (statusFilter === "All" ||
+          returnStatusLabel(request.status) === statusFilter) &&
         [
           request.item,
           request.claimant,
@@ -545,7 +546,13 @@ export function ReturnItemsPage() {
               <StatusFilter
                 value={statusFilter}
                 onChange={updateStatusFilter}
-                options={["Pending", "Unreturned", "Returned", "Rejected"]}
+                options={[
+                  "All",
+                  "Pending",
+                  "Unreturned",
+                  "Returned",
+                  "Rejected",
+                ]}
               />
             </div>
           }

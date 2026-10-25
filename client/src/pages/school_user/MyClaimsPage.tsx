@@ -28,6 +28,7 @@ import {
 } from "@/components/school_user/claimStatus";
 import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { useItems, useMyItems } from "@/hooks/useItems";
 import { useDeleteClaim, useUpdateClaim } from "@/hooks/useClaims";
@@ -356,6 +357,10 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     const item = itemById.get(itemId);
                     const statusLabel = submissionStatusLabel(claims[0]);
                     const statusStyle = simplifiedClaimStatusStyles[statusLabel];
+                    const itemTypeLabel =
+                      item?.type === "lost" || claims[0]?.kind === "return"
+                        ? "Lost"
+                        : "Found";
                     return (
                       <StaggerItem key={itemId}>
                     <section
@@ -367,17 +372,15 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                           <h2 className="truncate text-sm font-extrabold text-neutral-900 dark:text-neutral-100">
                             {item?.title ?? claims[0]?.item ?? "Post"}
                           </h2>
-                          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                            {claims.length}{" "}
-                            {claims.length === 1 ? "request" : "requests"} ·{" "}
-                            {item?.location ?? claims[0]?.location ?? ""}
-                          </p>
                         </div>
-                        <span
-                          className={`inline-flex shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${statusStyle}`}
-                        >
-                          {statusLabel}
-                        </span>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <StatusBadge status={itemTypeLabel} />
+                          <span
+                            className={`inline-flex shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${statusStyle}`}
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
                       </div>
 
                       <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -398,7 +401,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                 />
                                 <div className="flex min-w-0 flex-col">
                                   <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
-                                    {isFoundReport ? "Found report" : "Claim"} ·
                                     Submitted {claim.submitted}
                                   </p>
                                   <div className="mt-1.5">

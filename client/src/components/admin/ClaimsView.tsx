@@ -300,7 +300,7 @@ export function ClaimsView({
 
   const filteredClaims = claimRequests.filter(
     (claim) =>
-      (statusFilter === "All statuses" || claim.status === statusFilter) &&
+      (statusFilter === "All" || claim.status === statusFilter) &&
       [claim.id, claim.item, claim.claimant, claim.location]
         .join(" ")
         .toLowerCase()

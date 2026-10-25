@@ -1,5 +1,6 @@
 import { pool } from "../config/db";
 import {
+  createClaimedNotifications,
   createAdminSubmissionNotifications,
   createRequestStatusNotification,
 } from "./notification.repository";
@@ -265,7 +266,15 @@ async function updateRequestStatusById(
       return null;
     }
 
-    if (
+    if (kind === "claim" && status === "claimed") {
+      await createClaimedNotifications(client, {
+        requestId: id,
+        itemId: current.item_id,
+        itemName: current.item_name,
+        requesterId: current.user_id,
+        itemOwnerId: current.item_owner_id,
+      });
+    } else if (
       status === "approved" ||
       status === "rejected" ||
       status === "returned"

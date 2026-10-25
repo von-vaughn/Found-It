@@ -111,7 +111,6 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
     event.preventDefault();
     if (
       !claimTitle.trim() ||
-      !additionalInfo.trim() ||
       !importantDetails.trim() ||
       !dateLost ||
       !timeLost ||
@@ -164,8 +163,8 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         className="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
       >
         Share details that can help verify this item belongs to you. Your
-        additional information, important details, lost date, time, and
-        location are required. You may also attach picture evidence.
+        important details, lost date, time, and location are required.
+        Description and picture evidence are optional.
       </p>
       <hr className="mt-4 border-t border-neutral-200 dark:border-neutral-800" />
 
@@ -352,12 +351,11 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
 
         <div>
           <label htmlFor="claim-additional-info" className={labelClass}>
-            Description <span aria-hidden="true">*</span>
+            Description
           </label>
           <textarea
             id="claim-additional-info"
             name="additionalInfo"
-            required
             rows={3}
             value={additionalInfo}
             onChange={(event) => setAdditionalInfo(event.target.value)}

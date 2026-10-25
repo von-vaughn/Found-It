@@ -133,6 +133,33 @@ export async function createRequestStatusNotification(
   );
 }
 
+export async function createClaimedNotifications(
+  client: PoolClient,
+  input: {
+    requestId: string;
+    itemId: string;
+    itemName: string;
+    requesterId: string;
+    itemOwnerId: string;
+  },
+): Promise<void> {
+  await client.query(
+    `INSERT INTO notification (
+       user_id, item_id, request_id, kind, event, title, message
+     ) VALUES
+       ($1, $2, $3, 'claim', 'approved', 'Claim approved', $4),
+       ($5, $2, $3, 'claim', 'returned', 'Item returned', $6)`,
+    [
+      input.requesterId,
+      input.itemId,
+      input.requestId,
+      "You have successfully claimed this item.",
+      input.itemOwnerId,
+      `${input.itemName} has been successfully returned to its rightful owner.`,
+    ],
+  );
+}
+
 export async function listNotificationsForUser(
   userId: string,
 ): Promise<Notification[]> {

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { StatusBadge } from "./StatusBadge";
 import {
   rememberAdminSidebarExpanded,
   takeAdminSidebarExpanded,
@@ -356,9 +357,7 @@ export function AdminSidebar<TSection extends string>({
                           >
                             {notification.title}
                           </span>
-                          <span className="shrink-0 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                            {notification.status}
-                          </span>
+                          <StatusBadge status={notification.status} />
                         </span>
                         <span className="mt-1 line-clamp-2 block text-xs text-neutral-500 dark:text-neutral-400">
                           {notification.description}

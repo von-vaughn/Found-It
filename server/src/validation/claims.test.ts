@@ -20,6 +20,18 @@ test("accepts a complete claim", () => {
   assert.equal(result.success, true);
 });
 
+test("accepts a claim without an optional description", () => {
+  const result = createClaimSchema.safeParse({ ...validClaim, details: "" });
+  assert.equal(result.success, true);
+});
+
+test("defaults an omitted optional description to an empty string", () => {
+  const { details: _details, ...claimWithoutDetails } = validClaim;
+  const result = createClaimSchema.safeParse(claimWithoutDetails);
+  assert.equal(result.success, true);
+  if (result.success) assert.equal(result.data.details, "");
+});
+
 test("rejects a claim whose lost date is in the future", () => {
   const result = createClaimSchema.safeParse({
     ...validClaim,

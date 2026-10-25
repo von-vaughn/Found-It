@@ -1,5 +1,5 @@
 const DEFAULT_STATUS_OPTIONS = [
-  "All statuses",
+  "All",
   "Pending",
   "Approved",
   "Claimed",

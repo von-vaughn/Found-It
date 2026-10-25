@@ -20,7 +20,7 @@ export const createClaimSchema = z.object({
   dateLost: claimDateSchema,
   timeLost: claimTimeSchema,
   location: z.string().trim().min(1, "Location lost is required").max(500),
-  details: z.string().trim().min(1, "Description is required").max(2000),
+  details: z.string().trim().max(2000).default(""),
   importantDetails: z.string().trim().min(1, "Important details are required").max(2000),
   evidence: z.array(z.string().url("Evidence must be an image URL").max(2048)).max(4).optional(),
 });

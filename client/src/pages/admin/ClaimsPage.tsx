@@ -22,7 +22,7 @@ const ADMIN_STATUS: Partial<
 export function ClaimsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Pending");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [manualClaimId, setManualClaimId] = useState<string | null>(null);
   const logDecision = useAuditDecision();
   const {
@@ -190,7 +190,13 @@ export function ClaimsPage() {
         onSelectClaim={handleSelectClaim}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
-        statusOptions={["Pending", "Approved", "Claimed", "Rejected"]}
+        statusOptions={[
+          "All",
+          "Pending",
+          "Approved",
+          "Claimed",
+          "Rejected",
+        ]}
         onClaimStatusChange={handleClaimStatusChange}
         plainDetails
       />
