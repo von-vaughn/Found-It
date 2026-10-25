@@ -1,5 +1,7 @@
 import { pool } from "../config/db";
 import { assertMailConfigured } from "../utils/mailer";
+import { isDriveConfigured, uploadFileToDrive } from "../utils/google-drive";
+import { fetchRemoteImageBuffer, generateBlurredImage } from "../utils/image-blur";
 
 /**
  * Code-first schema for PostgreSQL (singular table names) — fresh install.
@@ -190,6 +192,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE location ALTER COLUMN building_id DROP NOT NULL;
 
     ALTER TABLE image ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    ALTER TABLE image ADD COLUMN IF NOT EXISTS blurred_image_url TEXT;
     ALTER TABLE category ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
     ALTER TABLE building ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
@@ -203,4 +206,40 @@ export async function migrate(): Promise<void> {
     ALTER TABLE request ADD COLUMN IF NOT EXISTS details TEXT;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS important_details TEXT;
   `);
+
+  // Backfill blurred_image_url for found items that don't have one yet
+  try {
+    const { rows: unblurredFoundImages } = await pool.query<{
+      id: string;
+      image_url: string;
+    }>(`
+      SELECT img.id, img.image_url
+      FROM image img
+      JOIN item i ON i.id = img.item_id
+      JOIN report r ON r.id = i.report_id
+      WHERE r.report_type = 'found' AND img.blurred_image_url IS NULL
+    `);
+
+    if (unblurredFoundImages.length > 0 && isDriveConfigured()) {
+      for (const row of unblurredFoundImages) {
+        try {
+          const remoteBuffer = await fetchRemoteImageBuffer(row.image_url);
+          const blurredBuffer = await generateBlurredImage(remoteBuffer);
+          const uploaded = await uploadFileToDrive({
+            name: `blurred-${Date.now()}-migrated.jpg`,
+            mimeType: 'image/jpeg',
+            content: blurredBuffer,
+          });
+          await pool.query(
+            `UPDATE image SET blurred_image_url = $1 WHERE id = $2`,
+            [uploaded.directUrl, row.id],
+          );
+        } catch (err) {
+          console.warn(`[Migration] Could not backfill blurred image for image ${row.id}:`, err);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Migration] Error during blurred image backfill:', err);
+  }
 }

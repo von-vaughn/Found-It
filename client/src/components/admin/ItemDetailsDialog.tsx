@@ -119,11 +119,18 @@ export function ItemDetailsDialog({
       </div>
       <div className="space-y-5 p-5">
         {report.image ? (
-          <img
-            src={report.image}
-            alt={report.title}
-            className="max-h-72 w-full rounded-lg bg-neutral-50 dark:bg-neutral-800 object-contain"
-          />
+          <div className="relative">
+            <img
+              src={report.image}
+              alt={report.title}
+              className="max-h-72 w-full rounded-lg bg-neutral-50 dark:bg-neutral-800 object-contain"
+            />
+            {report.type.toLowerCase() === "found" && (
+              <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-emerald-600/90 px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">
+                Original Photo (Admin View)
+              </span>
+            )}
+          </div>
         ) : (
           <NoItemImage
             title="No item photo provided"

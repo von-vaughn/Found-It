@@ -11,7 +11,7 @@ import type { Item } from "@/data/mockItems";
 import { toClientItem } from "@/lib/itemAdapter";
 import { useCreateItem, useUpdateItem } from "@/hooks/useItems";
 import { useCategoryMap, getCategoryUuid } from "@/hooks/useCategories";
-import { uploadImage, uploadImages } from "@/services/itemService";
+import { uploadFoundImage, uploadImages } from "@/services/itemService";
 import toast from "react-hot-toast";
 
 interface CreatePostFormProps {
@@ -553,12 +553,17 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
         let finalImageUrl = "";
         let finalImageUrls: string[] = [];
+        let finalBlurredUrls: string[] = [];
 
         // Upload images if any
         if (type === "found") {
           if (uploadedFile) {
-            finalImageUrl = await uploadImage(uploadedFile);
-            finalImageUrls = [finalImageUrl];
+            const uploadRes = await uploadFoundImage(uploadedFile);
+            finalImageUrl = uploadRes.url;
+            finalImageUrls = [uploadRes.url];
+            if (uploadRes.blurredUrl) {
+              finalBlurredUrls = [uploadRes.blurredUrl];
+            }
           } else if (previewImage && !previewImage.startsWith("blob:")) {
             finalImageUrl = previewImage;
             finalImageUrls = [previewImage];
@@ -602,6 +607,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               location: location.trim(),
               importantDetails: importantDetails.trim(),
               images: finalImageUrls.length > 0 ? finalImageUrls : [],
+              blurredImages: finalBlurredUrls.length > 0 ? finalBlurredUrls : undefined,
             },
           });
           onUpdateItem?.(toClientItem(updated));
@@ -625,6 +631,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           importantDetails: importantDetails.trim() || undefined,
           image: finalImageUrl || undefined,
           images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
+          blurredImages: finalBlurredUrls.length > 0 ? finalBlurredUrls : undefined,
         });
 
         onAddItem(toClientItem(created));

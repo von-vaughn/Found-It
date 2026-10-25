@@ -6,6 +6,7 @@ import {
   uploadFileToDrive,
   type DriveUploadedFile,
 } from '../utils/google-drive';
+import { generateBlurredImage } from '../utils/image-blur';
 
 const router = Router();
 
@@ -79,18 +80,46 @@ router.post(
     }
 
     try {
+      const shouldBlur =
+        req.query.isFound === 'true' ||
+        req.body?.isFound === 'true' ||
+        req.query.blur === 'true' ||
+        req.body?.blur === 'true' ||
+        req.body?.reportType === 'found' ||
+        req.query.type === 'found';
+
       const uploadedResults: DriveUploadedFile[] = [];
+      const blurredResults: (DriveUploadedFile | null)[] = [];
 
       // 1. Process files from multipart/form-data
       const rawFiles = req.files as Express.Multer.File[] | undefined;
       if (rawFiles && rawFiles.length > 0) {
         for (const file of rawFiles) {
-          const uploaded = await uploadFileToDrive({
-            name: `${Date.now()}-${file.originalname || 'image.jpg'}`,
-            mimeType: file.mimetype,
-            content: file.buffer,
-          });
-          uploadedResults.push(uploaded);
+          if (shouldBlur) {
+            const blurredBuffer = await generateBlurredImage(file.buffer);
+            const [originalUploaded, blurredUploaded] = await Promise.all([
+              uploadFileToDrive({
+                name: `${Date.now()}-${file.originalname || 'image.jpg'}`,
+                mimeType: file.mimetype,
+                content: file.buffer,
+              }),
+              uploadFileToDrive({
+                name: `blurred-${Date.now()}-${file.originalname || 'image.jpg'}`,
+                mimeType: 'image/jpeg',
+                content: blurredBuffer,
+              }),
+            ]);
+            uploadedResults.push(originalUploaded);
+            blurredResults.push(blurredUploaded);
+          } else {
+            const uploaded = await uploadFileToDrive({
+              name: `${Date.now()}-${file.originalname || 'image.jpg'}`,
+              mimeType: file.mimetype,
+              content: file.buffer,
+            });
+            uploadedResults.push(uploaded);
+            blurredResults.push(null);
+          }
         }
       }
 
@@ -115,12 +144,31 @@ router.post(
           const parsed = parseDataUrl(dataUrl);
           if (parsed && ALLOWED_MIME_TYPES.has(parsed.mimeType.toLowerCase())) {
             const ext = parsed.mimeType.split('/')[1] || 'jpg';
-            const uploaded = await uploadFileToDrive({
-              name: `${Date.now()}-${index + 1}.${ext}`,
-              mimeType: parsed.mimeType,
-              content: parsed.buffer,
-            });
-            uploadedResults.push(uploaded);
+            if (shouldBlur) {
+              const blurredBuffer = await generateBlurredImage(parsed.buffer);
+              const [originalUploaded, blurredUploaded] = await Promise.all([
+                uploadFileToDrive({
+                  name: `${Date.now()}-${index + 1}.${ext}`,
+                  mimeType: parsed.mimeType,
+                  content: parsed.buffer,
+                }),
+                uploadFileToDrive({
+                  name: `blurred-${Date.now()}-${index + 1}.jpg`,
+                  mimeType: 'image/jpeg',
+                  content: blurredBuffer,
+                }),
+              ]);
+              uploadedResults.push(originalUploaded);
+              blurredResults.push(blurredUploaded);
+            } else {
+              const uploaded = await uploadFileToDrive({
+                name: `${Date.now()}-${index + 1}.${ext}`,
+                mimeType: parsed.mimeType,
+                content: parsed.buffer,
+              });
+              uploadedResults.push(uploaded);
+              blurredResults.push(null);
+            }
           }
         }
       }
@@ -132,14 +180,19 @@ router.post(
         return;
       }
 
+      const validBlurredUrls = blurredResults.map((b) => b?.directUrl).filter(Boolean) as string[];
+
       res.status(201).json({
         message: 'Image(s) uploaded successfully.',
         url: uploadedResults[0].directUrl,
         urls: uploadedResults.map((f) => f.directUrl),
-        files: uploadedResults.map((f) => ({
+        blurredUrl: validBlurredUrls[0] || undefined,
+        blurredUrls: validBlurredUrls.length > 0 ? validBlurredUrls : undefined,
+        files: uploadedResults.map((f, i) => ({
           id: f.id,
           name: f.name,
           url: f.directUrl,
+          blurredUrl: blurredResults[i]?.directUrl,
           thumbnailUrl: f.thumbnailUrl,
           webViewLink: f.webViewLink,
         })),

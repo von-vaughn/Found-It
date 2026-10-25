@@ -5,11 +5,15 @@ import {
   createItem,
   deleteItem,
   findItemById,
+  findItemImageForBlur,
   findItemOwner,
   listItems,
+  saveBlurredImageUrl,
   updateItem,
 } from '../repositories/item.repository';
 import { REPORT_TYPES, type ReportType } from '../types/items';
+import { fetchRemoteImageBuffer, generateBlurredImage } from '../utils/image-blur';
+import { isDriveConfigured, uploadFileToDrive } from '../utils/google-drive';
 
 const itemDateSchema = z
   .string()
@@ -36,6 +40,8 @@ const createItemSchema = z.object({
   importantDetails: z.string().trim().min(1).max(2000).optional(),
   image: z.string().trim().min(1).optional(),
   images: z.array(z.string().trim().min(1)).max(10).optional(),
+  blurredImage: z.string().trim().min(1).optional(),
+  blurredImages: z.array(z.string().trim().min(1)).max(10).optional(),
 });
 
 const updateItemSchema = z.object({
@@ -50,6 +56,8 @@ const updateItemSchema = z.object({
   location: z.string().trim().min(1).max(500).optional(),
   image: z.string().trim().min(1).optional(),
   images: z.array(z.string().trim().min(1)).max(10).optional(),
+  blurredImage: z.string().trim().min(1).optional(),
+  blurredImages: z.array(z.string().trim().min(1)).max(10).optional(),
 });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -74,8 +82,8 @@ function invalidId(res: Response, id: string): boolean {
   return false;
 }
 
-/** Admins see reporter email; school users and guests see reporter name only. */
-function seesReporterEmail(req: Request): boolean {
+/** Admins see reporter email and unblurred found-item images. */
+function isAdminUser(req: Request): boolean {
   return req.user?.role === 'admin' || req.user?.role === 'super_admin';
 }
 
@@ -100,12 +108,16 @@ export async function createItemReport(req: Request, res: Response): Promise<voi
   if (!images && data.image) {
     images = [data.image];
   }
-  const { id } = await createItem({ reporterId: req.user!.sub, ...data, images });
-  const item = await findItemById(id, seesReporterEmail(req), req.user!.sub);
+  let blurredImages = data.blurredImages;
+  if (!blurredImages && data.blurredImage) {
+    blurredImages = [data.blurredImage];
+  }
+  const { id } = await createItem({ reporterId: req.user!.sub, ...data, images, blurredImages });
+  const item = await findItemById(id, isAdminUser(req), req.user!.sub);
   res.status(201).json({ message: 'Item report submitted.', item });
 }
 
-/** GET /api/items — any user or guest (admins see reporter emails). Filters: reportType, categoryId, search, mine */
+/** GET /api/items — any user or guest (admins see reporter emails and unblurred found photos). Filters: reportType, categoryId, search, mine */
 export async function getAllItems(req: Request, res: Response): Promise<void> {
   const reportType =
     typeof req.query.reportType === 'string' ? (req.query.reportType as ReportType) : undefined;
@@ -123,7 +135,7 @@ export async function getAllItems(req: Request, res: Response): Promise<void> {
   const viewerId = req.user?.sub ?? '';
   const items = await listItems(
     { reportType, categoryId, search, reporterId: mine },
-    seesReporterEmail(req),
+    isAdminUser(req),
     viewerId,
   );
   res.json({ items, count: items.length });
@@ -134,7 +146,7 @@ export async function getItemById(req: Request, res: Response): Promise<void> {
   const id = getId(req);
   if (invalidId(res, id)) return;
   const viewerId = req.user?.sub ?? '';
-  const item = await findItemById(id, seesReporterEmail(req), viewerId);
+  const item = await findItemById(id, isAdminUser(req), viewerId);
   if (!item) {
     res.status(404).json({ message: 'Item not found.' });
     return;
@@ -177,10 +189,14 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
   if (!images && data.image !== undefined) {
     images = data.image ? [data.image] : [];
   }
+  let blurredImages = data.blurredImages;
+  if (!blurredImages && data.blurredImage !== undefined) {
+    blurredImages = data.blurredImage ? [data.blurredImage] : [];
+  }
   const updated = await updateItem(
     id,
-    { ...data, images },
-    seesReporterEmail(req),
+    { ...data, images, blurredImages },
+    isAdminUser(req),
     req.user!.sub,
   );
   res.json({ message: 'Item report updated.', item: updated });
@@ -201,4 +217,49 @@ export async function removeItemReport(req: Request, res: Response): Promise<voi
   }
   await deleteItem(id);
   res.json({ message: 'Item report deleted.' });
+}
+
+/**
+ * GET /api/items/:id/image/blurred — Dynamic streaming fallback.
+ * Generates and streams genuinely blurred image bytes directly if a found item
+ * did not have a pre-stored blurred URL.
+ */
+export async function getBlurredItemImage(req: Request, res: Response): Promise<void> {
+  const id = getId(req);
+  if (invalidId(res, id)) return;
+
+  const imgData = await findItemImageForBlur(id);
+  if (!imgData || !imgData.imageUrl) {
+    res.status(404).json({ message: 'Image not found.' });
+    return;
+  }
+
+  // If already pre-blurred in Drive, redirect to high-performance CDN
+  if (imgData.blurredImageUrl && imgData.blurredImageUrl.startsWith('http')) {
+    res.redirect(imgData.blurredImageUrl);
+    return;
+  }
+
+  try {
+    const remoteBuffer = await fetchRemoteImageBuffer(imgData.imageUrl);
+    const blurredBuffer = await generateBlurredImage(remoteBuffer);
+
+    // Asynchronously save to Drive for future requests
+    if (isDriveConfigured()) {
+      uploadFileToDrive({
+        name: `blurred-${Date.now()}-${id}.jpg`,
+        mimeType: 'image/jpeg',
+        content: blurredBuffer,
+      })
+        .then((uploaded) => saveBlurredImageUrl(imgData.id, uploaded.directUrl))
+        .catch((err) => console.warn('[Blur Fallback] Failed to save to Drive:', err));
+    }
+
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    res.send(blurredBuffer);
+  } catch (err) {
+    console.error('[Blur Fallback] Error generating blurred image:', err);
+    res.status(500).json({ message: 'Failed to process blurred image.' });
+  }
 }

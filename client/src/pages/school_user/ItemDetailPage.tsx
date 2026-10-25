@@ -12,6 +12,7 @@ import {
   Palette,
   Pencil,
   Share2,
+  ShieldCheck,
   Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -591,23 +592,41 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
           {/* Hero image — fixed frame so every item measures the same */}
-          {item.image ? (
-            <div className="aspect-[4/3] max-h-[560px] w-full overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-800">
-              <img
-                src={item.image}
-                alt={item.title}
-                width={1200}
-                height={900}
-                fetchPriority="high"
-                className="h-full w-full object-cover"
+          <div className="min-w-0">
+            {item.image ? (
+              <div className="relative aspect-[4/3] max-h-[560px] w-full overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-800">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  width={1200}
+                  height={900}
+                  fetchPriority="high"
+                  className="h-full w-full object-cover"
+                />
+                {item.type === "found" && (
+                  <div className="absolute bottom-4 left-4 z-10 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-xs font-medium text-white shadow-sm">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                    <span>Photo blurred for verification</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <NoItemImage
+                title="No image attached to this report."
+                className="aspect-[4/3] max-h-[560px] w-full rounded-3xl"
               />
-            </div>
-          ) : (
-            <NoItemImage
-              title="No image attached to this report."
-              className="aspect-[4/3] max-h-[560px] w-full rounded-3xl"
-            />
-          )}
+            )}
+
+            {item.type === "found" && item.image && (
+              <div className="mt-3 flex items-start gap-2.5 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-3.5 text-xs text-neutral-600 dark:text-neutral-400">
+                <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">Blurred for claim verification: </span>
+                  Photos of found items are intentionally blurred by the server so distinctive markings, contents, and serial identifiers remain confidential until verified by OSA administrators.
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Details (not in a card) */}
           <article className="min-w-0">

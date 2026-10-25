@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createItemReport,
   getAllItems,
+  getBlurredItemImage,
   getItemById,
   removeItemReport,
   updateItemReport,
@@ -12,6 +13,7 @@ const router = Router();
 
 // Public read routes — guests can browse; logged-in users get richer data
 router.get('/', optionalAuthenticate, getAllItems);
+router.get('/:id/image/blurred', getBlurredItemImage);
 router.get('/:id', optionalAuthenticate, getItemById);
 
 // Write routes require authentication

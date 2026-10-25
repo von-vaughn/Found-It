@@ -9,6 +9,7 @@ import {
   Palette,
   Building2,
   Package,
+  ShieldCheck,
 } from "lucide-react";
 import type { Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
@@ -75,6 +76,13 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
                   alt={item.title}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
+
+                {!isLost && (
+                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-xs font-medium text-white shadow-sm">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                    <span>Photo blurred for verification</span>
+                  </div>
+                )}
 
                 {item.reward && (
                   <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">

@@ -52,6 +52,8 @@ export interface CreateItemPayload {
   importantDetails?: string;
   image?: string;
   images?: string[];
+  blurredImage?: string;
+  blurredImages?: string[];
 }
 
 export interface ListItemsParams {
@@ -105,36 +107,91 @@ export interface UpdateItemPayload {
   importantDetails?: string;
   image?: string;
   images?: string[];
+  blurredImage?: string;
+  blurredImages?: string[];
 }
 
 export interface UploadImageResponse {
   message: string;
   url: string;
   urls: string[];
+  blurredUrl?: string;
+  blurredUrls?: string[];
   files: Array<{
     id: string;
     name: string;
     url: string;
+    blurredUrl?: string;
     thumbnailUrl?: string;
   }>;
+}
+
+export interface UploadImageOptions {
+  filename?: string;
+  isFound?: boolean;
+}
+
+export interface UploadResult {
+  url: string;
+  blurredUrl?: string;
 }
 
 /**
  * Uploads a single image File or Blob to Google Drive via the server.
  * Returns the public direct CDN image URL.
  */
-export async function uploadImage(file: File | Blob, filename?: string): Promise<string> {
+export async function uploadImage(
+  file: File | Blob,
+  filenameOrOptions?: string | UploadImageOptions,
+): Promise<string> {
+  const options: UploadImageOptions =
+    typeof filenameOrOptions === "string"
+      ? { filename: filenameOrOptions }
+      : filenameOrOptions ?? {};
+
   const formData = new FormData();
   if (file instanceof File) {
     formData.append("file", file);
   } else {
-    formData.append("file", file, filename || "capture.jpg");
+    formData.append("file", file, options.filename || "capture.jpg");
+  }
+  if (options.isFound) {
+    formData.append("isFound", "true");
   }
   try {
     const { data } = await api.post<UploadImageResponse>("/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.url;
+  } catch (error: unknown) {
+    throw new Error("The image couldn't be uploaded. Please try again.", {
+      cause: error,
+    });
+  }
+}
+
+/**
+ * Uploads a found item image and returns both the original URL and the server-blurred URL.
+ */
+export async function uploadFoundImage(
+  file: File | Blob,
+  filename?: string,
+): Promise<UploadResult> {
+  const formData = new FormData();
+  if (file instanceof File) {
+    formData.append("file", file);
+  } else {
+    formData.append("file", file, filename || "found-capture.jpg");
+  }
+  formData.append("isFound", "true");
+  try {
+    const { data } = await api.post<UploadImageResponse>("/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return {
+      url: data.url,
+      blurredUrl: data.blurredUrl,
+    };
   } catch (error: unknown) {
     throw new Error("The image couldn't be uploaded. Please try again.", {
       cause: error,
@@ -192,5 +249,6 @@ export default {
   updateItem,
   deleteItem,
   uploadImage,
+  uploadFoundImage,
   uploadImages,
 };

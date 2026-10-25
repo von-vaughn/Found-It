@@ -20,7 +20,7 @@ interface ItemRow {
   category_name: string;
   reporter_name: string;
   reporter_email: string;
-  images: string[] | null;
+  images: Array<{ url: string; blurred_url: string | null }> | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -60,7 +60,10 @@ const ITEM_COLUMNS = `
   c.id AS category_id, c.name AS category_name,
   u.first_name || ' ' || u.last_name AS reporter_name, u.email AS reporter_email,
   COALESCE(
-    (SELECT json_agg(img.image_url ORDER BY img.created_at ASC) FROM image img WHERE img.item_id = i.id),
+    (SELECT json_agg(
+      json_build_object('url', img.image_url, 'blurred_url', img.blurred_image_url)
+      ORDER BY img.created_at ASC
+    ) FROM image img WHERE img.item_id = i.id),
     '[]'::json
   ) AS images,
   i.created_at, i.updated_at
@@ -76,12 +79,32 @@ const ITEM_JOIN = `
 
 /**
  * Builds the public Item shape.
- * Reporter email and the important-details marker are gated: email for
- * admin/super_admin only, importantDetails for the report owner or admin+.
+ * - Reporter email is gated to admins (super_admin, admin) only.
+ * - importantDetails is gated to the report owner or admin+.
+ * - For found items: admins see the original unblurred image; school users and
+ *   public guests only receive the server-blurred image variant.
+ * - For lost items: all users see the original unblurred image.
  */
-function toItem(row: ItemRow, includeEmail: boolean, viewerId: string): Item {
-  const canSeeMarker = includeEmail || row.reporter_id === viewerId;
-  const imageList: string[] = Array.isArray(row.images) ? row.images : [];
+function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
+  const canSeeMarker = isAdmin || row.reporter_id === viewerId;
+  const rawImages: Array<{ url: string; blurred_url: string | null }> = Array.isArray(row.images)
+    ? row.images
+    : [];
+
+  let imageList: string[];
+  if (row.report_type === 'found') {
+    if (isAdmin) {
+      // Admins see original, unblurred photos
+      imageList = rawImages.map((img) => img.url);
+    } else {
+      // School users and public users receive server-blurred images only
+      imageList = rawImages.map((img) => img.blurred_url || `/api/items/${row.id}/image/blurred`);
+    }
+  } else {
+    // Lost items are never blurred
+    imageList = rawImages.map((img) => img.url);
+  }
+
   return {
     id: row.id,
     reporterId: row.reporter_id,
@@ -102,7 +125,7 @@ function toItem(row: ItemRow, includeEmail: boolean, viewerId: string): Item {
     ...(canSeeMarker && row.important_details
       ? { importantDetails: row.important_details }
       : {}),
-    user: includeEmail
+    user: isAdmin
       ? { id: row.reporter_id, name: row.reporter_name, email: row.reporter_email }
       : { id: row.reporter_id, name: row.reporter_name },
     createdAt: new Date(row.created_at).toISOString(),
@@ -168,6 +191,7 @@ export async function createItem(input: {
   location?: string;
   importantDetails?: string;
   images?: string[];
+  blurredImages?: string[];
 }): Promise<{ id: string }> {
   const client = await pool.connect();
   try {
@@ -195,11 +219,13 @@ export async function createItem(input: {
     );
     const itemId = itemRows[0].id;
     if (input.images && input.images.length > 0) {
-      for (const imgUrl of input.images) {
+      for (let i = 0; i < input.images.length; i++) {
+        const imgUrl = input.images[i];
+        const blurredUrl = input.blurredImages?.[i] || null;
         if (imgUrl && typeof imgUrl === 'string' && imgUrl.trim()) {
           await client.query(
-            `INSERT INTO image (item_id, image_url) VALUES ($1, $2)`,
-            [itemId, imgUrl.trim()],
+            `INSERT INTO image (item_id, image_url, blurred_image_url) VALUES ($1, $2, $3)`,
+            [itemId, imgUrl.trim(), blurredUrl ? blurredUrl.trim() : null],
           );
         }
       }
@@ -216,14 +242,14 @@ export async function createItem(input: {
 
 export async function findItemById(
   id: string,
-  includeEmail: boolean,
+  isAdmin: boolean,
   viewerId: string,
 ): Promise<Item | null> {
   const { rows } = await pool.query<ItemRow>(
     `SELECT ${ITEM_COLUMNS} ${ITEM_JOIN} WHERE i.id = $1 LIMIT 1`,
     [id],
   );
-  return rows[0] ? toItem(rows[0], includeEmail, viewerId) : null;
+  return rows[0] ? toItem(rows[0], isAdmin, viewerId) : null;
 }
 
 export async function listItems(
@@ -233,7 +259,7 @@ export async function listItems(
     search?: string;
     reporterId?: string;
   },
-  includeEmail: boolean,
+  isAdmin: boolean,
   viewerId: string,
 ): Promise<Item[]> {
   const conditions: string[] = [];
@@ -256,7 +282,7 @@ export async function listItems(
       `(LOWER(i.name) LIKE $${params.length} OR LOWER(i.description) LIKE $${params.length})`,
     );
   }
-  if (!includeEmail && !filter?.reporterId) {
+  if (!isAdmin && !filter?.reporterId) {
     conditions.push(`NOT EXISTS (
       SELECT 1 FROM request claim_request
       WHERE claim_request.item_id = i.id
@@ -269,7 +295,7 @@ export async function listItems(
     `SELECT ${ITEM_COLUMNS} ${ITEM_JOIN} ${where} ORDER BY i.created_at DESC LIMIT 200`,
     params,
   );
-  return rows.map((row) => toItem(row, includeEmail, viewerId));
+  return rows.map((row) => toItem(row, isAdmin, viewerId));
 }
 
 /** Returns reporterId for ownership checks (no reporter PII attached). */
@@ -296,8 +322,9 @@ export async function updateItem(
     building?: string;
     location?: string;
     images?: string[];
+    blurredImages?: string[];
   },
-  includeEmail: boolean,
+  isAdmin: boolean,
   viewerId: string,
 ): Promise<Item | null> {
   const itemFields: string[] = [];
@@ -357,11 +384,13 @@ export async function updateItem(
     }
     if (updates.images !== undefined) {
       await client.query(`DELETE FROM image WHERE item_id = $1`, [id]);
-      for (const imgUrl of updates.images) {
+      for (let i = 0; i < updates.images.length; i++) {
+        const imgUrl = updates.images[i];
+        const blurredUrl = updates.blurredImages?.[i] || null;
         if (imgUrl && typeof imgUrl === 'string' && imgUrl.trim()) {
           await client.query(
-            `INSERT INTO image (item_id, image_url) VALUES ($1, $2)`,
-            [id, imgUrl.trim()],
+            `INSERT INTO image (item_id, image_url, blurred_image_url) VALUES ($1, $2, $3)`,
+            [id, imgUrl.trim(), blurredUrl ? blurredUrl.trim() : null],
           );
         }
       }
@@ -373,7 +402,7 @@ export async function updateItem(
   } finally {
     client.release();
   }
-  return findItemById(id, includeEmail, viewerId);
+  return findItemById(id, isAdmin, viewerId);
 }
 
 /** Deletes the parent report; the item row cascades. */
@@ -383,4 +412,41 @@ export async function deleteItem(id: string): Promise<boolean> {
     [id],
   );
   return (rowCount ?? 0) > 0;
+}
+
+/**
+ * Retrieves the first image of an item for the dynamic blur endpoint fallback.
+ */
+export async function findItemImageForBlur(
+  itemId: string,
+): Promise<{ id: string; imageUrl: string; blurredImageUrl: string | null; reportType: ReportType } | null> {
+  const { rows } = await pool.query<{
+    id: string;
+    image_url: string;
+    blurred_image_url: string | null;
+    report_type: ReportType;
+  }>(
+    `SELECT img.id, img.image_url, img.blurred_image_url, r.report_type
+     FROM image img
+     JOIN item i ON i.id = img.item_id
+     JOIN report r ON r.id = i.report_id
+     WHERE i.id = $1
+     ORDER BY img.created_at ASC
+     LIMIT 1`,
+    [itemId],
+  );
+  if (!rows[0]) return null;
+  return {
+    id: rows[0].id,
+    imageUrl: rows[0].image_url,
+    blurredImageUrl: rows[0].blurred_image_url,
+    reportType: rows[0].report_type,
+  };
+}
+
+/**
+ * Updates the blurred image URL for a given image row.
+ */
+export async function saveBlurredImageUrl(imageId: string, blurredUrl: string): Promise<void> {
+  await pool.query(`UPDATE image SET blurred_image_url = $1 WHERE id = $2`, [blurredUrl, imageId]);
 }
