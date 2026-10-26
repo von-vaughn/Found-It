@@ -171,6 +171,9 @@ export function AdminAccountsManager({
           setError(fieldError.field, { message: fieldError.message });
         }
       }
+      if (responseData?.message?.toLowerCase().includes("already exists")) {
+        setError("email", { message: responseData.message });
+      }
       setError("root.server", {
         message:
           responseData?.message && responseData.message !== "Validation failed."

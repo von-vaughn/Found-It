@@ -8,7 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "tsc --noEmit",
-    "test": "tsx --test src/validation/claims.test.ts src/validation/returns.test.ts src/utils/image-blur.test.ts src/controllers/items-blur.test.ts",
+    "test": "tsx --test src/validation/claims.test.ts src/validation/returns.test.ts src/utils/image-blur.test.ts src/controllers/items-blur.test.ts src/controllers/auth-duplicate.test.ts",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down"
   },

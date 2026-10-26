@@ -43,6 +43,9 @@ export interface AuthContextType {
     email: string;
     password: string;
   }) => Promise<{ success: boolean; message?: string }>;
+  checkEmailAvailability?: (
+    email: string,
+  ) => Promise<{ available: boolean; message?: string }>;
   verifyOtp: (code: string) => Promise<{ success: boolean; message?: string; role?: Role }>;
   resendOtp: (email?: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;

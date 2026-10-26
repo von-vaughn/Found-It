@@ -52,6 +52,7 @@ describe('Secure Item Image Blurring & Role-Based Delivery', () => {
   after(async () => {
     if (foundItemId) await deleteItem(foundItemId);
     if (lostItemId) await deleteItem(lostItemId);
+    await pool.end();
   });
 
   it('serves genuinely blurred image to school users and public guests for found items', async () => {

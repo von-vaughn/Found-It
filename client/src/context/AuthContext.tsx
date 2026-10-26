@@ -154,6 +154,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const checkEmailAvailability = async (
+    email: string,
+  ): Promise<{ available: boolean; message?: string }> => {
+    try {
+      return await authService.checkEmail(email);
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "Unable to verify email availability.";
+      return { available: false, message };
+    }
+  };
+
   const verifyOtp = async (
     code: string,
   ): Promise<{ success: boolean; message?: string; role?: Role }> => {
@@ -228,6 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setPendingEmail,
         login,
         signup,
+        checkEmailAvailability,
         verifyOtp,
         resendOtp,
         logout,

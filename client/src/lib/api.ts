@@ -110,6 +110,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 const NO_RETRY_PATHS = [
   "/auth/login",
   "/auth/register",
+  "/auth/check-email",
   "/auth/verify-email",
   "/auth/resend-otp",
   "/auth/refresh",

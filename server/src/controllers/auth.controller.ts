@@ -1,6 +1,7 @@
 import type { CookieOptions, Request, Response } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env';
+import type { SafeUser } from '../types/roles';
 import {
   createUser,
   findUserByEmail,
@@ -101,6 +102,18 @@ const resendOtpSchema = z
   })
   .strict();
 
+const checkEmailSchema = z
+  .object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email('Invalid email address')
+      .max(EMAIL_MAX, 'Email address is too long')
+      .refine(isStrictSchoolEmail, { message: 'Registration is restricted to @wmsu.edu.ph school emails' }),
+  })
+  .strict();
+
 function zodError(res: Response, error: z.ZodError): Response {
   return res.status(400).json({
     message: 'Validation failed',
@@ -138,8 +151,34 @@ function dispatchOtpEmail(email: string, otp: string, name: string): void {
 }
 
 /**
+ * POST /api/auth/check-email (also accepts GET with ?email=) — public.
+ * Checks whether an email is already registered within the system.
+ */
+export async function checkEmail(req: Request, res: Response): Promise<void> {
+  const rawEmail = req.method === 'GET' ? req.query.email : req.body?.email;
+  const parsed = checkEmailSchema.safeParse({ email: rawEmail });
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+  const { email } = parsed.data;
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    res.status(409).json({
+      available: false,
+      message: 'An account with this email already exists.',
+    });
+    return;
+  }
+  res.status(200).json({
+    available: true,
+    message: 'Email is available.',
+  });
+}
+
+/**
  * POST /api/auth/register — public.
- * Non-enumerable: hashes password for all branches and always returns HTTP 200.
+ * Registers a new school user. Duplicate emails already existing in the system are rejected.
  */
 export async function register(req: Request, res: Response): Promise<void> {
   const parsed = registerSchema.safeParse(req.body);
@@ -148,18 +187,23 @@ export async function register(req: Request, res: Response): Promise<void> {
     return;
   }
   const { name, email, password } = parsed.data;
+
+  // Duplicate email check: duplicate emails already existing within the system are strictly not allowed
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    res.status(409).json({ message: 'An account with this email already exists.' });
+    return;
+  }
+
   const [firstNameRaw, ...restRaw] = name.trim().split(/\s+/);
   const firstName = firstNameRaw;
   const lastName = restRaw.join(' ') || firstName;
 
-  // Constant work: hash password in all execution branches to normalize response timing
   const passwordHash = await hashPassword(password);
 
-  const existing = await findUserByEmail(email);
-
-  if (!existing) {
-    // 1. New account registration
-    const user = await createUser({
+  let user: SafeUser;
+  try {
+    user = await createUser({
       firstName,
       lastName,
       email,
@@ -167,29 +211,23 @@ export async function register(req: Request, res: Response): Promise<void> {
       role: 'school_user',
       isVerified: false,
     });
-    const otp = generateOtp();
-    await storeOtp(user.id, otp, otpExpiryDate());
-    // Asynchronous dispatch (non-blocking)
-    void dispatchOtpEmail(user.email, otp, user.name);
-  } else if (!existing.isVerified) {
-    // 2. Existing unverified account: overwrite credentials to prevent pre-registration hijacking
-    await updateUserRegistration(existing.id, {
-      firstName,
-      lastName,
-      passwordHash,
-    });
-    const eligible = await checkResendEligibility(existing.id);
-    if (eligible.allowed) {
-      const otp = generateOtp();
-      await storeOtp(existing.id, otp, otpExpiryDate());
-      void dispatchOtpEmail(existing.email, otp, existing.name);
+  } catch (error) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === '23505'
+    ) {
+      res.status(409).json({ message: 'An account with this email already exists.' });
+      return;
     }
-  } else {
-    // 3. Existing verified account: do not leak status; optionally send security alert
-    // (no-op or security notification asynchronously)
+    throw error;
   }
 
-  // Consistent 200 response across all cases
+  const otp = generateOtp();
+  await storeOtp(user.id, otp, otpExpiryDate());
+  void dispatchOtpEmail(user.email, otp, user.name);
+
   res.status(200).json(GENERIC_OTP_RESPONSE);
 }
 

@@ -26,6 +26,35 @@ export const authService = {
     return data;
   },
 
+  async checkEmail(
+    email: string,
+  ): Promise<{ available: boolean; message: string }> {
+    try {
+      const { data } = await api.post<{ available: boolean; message: string }>(
+        "/auth/check-email",
+        { email },
+      );
+      return data;
+    } catch (err: unknown) {
+      const response = (
+        err as {
+          response?: {
+            status?: number;
+            data?: { available?: boolean; message?: string };
+          };
+        }
+      )?.response;
+      if (response?.status === 409) {
+        return {
+          available: false,
+          message:
+            response.data?.message || "An account with this email already exists.",
+        };
+      }
+      throw err;
+    }
+  },
+
   async register(payload: {
     name: string;
     email: string;

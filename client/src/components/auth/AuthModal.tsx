@@ -10,10 +10,12 @@ import { Eye, EyeOff, KeyRound, RotateCcw, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import { isSchoolEmail, SCHOOL_EMAIL_DOMAINS } from "@/context/auth-context";
+import { authService } from "@/services/authService";
 import { paths } from "@/routes/paths";
 
 type AuthMode = "signin" | "signup";
 type SignupScreen = "email" | "profile" | "verify";
+type ScreenTransition = { direction: number; immediate: boolean };
 
 interface AuthModalProps {
   initialMode: AuthMode;
@@ -42,13 +44,16 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const [verificationCountdown, setVerificationCountdown] = useState(30);
   const [isVerifying, setIsVerifying] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<1 | -1>(1);
+  const [isSwitchingAuthMode, setIsSwitchingAuthMode] = useState(false);
+  const [skipScreenAnimation, setSkipScreenAnimation] = useState(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const verificationInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
-  const { login, signup, verifyOtp, resendOtp } = useAuth();
+  const { login, signup, verifyOtp, resendOtp, checkEmailAvailability } =
+    useAuth();
 
   const screenKey = mode === "signin" ? "signin" : `signup-${signupScreen}`;
   const screenOrder: Record<string, number> = {
@@ -58,15 +63,19 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     "signup-verify": 3,
   };
   const screenVariants = {
-    enter: (direction: number) => ({
-      opacity: reduceMotion ? 1 : 0,
-      x: reduceMotion ? 0 : direction * 14,
+    enter: ({ direction, immediate }: ScreenTransition) => ({
+      opacity: reduceMotion || immediate ? 1 : 0,
+      x: reduceMotion || immediate ? 0 : direction * 14,
     }),
     center: { opacity: 1, x: 0 },
-    exit: (direction: number) => ({
-      opacity: reduceMotion ? 1 : 0,
-      x: reduceMotion ? 0 : direction * -14,
+    exit: ({ direction, immediate }: ScreenTransition) => ({
+      opacity: reduceMotion || immediate ? 1 : 0,
+      x: reduceMotion || immediate ? 0 : direction * -14,
     }),
+  };
+  const screenTransition = {
+    direction: transitionDirection,
+    immediate: isSwitchingAuthMode || skipScreenAnimation,
   };
 
   useEffect(() => {
@@ -136,6 +145,8 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const switchMode = (nextMode: AuthMode) => {
     const nextKey = nextMode === "signin" ? "signin" : "signup-email";
+    setIsSwitchingAuthMode(true);
+    setSkipScreenAnimation(false);
     setTransitionDirection(
       screenOrder[nextKey] > screenOrder[screenKey] ? 1 : -1,
     );
@@ -147,6 +158,11 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const changeSignupScreen = (nextScreen: SignupScreen) => {
     const nextKey = `signup-${nextScreen}`;
+    const shouldSkip =
+      (signupScreen === "email" && nextScreen === "profile") ||
+      (signupScreen === "profile" && nextScreen === "email");
+    setIsSwitchingAuthMode(false);
+    setSkipScreenAnimation(shouldSkip);
     setTransitionDirection(
       screenOrder[nextKey] > screenOrder[screenKey] ? 1 : -1,
     );
@@ -217,7 +233,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     }
   };
 
-  const handleContinue = (event: FormEvent<HTMLFormElement>) => {
+  const handleContinue = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     if (!emailPattern.test(normalizedEmail)) {
@@ -233,9 +249,25 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       return;
     }
 
-    setEmail(normalizedEmail);
+    setIsLoading(true);
     setError("");
-    changeSignupScreen("profile");
+
+    try {
+      const checkFn = checkEmailAvailability || authService.checkEmail;
+      const res = await checkFn(normalizedEmail);
+      if (!res.available) {
+        setError(res.message || "An account with this email already exists.");
+        emailInputRef.current?.focus();
+        return;
+      }
+      setEmail(normalizedEmail);
+      changeSignupScreen("profile");
+    } catch {
+      setError("Unable to verify email availability. Check your connection.");
+      emailInputRef.current?.focus();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCreateAccount = async (event: FormEvent<HTMLFormElement>) => {
@@ -351,7 +383,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
-        layout
+        layout={!isSwitchingAuthMode && !skipScreenAnimation}
         className="relative my-auto flex min-h-[100dvh] w-full flex-col overflow-y-auto overscroll-contain bg-white sm:my-auto sm:block sm:h-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-md sm:min-h-0 sm:overflow-y-auto sm:rounded-3xl sm:border sm:border-neutral-200 sm:p-8 sm:shadow-2xl"
         initial={reduceMotion ? false : { opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -359,9 +391,10 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
         transition={{
           duration: reduceMotion ? 0 : 0.22,
           ease: "easeOut",
-          layout: reduceMotion
-            ? { duration: 0 }
-            : { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
+          layout:
+            reduceMotion || isSwitchingAuthMode || skipScreenAnimation
+              ? { duration: 0 }
+              : { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
         }}
         onKeyDown={handleDialogKeyDown}
       >
@@ -398,9 +431,13 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
         <div className="px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-0 sm:pb-0">
           <AnimatePresence
-            mode="popLayout"
+            mode={
+              isSwitchingAuthMode || skipScreenAnimation
+                ? undefined
+                : "popLayout"
+            }
             initial={false}
-            custom={transitionDirection}
+            custom={screenTransition}
             onExitComplete={focusActiveField}
           >
             {mode === "signin" ? (
@@ -409,13 +446,13 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 className="mt-6 flex flex-col gap-4"
                 noValidate
                 onSubmit={handleSignIn}
-                custom={transitionDirection}
+                custom={screenTransition}
                 variants={screenVariants}
-                initial="enter"
+                initial={isSwitchingAuthMode ? false : "enter"}
                 animate="center"
                 exit="exit"
                 transition={{
-                  duration: reduceMotion ? 0 : 0.2,
+                  duration: reduceMotion || isSwitchingAuthMode ? 0 : 0.2,
                   ease: [0.16, 1, 0.3, 1],
                 }}
               >
@@ -528,13 +565,18 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 className="mt-6 flex flex-col gap-4"
                 noValidate
                 onSubmit={handleContinue}
-                custom={transitionDirection}
+                custom={screenTransition}
                 variants={screenVariants}
-                initial="enter"
+                initial={
+                  isSwitchingAuthMode || skipScreenAnimation ? false : "enter"
+                }
                 animate="center"
                 exit="exit"
                 transition={{
-                  duration: reduceMotion ? 0 : 0.2,
+                  duration:
+                    reduceMotion || isSwitchingAuthMode || skipScreenAnimation
+                      ? 0
+                      : 0.2,
                   ease: [0.16, 1, 0.3, 1],
                 }}
               >
@@ -574,9 +616,10 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 <div className={actionDockClass}>
                   <button
                     type="submit"
-                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                    disabled={isLoading}
+                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
                   >
-                    Continue
+                    {isLoading ? "Checking…" : "Continue"}
                   </button>
                 </div>
                 <p className="pt-1 text-center text-sm text-neutral-600">
@@ -596,23 +639,40 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 className="mt-6 flex flex-col gap-4"
                 noValidate
                 onSubmit={handleCreateAccount}
-                custom={transitionDirection}
+                custom={screenTransition}
                 variants={screenVariants}
-                initial="enter"
+                initial={
+                  isSwitchingAuthMode || skipScreenAnimation ? false : "enter"
+                }
                 animate="center"
                 exit="exit"
                 transition={{
-                  duration: reduceMotion ? 0 : 0.2,
+                  duration:
+                    reduceMotion || isSwitchingAuthMode || skipScreenAnimation
+                      ? 0
+                      : 0.2,
                   ease: [0.16, 1, 0.3, 1],
                 }}
               >
-                <div className="rounded-xl bg-neutral-50 px-4 py-3">
-                  <p className="text-xs font-semibold text-neutral-500">
-                    Email address
-                  </p>
-                  <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900">
-                    {email}
-                  </p>
+                <div className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-neutral-500">
+                      Email address
+                    </p>
+                    <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900">
+                      {email}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError("");
+                      changeSignupScreen("email");
+                    }}
+                    className="ml-3 shrink-0 text-xs font-semibold text-[#E5192D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  >
+                    Change
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
@@ -780,13 +840,13 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 className="mt-6 flex flex-col gap-5"
                 noValidate
                 onSubmit={handleVerifyEmail}
-                custom={transitionDirection}
+                custom={screenTransition}
                 variants={screenVariants}
-                initial="enter"
+                initial={isSwitchingAuthMode ? false : "enter"}
                 animate="center"
                 exit="exit"
                 transition={{
-                  duration: reduceMotion ? 0 : 0.2,
+                  duration: reduceMotion || isSwitchingAuthMode ? 0 : 0.2,
                   ease: [0.16, 1, 0.3, 1],
                 }}
               >

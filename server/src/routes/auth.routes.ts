@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   changePassword,
+  checkEmail,
   login,
   logout,
   logoutAll,
@@ -11,12 +12,14 @@ import {
   verifyEmail,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/authenticate';
-import { authLimiter, resendOtpLimiter } from '../middleware/rate-limit';
+import { apiLimiter, authLimiter, resendOtpLimiter } from '../middleware/rate-limit';
 import { csrfProtection } from '../middleware/csrf';
 
 const router = Router();
 
 // Public (brute-force & CSRF protected)
+router.post('/check-email', apiLimiter, checkEmail);
+router.get('/check-email', apiLimiter, checkEmail);
 router.post('/register', authLimiter, register);
 router.post('/verify-email', authLimiter, verifyEmail);
 router.post('/resend-otp', authLimiter, resendOtpLimiter, resendOtp);
