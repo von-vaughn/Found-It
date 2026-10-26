@@ -22,15 +22,6 @@ const ADMIN_USERS_QUERY_KEY = ["admin-users"] as const;
 
 type UsersTab = "school" | "admins";
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 function errorMessage(error: unknown, fallback: string): string {
   const responseMessage = (
     error as { response?: { data?: { message?: string } } }
@@ -290,14 +281,13 @@ export function UsersPage() {
             </div>
           ) : (
             <div className="min-h-[680px] overflow-x-auto">
-              <table className="w-full min-w-[960px] text-left text-xs">
+              <table className="w-full min-w-[880px] text-left text-xs">
                 <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   <tr>
                     <th scope="col" className="px-5 py-3">User</th>
                     <th scope="col" className="px-4 py-3">Email</th>
                     <th scope="col" className="px-4 py-3">Status</th>
                     <th scope="col" className="px-4 py-3">Joined</th>
-                    <th scope="col" className="px-4 py-3">Reports</th>
                     <th scope="col" className="px-5 py-3"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
@@ -305,17 +295,7 @@ export function UsersPage() {
                   {pageUsers.map((user) => (
                     <tr key={user.id} className="text-neutral-700 dark:text-neutral-300">
                       <td className="px-5 py-3.5">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span
-                            aria-hidden="true"
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-bold text-white"
-                          >
-                            {initials(user.name)}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">{user.name}</span>
-                          </span>
-                        </div>
+                        <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">{user.name}</span>
                       </td>
                       <td className="max-w-56 px-4 py-3.5">
                         <span className="block truncate">{user.email}</span>
@@ -324,7 +304,6 @@ export function UsersPage() {
                         <StatusBadge status={user.isActive ? "Active" : "Inactive"} />
                       </td>
                       <td className="whitespace-nowrap px-4 py-3.5">{user.joined}</td>
-                      <td className="px-4 py-3.5 tabular-nums">{user.reportCount}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex justify-end">
                           {user.isActive ? (

@@ -23,6 +23,7 @@ export interface ServerClaim {
   color: string | null;
   building: string | null;
   receivedByOsa?: boolean;
+  publishedItemId?: string | null;
   status: ServerClaimStatus;
   submitted: string;
 }

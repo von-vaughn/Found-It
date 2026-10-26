@@ -12,6 +12,7 @@ import {
   Lock,
   MapPin,
   Package,
+  Send,
   Palette,
   Tag,
   X,
@@ -33,6 +34,7 @@ import { toFoundReportClaims } from "@/lib/claimAdapter";
 import { extractIdNumberFromEmail } from "@/lib/idNumber";
 import {
   useAdminReturns,
+  usePublishRejectedReturn,
   useUpdateAdminReturnOsaReceipt,
   useUpdateAdminReturnStatus,
 } from "@/hooks/useReturns";
@@ -72,20 +74,26 @@ type StatusDecision = "Approved" | "Rejected" | "Pending" | "Returned";
 
 function ReturnRequestSection({
   request,
+  physicalItemReceived,
   headingId,
   title,
   onRequestStatus,
   onOsaReceiptChange,
   isUpdatingOsaReceipt,
+  onPublish,
+  isPublishing,
   unlocked,
   onRequestUnlock,
 }: {
   request: ClaimRequest;
+  physicalItemReceived: boolean;
   headingId: string;
   title?: string;
   onRequestStatus: (requestId: string, status: StatusDecision) => void;
   onOsaReceiptChange: (requestId: string, receivedByOsa: boolean) => void;
   isUpdatingOsaReceipt: boolean;
+  onPublish: (request: ClaimRequest) => void;
+  isPublishing: boolean;
   unlocked: boolean;
   onRequestUnlock: () => void;
 }) {
@@ -159,6 +167,28 @@ function ReturnRequestSection({
               Approval is unavailable until the physical item is received by OSA.
             </p>
           )}
+          {request.status === "Rejected" && (
+            <div className="mt-4 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+              <button
+                type="button"
+                onClick={() => onPublish(request)}
+                disabled={Boolean(request.publishedItemId) || isPublishing}
+                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-60"
+              >
+                <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                {request.publishedItemId
+                  ? "Posted as found item"
+                  : isPublishing
+                    ? "Posting item…"
+                    : "Post as found item"}
+              </button>
+              {request.publishedItemId && (
+                <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                  This found-item post is already available in the public listings.
+                </p>
+              )}
+            </div>
+          )}
           {request.status === "Approved" && (
             <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
               <button
@@ -192,6 +222,15 @@ function ReturnRequestSection({
           <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 pt-3 text-xs">
             <div>
               <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                <Tag className="h-3 w-3" aria-hidden="true" />
+                Item name
+              </dt>
+              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                {request.item || "None"}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                 <CalendarDays className="h-3 w-3" aria-hidden="true" />
                 Submitted
               </dt>
@@ -214,21 +253,26 @@ function ReturnRequestSection({
                 Physical Item
               </dt>
               <dd className="mt-1 space-y-2">
-                <OsaReceiptStatus received={request.receivedByOsa ?? false} />
-                <button
-                  type="button"
-                  disabled={isUpdatingOsaReceipt}
-                  onClick={() =>
-                    onOsaReceiptChange(request.id, !(request.receivedByOsa ?? false))
-                  }
-                  className="inline-flex h-8 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 px-2.5 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60"
-                >
-                  {isUpdatingOsaReceipt
-                    ? "Updating…"
-                    : request.receivedByOsa
-                      ? "Mark not yet received"
+                <OsaReceiptStatus received={physicalItemReceived} />
+                {request.status === "Pending" && (
+                  <button
+                    type="button"
+                    disabled={isUpdatingOsaReceipt}
+                    onClick={() =>
+                      onOsaReceiptChange(
+                        request.id,
+                        !(request.receivedByOsa ?? false),
+                      )
+                    }
+                    className="inline-flex h-8 items-center justify-center rounded-lg border border-neutral-200 px-2.5 text-[11px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                  >
+                    {isUpdatingOsaReceipt
+                      ? "Updating…"
+                      : request.receivedByOsa
+                        ? "Mark not yet received"
                         : "Mark received"}
-                </button>
+                  </button>
+                )}
               </dd>
             </div>
             <div>
@@ -297,6 +341,8 @@ export function ReturnItemsPage() {
     requestId: string;
     status: StatusDecision;
   } | null>(null);
+  const [confirmPublishRequest, setConfirmPublishRequest] =
+    useState<ClaimRequest | null>(null);
 
   const {
     data: serverReturns = [],
@@ -312,6 +358,7 @@ export function ReturnItemsPage() {
   } = useItems();
   const updateReturnStatus = useUpdateAdminReturnStatus();
   const updateOsaReceipt = useUpdateAdminReturnOsaReceipt();
+  const publishRejected = usePublishRejectedReturn();
   const requests = useMemo(
     () => toFoundReportClaims(serverReturns),
     [serverReturns],
@@ -377,6 +424,12 @@ export function ReturnItemsPage() {
   const selectedLostReport = selectedRequest
     ? reports.find((report) => report.id === selectedRequest.itemId)
     : undefined;
+  const physicalItemReceived = (request: ClaimRequest) => {
+    const publishedItem = request.publishedItemId
+      ? reports.find((report) => report.id === request.publishedItemId)
+      : undefined;
+    return publishedItem?.receivedByOsa ?? request.receivedByOsa ?? false;
+  };
   const rangeStart =
     filteredRequests.length === 0 ? 0 : (visiblePage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(visiblePage * PAGE_SIZE, filteredRequests.length);
@@ -386,7 +439,8 @@ export function ReturnItemsPage() {
     ? visibleRequests.filter(
         (request) =>
           request.itemId === selectedRequest.itemId &&
-          request.id !== selectedRequest.id,
+          request.id !== selectedRequest.id &&
+          !(statusFilter === "Pending" && request.status === "Rejected"),
       )
     : [];
   const confirmTargetRequest = confirmAction
@@ -453,6 +507,38 @@ export function ReturnItemsPage() {
       if (target.status !== "Approved") return;
     } else if (target.status !== "Pending") return;
     setConfirmAction({ requestId, status });
+  };
+
+  const requestPublishRejectedReturn = (request: ClaimRequest) => {
+    setConfirmPublishRequest(request);
+  };
+
+  const confirmPublishRejectedReturn = () => {
+    if (!confirmPublishRequest) return;
+    const request = confirmPublishRequest;
+    publishRejected.mutate(request.id, {
+      onSuccess: (result) => {
+        setConfirmPublishRequest(null);
+        if (result.alreadyPublished) {
+          toast.success("This return request was already posted as a found item.");
+          return;
+        }
+        logDecision({
+          action: "published",
+          entityType: "item",
+          entityId: result.itemId,
+          itemTitle: request.claimantTitle || request.item,
+          details: `Published rejected return request ${request.id} as a public found-item post.`,
+        });
+        toast.success(`Posted "${request.claimantTitle || request.item}" as a found item.`);
+      },
+      onError: (error) => {
+        const responseMessage = (
+          error as { response?: { data?: { message?: string } } }
+        )?.response?.data?.message;
+        toast.error(responseMessage || "Could not post this found item. Please try again.");
+      },
+    });
   };
 
   const handleOsaReceiptChange = (
@@ -531,13 +617,16 @@ export function ReturnItemsPage() {
   }, [visibleRequests]);
 
   useEffect(() => {
-    if (!confirmAction) return;
+    if (!confirmAction && !confirmPublishRequest) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setConfirmAction(null);
+      if (event.key === "Escape") {
+        setConfirmAction(null);
+        setConfirmPublishRequest(null);
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [confirmAction]);
+  }, [confirmAction, confirmPublishRequest]);
 
   // ── Loading state ──────────────────────────────────────────────────
   if (returnsLoading || itemsLoading) {
@@ -867,6 +956,7 @@ export function ReturnItemsPage() {
               </section>
               <ReturnRequestSection
                 request={selectedRequest}
+                physicalItemReceived={physicalItemReceived(selectedRequest)}
                 headingId="return-evidence-heading"
                 title={
                   siblingRequests.length > 0
@@ -875,7 +965,15 @@ export function ReturnItemsPage() {
                 }
                 onRequestStatus={requestStatusChange}
                 onOsaReceiptChange={handleOsaReceiptChange}
-                isUpdatingOsaReceipt={updateOsaReceipt.isPending}
+                isUpdatingOsaReceipt={
+                  updateOsaReceipt.isPending &&
+                  updateOsaReceipt.variables?.id === selectedRequest.id
+                }
+                onPublish={requestPublishRejectedReturn}
+                isPublishing={
+                  publishRejected.isPending &&
+                  publishRejected.variables === selectedRequest.id
+                }
                 unlocked={unlocked}
                 onRequestUnlock={requestUnlock}
               />
@@ -886,10 +984,19 @@ export function ReturnItemsPage() {
                       <ReturnRequestSection
                         key={sibling.id}
                         request={sibling}
+                        physicalItemReceived={physicalItemReceived(sibling)}
                         headingId={`return-request-${sibling.id}`}
                         onRequestStatus={requestStatusChange}
                         onOsaReceiptChange={handleOsaReceiptChange}
-                        isUpdatingOsaReceipt={updateOsaReceipt.isPending}
+                        isUpdatingOsaReceipt={
+                          updateOsaReceipt.isPending &&
+                          updateOsaReceipt.variables?.id === sibling.id
+                        }
+                        onPublish={requestPublishRejectedReturn}
+                        isPublishing={
+                          publishRejected.isPending &&
+                          publishRejected.variables === sibling.id
+                        }
                         unlocked={unlocked}
                         onRequestUnlock={requestUnlock}
                       />
@@ -985,6 +1092,61 @@ export function ReturnItemsPage() {
                     : confirmAction.status === "Returned"
                       ? "Mark as returned"
                     : "Reject"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmPublishRequest && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="publish-return-confirm-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          <div
+            aria-hidden="true"
+            onClick={() => setConfirmPublishRequest(null)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-neutral-900">
+            <button
+              type="button"
+              onClick={() => setConfirmPublishRequest(null)}
+              aria-label="Close confirmation"
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <h2
+              id="publish-return-confirm-title"
+              className="text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
+            >
+              Post this found item?
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+              “{confirmPublishRequest.claimantTitle || confirmPublishRequest.item}”
+              will be added to the public found-items list with its report details
+              and photos.
+            </p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                autoFocus
+                disabled={publishRejected.isPending}
+                onClick={() => setConfirmPublishRequest(null)}
+                className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:opacity-60 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={publishRejected.isPending}
+                onClick={confirmPublishRejectedReturn}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+              >
+                <Send className="h-4 w-4" aria-hidden="true" />
+                {publishRejected.isPending ? "Posting…" : "Post found item"}
               </button>
             </div>
           </div>

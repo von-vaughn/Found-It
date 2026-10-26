@@ -137,6 +137,7 @@ export async function migrate(): Promise<void> {
       details TEXT,
       important_details TEXT,
       received_by_osa BOOLEAN NOT NULL DEFAULT FALSE,
+      published_item_id UUID REFERENCES item(id) ON DELETE SET NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
@@ -173,12 +174,16 @@ export async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_request_item_id ON request(item_id);
     CREATE INDEX IF NOT EXISTS idx_request_user_id ON request(user_id);
     CREATE INDEX IF NOT EXISTS idx_notification_user_id ON notification(user_id);
-    -- One ownership claim per user per item; return requests are unaffected.
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_request_claim_unique
-      ON request(item_id, user_id) WHERE kind = 'claim';
     -- One found report per user per lost item.
     CREATE UNIQUE INDEX IF NOT EXISTS idx_request_return_unique
       ON request(item_id, user_id) WHERE kind = 'return';
+  `);
+
+  await pool.query(`
+    DROP INDEX IF EXISTS idx_request_claim_unique;
+    CREATE UNIQUE INDEX idx_request_claim_unique
+      ON request(item_id, user_id)
+      WHERE kind = 'claim' AND status <> 'rejected';
   `);
 
   await pool.query(`
@@ -209,6 +214,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE request ADD COLUMN IF NOT EXISTS details TEXT;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS important_details TEXT;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS received_by_osa BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS published_item_id UUID REFERENCES item(id) ON DELETE SET NULL;
   `);
 
   // Backfill blurred_image_url for found items that don't have one yet

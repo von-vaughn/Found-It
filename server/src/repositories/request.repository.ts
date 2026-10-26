@@ -1,4 +1,5 @@
 import { pool } from "../config/db";
+import { createItemWithClient } from "./item.repository";
 import {
   createClaimedNotifications,
   createAdminSubmissionNotifications,
@@ -22,6 +23,7 @@ interface ClaimRow {
   primary_color: string | null;
   building: string | null;
   received_by_osa: boolean;
+  published_item_id: string | null;
   status: ClaimStatus;
   created_at: Date | string;
 }
@@ -31,7 +33,8 @@ const CLAIM_COLUMNS = `
   u.first_name || ' ' || u.last_name AS claimant, u.email,
   rq.date_lost, rq.time_lost, rq.location_lost, rq.details,
   rq.important_details, rq.evidence, rq.claimant_title,
-  rq.primary_color, rq.building, rq.received_by_osa, rq.status, rq.created_at
+  rq.primary_color, rq.building, rq.received_by_osa, rq.published_item_id,
+  rq.status, rq.created_at
 `;
 const CLAIM_JOIN = `
   FROM request rq
@@ -77,6 +80,7 @@ function toClaim(row: ClaimRow, includeOsaReceipt = false): Claim {
     color: row.primary_color,
     building: row.building,
     ...(includeOsaReceipt ? { receivedByOsa: row.received_by_osa } : {}),
+    publishedItemId: row.published_item_id,
     status: row.status,
     submitted: new Date(row.created_at).toISOString(),
   };
@@ -122,12 +126,15 @@ async function findRequestForUserAndItem(
   userId: string,
   itemId: string,
   kind: "claim" | "return",
+  excludeRejected = false,
 ): Promise<Claim | null> {
   const { rows } = await pool.query<ClaimRow>(
     `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
      WHERE rq.user_id = $1 AND rq.item_id = $2 AND rq.kind = $3
+       AND (NOT $4 OR rq.status <> 'rejected')
+     ORDER BY rq.created_at DESC
      LIMIT 1`,
-    [userId, itemId, kind],
+    [userId, itemId, kind, excludeRejected],
   );
   return rows[0] ? toClaim(rows[0]) : null;
 }
@@ -150,7 +157,7 @@ export function findClaimForUserAndItem(
   userId: string,
   itemId: string,
 ): Promise<Claim | null> {
-  return findRequestForUserAndItem(userId, itemId, "claim");
+  return findRequestForUserAndItem(userId, itemId, "claim", true);
 }
 
 export function findReturnForUserAndItem(
@@ -234,6 +241,104 @@ export function listAllReturns(): Promise<Claim[]> {
   return listAllRequests("return");
 }
 
+export type PublishRejectedReturnResult =
+  | { status: "not_found" }
+  | { status: "not_rejected" }
+  | { status: "already_published"; itemId: string }
+  | { status: "invalid_data"; message: string }
+  | { status: "published"; itemId: string };
+
+/** Publishes a rejected found report as a public found-item post exactly once. */
+export async function publishRejectedReturn(
+  requestId: string,
+  adminId: string,
+): Promise<PublishRejectedReturnResult> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows } = await client.query<{
+      status: ClaimStatus;
+      published_item_id: string | null;
+      claimant_title: string | null;
+      primary_color: string | null;
+      building: string | null;
+      date_lost: Date | string | null;
+      time_lost: string | null;
+      location_lost: string | null;
+      details: string | null;
+      important_details: string | null;
+      evidence: string | null;
+      category_id: string;
+      item_name: string;
+    }>(
+      `SELECT rq.status, rq.published_item_id, rq.claimant_title,
+              rq.primary_color, rq.building, rq.date_lost, rq.time_lost,
+              rq.location_lost, rq.details, rq.important_details, rq.evidence,
+              item.category_id, item.name AS item_name
+       FROM request rq
+       JOIN item ON item.id = rq.item_id
+       WHERE rq.id = $1 AND rq.kind = 'return'
+       FOR UPDATE OF rq`,
+      [requestId],
+    );
+    const request = rows[0];
+    if (!request) {
+      await client.query("ROLLBACK");
+      return { status: "not_found" };
+    }
+    if (request.published_item_id) {
+      await client.query("COMMIT");
+      return {
+        status: "already_published",
+        itemId: request.published_item_id,
+      };
+    }
+    if (request.status !== "rejected") {
+      await client.query("ROLLBACK");
+      return { status: "not_rejected" };
+    }
+
+    const name = request.claimant_title?.trim() || request.item_name;
+    const description = request.details?.trim() ?? "";
+    const itemDate = toDateOnly(request.date_lost);
+    const location = request.location_lost?.trim();
+    if (!itemDate || !location || description.length < 10) {
+      await client.query("ROLLBACK");
+      return {
+        status: "invalid_data",
+        message:
+          "This report is missing a found date, location, or item description required for a public post.",
+      };
+    }
+
+    const created = await createItemWithClient(client, {
+      reporterId: adminId,
+      reportType: "found",
+      name,
+      description,
+      itemDate,
+      itemTime: request.time_lost?.slice(0, 5) ?? undefined,
+      categoryId: request.category_id,
+      color: request.primary_color ?? undefined,
+      building: request.building ?? undefined,
+      location,
+      importantDetails: request.important_details ?? undefined,
+      images: parseEvidence(request.evidence),
+    });
+    await client.query(
+      "UPDATE request SET published_item_id = $2 WHERE id = $1",
+      [requestId, created.id],
+    );
+    await client.query("COMMIT");
+    return { status: "published", itemId: created.id };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function updateReturnOsaReceipt(
   requestId: string,
   receivedByOsa: boolean,
@@ -276,6 +381,16 @@ async function updateRequestStatusById(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    if (kind === "claim" && status === "approved") {
+      await client.query(
+        `SELECT item.id
+         FROM item
+         JOIN request ON request.item_id = item.id
+         WHERE request.id = $1 AND request.kind = 'claim'
+         FOR UPDATE OF item`,
+        [id],
+      );
+    }
     const predecessors = allowedStatusPredecessors(kind, status);
     const { rows } = await client.query<{
       user_id: string;
@@ -294,7 +409,7 @@ async function updateRequestStatusById(
        JOIN item ON item.id = rq.item_id
        JOIN report ON report.id = item.report_id
        WHERE rq.id = $1 AND rq.kind = $2
-       FOR UPDATE OF rq, item`,
+       FOR UPDATE OF rq`,
       [id, kind],
     );
     const current = rows[0];
@@ -344,6 +459,33 @@ async function updateRequestStatusById(
         requesterId: current.user_id,
         itemOwnerId: current.item_owner_id,
       });
+    }
+
+    if (kind === "claim" && status === "approved") {
+      const { rows: rejectedClaims } = await client.query<{
+        id: string;
+        user_id: string;
+      }>(
+        `UPDATE request
+         SET status = 'rejected'
+         WHERE item_id = $1
+           AND kind = 'claim'
+           AND status = 'pending'
+           AND id <> $2
+         RETURNING id, user_id`,
+        [current.item_id, id],
+      );
+      for (const rejected of rejectedClaims) {
+        await createRequestStatusNotification(client, {
+          requestId: rejected.id,
+          itemId: current.item_id,
+          itemName: current.item_name,
+          kind: "claim",
+          status: "rejected",
+          requesterId: rejected.user_id,
+          itemOwnerId: current.item_owner_id,
+        });
+      }
     }
 
     await client.query("COMMIT");

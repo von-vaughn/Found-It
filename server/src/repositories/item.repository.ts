@@ -181,6 +181,58 @@ async function upsertLocation(
 }
 
 /** Creates the parent report row and its item (plus any location) in one transaction. */
+export async function createItemWithClient(client: PoolClient, input: {
+  reporterId: string;
+  reportType: ReportType;
+  name: string;
+  description: string;
+  itemDate: string;
+  itemTime?: string;
+  categoryId: string;
+  color?: string;
+  building?: string;
+  location?: string;
+  importantDetails?: string;
+  images?: string[];
+  blurredImages?: string[];
+}): Promise<{ id: string }> {
+  const buildingId = input.building ? await upsertBuilding(client, input.building) : null;
+  const locationId = input.location
+    ? await upsertLocation(client, buildingId, input.location)
+    : null;
+  const { rows: reportRows } = await client.query<{ id: string }>(
+    `INSERT INTO report (user_id, report_type, date, time, important_details, location_id)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [
+      input.reporterId,
+      input.reportType,
+      input.itemDate,
+      input.itemTime ?? null,
+      input.importantDetails ?? null,
+      locationId,
+    ],
+  );
+  const { rows: itemRows } = await client.query<{ id: string }>(
+    `INSERT INTO item (report_id, category_id, name, description, primary_color)
+     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+    [reportRows[0].id, input.categoryId, input.name, input.description, input.color ?? null],
+  );
+  const itemId = itemRows[0].id;
+  if (input.images && input.images.length > 0) {
+    for (let i = 0; i < input.images.length; i++) {
+      const imgUrl = input.images[i];
+      const blurredUrl = input.blurredImages?.[i] || null;
+      if (imgUrl && typeof imgUrl === 'string' && imgUrl.trim()) {
+        await client.query(
+          `INSERT INTO image (item_id, image_url, blurred_image_url) VALUES ($1, $2, $3)`,
+          [itemId, imgUrl.trim(), blurredUrl ? blurredUrl.trim() : null],
+        );
+      }
+    }
+  }
+  return { id: itemId };
+}
+
 export async function createItem(input: {
   reporterId: string;
   reportType: ReportType;
@@ -199,42 +251,9 @@ export async function createItem(input: {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const buildingId = input.building ? await upsertBuilding(client, input.building) : null;
-    const locationId = input.location
-      ? await upsertLocation(client, buildingId, input.location)
-      : null;
-    const { rows: reportRows } = await client.query<{ id: string }>(
-      `INSERT INTO report (user_id, report_type, date, time, important_details, location_id)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [
-        input.reporterId,
-        input.reportType,
-        input.itemDate,
-        input.itemTime ?? null,
-        input.importantDetails ?? null,
-        locationId,
-      ],
-    );
-    const { rows: itemRows } = await client.query<{ id: string }>(
-      `INSERT INTO item (report_id, category_id, name, description, primary_color)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [reportRows[0].id, input.categoryId, input.name, input.description, input.color ?? null],
-    );
-    const itemId = itemRows[0].id;
-    if (input.images && input.images.length > 0) {
-      for (let i = 0; i < input.images.length; i++) {
-        const imgUrl = input.images[i];
-        const blurredUrl = input.blurredImages?.[i] || null;
-        if (imgUrl && typeof imgUrl === 'string' && imgUrl.trim()) {
-          await client.query(
-            `INSERT INTO image (item_id, image_url, blurred_image_url) VALUES ($1, $2, $3)`,
-            [itemId, imgUrl.trim(), blurredUrl ? blurredUrl.trim() : null],
-          );
-        }
-      }
-    }
+    const created = await createItemWithClient(client, input);
     await client.query('COMMIT');
-    return { id: itemId };
+    return created;
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;

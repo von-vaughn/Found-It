@@ -18,6 +18,7 @@ export interface ClaimRequest {
   color?: string;
   building?: string;
   receivedByOsa?: boolean;
+  publishedItemId?: string | null;
 }
 
 export type NewClaimRequest = Omit<

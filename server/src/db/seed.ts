@@ -110,48 +110,7 @@ const DEMO_ITEMS: Array<{
     time: '12:05',
   },
 
-  // ── Maria Santos ────────────────────────────────────────────────────────
-  {
-    reporterEmail: 'maria.santos@foundit.local',
-    reportType: 'lost',
-    categoryName: 'jewelry',
-    name: 'Gold Ring with a Small Stone',
-    description: 'Thin gold ring with a single clear stone. Slipped off while I was reading.',
-    color: 'Gold',
-    building: 'CLA - College of Liberal Arts',
-    location: 'Reading room, second floor',
-    importantDetails: 'Engraved with the initials M.S. inside the band.',
-    daysAgo: 3,
-    time: '15:10',
-  },
 
-  // ── Jose Reyes ──────────────────────────────────────────────────────────
-  {
-    reporterEmail: 'jose.reyes@foundit.local',
-    reportType: 'found',
-    categoryName: 'cards',
-    name: 'BPI ATM Card',
-    description: 'Bank ATM card found on the floor near the vending machine, name still legible.',
-    color: 'Green',
-    building: 'CAIS - College of Asian & Islamic Studies',
-    location: 'Near the vending machine',
-    daysAgo: 4,
-    time: '16:20',
-  },
-
-  // ── Ana Lim ─────────────────────────────────────────────────────────────
-  {
-    reporterEmail: 'ana.lim@foundit.local',
-    reportType: 'found',
-    categoryName: 'other',
-    name: 'Brown Stuffed Toy Bear',
-    description: 'Small brown stuffed bear, well worn. Sitting on the bench outside the lobby.',
-    color: 'Brown',
-    building: 'WMSU Administration Building',
-    location: 'Bench outside the lobby',
-    daysAgo: 13,
-    time: '17:55',
-  },
 ];
 
 /** Demo posts are planted only once: any that already exist by name are left alone. */
@@ -233,9 +192,6 @@ export async function seed(): Promise<void> {
     const demos = [
       { firstName: 'Demo', lastName: 'Admin', email: 'admin@foundit.local', password: 'Admin123!', role: 'admin' as const },
       { firstName: 'Demo', lastName: 'User', email: 'user@foundit.local', password: 'User12345!', role: 'school_user' as const },
-      { firstName: 'Maria', lastName: 'Santos', email: 'maria.santos@foundit.local', password: 'User12345!', role: 'school_user' as const },
-      { firstName: 'Jose', lastName: 'Reyes', email: 'jose.reyes@foundit.local', password: 'User12345!', role: 'school_user' as const },
-      { firstName: 'Ana', lastName: 'Lim', email: 'ana.lim@foundit.local', password: 'User12345!', role: 'school_user' as const },
     ];
     for (const d of demos) {
       const existing = await findUserByEmail(d.email);

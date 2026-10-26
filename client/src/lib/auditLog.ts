@@ -5,7 +5,8 @@ export type AuditAction =
   | "rejected"
   | "returned"
   | "claimed"
-  | "cancelled";
+  | "cancelled"
+  | "published";
 export type AuditEntityType = "claim" | "return_request" | "item";
 
 export interface AuditLogEntry {

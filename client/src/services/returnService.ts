@@ -14,6 +14,12 @@ export interface CreateReturnPayload {
   evidence?: string[];
 }
 
+export interface PublishReturnResponse {
+  message: string;
+  itemId: string;
+  alreadyPublished: boolean;
+}
+
 export type UpdateReturnPayload = Omit<CreateReturnPayload, "itemId">;
 
 interface CreateReturnResponse {
@@ -55,6 +61,16 @@ export async function listItemReturns(itemId: string): Promise<ServerClaim[]> {
 export async function listAllReturns(): Promise<ServerClaim[]> {
   const { data } = await api.get<ListReturnsResponse>("/returns/admin");
   return data.returns;
+}
+
+/** POST /api/returns/admin/:id/publish — publish rejected found evidence. */
+export async function publishRejectedReturn(
+  id: string,
+): Promise<PublishReturnResponse> {
+  const { data } = await api.post<PublishReturnResponse>(
+    `/returns/admin/${id}/publish`,
+  );
+  return data;
 }
 
 /** PATCH /api/returns/admin/:id/status — record an admin decision. */

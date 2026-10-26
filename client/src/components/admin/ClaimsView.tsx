@@ -325,6 +325,18 @@ export function ClaimsView({
         .toLowerCase()
         .includes(query),
   );
+  const claimGroups = useMemo(() => {
+    const groups = new Map<string, ClaimRequest[]>();
+    for (const claim of filteredClaims) {
+      const group = groups.get(claim.itemId) ?? [];
+      group.push(claim);
+      groups.set(claim.itemId, group);
+    }
+    return Array.from(groups.values()).map((claims) => ({
+      representative: claims[0],
+      claims,
+    }));
+  }, [filteredClaims]);
 
   // Reset to the first page whenever the list inputs change (derived state).
   const [prevListKey, setPrevListKey] = useState({
@@ -341,15 +353,15 @@ export function ClaimsView({
     setPage(1);
   }
 
-  const totalPages = Math.max(1, Math.ceil(filteredClaims.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(claimGroups.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const pagedClaims = filteredClaims.slice(
+  const pagedClaims = claimGroups.slice(
     (safePage - 1) * PAGE_SIZE,
     safePage * PAGE_SIZE,
   );
   const rangeStart =
-    filteredClaims.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
-  const rangeEnd = Math.min(safePage * PAGE_SIZE, filteredClaims.length);
+    claimGroups.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * PAGE_SIZE, claimGroups.length);
   const visibleSelectedClaim =
     filteredClaims.find((claim) => claim.id === selectedClaimId) ?? null;
   // Other requests filed for the same item, so competing claims can be
@@ -361,13 +373,6 @@ export function ClaimsView({
           claim.id !== visibleSelectedClaim.id,
       )
     : [];
-  const claimCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const claim of claimRequests) {
-      counts.set(claim.itemId, (counts.get(claim.itemId) ?? 0) + 1);
-    }
-    return counts;
-  }, [claimRequests]);
   const baseItemPost = visibleSelectedClaim
     ? reports.find((report) => report.id === visibleSelectedClaim.itemId)
     : undefined;
@@ -377,32 +382,23 @@ export function ClaimsView({
   const { unlocked, promptOpen, requestUnlock, submitPassword, setPromptOpen } =
     useSensitiveUnlock();
 
+  const claimsToAutoReject =
+    claimForStatusChange && pendingStatusChange?.status === "Approved"
+      ? claimRequests.filter(
+          (claim) =>
+            claim.id !== claimForStatusChange.id &&
+            claim.itemId === claimForStatusChange.itemId &&
+            claim.status === "Pending",
+        )
+      : [];
+
   const closeApprovalDialog = () => {
     setPendingStatusChange(null);
     if (approvalDialogRef.current?.open) approvalDialogRef.current.close();
   };
 
-  const FINAL_CLAIM_STATUSES = new Set([
-    "Approved",
-    "Claimed",
-    "Returned",
-    "Rejected",
-  ]);
-
-  // Other open requests for the same item: accepting one resolves the item,
-  // so the rest are rejected automatically on confirm.
-  const claimsToAutoReject = claimForStatusChange
-    ? claimRequests.filter(
-        (claim) =>
-          claim.id !== claimForStatusChange.id &&
-          claim.itemId === claimForStatusChange.itemId &&
-          !FINAL_CLAIM_STATUSES.has(claim.status),
-      )
-    : [];
   const isAcceptDecision =
-    pendingStatusChange?.status === "Approved" ||
-    pendingStatusChange?.status === "ItemClaimed" ||
-    pendingStatusChange?.status === "Returned";
+    pendingStatusChange?.status === "Approved";
 
   const confirmStatusChange = async () => {
     if (!pendingStatusChange || !claimForStatusChange || savingStatusChange) {
@@ -437,18 +433,6 @@ export function ClaimsView({
         );
       }
 
-      if (isAcceptDecision && claimsToAutoReject.length > 0) {
-        const results = await Promise.allSettled(
-          claimsToAutoReject.map((sibling) =>
-            onClaimStatusChange(sibling.id, "Rejected"),
-          ),
-        );
-        if (results.some((result) => result.status === "rejected")) {
-          toast.error(
-            "The claim was updated, but one or more competing requests could not be rejected.",
-          );
-        }
-      }
       closeApprovalDialog();
     } catch (error) {
       const message = axios.isAxiosError<{ message?: string }>(error)
@@ -550,7 +534,7 @@ export function ClaimsView({
           title="Submitted Claims Request"
           titleAdornment={
             <span className="shrink-0 text-xs font-normal text-neutral-500 dark:text-neutral-400">
-              {filteredClaims.length}
+              {claimGroups.length}
             </span>
           }
           stickyHeader
@@ -572,19 +556,25 @@ export function ClaimsView({
           ) : (
             <>
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {pagedClaims.map((claim) => {
+              {pagedClaims.map((group) => {
+                const claim = group.representative;
                 const itemImage =
                   reports.find((report) => report.id === claim.itemId)
                     ?.image ?? "";
+                const claimantNames = group.claims
+                  .map((request) => request.claimant)
+                  .filter((name, index, names) => names.indexOf(name) === index);
 
                 return (
                   <button
-                    key={claim.id}
+                    key={claim.itemId}
                     type="button"
-                    aria-pressed={selectedClaimId === claim.id}
+                    aria-pressed={
+                      visibleSelectedClaim?.itemId === claim.itemId
+                    }
                     onClick={() => onSelectClaim(claim.id)}
                     className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5 ${
-                      selectedClaimId === claim.id
+                      visibleSelectedClaim?.itemId === claim.itemId
                         ? "bg-neutral-50 dark:bg-neutral-800"
                         : "hover:bg-neutral-50 dark:bg-neutral-800/70 dark:hover:bg-neutral-800"
                     }`}
@@ -604,10 +594,10 @@ export function ClaimsView({
                         {claim.item}
                       </span>
                     <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {claim.claimant}
-                      {(claimCounts.get(claim.itemId) ?? 1) > 1 && (
-                        <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
-                          {claimCounts.get(claim.itemId)} requests
+                        {claimantNames.join(", ")}
+                        {group.claims.length > 1 && (
+                          <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
+                            {group.claims.length} requests
                         </span>
                       )}
                     </span>
@@ -626,7 +616,7 @@ export function ClaimsView({
             </div>
             <div className="sticky bottom-0 z-10 mt-auto flex items-center justify-between gap-2 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 sm:px-5">
               <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                Showing {rangeStart}–{rangeEnd} of {filteredClaims.length}
+                Showing {rangeStart}–{rangeEnd} of {claimGroups.length} posts
               </p>
               {totalPages > 1 && (
                 <div className="flex items-center gap-1">
@@ -735,6 +725,15 @@ export function ClaimsView({
                           {selectedItemPost.description}
                         </p>
                         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 py-3 text-xs">
+                      <div>
+                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                          <Tag className="h-3 w-3" aria-hidden="true" />
+                          Item name
+                        </dt>
+                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                          {selectedItemPost.title || visibleSelectedClaim.item || "None"}
+                        </dd>
+                      </div>
                       <div>
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Tag className="h-3 w-3" aria-hidden="true" />

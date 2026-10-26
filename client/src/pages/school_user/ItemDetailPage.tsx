@@ -390,7 +390,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
   const existingClaim = useMemo(() => {
     if (!item) return null;
-    return submittedClaims.find((claim) => claim.itemId === item.id) ?? null;
+    return (
+      submittedClaims.find(
+        (claim) => claim.itemId === item.id && claim.status !== "Rejected",
+      ) ?? null
+    );
   }, [item, submittedClaims]);
 
   const existingFoundReport = useMemo(() => {

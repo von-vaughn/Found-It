@@ -53,7 +53,11 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
   );
   const existingClaim = useMemo(() => {
     if (!item) return null;
-    return submittedClaims.find((claim) => claim.itemId === item.id) ?? null;
+    return (
+      submittedClaims.find(
+        (claim) => claim.itemId === item.id && claim.status !== "Rejected",
+      ) ?? null
+    );
   }, [item, submittedClaims]);
 
   const goBack = () =>

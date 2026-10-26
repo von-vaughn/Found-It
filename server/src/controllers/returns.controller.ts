@@ -10,6 +10,7 @@ import {
   listReturnsByItem,
   listReturnsByUser,
   PhysicalItemNotReceivedError,
+  publishRejectedReturn,
   updateReturnRequest,
   updateReturnOsaReceipt,
   updateReturnStatusById,
@@ -88,6 +89,41 @@ export async function getMyReturns(req: Request, res: Response): Promise<void> {
 export async function getAllReturns(_req: Request, res: Response): Promise<void> {
   const returns = await listAllReturns();
   res.json({ returns, count: returns.length });
+}
+
+/** POST /api/returns/admin/:id/publish — publish rejected found evidence publicly. */
+export async function publishRejectedReturnItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const requestId = requestIdParam(req);
+  if (!requestId || !UUID_RE.test(requestId)) {
+    res.status(400).json({ message: "Invalid return request ID." });
+    return;
+  }
+  const result = await publishRejectedReturn(requestId, req.user!.sub);
+  if (result.status === "not_found") {
+    res.status(404).json({ message: "Return request not found." });
+    return;
+  }
+  if (result.status === "not_rejected") {
+    res.status(409).json({
+      message: "Only rejected return requests can be published as found items.",
+    });
+    return;
+  }
+  if (result.status === "invalid_data") {
+    res.status(409).json({ message: result.message });
+    return;
+  }
+  res.status(result.status === "published" ? 201 : 200).json({
+    message:
+      result.status === "published"
+        ? "Found item published."
+        : "This return request was already published.",
+    itemId: result.itemId,
+    alreadyPublished: result.status === "already_published",
+  });
 }
 
 /** PATCH /api/returns/admin/:id/status — approve, reject, claim, or return (admin+). */

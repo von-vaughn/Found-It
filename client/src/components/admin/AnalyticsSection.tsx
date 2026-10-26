@@ -250,7 +250,7 @@ export function AnalyticsSection({
                     aria-pressed={range === option.id}
                     className={`h-8 rounded-md px-2.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                       range === option.id
-                        ? "bg-neutral-900 dark:bg-neutral-100 dark:bg-neutral-800 text-white dark:text-neutral-900 dark:text-neutral-100"
+                        ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
                         : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                     }`}
                   >

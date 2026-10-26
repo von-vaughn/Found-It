@@ -13,7 +13,9 @@ import {
   listAllReturns,
   listItemReturns,
   listMyReturns,
+  publishRejectedReturn,
   type CreateReturnPayload,
+  type PublishReturnResponse,
   type UpdateReturnPayload,
   updateReturnRequest,
   updateReturnOsaReceipt,
@@ -117,6 +119,19 @@ export function useUpdateAdminReturnStatus() {
         ),
       );
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: returnKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+    },
+  });
+}
+
+/** Publishes a rejected found report and refreshes the related admin lists. */
+export function usePublishRejectedReturn() {
+  const queryClient = useQueryClient();
+
+  return useMutation<PublishReturnResponse, Error, string>({
+    mutationFn: publishRejectedReturn,
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
