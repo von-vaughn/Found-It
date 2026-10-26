@@ -7,12 +7,14 @@ import {
   findReturnForUserById,
   findReturnForUserAndItem,
   listAllReturns,
+  listReturnsByItem,
   listReturnsByUser,
   PhysicalItemNotReceivedError,
   updateReturnRequest,
   updateReturnOsaReceipt,
   updateReturnStatusById,
 } from "../repositories/request.repository";
+import { findItemOwner } from "../repositories/item.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
 import { validateReturnTarget } from "../validation/returns";
 
@@ -209,4 +211,30 @@ export async function deleteMyReturn(req: Request, res: Response): Promise<void>
     return;
   }
   res.json({ message: "Found report deleted." });
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** GET /api/returns/item/:itemId — return requests for a specific item (owner or admin+). */
+export async function getItemReturns(req: Request, res: Response): Promise<void> {
+  const itemId = req.params.itemId;
+  if (typeof itemId !== "string" || !UUID_RE.test(itemId)) {
+    res.status(400).json({ message: "Invalid item ID." });
+    return;
+  }
+  const owner = await findItemOwner(itemId);
+  if (!owner) {
+    res.status(404).json({ message: "Item not found." });
+    return;
+  }
+  const isOwner = owner.reporterId === req.user!.sub;
+  const isAdmin = req.user!.role === "admin" || req.user!.role === "super_admin";
+  if (!isOwner && !isAdmin) {
+    res.status(403).json({
+      message: "You are not authorized to view responses for this item.",
+    });
+    return;
+  }
+  const returns = await listReturnsByItem(itemId, isAdmin);
+  res.json({ returns, count: returns.length });
 }

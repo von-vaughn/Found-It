@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Clock, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { paths } from "@/routes/paths";
 
 interface StepData {
@@ -207,57 +207,6 @@ export const HowItWorks: React.FC = () => {
         </div>
 
         {/* ═══════════════════════ OSA BUILDING HOURS & RETRIEVAL HUB ═══════════════════════ */}
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.6 }}
-          className="mt-16 sm:mt-24 bg-linear-to-r from-[#8a1215] via-[#a3161a] to-[#7f1114] rounded-3xl p-6 sm:p-10 text-white relative overflow-hidden shadow-xl shadow-red-950/20"
-        >
-          {/* Subtle background glow */}
-          <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-            <div className="flex items-start sm:items-center gap-4 sm:gap-6">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white text-[#a3161a] flex items-center justify-center shrink-0 shadow-lg">
-                <Building2 className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.2]" />
-              </div>
-              <div>
-                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold tracking-wider uppercase mb-1">
-                  <span>Physical Turnover & Retrieval Desk</span>
-                </div>
-                <h3 className="text-xl sm:text-2xl font-black text-white leading-snug">
-                  Office of Student Affairs (OSA)
-                </h3>
-                <p className="text-white/80 text-xs sm:text-sm mt-1 max-w-xl">
-                  Student Center Grounds, Western Mindanao State University Main
-                  Campus, Baliwasan, Zamboanga City.
-                </p>
-              </div>
-            </div>
-
-            {/* Timetable / Office hours */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 lg:text-right border-t lg:border-t-0 border-white/20 pt-4 lg:pt-0">
-              <div>
-                <div className="flex items-center gap-2 lg:justify-end text-white/80 text-xs font-semibold uppercase tracking-wider">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Office Hours</span>
-                </div>
-                <p className="text-xl sm:text-2xl font-black text-white mt-0.5">
-                  8:00 AM – 5:00 PM
-                </p>
-                <p className="text-xs text-white/70">Monday through Friday</p>
-              </div>
-
-              <button
-                onClick={() => navigate(paths.browse)}
-                className="bg-white hover:bg-neutral-100 text-[#a3161a] px-6 py-3 rounded-full text-xs sm:text-sm font-black transition-all shadow-md hover:scale-[1.02] cursor-pointer shrink-0"
-              >
-                Browse Items First
-              </button>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </section>
   );

@@ -196,6 +196,23 @@ export function listReturnsByUser(userId: string): Promise<Claim[]> {
   return listRequestsByUser(userId, "return");
 }
 
+/** Lists return requests filed on a specific item (for lost item owner or admin). */
+export async function listReturnsByItem(
+  itemId: string,
+  isAdmin = false,
+): Promise<Claim[]> {
+  const statusClause = isAdmin
+    ? ""
+    : "AND rq.status IN ('approved', 'returned')";
+  const { rows } = await pool.query<ClaimRow>(
+    `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
+     WHERE rq.item_id = $1 AND rq.kind = 'return' ${statusClause}
+     ORDER BY rq.created_at DESC`,
+    [itemId],
+  );
+  return rows.map((row) => toClaim(row, true));
+}
+
 async function listAllRequests(kind: "claim" | "return"): Promise<Claim[]> {
   const { rows } = await pool.query<ClaimRow>(
     `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}

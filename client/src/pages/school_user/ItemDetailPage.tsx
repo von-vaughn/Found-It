@@ -6,13 +6,12 @@ import {
   Building2,
   CalendarDays,
   Clock3,
+  FileText,
   Lock,
   MapPin,
   Package,
   Palette,
   Pencil,
-  Share2,
-  ShieldCheck,
   Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -27,7 +26,9 @@ import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
 import { useItemDetail, useDeleteItem, useItems } from "@/hooks/useItems";
+import { useItemReturns } from "@/hooks/useReturns";
 import { toClientItem, toClientItems } from "@/lib/itemAdapter";
+import { toFoundReportClaims } from "@/lib/claimAdapter";
 import { minutesApart, reportMoment, timePoints } from "@/lib/itemMatchTime";
 import { UUID_RE } from "@/services/itemService";
 import type {
@@ -36,7 +37,6 @@ import type {
   NewReturnItemRequest,
   ReturnItemRequest,
 } from "@/types/claim";
-import { getClaimantEmail } from "@/types/claim";
 import { ClaimEvidenceGallery } from "@/components/school_user/ClaimEvidenceGallery";
 import {
   simplifiedClaimStatusStyles,
@@ -77,7 +77,8 @@ const finderStatusStyles: Record<string, string> = {
   "Pending admin approval":
     "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
   "Under review": "bg-violet-50 dark:bg-violet-500/10 text-violet-800 dark:text-violet-400",
-  Approved: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400",
+  Approved: "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-800 dark:text-cyan-400",
+  Unreturned: "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-800 dark:text-cyan-400",
   Claimed: "bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400",
   Returned: "bg-teal-50 dark:bg-teal-500/10 text-teal-800 dark:text-teal-400",
   Rejected: "bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-400",
@@ -138,11 +139,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   };
 
   const { data: serverItem, isLoading: isItemLoading } = useItemDetail(id ?? "");
-  const {
-    data: serverItems,
-    isLoading: areItemsLoading,
-    isError: areItemsError,
-  } = useItems(undefined, {
+  const { data: serverItems } = useItems(undefined, {
     staleTime: 30_000,
     retry: 1,
   });
@@ -367,12 +364,29 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     );
   }, [item, profileName, serverItem, user?.id]);
 
+  const isOwnLostItem = Boolean(
+    isOwnItem &&
+    (item?.type === "lost" || serverItem?.reportType === "lost"),
+  );
+  const { data: serverItemReturns = [] } = useItemReturns(
+    isOwnLostItem ? item?.id : undefined,
+  );
+  const serverReturnClaims = useMemo(
+    () => toFoundReportClaims(serverItemReturns),
+    [serverItemReturns],
+  );
+
   const finderReports = useMemo(() => {
     if (!item) return [];
-    return [...submittedClaims, ...demoClaims].filter(
-      (claim) => claim.itemId === item.id,
-    );
-  }, [item, submittedClaims]);
+    const all = [...serverReturnClaims, ...submittedClaims, ...demoClaims];
+    const seen = new Set<string>();
+    return all.filter((claim) => {
+      if (claim.itemId !== item.id) return false;
+      if (seen.has(claim.id)) return false;
+      seen.add(claim.id);
+      return true;
+    });
+  }, [item, serverReturnClaims, submittedClaims]);
 
   const existingClaim = useMemo(() => {
     if (!item) return null;
@@ -500,15 +514,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const category = ITEM_CATEGORIES.find(({ id }) => id === item.category);
   const CategoryIcon = category?.icon ?? Package;
 
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard?.writeText(window.location.href);
-      toast.success("Item link copied to clipboard!");
-    } catch {
-      toast.error("Could not copy the link.");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <a
@@ -575,14 +580,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 </button>
               </>
             )}
-            <button
-              type="button"
-              onClick={handleShare}
-              aria-label="Copy link to this item"
-              className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
-            >
-              <Share2 className="h-4 w-4" aria-hidden="true" />
-            </button>
           </div>
         </div>
         <main
@@ -603,12 +600,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   fetchPriority="high"
                   className="h-full w-full object-cover"
                 />
-                {item.type === "found" && (
-                  <div className="absolute bottom-4 left-4 z-10 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-xs font-medium text-white shadow-sm">
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
-                    <span>Photo blurred for verification</span>
-                  </div>
-                )}
               </div>
             ) : (
               <NoItemImage
@@ -617,15 +608,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               />
             )}
 
-            {item.type === "found" && item.image && (
-              <div className="mt-3 flex items-start gap-2.5 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-3.5 text-xs text-neutral-600 dark:text-neutral-400">
-                <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
-                <div>
-                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">Blurred for claim verification: </span>
-                  Photos of found items are intentionally blurred by the server so distinctive markings, contents, and serial identifiers remain confidential until verified by OSA administrators.
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Details (not in a card) */}
@@ -799,7 +781,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           </div>
 
           {/* Possible matches: found reports the system suggests for your lost item */}
-          {serverItem && isOwnItem && isLost && (
+          {serverItem && isOwnItem && isLost && suggestedMatches.length > 0 && (
             <section aria-labelledby="suggested-matches-heading">
               <h2
                 id="suggested-matches-heading"
@@ -811,38 +793,17 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 Found reports in the same category that look related to your
                 lost item, ranked by color, place, timing, and title.
               </p>
-              {areItemsLoading ? (
-                <p
-                  role="status"
-                  className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400"
-                >
-                  Checking for possible matches…
-                </p>
-              ) : areItemsError ? (
-                <p
-                  role="alert"
-                  className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400"
-                >
-                  Could not load possible matches right now. Try again later.
-                </p>
-              ) : suggestedMatches.length > 0 ? (
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                  {suggestedMatches.map((suggested) => (
-                    <ItemCard
-                      key={suggested.id}
-                      item={suggested}
-                      onItemClick={(selected) =>
-                        navigate(`/dashboard/items/${selected.id}`)
-                      }
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-                  No potential matches right now. New found reports that look
-                  related will appear here.
-                </p>
-              )}
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {suggestedMatches.map((suggested) => (
+                  <ItemCard
+                    key={suggested.id}
+                    item={suggested}
+                    onItemClick={(selected) =>
+                      navigate(`/dashboard/items/${selected.id}`)
+                    }
+                  />
+                ))}
+              </div>
             </section>
           )}
 
@@ -871,7 +832,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           )}
 
           {/* People holding this item (own lost reports only) */}
-          {isOwnItem && isLost && (
+          {isOwnItem && isLost && finderReports.length > 0 && (
             <section aria-labelledby="finder-reports-heading">
               <h2
                 id="finder-reports-heading"
@@ -879,17 +840,18 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               >
                 Responses to Your Lost Items ({finderReports.length})
               </h2>
-              {finderReports.length > 0 ? (
-                <ul className="mt-4 space-y-3">
+              <ul className="mt-4 space-y-3">
                   {finderReports.map((claim) => {
                     const returnRequest = returnRequests.find(
                       (request) => request.sourceClaimId === claim.id,
                     );
-                    const claimStatus = returnRequest
+                    const rawStatus = returnRequest
                       ? returnRequest.status === "Pending"
                         ? "Pending admin approval"
                         : returnRequest.status
                       : claimStatusOverrides[claim.id] ?? claim.status;
+                    const claimStatus =
+                      rawStatus === "Approved" ? "Unreturned" : rawStatus;
 
                     return (
                       <li
@@ -901,7 +863,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                           {claim.evidence && claim.evidence.length > 0 ? (
                             <ClaimEvidenceGallery
                               images={claim.evidence}
-                              altPrefix={`Photo evidence from ${claim.claimant}`}
+                              altPrefix="Found item photo evidence"
                             />
                           ) : (
                             <NoItemImage
@@ -912,26 +874,28 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center justify-between gap-3">
-                            <p className="min-w-0 truncate text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                              {claim.claimant}
-                            </p>
+                            <h3 className="min-w-0 truncate text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                              {claim.claimantTitle || "Found item report"}
+                            </h3>
                             <span
                               className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold ${finderStatusStyles[claimStatus] ?? "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"}`}
                             >
                               {claimStatus}
                             </span>
                           </div>
-                          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                            {getClaimantEmail(claim)}
-                          </p>
                           <div className="mt-3 border-b border-neutral-100 dark:border-neutral-800 pb-3">
-                            <p className="text-xs leading-relaxed text-neutral-700 dark:text-neutral-300 break-words">
-                              {claim.details}
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                              <FileText className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                              Description
+                            </span>
+                            <p className="mt-1 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300 break-words">
+                              {claim.details || "No additional description provided."}
                             </p>
                           </div>
                           <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
                             <div>
-                              <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                <CalendarDays className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
                                 Submitted
                               </dt>
                               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -939,7 +903,8 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                <CalendarDays className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
                                 Date found
                               </dt>
                               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -947,21 +912,45 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                <Clock3 className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
                                 Time found
                               </dt>
                               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                {claim.timeLost}
+                                {claim.timeLost || "None"}
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                <MapPin className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
                                 Location found
                               </dt>
                               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                {claim.location}
+                                {claim.location || "None"}
                               </dd>
                             </div>
+                            {claim.building && (
+                              <div>
+                                <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                  <Building2 className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                                  Building
+                                </dt>
+                                <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                                  {claim.building}
+                                </dd>
+                              </div>
+                            )}
+                            {claim.color && (
+                              <div>
+                                <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                  <Palette className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                                  Primary color
+                                </dt>
+                                <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
+                                  {claim.color}
+                                </dd>
+                              </div>
+                            )}
                           </dl>
                           {claimStatus === "Pending" && !returnRequest && (
                             <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-3">
@@ -985,18 +974,31 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </button>
                             </div>
                           )}
+                          {claimStatus === "Unreturned" && (
+                            <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50/70 dark:border-cyan-800/60 dark:bg-cyan-950/30 p-3 text-xs text-cyan-900 dark:text-cyan-300">
+                              <p className="font-bold flex items-center gap-1.5">
+                                <Award className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                                Returned to OSA office
+                              </p>
+                              <p className="mt-1 leading-relaxed text-cyan-800 dark:text-cyan-400">
+                                This return has been verified and received by OSA. Please visit the OSA office with your school ID to claim your item.
+                              </p>
+                            </div>
+                          )}
+                          {claimStatus === "Returned" && (
+                            <div className="mt-4 rounded-xl border border-teal-200 bg-teal-50/70 dark:border-teal-800/60 dark:bg-teal-950/30 p-3 text-xs text-teal-900 dark:text-teal-300">
+                              <p className="font-bold">Item returned</p>
+                              <p className="mt-1 leading-relaxed text-teal-800 dark:text-teal-400">
+                                This item has been successfully claimed and marked as returned to you.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                       </li>
                     );
                   })}
                 </ul>
-              ) : (
-                <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-                  No one has submitted a found report for this item yet. New
-                  submissions from people holding it will appear here.
-                </p>
-              )}
             </section>
           )}
 

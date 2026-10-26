@@ -45,6 +45,12 @@ export async function listMyReturns(): Promise<ServerClaim[]> {
   return data.returns;
 }
 
+/** GET /api/returns/item/:itemId — return reports filed on an item (owner or admin+). */
+export async function listItemReturns(itemId: string): Promise<ServerClaim[]> {
+  const { data } = await api.get<ListReturnsResponse>(`/returns/item/${itemId}`);
+  return data.returns;
+}
+
 /** GET /api/returns/admin — every return request (admin+). */
 export async function listAllReturns(): Promise<ServerClaim[]> {
   const { data } = await api.get<ListReturnsResponse>("/returns/admin");

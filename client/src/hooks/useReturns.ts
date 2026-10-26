@@ -11,6 +11,7 @@ import {
   createReturnRequest,
   deleteReturnRequest,
   listAllReturns,
+  listItemReturns,
   listMyReturns,
   type CreateReturnPayload,
   type UpdateReturnPayload,
@@ -24,6 +25,8 @@ export const returnKeys = {
   admin: () => [...returnKeys.all, "admin"] as const,
   mine: (userId?: string) =>
     [...returnKeys.all, "mine", userId ?? "anonymous"] as const,
+  item: (itemId?: string) =>
+    [...returnKeys.all, "item", itemId ?? "unknown"] as const,
 };
 
 /** The signed-in user's saved found reports. */
@@ -49,6 +52,24 @@ export function useAdminReturns() {
     queryKey: returnKeys.admin(),
     queryFn: listAllReturns,
     staleTime: 15_000,
+  });
+}
+
+/** Return reports filed for a specific item (for lost item owner or admin). */
+export function useItemReturns(
+  itemId?: string,
+  options?: Omit<
+    UseQueryOptions<ServerClaim[], Error>,
+    "queryKey" | "queryFn" | "enabled"
+  >,
+) {
+  const { user } = useAuth();
+  return useQuery<ServerClaim[], Error>({
+    queryKey: returnKeys.item(itemId),
+    queryFn: () => listItemReturns(itemId!),
+    enabled: Boolean(user && itemId),
+    staleTime: 15_000,
+    ...options,
   });
 }
 

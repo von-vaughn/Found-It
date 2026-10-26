@@ -88,49 +88,90 @@ export async function createRequestStatusNotification(
     itemOwnerId: string;
   },
 ): Promise<void> {
-  const recipientId =
-    input.kind === "claim"
-      ? input.requesterId
-      : input.status === "approved" || input.status === "returned"
-        ? input.requesterId
-        : null;
-  if (!recipientId || !["approved", "rejected", "returned"].includes(input.status)) {
+  if (!["approved", "rejected", "returned"].includes(input.status)) {
     return;
   }
 
-  const title =
+  // 1. Notify the requester (finder for returns, claimant for claims)
+  const requesterTitle =
     input.status === "approved"
       ? input.kind === "return"
         ? "Return request approved"
         : "Claim approved"
       : input.status === "rejected"
-        ? "Claim rejected"
+        ? input.kind === "return"
+          ? "Return request rejected"
+          : "Claim rejected"
         : "Item returned";
-  const message =
+
+  const requesterMessage =
     input.status === "approved"
       ? input.kind === "return"
         ? `Your return request for ${input.itemName} was approved.`
         : `Your claim for ${input.itemName} was approved.`
       : input.status === "rejected"
-        ? `Your claim for ${input.itemName} was rejected.`
+        ? input.kind === "return"
+          ? `Your return request for ${input.itemName} was rejected.`
+          : `Your claim for ${input.itemName} was rejected.`
         : input.kind === "claim"
           ? `${input.itemName} has been returned to its owner.`
           : `Your return of ${input.itemName} to the OSA office has been recorded.`;
 
-  await client.query(
-    `INSERT INTO notification (
-       user_id, item_id, request_id, kind, event, title, message
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [
-      recipientId,
-      input.itemId,
-      input.requestId,
-      input.kind,
-      input.status,
-      title,
-      message,
-    ],
-  );
+  if (input.requesterId) {
+    await client.query(
+      `INSERT INTO notification (
+         user_id, item_id, request_id, kind, event, title, message
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        input.requesterId,
+        input.itemId,
+        input.requestId,
+        input.kind,
+        input.status,
+        requesterTitle,
+        requesterMessage,
+      ],
+    );
+  }
+
+  // 2. When a return request is approved or completed, notify the person who lost the item
+  if (
+    input.kind === "return" &&
+    input.itemOwnerId &&
+    input.itemOwnerId !== input.requesterId
+  ) {
+    if (input.status === "approved") {
+      await client.query(
+        `INSERT INTO notification (
+           user_id, item_id, request_id, kind, event, title, message
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          input.itemOwnerId,
+          input.itemId,
+          input.requestId,
+          "return",
+          "approved",
+          "Someone returned your lost item",
+          `Someone returned your lost item "${input.itemName}". Please visit the OSA office to verify and claim it.`,
+        ],
+      );
+    } else if (input.status === "returned") {
+      await client.query(
+        `INSERT INTO notification (
+           user_id, item_id, request_id, kind, event, title, message
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          input.itemOwnerId,
+          input.itemId,
+          input.requestId,
+          "return",
+          "returned",
+          "Lost item returned",
+          `Your lost item "${input.itemName}" has been marked as returned to you.`,
+        ],
+      );
+    }
+  }
 }
 
 export async function createClaimedNotifications(
