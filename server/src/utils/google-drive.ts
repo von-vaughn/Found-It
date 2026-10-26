@@ -155,7 +155,18 @@ export async function testDriveConnection(): Promise<boolean> {
     await drive.files.list({ pageSize: 1 });
     return true;
   } catch (err) {
-    console.error('[Google Drive] Connection test failed:', err);
+    const errorDetails =
+      err && typeof err === 'object'
+        ? (err as { code?: unknown; status?: unknown })
+        : {};
+    console.error('[Google Drive] Connection test failed.', {
+      code:
+        typeof errorDetails.code === 'string' ? errorDetails.code : undefined,
+      status:
+        typeof errorDetails.status === 'number'
+          ? errorDetails.status
+          : undefined,
+    });
     return false;
   }
 }

@@ -1,9 +1,40 @@
 import { env } from '../config/env';
 
+const FETCH_ATTEMPTS = 3;
+
 function isMailConfigured(): boolean {
   return Boolean(
     env.GMAIL_USER && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_REFRESH_TOKEN,
   );
+}
+
+function isConnectionTimeout(error: unknown): boolean {
+  const pending = [error];
+  const visited = new Set<unknown>();
+
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current || typeof current !== 'object' || visited.has(current)) continue;
+    visited.add(current);
+
+    const details = current as { code?: unknown; cause?: unknown; errors?: unknown };
+    if (details.code === 'ETIMEDOUT') return true;
+    if (details.cause) pending.push(details.cause);
+    if (Array.isArray(details.errors)) pending.push(...details.errors);
+  }
+
+  return false;
+}
+
+async function fetchGoogle(url: string, init: RequestInit): Promise<Response> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await fetch(url, init);
+    } catch (error) {
+      if (!isConnectionTimeout(error) || attempt >= FETCH_ATTEMPTS) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** (attempt - 1)));
+    }
+  }
 }
 
 /**
@@ -28,7 +59,7 @@ export function assertMailConfigured(): void {
 // that scope if SMTP is ever needed.
 
 async function getAccessToken(): Promise<string> {
-  const res = await fetch('https://oauth2.googleapis.com/token', {
+  const res = await fetchGoogle('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -46,10 +77,12 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function sendOtpEmail(to: string, otp: string, name: string): Promise<void> {
-  if (!isMailConfigured()) {
+  const mailConfigured = isMailConfigured();
+  if (env.NODE_ENV !== 'production') {
     console.log(`[dev-mail] OTP for ${to}: ${otp} (expires in ${env.OTP_EXPIRES_MINUTES} min)`);
-    return;
   }
+
+  if (!mailConfigured) return;
 
   const boundary = `foundit-${Date.now()}`;
   const html =
@@ -75,7 +108,7 @@ export async function sendOtpEmail(to: string, otp: string, name: string): Promi
     '',
   ].join('\r\n');
 
-  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+  const res = await fetchGoogle('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${await getAccessToken()}`,

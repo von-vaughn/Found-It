@@ -124,8 +124,8 @@ export async function checkOtp(userId: string, otp: string): Promise<OtpCheck> {
     if (new Date(user.verification_locked_until).getTime() > Date.now()) {
       return { ok: false, reason: 'locked' };
     }
-    // The lock has served its sentence: clear the slate, otherwise a single
-    // wrong guess re-locks the account for another hour.
+    // Reset the lockout before recording a failed attempt to avoid immediately
+    // locking the account again.
     await pool.query(
       `UPDATE "user"
        SET verification_failed_attempts = 0, verification_locked_until = NULL
