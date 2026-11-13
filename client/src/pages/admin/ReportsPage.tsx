@@ -1,15 +1,15 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { ItemTable } from "@/components/admin/ItemTable";
 import { Panel } from "@/components/admin/Panel";
 import { ItemDetailsDialog } from "@/components/admin/ItemDetailsDialog";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
-import { CreatePostModal } from "@/components/school_user/CreatePostModal";
-import type { Item } from "@/data/mockItems";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { useBuildings } from "@/hooks/useBuildings";
+import { paths } from "@/routes/paths";
 import { AdminLayout } from "./AdminLayout";
 import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import { useAuditDecision } from "@/components/admin/useAuditDecision";
@@ -19,11 +19,8 @@ import {
   useUpdateOsaReceipt,
 } from "@/hooks/useItems";
 
-export function ReportsPage({
-  onAddItem,
-}: {
-  onAddItem: (newItem: Item) => void;
-}) {
+export function ReportsPage() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [osaReceiptFilter, setOsaReceiptFilter] = useState("All found items");
@@ -31,7 +28,6 @@ export function ReportsPage({
   const [buildingFilter, setBuildingFilter] = useState("All buildings");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [createModalOpen, setCreateModalOpen] = useState(false);
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
   const { data: items = [], isLoading, isError, refetch } = useItems();
@@ -186,7 +182,7 @@ export function ReportsPage({
             </span>
             <button
               type="button"
-              onClick={() => setCreateModalOpen(true)}
+              onClick={() => navigate(paths.adminItemsNew)}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -352,12 +348,6 @@ export function ReportsPage({
           isUpdatingOsaReceipt={updateOsaReceipt.isPending}
         />
       )}
-      <CreatePostModal
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onAddItem={onAddItem}
-        initialType="lost"
-      />
     </AdminLayout>
   );
 }

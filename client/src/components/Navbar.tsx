@@ -75,9 +75,8 @@ export const Navbar: React.FC<NavbarProps> = () => {
   }, []);
 
   useEffect(() => {
-    if (!isLanding) return;
     let rafId: number | null = null;
-    if (location.hash === "#how-it-works") {
+    if (isLanding && location.hash === "#how-it-works") {
       suppressScrollSpyBriefly();
       rafId = window.requestAnimationFrame(() => {
         setActiveLandingSection("how-it-works");
@@ -85,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
     }
     const handleScroll = () => {
       setScrolled(window.scrollY > 24);
-      if (suppressScrollSpyRef.current) return;
+      if (!isLanding || suppressScrollSpyRef.current) return;
       const howItWorksEl = document.getElementById("how-it-works");
       if (howItWorksEl && howItWorksEl.getBoundingClientRect().top <= 120) {
         setActiveLandingSection("how-it-works");
@@ -99,7 +98,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
       if (rafId !== null) window.cancelAnimationFrame(rafId);
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [isLanding, location.hash]);
+  }, [isLanding, location.hash, location.pathname]);
 
   const getIsActive = (link: (typeof navLinks)[0]) => {
     if (link.key === "browse")
@@ -185,11 +184,9 @@ export const Navbar: React.FC<NavbarProps> = () => {
       } ${
         mobileMenuOpen
           ? "bg-white"
-          : isLanding
-            ? scrolled
-              ? "border-b border-white/50 bg-white/70 shadow-sm backdrop-blur-xl"
-              : "border-b border-transparent bg-transparent"
-            : "bg-white/95 backdrop-blur-md border-b border-neutral-100 shadow-xs"
+          : scrolled
+            ? "border-b border-white/50 bg-white/70 shadow-sm backdrop-blur-xl"
+            : "border-b border-transparent bg-transparent"
       }`}
     >
       <motion.div

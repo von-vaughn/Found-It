@@ -4,7 +4,6 @@ import { extractIdNumberFromEmail } from "@/lib/idNumber";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut, PlusCircle } from "lucide-react";
-import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
@@ -35,7 +34,6 @@ const DEFAULT_PROFILE = {
 export const ProfilePage: React.FC<ProfilePageProps> = ({
   items: propItems,
   submittedClaims = [],
-  onAddItem,
   filters,
   onFiltersChange,
 }) => {
@@ -43,7 +41,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const navigate = useNavigate();
   const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [reportFilter, setReportFilter] = useState<"all" | "lost" | "found">(
     "all",
   );
@@ -104,12 +101,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     );
   };
 
-  const handleAddItem = (newItem: Item) => {
-    onAddItem?.(newItem);
-    setCreateModalOpen(false);
-    navigate("/dashboard");
-  };
-
   return (
     <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
@@ -120,7 +111,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           if (tab === "home") navigate("/dashboard");
           if (tab === "claims") navigate("/dashboard/claims");
         }}
-        onOpenCreateModal={() => setCreateModalOpen(true)}
+        onOpenCreateModal={() => navigate("/dashboard/create")}
       />
 
       <div
@@ -142,7 +133,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         <div
           className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
         >
-          <main className="mx-auto w-full max-w-[1100px] bg-white px-4 py-8 sm:px-6 lg:px-8 dark:bg-neutral-950">
+          <main className="mx-auto w-full max-w-[1440px] bg-white px-4 py-8 sm:px-8 lg:px-12 dark:bg-neutral-950">
             <section
               aria-labelledby="profile-identity-heading"
               className="flex flex-row items-center gap-5 pb-7"
@@ -221,14 +212,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    // On mobile the post form is a full page, not a modal.
-                    if (window.matchMedia("(max-width: 767px)").matches) {
-                      navigate("/dashboard/create");
-                      return;
-                    }
-                    setCreateModalOpen(true);
-                  }}
+                  onClick={() => navigate("/dashboard/create")}
                   className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                 >
                   <PlusCircle className="h-4 w-4" aria-hidden="true" />
@@ -269,7 +253,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   </nav>
 
                   {filteredUserItems.length > 0 ? (
-                    <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                   {filteredUserItems.map((item) => (
                     <ItemCard
                       key={item.id}
@@ -316,12 +300,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </main>
         </div>
       </div>
-
-      <CreatePostModal
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onAddItem={handleAddItem}
-      />
     </div>
   );
 };

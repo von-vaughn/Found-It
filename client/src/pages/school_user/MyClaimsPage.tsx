@@ -16,7 +16,6 @@ import {
 import toast from "react-hot-toast";
 import { Header } from "@/components/school_user/Header";
 import { Sidebar } from "@/components/school_user/Sidebar";
-import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import {
   RequestEditDialog,
   type EditableRequestPayload,
@@ -123,7 +122,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   items: propItems,
   submittedClaims = [],
   foundReports = [],
-  onAddItem,
   filters,
   onFiltersChange,
 }) => {
@@ -149,7 +147,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
     [serverItems, serverMyItems, propItems],
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending");
   const [editingRequest, setEditingRequest] = useState<ClaimRequest | null>(
     null,
@@ -225,12 +222,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
     return map;
   }, [items]);
 
-  const handleAddItem = (newItem: Item) => {
-    onAddItem?.(newItem);
-    setCreateModalOpen(false);
-    navigate("/dashboard");
-  };
-
   const isSubmittingChange =
     updateClaim.isPending ||
     deleteClaim.isPending ||
@@ -281,7 +272,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
           if (tab === "home") navigate("/dashboard");
           if (tab === "claims") navigate("/dashboard/claims");
         }}
-        onOpenCreateModal={() => setCreateModalOpen(true)}
+        onOpenCreateModal={() => navigate("/dashboard/create")}
       />
 
       <div
@@ -303,7 +294,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
         <div
           className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
         >
-          <main className="mx-auto w-full max-w-[1100px] bg-white dark:bg-neutral-950 px-4 py-8 sm:px-6 lg:px-8">
+          <main className="mx-auto w-full max-w-[1440px] bg-white dark:bg-neutral-950 px-4 py-8 sm:px-8 lg:px-12">
             <header>
               <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 Claims &amp; Returned
@@ -598,11 +589,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
         </div>
       </div>
 
-      <CreatePostModal
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onAddItem={handleAddItem}
-      />
       <RequestEditDialog
         request={editingRequest}
         isSaving={updateClaim.isPending || updateReturnRequest.isPending}

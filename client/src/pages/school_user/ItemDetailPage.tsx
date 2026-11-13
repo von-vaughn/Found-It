@@ -18,7 +18,6 @@ import toast from "react-hot-toast";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
-import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
@@ -106,8 +105,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   submittedClaims = [],
   foundReports = [],
   returnRequests = [],
-  onAddItem: propOnAddItem,
-  onUpdateItem: propOnUpdateItem,
   onDeleteItem: propOnDeleteItem,
   onSubmitClaim,
   filters,
@@ -147,13 +144,8 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   }, [serverItem, items, id]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [foundItemCameraOpen, setFoundItemCameraOpen] = useState(false);
   const [ownershipClaimOpen, setOwnershipClaimOpen] = useState(false);
-  const [createModalInitialType, setCreateModalInitialType] = useState<
-    "lost" | "found"
-  >("lost");
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
@@ -190,22 +182,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     navigate(query.trim() ? `/dashboard?q=${encodeURIComponent(query.trim())}` : "/dashboard", {
       replace: true,
     });
-  };
-
-  const handleOpenCreateModal = (type: "lost" | "found" = "lost") => {
-    setCreateModalInitialType(type);
-    setCreateModalOpen(true);
-  };
-
-  const handleAddItem = (newItem: Item) => {
-    if (propOnAddItem) propOnAddItem(newItem);
-    setCreateModalOpen(false);
-    navigate("/dashboard");
-  };
-
-  const handleUpdateItem = (updatedItem: Item) => {
-    propOnUpdateItem?.(updatedItem);
-    setEditModalOpen(false);
   };
 
   const handleDeleteClick = () => {
@@ -381,7 +357,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             if (tab === "claims") navigate("/dashboard/claims");
             else navigate("/dashboard");
           }}
-          onOpenCreateModal={() => handleOpenCreateModal("lost")}
+          onOpenCreateModal={() => navigate("/dashboard/create")}
           items={items}
           submittedClaims={submittedClaims}
         />
@@ -413,7 +389,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             if (tab === "claims") navigate("/dashboard/claims");
             else navigate("/dashboard");
           }}
-          onOpenCreateModal={() => handleOpenCreateModal("lost")}
+          onOpenCreateModal={() => navigate("/dashboard/create")}
           items={items}
           submittedClaims={submittedClaims}
         />
@@ -494,7 +470,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             if (tab === "claims") navigate("/dashboard/claims");
             else navigate("/dashboard");
           }}
-        onOpenCreateModal={() => handleOpenCreateModal("lost")}
+        onOpenCreateModal={() => navigate("/dashboard/create")}
         items={items}
         submittedClaims={submittedClaims}
       />
@@ -516,11 +492,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
         >
         {/* Detail actions row */}
-        <div className="px-2 sm:px-3 lg:px-4 pt-4 flex items-center justify-between max-w-[1100px] mx-auto w-full">
+        <div className="px-4 sm:px-8 lg:px-12 pt-4 flex items-center justify-between max-w-[1440px] mx-auto w-full">
           <button
             type="button"
             onClick={handleGoBack}
-            className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+            className="-ml-3 inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Go back
@@ -530,7 +506,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               <>
                 <button
                   type="button"
-                  onClick={() => setEditModalOpen(true)}
+                  onClick={() => navigate(`/dashboard/items/${item.id}/edit`)}
                   aria-label="Edit this report"
                   className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
                 >
@@ -550,7 +526,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         </div>
         <main
           id="item-detail-main"
-          className="min-w-0 w-full max-w-[1100px] mx-auto bg-white dark:bg-neutral-950 px-2 sm:px-3 lg:px-4 py-6 space-y-6"
+          className="min-w-0 w-full max-w-[1440px] mx-auto bg-white dark:bg-neutral-950 px-4 sm:px-8 lg:px-12 py-6 space-y-6"
         >
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
@@ -972,22 +948,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         </div>
       </div>
 
-      {/* Create / Report Item Modal (same as dashboard) */}
-      <CreatePostModal
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onAddItem={handleAddItem}
-        initialType={createModalInitialType}
-      />
-      {item && (
-        <CreatePostModal
-          isOpen={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
-          onAddItem={handleAddItem}
-          onUpdateItem={handleUpdateItem}
-          initialItem={item}
-        />
-      )}
       {item && foundItemCameraOpen && (
         <FoundItemCameraModal
           lostItemId={item.id}

@@ -1,6 +1,5 @@
-import React, { useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import React, { useMemo, useRef, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CreatePostForm } from "@/components/school_user/CreatePostForm";
 import { Header } from "@/components/school_user/Header";
 import { Sidebar } from "@/components/school_user/Sidebar";
@@ -11,12 +10,16 @@ import {
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { useAuth } from "@/context/useAuth";
+import { useItemDetail } from "@/hooks/useItems";
+import { toClientItem } from "@/lib/itemAdapter";
 import type { ClaimRequest } from "@/types/claim";
 
 interface CreatePostPageProps {
   items?: Item[];
   submittedClaims?: ClaimRequest[];
   onAddItem?: (newItem: Item) => void;
+  onUpdateItem?: (updatedItem: Item) => void;
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
@@ -25,17 +28,34 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
   items: propItems,
   submittedClaims = [],
   onAddItem,
+  onUpdateItem,
   filters,
   onFiltersChange,
 }) => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const isEditingRoute = Boolean(id);
+  const { data: serverItem, isLoading: isItemLoading } = useItemDetail(
+    id ?? "",
+  );
   const items = propItems ?? EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const initialType =
     searchParams.get("type") === "found" ? "found" : "lost";
+
+  const initialItem = useMemo(() => {
+    if (!id) return null;
+    if (serverItem) return toClientItem(serverItem);
+    return items.find((entry) => entry.id === id) ?? null;
+  }, [id, serverItem, items]);
+
+  const isOwnReport = Boolean(
+    serverItem && user?.id && serverItem.reporterId === user.id,
+  );
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -50,6 +70,11 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
   const handleAddItem = (newItem: Item) => {
     onAddItem?.(newItem);
     navigate("/dashboard");
+  };
+
+  const handleUpdateItem = (updatedItem: Item) => {
+    onUpdateItem?.(updatedItem);
+    navigate(id ? `/dashboard/items/${id}` : "/dashboard");
   };
 
   return (
@@ -84,35 +109,47 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
         <div
           className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
         >
-          <main className="mx-auto w-full max-w-[720px] bg-white px-4 py-6 sm:px-6 lg:px-8 dark:bg-neutral-950">
-            <button
-              type="button"
-              onClick={() =>
-                window.history.length > 1
-                  ? navigate(-1)
-                  : navigate("/dashboard")
-              }
-              className="hidden md:inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Go back
-            </button>
-
-            <header className="mt-2 mb-1">
-              <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-                Post an item
-              </h1>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                Report something you lost or found on campus.
+          <main className="mx-auto w-full max-w-[1440px] bg-white px-4 py-6 sm:px-8 sm:py-8 lg:px-12 dark:bg-neutral-950">
+            {isEditingRoute && isItemLoading && !initialItem ? (
+              <p className="mt-8 text-sm text-neutral-500 dark:text-neutral-400">
+                Loading report…
               </p>
-            </header>
+            ) : isEditingRoute && (!initialItem || !isOwnReport) ? (
+              <div className="mt-8 space-y-2">
+                <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                  {initialItem ? "Cannot edit this report" : "Report not found"}
+                </h1>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {initialItem
+                    ? "Only the person who posted this report can edit it."
+                    : "The report you are looking for may have been removed."}
+                </p>
+              </div>
+            ) : (
+              <>
+                {isEditingRoute && (
+                  <header className="mb-6">
+                    <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                      Edit your report
+                    </h1>
+                    <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      Update the details or photos for your report.
+                    </p>
+                  </header>
+                )}
 
-            <CreatePostForm
-              active
-              onAddItem={handleAddItem}
-              onSubmitted={() => navigate("/dashboard")}
-              initialType={initialType}
-            />
+                <CreatePostForm
+                  active
+                  onAddItem={handleAddItem}
+                  onUpdateItem={handleUpdateItem}
+                  onSubmitted={() =>
+                    navigate(id ? `/dashboard/items/${id}` : "/dashboard")
+                  }
+                  initialType={initialType}
+                  initialItem={initialItem}
+                />
+              </>
+            )}
           </main>
         </div>
       </div>

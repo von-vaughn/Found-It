@@ -180,6 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: PlusCircle,
       onClick: () => {
         if (onOpenCreateModal) onOpenCreateModal();
+        else navigate("/dashboard/create");
       },
     },
     {
@@ -241,7 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       initial={false}
       animate={{ width: expanded && !notificationsOpen ? 240 : collapsedWidth }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className={`shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
+      className={`shrink-0 bg-white dark:bg-neutral-950 border-r border-neutral-200 dark:border-neutral-800 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
     >
       {/* Top Logo */}
       <button
@@ -278,7 +279,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     : undefined
                 }
                 onClick={() => {
-                  if (item.id === "home" || item.id === "claims") {
+                  if (
+                    item.id === "home" ||
+                    item.id === "claims" ||
+                    item.id === "create"
+                  ) {
                     // Capture hover synchronously: the click target is inside
                     // the aside, so a mouse click guarantees :hover here. The
                     // next page mount consumes this to stay expanded.
@@ -329,7 +334,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {!hideMobileNav && (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-sm md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="grid grid-cols-5">
@@ -427,7 +432,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? { left: collapsedWidth, willChange: "transform, opacity" }
               : undefined
           }
-          className="fixed z-40 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-xl max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:overflow-y-auto max-md:rounded-t-2xl max-md:border max-md:border-b-0 md:top-0 md:bottom-0 md:w-80 md:border-r"
+          className="fixed z-40 bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 max-md:shadow-xl md:shadow-none max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:overflow-y-auto max-md:rounded-t-2xl max-md:border max-md:border-b-0 md:top-0 md:bottom-0 md:w-80 md:border-r"
         >
           <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100 dark:border-neutral-800">
             <div>

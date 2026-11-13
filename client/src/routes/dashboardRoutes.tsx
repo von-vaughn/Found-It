@@ -109,6 +109,19 @@ export function getDashboardRoutes({
       ),
     },
     {
+      path: paths.dashboardItemEdit,
+      element: (
+        <CreatePostPage
+          items={items}
+          submittedClaims={submittedClaims}
+          onAddItem={onAddItem}
+          onUpdateItem={onUpdateItem}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
+      ),
+    },
+    {
       path: paths.dashboardFoundReport,
       element: (
         <FoundReportPage

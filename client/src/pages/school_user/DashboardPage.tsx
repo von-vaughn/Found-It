@@ -15,7 +15,6 @@ import {
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
-import { CreatePostModal } from "@/components/school_user/CreatePostModal";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -24,7 +23,7 @@ import {
 } from "@/components/school_user/itemFilters";
 import { SearchX } from "lucide-react";
 import { ITEM_CATEGORIES, type ItemCategory } from "@/data/itemCategories";
-import type { Item } from "@/data/mockItems";
+import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import type { ClaimRequest } from "@/types/claim";
 
 interface DashboardPageProps {
@@ -36,12 +35,9 @@ interface DashboardPageProps {
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   submittedClaims = [],
-  onAddItem: propOnAddItem,
   filters,
   onFiltersChange: setFilters,
 }) => {
-  const [internalItems, setInternalItems] = useState<Item[]>([]);
-
   // Only backend items are rendered; example JSON must never reach the grid.
   // Until the query settles, the skeleton below stands in for the feed.
   const { data: serverItems, isLoading: isItemsLoading } = useItems(
@@ -52,7 +48,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     },
   );
   const apiItems = serverItems ? toClientItems(serverItems) : null;
-  const items = apiItems ?? internalItems;
+  const items = apiItems ?? EMPTY_ITEMS;
 
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
   const [selectedCategory, setSelectedCategory] = useState<
@@ -67,10 +63,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     () => searchParams.get("q") ?? "",
   );
   const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [createModalInitialType, setCreateModalInitialType] = useState<
-    "lost" | "found"
-  >("lost");
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -94,18 +86,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     if (current === searchQuery) return;
     setSearchParams(searchQuery ? { q: searchQuery } : {}, { replace: true });
   }, [searchQuery, searchParams, setSearchParams]);
-
-  const handleAddItem = (newItem: Item) => {
-    if (propOnAddItem) {
-      propOnAddItem(newItem);
-    }
-    setInternalItems((prev) => [newItem, ...prev]);
-  };
-
-  const handleOpenCreateModal = (type: "lost" | "found" = "lost") => {
-    setCreateModalInitialType(type);
-    setCreateModalOpen(true);
-  };
 
   const categories = [
     { id: "all", label: "All" },
@@ -222,7 +202,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           discardSchoolSidebarExpanded();
           setActiveNavTab(tab);
         }}
-        onOpenCreateModal={() => handleOpenCreateModal("lost")}
+        onOpenCreateModal={() => navigate("/dashboard/create")}
       />
 
       {/* Main Content Area */}
@@ -247,7 +227,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
 
         {/* Dashboard Main Container */}
-        <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto bg-white dark:bg-neutral-950 px-2 sm:px-3 lg:px-4 pt-2 pb-5 space-y-5">
+        <main className="flex-1 min-w-0 w-full max-w-[1440px] mx-auto bg-white dark:bg-neutral-950 px-4 sm:px-8 lg:px-12 pt-2 pb-5 space-y-5">
           <div className="@container notifications-shift min-w-0 w-full space-y-5 transition-[margin,width] duration-300 ease-in-out">
            {/* Filter Pills and Tabs Bar */}
 
@@ -338,7 +318,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             // one-shot animation's finished hidden state.
             <StaggerGrid
               key={`${activeNavTab}-${selectedCategory}-${JSON.stringify(filters)}-${filteredItems.length}-${filteredItems[0]?.id ?? ""}`}
-              className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 gap-6 pb-12"
+              className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @5xl:grid-cols-4 gap-6 pb-12"
             >
               {filteredItems.map((item) => (
                 <StaggerItem
@@ -381,14 +361,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         </main>
       </div>
-
-      {/* Create / Report Item Modal */}
-      <CreatePostModal
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onAddItem={handleAddItem}
-        initialType={createModalInitialType}
-      />
     </div>
   );
 };
@@ -397,9 +369,9 @@ const DashboardGridSkeleton: React.FC = () => (
   <div
     role="status"
     aria-label="Loading items"
-    className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 @7xl:grid-cols-5 gap-6 pb-12"
+    className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @5xl:grid-cols-4 gap-6 pb-12"
   >
-    {Array.from({ length: 10 }, (_, index) => (
+    {Array.from({ length: 8 }, (_, index) => (
       <div
         key={index}
         aria-hidden="true"

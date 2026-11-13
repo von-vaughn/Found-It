@@ -698,7 +698,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             >
               {tab.label}
               {type === tab.id && (
-                <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-neutral-900 rounded-full dark:hidden" />
+                <span className="absolute -bottom-px left-0 right-0 h-[2px] rounded-full bg-neutral-900 dark:bg-neutral-100" />
               )}
             </button>
           ))}
@@ -710,10 +710,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         onSubmit={handleSubmit}
         onChange={handleFieldChange}
         noValidate
-        className="mt-5 grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6"
+        className="mt-6 grid grid-cols-1 items-start gap-8 md:grid-cols-[280px_minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-10"
       >
         {/* Left: photo — live camera for found items, file upload for lost */}
-        <div className="min-w-0">
+        <div className="min-w-0 md:sticky md:top-24">
           <span className={labelClass}>
             Photo{type === "found" ? " *" : ""}
           </span>
@@ -868,7 +868,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             tabIndex={-1}
           />
           <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
-            <div className="grid grid-cols-2 gap-2">
+            <div
+              className={`grid gap-2 ${
+                lostImages.length === 0 ? "grid-cols-1" : "grid-cols-2"
+              }`}
+            >
               {lostImages.map((preview, index) => (
                 <div
                   key={preview}
@@ -893,7 +897,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 px-2 text-center transition-colors hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-neutral-400"
+                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 px-3 text-center transition-colors hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-neutral-400 ${
+                    lostImages.length === 0
+                      ? "aspect-[4/3] md:aspect-square"
+                      : "aspect-square"
+                  }`}
                 >
                   <ImagePlus
                     className="h-5 w-5 text-neutral-400 dark:text-neutral-500"
@@ -947,7 +955,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="min-w-0">
               <label htmlFor="report-color" className={labelClass}>
                 Primary color
@@ -1000,7 +1008,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="min-w-0">
               <label htmlFor="report-time" className={labelClass}>
                 {type === "lost" ? "Approximate time lost *" : "Approximate time found *"}
@@ -1052,7 +1060,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="min-w-0">
                 <label htmlFor="report-location" className={labelClass}>
                   {type === "lost" ? "Location lost *" : "Location found *"}
@@ -1083,26 +1091,32 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               <label htmlFor="report-category" className={labelClass}>
                 Category *
               </label>
-              <select
-                id="report-category"
-                name="category"
-                required
-                value={category}
-                onChange={(e) =>
-                  setCategory(e.target.value as Item["category"] | "")
-                }
-                className={`${inputClass} cursor-pointer`}
-                {...errorProps("report-category")}
-              >
-                <option value="" disabled>
-                  Select category
-                </option>
-                {ITEM_CATEGORIES.map((categoryOption) => (
-                  <option key={categoryOption.id} value={categoryOption.id}>
-                    {categoryOption.label}
+              <div className="relative">
+                <select
+                  id="report-category"
+                  name="category"
+                  required
+                  value={category}
+                  onChange={(e) =>
+                    setCategory(e.target.value as Item["category"] | "")
+                  }
+                  className={`${inputClass} appearance-none pr-9 cursor-pointer`}
+                  {...errorProps("report-category")}
+                >
+                  <option value="" disabled>
+                    Select category
                   </option>
-                ))}
-              </select>
+                  {ITEM_CATEGORIES.map((categoryOption) => (
+                    <option key={categoryOption.id} value={categoryOption.id}>
+                      {categoryOption.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
+                />
+              </div>
               <FieldError
                 fieldId="report-category"
                 message={fieldErrors["report-category"]}
@@ -1155,11 +1169,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             </p>
           </div>
 
-          <div className="pt-1">
+          <div className="flex justify-end border-t border-neutral-100 pt-4 dark:border-neutral-800">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-11 rounded-xl bg-[#E5192D] text-white font-bold text-sm transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-6 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-44"
             >
               {isSubmitting ? (
                 <>

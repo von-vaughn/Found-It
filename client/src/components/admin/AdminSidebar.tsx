@@ -158,7 +158,7 @@ export function AdminSidebar<TSection extends string>({
           width: expanded && !notificationsOpen ? 240 : collapsedWidth,
         }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 py-5 selection:bg-[#E5192D] selection:text-white"
+        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 py-5 selection:bg-[#E5192D] selection:text-white"
       >
         <Link
           to="/admin"
@@ -283,7 +283,7 @@ export function AdminSidebar<TSection extends string>({
             exit={{ opacity: 0, x: -16 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             style={{ left: collapsedWidth, willChange: "transform, opacity" }}
-            className="fixed bottom-0 top-0 z-40 flex w-[min(20rem,calc(100vw-4rem))] flex-col bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 shadow-xl"
+            className="fixed bottom-0 top-0 z-40 flex w-[min(20rem,calc(100vw-4rem))] flex-col bg-white dark:bg-neutral-950 border-r border-neutral-200 dark:border-neutral-800 shadow-xl"
           >
             <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 px-5 py-5">
               <div>
