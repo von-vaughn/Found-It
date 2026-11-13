@@ -8,6 +8,7 @@ import {
   defaultFilters,
 } from "@/components/school_user/itemFilters";
 import type { Item } from "@/data/mockItems";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import { useBrowseFilters } from "./useBrowseFilters";
 import { useItems } from "@/hooks/useItems";
 import { toClientItems } from "@/lib/itemAdapter";
@@ -18,9 +19,7 @@ interface BrowseFiltersPageProps {
   items: Item[];
 }
 
-export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = ({
-  items: exampleItems,
-}) => {
+export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -30,18 +29,15 @@ export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = ({
     }
   }, [user, navigate]);
 
-  if (user?.role === "school_user") {
-    return null;
-  }
-
   const [searchParams] = useSearchParams();
-  const { filters, setFilters, selectedCategory } = useBrowseFilters();
+  const { filters, setFilters, selectedCategory, setSelectedCategory } =
+    useBrowseFilters();
 
   // Fetch real items from the API (works for both guests and authenticated users)
   const { data: serverItems } = useItems(undefined, {
     staleTime: 30_000,
   });
-  const items = serverItems ? toClientItems(serverItems) : exampleItems;
+  const items = serverItems ? toClientItems(serverItems) : EMPTY_ITEMS;
 
   const requestedType = searchParams.get("type");
   const searchQuery = searchParams.get("q") || "";
@@ -60,8 +56,13 @@ export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = ({
       applyAdvancedFilters(
         items.filter((item) => {
           if (activeTab !== "all" && item.type !== activeTab) return false;
-          if (selectedCategory !== "all" && item.category !== selectedCategory)
+          if (
+            filters.categories.length === 0 &&
+            selectedCategory !== "all" &&
+            item.category !== selectedCategory
+          ) {
             return false;
+          }
           const query = searchQuery.toLowerCase().trim();
           return (
             item.title.toLowerCase().includes(query) ||
@@ -74,6 +75,10 @@ export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = ({
     [items, filters, activeTab, selectedCategory, searchQuery],
   );
   const activeFilterCount = countActiveFilters(filters);
+
+  if (user?.role === "school_user") {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
@@ -107,7 +112,12 @@ export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = ({
             onClose={() => navigate(backTo)}
             items={items}
             filters={filters}
-            onFiltersChange={setFilters}
+            onFiltersChange={(nextFilters) => {
+              if (nextFilters.categories.length > 0 && selectedCategory !== "all") {
+                setSelectedCategory("all");
+              }
+              setFilters(nextFilters);
+            }}
             onClearFilters={() => setFilters(defaultFilters)}
             filterResultCount={resultCount}
           />

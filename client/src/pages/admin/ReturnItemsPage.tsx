@@ -480,26 +480,6 @@ export function ReturnItemsPage() {
     useSensitiveUnlock();
   const logDecision = useAuditDecision();
 
-  /** Persists a single status transition to the server. */
-  const persistStatusChange = (
-    requestId: string,
-    status: StatusDecision,
-    options?: { silent?: boolean },
-  ) => {
-    const serverStatus = ADMIN_RETURN_STATUS[status];
-    if (!serverStatus) return;
-    updateReturnStatus.mutate(
-      { id: requestId, status: serverStatus },
-      {
-        onError: () => {
-          if (!options?.silent) {
-            toast.error("Could not update this return request. Please try again.");
-          }
-        },
-      },
-    );
-  };
-
   const requestStatusChange = (requestId: string, status: StatusDecision) => {
     const target = requests.find((request) => request.id === requestId);
     if (!target) return;
@@ -562,9 +542,20 @@ export function ReturnItemsPage() {
     );
   };
 
-  const confirmStatusChange = () => {
+  const confirmStatusChange = async () => {
     if (!confirmAction || !confirmTargetRequest) return;
-    persistStatusChange(confirmAction.requestId, confirmAction.status);
+    const serverStatus = ADMIN_RETURN_STATUS[confirmAction.status];
+    if (!serverStatus) return;
+    try {
+      await updateReturnStatus.mutateAsync({
+        id: confirmAction.requestId,
+        status: serverStatus,
+      });
+    } catch {
+      toast.error("Could not update this return request. Please try again.");
+      return;
+    }
+
     logDecision({
       action:
         confirmAction.status === "Pending"
@@ -599,11 +590,6 @@ export function ReturnItemsPage() {
       toast.success(
         `Rejected return request for "${confirmTargetRequest.item}".`,
       );
-    }
-    if (confirmAction.status === "Approved") {
-      for (const sibling of requestsToAutoReject) {
-        persistStatusChange(sibling.id, "Rejected", { silent: true });
-      }
     }
     setConfirmAction(null);
   };

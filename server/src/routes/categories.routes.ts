@@ -5,9 +5,7 @@ import { requireAdmin } from '../middleware/authorize';
 
 const router = Router();
 
-router.use(authenticate);
-
-/** GET /api/categories — returns all categories with their UUIDs. */
+/** GET /api/categories — public active category options. */
 router.get('/', async (_req, res) => {
   const { rows } = await pool.query<{ id: string; name: string }>(
     `SELECT id, name FROM category WHERE is_active = TRUE ORDER BY name`,
@@ -16,7 +14,7 @@ router.get('/', async (_req, res) => {
 });
 
 /** DELETE /api/categories/:id — admin + super_admin */
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
     res.status(404).json({ message: 'Category not found.' });

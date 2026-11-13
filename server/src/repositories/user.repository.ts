@@ -146,7 +146,13 @@ export async function listUsers(
 
 export async function updateUserRole(id: string, role: Role): Promise<SafeUser | null> {
   const { rows } = await pool.query<SafeUserRow>(
-    `UPDATE "user" SET role = $2, updated_at = NOW() WHERE id = $1 RETURNING ${SAFE_USER_COLUMNS}`,
+    `UPDATE "user"
+     SET role = $2,
+         is_student = ($2 = 'school_user'),
+         is_admin = ($2 IN ('admin', 'super_admin')),
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING ${SAFE_USER_COLUMNS}`,
     [id, role],
   );
   return rows[0] ? toSafeUser(rows[0]) : null;

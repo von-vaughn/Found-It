@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { ItemTable } from "@/components/admin/ItemTable";
@@ -134,9 +134,6 @@ export function ReportsPage({
   }, [buildingFilter, categoryFilter, osaReceiptFilter, query, reports, statusFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-  useEffect(() => {
-    setCurrentPage((value) => Math.min(value, pageCount));
-  }, [pageCount]);
   const page = Math.min(currentPage, pageCount);
   const pageRows = filteredRows.slice(
     (page - 1) * pageSize,

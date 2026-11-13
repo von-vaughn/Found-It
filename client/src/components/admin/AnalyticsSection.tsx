@@ -11,10 +11,8 @@ import {
 } from "recharts";
 import { Panel } from "./Panel";
 import { StatusBadge } from "./StatusBadge";
-import { claims, itemToAdminReport } from "./adminData";
-import type { AdminSection } from "./types";
-import type { Item } from "@/data/mockItems";
-import type { ReturnItemRequest } from "@/types/claim";
+import type { AdminReport, AdminSection } from "./types";
+import type { ClaimRequest } from "@/types/claim";
 
 type RangeKey = "7D" | "14D" | "ALL" | "MONTH";
 
@@ -47,7 +45,9 @@ const NEUTRAL_BAR = "#171717";
 const DAY_MS = 86_400_000;
 
 function parseDate(value: string): number {
-  return new Date(`${value}T12:00:00`).getTime();
+  if (!value) return Number.NaN;
+  const time = new Date(`${value.slice(0, 10)}T12:00:00`).getTime();
+  return Number.isFinite(time) ? time : Number.NaN;
 }
 
 function shortDayLabel(time: number): string {
@@ -109,17 +109,21 @@ const axisTick = { fontSize: 10, fill: "#737373" };
 const FALLBACK_ANCHOR = Date.now();
 
 export function AnalyticsSection({
-  items,
+  reports,
+  claims,
   returnRequests,
   onNavigate,
 }: {
-  items: Item[];
-  returnRequests: ReturnItemRequest[];
+  reports: AdminReport[];
+  claims: ClaimRequest[];
+  returnRequests: ClaimRequest[];
   onNavigate: (section: AdminSection) => void;
 }) {
-  const reports = useMemo(() => items.map(itemToAdminReport), [items]);
   const dataTimestamps = useMemo(
-    () => reports.map((r) => parseDate(r.date)),
+    () =>
+      reports
+        .map((r) => parseDate(r.date))
+        .filter((time) => Number.isFinite(time)),
     [reports],
   );
   const dataAnchor = useMemo(
@@ -129,15 +133,12 @@ export function AnalyticsSection({
         : FALLBACK_ANCHOR,
     [dataTimestamps],
   );
-  const dataYears = useMemo(
-    () =>
-      [
-        ...new Set(
-          dataTimestamps.map((time) => new Date(time).getFullYear()),
-        ),
-      ].sort((a, b) => b - a),
-    [dataTimestamps],
-  );
+  const dataYears = useMemo(() => {
+    const years = [
+      ...new Set(dataTimestamps.map((time) => new Date(time).getFullYear())),
+    ].sort((a, b) => b - a);
+    return years.length > 0 ? years : [new Date(FALLBACK_ANCHOR).getFullYear()];
+  }, [dataTimestamps]);
   const [range, setRange] = useState<RangeKey>("14D");
   const [customMonth, setCustomMonth] = useState(
     () => new Date(dataAnchor).getMonth(),
@@ -177,17 +178,17 @@ export function AnalyticsSection({
     const windowStart =
       windowDays === null ? -Infinity : anchor - (windowDays - 1) * DAY_MS;
 
-    const inWindow = reports.filter(
-      (r) => parseDate(r.date) >= windowStart,
-    );
+    const inWindow = reports.filter((r) => {
+      const parsed = parseDate(r.date);
+      return Number.isFinite(parsed) && parsed >= windowStart;
+    });
 
     // Daily buckets across the selected window.
+    const earliest =
+      dataTimestamps.length > 0 ? Math.min(...dataTimestamps) : anchor;
     const bucketDays =
       windowDays ??
-      Math.min(
-        30,
-        Math.round((anchor - Math.min(...dataTimestamps)) / DAY_MS) + 1,
-      );
+      Math.max(1, Math.min(30, Math.round((anchor - earliest) / DAY_MS) + 1));
     const series = Array.from({ length: bucketDays }, (_, index) => {
       const dayStart = anchor - (bucketDays - 1 - index) * DAY_MS;
       const dayEnd = dayStart + DAY_MS;
@@ -401,6 +402,11 @@ export function AnalyticsSection({
                 <StatusBadge status={claim.status} />
               </li>
             ))}
+            {claims.length === 0 && (
+              <li className="px-4 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400 sm:px-5">
+                No submitted claims yet.
+              </li>
+            )}
           </ul>
         </Panel>
 
@@ -429,7 +435,7 @@ export function AnalyticsSection({
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                    {request.lostItemTitle}
+                    {request.claimantTitle || request.item}
                   </span>
                   <span className="mt-0.5 block truncate text-[10px] text-neutral-500 dark:text-neutral-400">
                     {request.claimant} · {request.submitted}

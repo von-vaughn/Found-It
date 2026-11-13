@@ -11,6 +11,8 @@ import {
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { useItems } from "@/hooks/useItems";
+import { toClientItems } from "@/lib/itemAdapter";
 
 interface FiltersPageProps {
   items?: Item[];
@@ -19,12 +21,12 @@ interface FiltersPageProps {
 }
 
 export const FiltersPage: React.FC<FiltersPageProps> = ({
-  items: propItems,
   filters,
   onFiltersChange,
 }) => {
   const navigate = useNavigate();
-  const items = propItems ?? EMPTY_ITEMS;
+  const { data: serverItems } = useItems(undefined, { staleTime: 30_000 });
+  const items = serverItems ? toClientItems(serverItems) : EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import type { Role } from "@/context/auth-context";
@@ -22,6 +22,24 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const [newPassword, setNewPassword] = useState("");
   const [changeError, setChangeError] = useState("");
   const [isChanging, setIsChanging] = useState(false);
+  const unauthorizedToastShownRef = useRef(false);
+
+  const isUnauthorizedRole = Boolean(
+    !isLoading &&
+      isAuthenticated &&
+      user &&
+      allowedRoles &&
+      !allowedRoles.includes(user.role),
+  );
+
+  useEffect(() => {
+    if (isUnauthorizedRole && !unauthorizedToastShownRef.current) {
+      unauthorizedToastShownRef.current = true;
+      toast.error("You are not authorized to view this section.");
+    } else if (!isUnauthorizedRole) {
+      unauthorizedToastShownRef.current = false;
+    }
+  }, [isUnauthorizedRole]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -147,7 +165,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Enforce role authorization
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    toast.error("You are not authorized to view this section.");
     const roleFallback =
       user.role === "admin" || user.role === "super_admin"
         ? "/admin"

@@ -15,13 +15,9 @@ import {
 import { REPORT_TYPES, type ReportType } from '../types/items';
 import { fetchRemoteImageBuffer, generateBlurredImage } from '../utils/image-blur';
 import { isDriveConfigured, uploadFileToDrive } from '../utils/google-drive';
+import { pastOrTodayDateSchema } from '../validation/dates';
 
-const itemDateSchema = z
-  .string()
-  .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD')
-  .refine((s) => !Number.isNaN(Date.parse(`${s}T00:00:00Z`)), 'Invalid calendar date')
-  .refine((s) => new Date(`${s}T00:00:00Z`) <= new Date(), 'Date cannot be in the future');
+const itemDateSchema = pastOrTodayDateSchema;
 
 const itemTimeSchema = z
   .string()
@@ -250,8 +246,11 @@ export async function getBlurredItemImage(req: Request, res: Response): Promise<
   const id = getId(req);
   if (invalidId(res, id)) return;
 
-  const imgData = await findItemImageForBlur(id);
-  if (!imgData || !imgData.imageUrl) {
+  const rawIndex = typeof req.query.index === 'string' ? Number.parseInt(req.query.index, 10) : 0;
+  const imageIndex = Number.isFinite(rawIndex) && rawIndex >= 0 ? rawIndex : 0;
+
+  const imgData = await findItemImageForBlur(id, imageIndex);
+  if (!imgData || !imgData.imageUrl || imgData.reportType !== 'found') {
     res.status(404).json({ message: 'Image not found.' });
     return;
   }

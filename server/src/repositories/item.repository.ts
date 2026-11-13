@@ -100,7 +100,9 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
       imageList = rawImages.map((img) => img.url);
     } else {
       // School users and public users receive server-blurred images only
-      imageList = rawImages.map((img) => img.blurred_url || `/api/items/${row.id}/image/blurred`);
+      imageList = rawImages.map(
+        (img, index) => img.blurred_url || `/api/items/${row.id}/image/blurred?index=${index}`,
+      );
     }
   } else {
     // Lost items are never blurred
@@ -306,10 +308,10 @@ export async function listItems(
   }
   if (!isAdmin && !filter?.reporterId) {
     conditions.push(`NOT EXISTS (
-      SELECT 1 FROM request claim_request
-      WHERE claim_request.item_id = i.id
-        AND claim_request.kind = 'claim'
-        AND claim_request.status IN ('approved', 'claimed', 'returned')
+      SELECT 1 FROM request resolved_request
+      WHERE resolved_request.item_id = i.id
+        AND resolved_request.kind IN ('claim', 'return')
+        AND resolved_request.status IN ('approved', 'claimed', 'returned')
     )`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -392,7 +394,20 @@ export async function updateItem(
       reportFields.push(`important_details = $${reportValues.length + 1}`);
     }
     if (updates.location !== undefined) {
-      const buildingId = updates.building ? await upsertBuilding(client, updates.building) : null;
+      let buildingId: string | null = null;
+      if (updates.building !== undefined) {
+        buildingId = updates.building ? await upsertBuilding(client, updates.building) : null;
+      } else {
+        const existingLoc = await client.query<{ building_id: string | null }>(
+          `SELECT l.building_id
+           FROM item i
+           JOIN report r ON r.id = i.report_id
+           LEFT JOIN location l ON l.id = r.location_id
+           WHERE i.id = $1 LIMIT 1`,
+          [id],
+        );
+        buildingId = existingLoc.rows[0]?.building_id ?? null;
+      }
       const locationId = await upsertLocation(client, buildingId, updates.location);
       reportValues.push(locationId);
       reportFields.push(`location_id = $${reportValues.length + 1}`);
@@ -455,11 +470,13 @@ export async function deleteItem(id: string): Promise<boolean> {
 }
 
 /**
- * Retrieves the first image of an item for the dynamic blur endpoint fallback.
+ * Retrieves an image of an item by index (default 0) for the dynamic blur endpoint fallback.
  */
 export async function findItemImageForBlur(
   itemId: string,
+  imageIndex: number = 0,
 ): Promise<{ id: string; imageUrl: string; blurredImageUrl: string | null; reportType: ReportType } | null> {
+  const safeOffset = Number.isInteger(imageIndex) && imageIndex >= 0 ? imageIndex : 0;
   const { rows } = await pool.query<{
     id: string;
     image_url: string;
@@ -472,8 +489,9 @@ export async function findItemImageForBlur(
      JOIN report r ON r.id = i.report_id
      WHERE i.id = $1
      ORDER BY img.created_at ASC
+     OFFSET $2
      LIMIT 1`,
-    [itemId],
+    [itemId, safeOffset],
   );
   if (!rows[0]) return null;
   return {

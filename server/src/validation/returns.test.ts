@@ -3,6 +3,7 @@ import { test } from "node:test";
 import type { PoolClient } from "pg";
 import { validateReturnTarget } from "./returns";
 import { createRequestStatusNotification } from "../repositories/notification.repository";
+import { allowedStatusPredecessors } from "../repositories/request.repository";
 
 const lostItem = { reporterId: "owner-id", reportType: "lost" as const };
 
@@ -70,4 +71,9 @@ test("notifies both finder and lost item owner when a return request is approved
     ownerNotif.values[6],
     'Someone returned your lost item "Blue Backpack". Please visit the OSA office to verify and claim it.',
   );
+});
+
+test("allows cancelling an approved return back to pending while disallowing claim pending transitions", () => {
+  assert.deepEqual(allowedStatusPredecessors("return", "pending"), ["approved"]);
+  assert.deepEqual(allowedStatusPredecessors("claim", "pending"), []);
 });

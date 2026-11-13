@@ -3,6 +3,7 @@ import { ChevronDown, ImagePlus, X } from "lucide-react";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
 import { uploadImages } from "@/services/itemService";
+import { localTodayDate } from "@/lib/date";
 import type { ClaimRequest } from "@/types/claim";
 
 export interface EditableRequestPayload {
@@ -167,7 +168,6 @@ function RequestEditForm({
       !dateLost ||
       !timeLost ||
       !location.trim() ||
-      !details.trim() ||
       !importantDetails.trim()
     ) {
       setError("Complete each required field before saving.");
@@ -305,6 +305,7 @@ function RequestEditForm({
               id="edit-request-date"
               required
               type="date"
+              max={localTodayDate()}
               className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
               value={dateLost}
               onChange={(event) => setDateLost(event.target.value)}
@@ -378,7 +379,6 @@ function RequestEditForm({
           </label>
           <textarea
             id="edit-request-description"
-            required
             rows={4}
             className={textareaClass}
             value={details}

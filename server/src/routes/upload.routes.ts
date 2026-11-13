@@ -36,21 +36,12 @@ const upload = multer({
   },
 });
 
-function parseDataUrl(dataUrl: string): { mimeType: string; buffer: Buffer } | null {
-  const match = dataUrl.match(/^data:([A-Za-z0-9-+\/]+);base64,(.+)$/);
-  if (!match) return null;
-  return {
-    mimeType: match[1],
-    buffer: Buffer.from(match[2], 'base64'),
-  };
-}
-
 // All upload routes require authentication
 router.use(authenticate);
 
 /**
  * POST /api/upload
- * Handles multipart form-data (single or multiple images) or JSON base64 data URLs.
+ * Handles multipart form-data (single or multiple images).
  * Uploads images to Google Drive and returns public CDN direct URLs.
  */
 router.post(
@@ -123,59 +114,9 @@ router.post(
         }
       }
 
-      // 2. Process base64 data URLs from JSON payload if no multipart files provided
-      if (uploadedResults.length === 0) {
-        const bodyImage = req.body?.image;
-        const bodyImages = req.body?.images;
-        const candidates: string[] = [];
-
-        if (typeof bodyImage === 'string' && bodyImage.startsWith('data:image/')) {
-          candidates.push(bodyImage);
-        }
-        if (Array.isArray(bodyImages)) {
-          for (const item of bodyImages) {
-            if (typeof item === 'string' && item.startsWith('data:image/')) {
-              candidates.push(item);
-            }
-          }
-        }
-
-        for (const [index, dataUrl] of candidates.entries()) {
-          const parsed = parseDataUrl(dataUrl);
-          if (parsed && ALLOWED_MIME_TYPES.has(parsed.mimeType.toLowerCase())) {
-            const ext = parsed.mimeType.split('/')[1] || 'jpg';
-            if (shouldBlur) {
-              const blurredBuffer = await generateBlurredImage(parsed.buffer);
-              const [originalUploaded, blurredUploaded] = await Promise.all([
-                uploadFileToDrive({
-                  name: `${Date.now()}-${index + 1}.${ext}`,
-                  mimeType: parsed.mimeType,
-                  content: parsed.buffer,
-                }),
-                uploadFileToDrive({
-                  name: `blurred-${Date.now()}-${index + 1}.jpg`,
-                  mimeType: 'image/jpeg',
-                  content: blurredBuffer,
-                }),
-              ]);
-              uploadedResults.push(originalUploaded);
-              blurredResults.push(blurredUploaded);
-            } else {
-              const uploaded = await uploadFileToDrive({
-                name: `${Date.now()}-${index + 1}.${ext}`,
-                mimeType: parsed.mimeType,
-                content: parsed.buffer,
-              });
-              uploadedResults.push(uploaded);
-              blurredResults.push(null);
-            }
-          }
-        }
-      }
-
       if (uploadedResults.length === 0) {
         res.status(400).json({
-          message: 'No valid image provided. Attach file(s) via form-data or base64 data URL.',
+          message: 'No valid image provided. Attach image file(s) via multipart form-data.',
         });
         return;
       }
@@ -199,10 +140,8 @@ router.post(
       });
     } catch (err: unknown) {
       console.error('[Upload] Failed to upload image to Google Drive:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown upload error';
       res.status(500).json({
         message: 'Failed to upload image to Google Drive.',
-        error: errorMessage,
       });
     }
   },

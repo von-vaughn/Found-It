@@ -694,7 +694,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                         setError("");
                       }}
                       required
-                      maxLength={80}
+                      maxLength={50}
                       className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-3 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
                     />
                   </div>
@@ -743,7 +743,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       setError("");
                     }}
                     required
-                    maxLength={80}
+                    maxLength={50}
                     aria-invalid={error === "Enter your last name."}
                     className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
                   />
@@ -780,7 +780,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   <p className="mt-1.5 text-xs text-neutral-600">
                     Use 8–72 characters.
                   </p>
-                  {error.includes("Password") && (
+                  {error.toLowerCase().includes("password") && (
                     <p
                       role="alert"
                       className="mt-1 text-sm font-medium text-red-700"
@@ -793,7 +793,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 {error &&
                   !error.includes("first name") &&
                   error !== "Enter your last name." &&
-                  !error.includes("Password") && (
+                  !error.toLowerCase().includes("password") && (
                     <p
                       role="alert"
                       className="text-sm font-medium text-red-700"

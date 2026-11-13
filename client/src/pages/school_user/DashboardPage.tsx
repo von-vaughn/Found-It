@@ -109,7 +109,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const categories = [
     { id: "all", label: "All" },
-    ...ITEM_CATEGORIES.filter((category) => category.id !== "eyewear"),
+    ...ITEM_CATEGORIES,
   ] as const;
   const visibleCategories = categories.slice(0, visibleCategoryCount);
   const hasHiddenSelectedCategory = filters.categories.some(
@@ -184,7 +184,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       }
 
       // Category filter
-      if (selectedCategory !== "all" && item.category !== selectedCategory) {
+      if (
+        filters.categories.length === 0 &&
+        selectedCategory !== "all" &&
+        item.category !== selectedCategory
+      ) {
         return false;
       }
 
@@ -230,7 +234,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           searchInputRef={searchInputRef}
           activeFilterCount={activeFilterCount}
           filters={filters}
-          onFiltersChange={setFilters}
+          onFiltersChange={(nextFilters) => {
+            if (nextFilters.categories.length > 0 && selectedCategory !== "all") {
+              setSelectedCategory("all");
+            }
+            setFilters(nextFilters);
+          }}
           onClearFilters={() => setFilters(defaultFilters)}
           filterResultCount={filteredItems.length}
           isFilterModalOpen={filterModalOpen}
@@ -261,6 +270,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       return;
                     }
                     setSelectedCategory(category.id);
+                    if (filters.categories.length > 0) {
+                      setFilters({ ...filters, categories: [] });
+                    }
                   }}
                   aria-pressed={isActive}
                   className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${

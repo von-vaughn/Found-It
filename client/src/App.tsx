@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { LoadingScreen } from "@/components/LoadingScreen";
 import { CommunityReunions } from "@/components/landing/CommunityReunions";
 import { AuthProvider } from "@/context/AuthContext";
 import { useAuth } from "@/context/useAuth";
@@ -38,45 +37,14 @@ export function App() {
 }
 
 function AppContent() {
-  // Example content (items, claim requests, return requests) lives in a
-  // single JSON file and is fetched dynamically at startup instead of being
-  // hardcoded: `public/data/examples.json`.
   const [items, setItems] = useState<Item[]>([]);
   const [returnRequests, setReturnRequests] = useState<ReturnItemRequest[]>(
     [],
   );
-  const [examplesLoaded, setExamplesLoaded] = useState(false);
   const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${import.meta.env.BASE_URL}data/examples.json`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(
-            `Failed to load example data: ${response.status} ${response.statusText}`,
-          );
-        }
-        return response.json();
-      })
-      .then((data) => {
-        if (cancelled) return;
-        if (Array.isArray(data?.items)) setItems(data.items);
-        if (Array.isArray(data?.returnRequests))
-          setReturnRequests(data.returnRequests);
-        setExamplesLoaded(true);
-      })
-      .catch((error) => {
-        console.error("Failed to load example data.", error);
-        if (!cancelled) setExamplesLoaded(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleAddItem = (newItem: Item) => {
     setItems((prev) => [newItem, ...prev]);
@@ -156,27 +124,21 @@ function AppContent() {
       )}
 
       <div className="flex-1">
-        {examplesLoaded ? (
-          <AppRoutes
-            items={items}
-            onAddItem={handleAddItem}
-            onUpdateItem={handleUpdateItem}
-            onDeleteItem={handleDeleteItem}
-            returnRequests={returnRequests}
-            onSubmitReturnRequest={handleSubmitReturnRequest}
-            onBrowseLost={handleBrowseLost}
-            onBrowseFound={handleBrowseFound}
-            filters={filters}
-            onFiltersChange={setFilters}
-          />
-        ) : (
-          <LoadingScreen message="Loading FoundIt…" />
-        )}
+        <AppRoutes
+          items={items}
+          onAddItem={handleAddItem}
+          onUpdateItem={handleUpdateItem}
+          onDeleteItem={handleDeleteItem}
+          returnRequests={returnRequests}
+          onSubmitReturnRequest={handleSubmitReturnRequest}
+          onBrowseLost={handleBrowseLost}
+          onBrowseFound={handleBrowseFound}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
       </div>
 
-      {examplesLoaded && isHome && shouldShowHomeChrome && (
-        <CommunityReunions />
-      )}
+      {isHome && shouldShowHomeChrome && <CommunityReunions />}
       {!isDashboard &&
         location.pathname !== "/lost-items" &&
         location.pathname !== "/found-items" &&

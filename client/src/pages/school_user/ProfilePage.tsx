@@ -1,7 +1,7 @@
 import { useMyItems } from "@/hooks/useItems";
 import { toClientItems } from "@/lib/itemAdapter";
 import { extractIdNumberFromEmail } from "@/lib/idNumber";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut, PlusCircle } from "lucide-react";
 import { CreatePostModal } from "@/components/school_user/CreatePostModal";
@@ -77,7 +77,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const email = user?.email || DEFAULT_PROFILE.email;
   const idNumber = extractIdNumberFromEmail(email);
   const avatar = user?.avatar || DEFAULT_PROFILE.avatar;
-  const profileUsername = name.toLowerCase().replace(/\s+/g, "_");
 
   // Fetch the current user's own reports from the API.
   const { data: serverMyItems } = useMyItems({
@@ -85,18 +84,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     retry: 1,
   });
   const apiMyItems = serverMyItems ? toClientItems(serverMyItems) : null;
-
-  // Fall back to client-side username matching while the API loads.
-  const clientUserItems = useMemo(
-    () =>
-      items.filter(
-        (item) =>
-          item.username?.toLowerCase() === profileUsername ||
-          item.contactName.trim().toLowerCase() === name.trim().toLowerCase(),
-      ),
-    [items, name, profileUsername],
-  );
-  const userItems = (apiMyItems ?? clientUserItems).filter(
+  const userItems = (apiMyItems ?? EMPTY_ITEMS).filter(
     (item) => item.type !== "found" || !item.isReturned,
   );
   const lostItems = userItems.filter((item) => item.type === "lost").length;

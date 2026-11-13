@@ -29,6 +29,7 @@ import { useItemDetail, useDeleteItem, useItems } from "@/hooks/useItems";
 import { useItemReturns } from "@/hooks/useReturns";
 import { toClientItem, toClientItems } from "@/lib/itemAdapter";
 import { toFoundReportClaims } from "@/lib/claimAdapter";
+import { parseItemEventDate } from "@/lib/date";
 import { minutesApart, reportMoment, timePoints } from "@/lib/itemMatchTime";
 import { UUID_RE } from "@/services/itemService";
 import type {
@@ -43,7 +44,6 @@ import {
   simplifyClaimStatus,
   submissionStatusLabel,
 } from "@/components/school_user/claimStatus";
-import { claims as demoClaims } from "@/components/admin/adminData";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -68,8 +68,6 @@ interface ItemDetailPageProps {
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
-
-const FALLBACK_PROFILE_NAME = "Vaughn Evangelista";
 
 const finderStatusStyles: Record<string, string> = {
   Pending:
@@ -112,8 +110,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   onUpdateItem: propOnUpdateItem,
   onDeleteItem: propOnDeleteItem,
   onSubmitClaim,
-  onSubmitReturnRequest,
-  onUpdateClaimStatus,
   filters,
   onFiltersChange,
 }) => {
@@ -159,9 +155,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   >("lost");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [claimStatusOverrides, setClaimStatusOverrides] = useState<
-    Record<string, ClaimRequest["status"]>
-  >({});
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -182,6 +176,12 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+
+  const [prevId, setPrevId] = useState(id);
+  if (id !== prevId) {
+    setPrevId(id);
+    setSelectedImageIndex(0);
+  }
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -228,46 +228,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     navigate("/dashboard");
   };
 
-  const handleResponseDecision = (
-    claim: ClaimRequest,
-    decision: "mine" | "not-mine",
-    lostItemTitle: string,
-  ) => {
-    if (decision === "mine") {
-      if (
-        returnRequests.some(
-          (request) => request.sourceClaimId === claim.id,
-        )
-      ) {
-        toast.error("This response has already been sent for admin review.");
-        return;
-      }
-      onSubmitReturnRequest?.({
-        sourceClaimId: claim.id,
-        lostItemTitle,
-        item: claim.item,
-        itemId: claim.itemId,
-        claimant: claim.claimant,
-        email: claim.email,
-        dateLost: claim.dateLost,
-        timeLost: claim.timeLost,
-        location: claim.location,
-        details: claim.details,
-        importantDetails: claim.importantDetails,
-        evidence: claim.evidence,
-      });
-      toast.success("Sent to the admin for return approval.");
-      return;
-    }
-
-    setClaimStatusOverrides((current) => ({
-      ...current,
-      [claim.id]: "Rejected",
-    }));
-    onUpdateClaimStatus?.(claim.id, "Rejected");
-    toast.success("Response marked as not yours.");
-  };
-
   // Related posts come from the backend list, not the example-content props:
   // same category, same lost/found type, excluding the item being viewed.
   const apiItems = useMemo(
@@ -300,7 +260,9 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         if (entry.type !== "found") return false;
         if (entry.category !== item.category) return false;
         if (entry.reporterId === item.reporterId) return false;
-        if (entry.status === "reunited") return false;
+        if (entry.status === "reunited" || entry.isClaimed || entry.isReturned) {
+          return false;
+        }
         const foundMoment = reportMoment(entry);
         return (
           !lostMoment ||
@@ -318,16 +280,20 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         ) {
           score += 25;
         }
-        const place = `${entry.location} ${entry.building ?? ""}`.toLowerCase();
+        const place = `${entry.location} ${entry.building ?? ""}`.trim().toLowerCase();
         const lostPlace =
-          `${item.location} ${item.building ?? ""}`.toLowerCase();
+          `${item.location} ${item.building ?? ""}`.trim().toLowerCase();
+        const sameBuilding = Boolean(
+          entry.building?.trim() &&
+            item.building?.trim() &&
+            entry.building.trim().toLowerCase() ===
+              item.building.trim().toLowerCase(),
+        );
         if (
-          place &&
-          lostPlace &&
-          (place.includes(lostPlace) ||
-            lostPlace.includes(place) ||
-            entry.building?.trim().toLowerCase() ===
-              item.building?.trim().toLowerCase())
+          sameBuilding ||
+          (place &&
+            lostPlace &&
+            (place.includes(lostPlace) || lostPlace.includes(place)))
         ) {
           score += 20;
         }
@@ -350,19 +316,9 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     return scored;
   }, [apiItems, item]);
 
-  const profileName = user?.name || FALLBACK_PROFILE_NAME;
-  const isOwnItem = useMemo(() => {
-    if (!item) return false;
-    if (serverItem && user?.id) {
-      if (serverItem.reporterId === user.id) return true;
-    }
-    return (
-      item.username?.toLowerCase() ===
-        profileName.toLowerCase().replace(/\s+/g, "_") ||
-      item.contactName.trim().toLowerCase() ===
-        profileName.trim().toLowerCase()
-    );
-  }, [item, profileName, serverItem, user?.id]);
+  const isOwnItem = Boolean(
+    serverItem && user?.id && serverItem.reporterId === user.id,
+  );
 
   const isOwnLostItem = Boolean(
     isOwnItem &&
@@ -378,7 +334,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
   const finderReports = useMemo(() => {
     if (!item) return [];
-    const all = [...serverReturnClaims, ...submittedClaims, ...demoClaims];
+    const all = [...serverReturnClaims, ...submittedClaims];
     const seen = new Set<string>();
     return all.filter((claim) => {
       if (claim.itemId !== item.id) return false;
@@ -501,20 +457,26 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   }
 
   const isLost = item.type === "lost";
-  const eventDate =
-    item.dateTime && !Number.isNaN(new Date(item.dateTime).getTime())
-      ? new Date(item.dateTime)
-      : null;
+  const { eventDate, hasTime } = parseItemEventDate(item.dateTime, item.date);
   const itemDate = eventDate
     ? new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(
         eventDate,
       )
     : null;
-  const itemTime = eventDate
-    ? new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(
-        eventDate,
-      )
-    : null;
+  const itemTime =
+    eventDate && hasTime
+      ? new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(
+          eventDate,
+        )
+      : null;
+  const galleryImages =
+    item.images && item.images.length > 0
+      ? item.images
+      : item.image
+        ? [item.image]
+        : [];
+  const activeHeroImage =
+    galleryImages[selectedImageIndex] ?? galleryImages[0] ?? "";
   const category = ITEM_CATEGORIES.find(({ id }) => id === item.category);
   const CategoryIcon = category?.icon ?? Package;
 
@@ -593,11 +555,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
           {/* Hero image — fixed frame so every item measures the same */}
-          <div className="min-w-0">
-            {item.image ? (
+          <div className="min-w-0 space-y-3">
+            {activeHeroImage ? (
               <div className="relative aspect-[4/3] max-h-[560px] w-full overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-800">
                 <img
-                  src={item.image}
+                  src={activeHeroImage}
                   alt={item.title}
                   width={1200}
                   height={900}
@@ -611,7 +573,29 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 className="aspect-[4/3] max-h-[560px] w-full rounded-3xl"
               />
             )}
-
+            {galleryImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {galleryImages.map((imgUrl, index) => (
+                  <button
+                    key={`${imgUrl}-${index}`}
+                    type="button"
+                    onClick={() => setSelectedImageIndex(index)}
+                    aria-label={`View photo ${index + 1}`}
+                    className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition cursor-pointer ${
+                      index === selectedImageIndex
+                        ? "border-[#E5192D]"
+                        : "border-transparent opacity-70 hover:opacity-100"
+                    }`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Details (not in a card) */}
@@ -853,7 +837,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                       ? returnRequest.status === "Pending"
                         ? "Pending admin approval"
                         : returnRequest.status
-                      : claimStatusOverrides[claim.id] ?? claim.status;
+                      : claim.status;
                     const claimStatus =
                       rawStatus === "Approved" ? "Unreturned" : rawStatus;
 
@@ -956,28 +940,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </div>
                             )}
                           </dl>
-                          {claimStatus === "Pending" && !returnRequest && (
-                            <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-3">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleResponseDecision(claim, "not-mine", item.title)
-                                }
-                                className="min-h-10 rounded-full border border-neutral-300 px-4 text-xs font-bold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
-                              >
-                                Not mine
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleResponseDecision(claim, "mine", item.title)
-                                }
-                                className="min-h-10 rounded-full bg-[#E5192D] px-4 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-                              >
-                                This is mine
-                              </button>
-                            </div>
-                          )}
                           {claimStatus === "Unreturned" && (
                             <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50/70 dark:border-cyan-800/60 dark:bg-cyan-950/30 p-3 text-xs text-cyan-900 dark:text-cyan-300">
                               <p className="font-bold flex items-center gap-1.5">

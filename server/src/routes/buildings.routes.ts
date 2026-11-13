@@ -5,9 +5,7 @@ import { requireAdmin } from '../middleware/authorize';
 
 const router = Router();
 
-router.use(authenticate);
-
-/** GET /api/buildings — returns active building options. */
+/** GET /api/buildings — public active building options. */
 router.get('/', async (_req, res) => {
   const { rows } = await pool.query<{ building_id: string; name: string }>(
     `SELECT building_id, name FROM building WHERE is_active = TRUE ORDER BY name`,
@@ -18,7 +16,7 @@ router.get('/', async (_req, res) => {
 });
 
 /** DELETE /api/buildings/:id — admin + super_admin; archived to preserve report history. */
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
     res.status(404).json({ message: 'Building not found.' });

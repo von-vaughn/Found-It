@@ -325,7 +325,7 @@ export function AdminSidebar<TSection extends string>({
             </div>
             {notifications.length > 0 ? (
               <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 pt-0">
-                {notifications.slice(0, 4).map((notification) => (
+                {notifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={`flex w-full items-start gap-2 rounded-xl p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 ${

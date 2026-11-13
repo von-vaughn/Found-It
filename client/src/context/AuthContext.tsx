@@ -44,6 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const handleBroadcast = (event: MessageEvent<AuthSyncEvent>) => {
       if (event.data?.type === "LOGOUT") {
         setAuthUser(null);
+        queryClient.removeQueries({
+          predicate: (q) => q.queryKey[0] !== "auth",
+        });
       } else if (event.data?.type === "REFRESHED") {
         const cached = getInMemoryUser();
         if (cached) {
@@ -58,7 +61,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     authChannel?.addEventListener("message", handleBroadcast);
 
-    const handleUnauthorized = () => setAuthUser(null);
+    const handleUnauthorized = () => {
+      setAuthUser(null);
+      queryClient.removeQueries({
+        predicate: (q) => q.queryKey[0] !== "auth",
+      });
+    };
     window.addEventListener("foundit:auth-unauthorized", handleUnauthorized);
 
     return () => {
@@ -98,6 +106,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         password,
       });
       setAuthUser(data.user);
+      queryClient.removeQueries({
+        predicate: (q) => q.queryKey[0] !== "auth",
+      });
       setPendingEmailState(null);
       toast.success(`Welcome back, ${data.user.name}!`, {
         icon: "🎉",
@@ -183,6 +194,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         otp: code.trim(),
       });
       setAuthUser(data.user);
+      queryClient.removeQueries({
+        predicate: (q) => q.queryKey[0] !== "auth",
+      });
       setPendingEmailState(null);
       toast.success(`Welcome, ${data.user.name}! Your email is verified.`, {
         icon: "🎉",
@@ -224,6 +238,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await logoutMutation.mutateAsync();
     } finally {
       setAuthUser(null);
+      queryClient.removeQueries({
+        predicate: (q) => q.queryKey[0] !== "auth",
+      });
       setPendingEmailState(null);
       toast.success("Successfully signed out.", {
         icon: "👋",

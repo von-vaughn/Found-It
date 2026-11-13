@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -41,22 +41,65 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
   const navLinks = [
     { name: "Home", path: "/", key: "home" },
+    { name: "How It Works", path: "/#how-it-works", key: "how-it-works" },
     ...(isSchoolUser
       ? []
       : [{ name: "Browse Items", path: "/browse", key: "browse" }]),
-    { name: "How It Works", path: "/#how-it-works", key: "how-it-works" },
   ];
 
   const isLanding = location.pathname === "/";
   const [scrolled, setScrolled] = useState(false);
+  const [activeLandingSection, setActiveLandingSection] = useState<
+    "home" | "how-it-works"
+  >(location.hash === "#how-it-works" ? "how-it-works" : "home");
+  const suppressScrollSpyRef = useRef(false);
+  const suppressTimerRef = useRef<number | null>(null);
+
+  const suppressScrollSpyBriefly = () => {
+    suppressScrollSpyRef.current = true;
+    if (suppressTimerRef.current !== null) {
+      window.clearTimeout(suppressTimerRef.current);
+    }
+    suppressTimerRef.current = window.setTimeout(() => {
+      suppressScrollSpyRef.current = false;
+      suppressTimerRef.current = null;
+    }, 900);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (suppressTimerRef.current !== null) {
+        window.clearTimeout(suppressTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!isLanding) return;
-    const handleScroll = () => setScrolled(window.scrollY > 24);
+    let rafId: number | null = null;
+    if (location.hash === "#how-it-works") {
+      suppressScrollSpyBriefly();
+      rafId = window.requestAnimationFrame(() => {
+        setActiveLandingSection("how-it-works");
+      });
+    }
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 24);
+      if (suppressScrollSpyRef.current) return;
+      const howItWorksEl = document.getElementById("how-it-works");
+      if (howItWorksEl && howItWorksEl.getBoundingClientRect().top <= 120) {
+        setActiveLandingSection("how-it-works");
+      } else {
+        setActiveLandingSection("home");
+      }
+    };
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isLanding]);
+    return () => {
+      if (rafId !== null) window.cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isLanding, location.hash]);
 
   const getIsActive = (link: (typeof navLinks)[0]) => {
     if (link.key === "browse")
@@ -65,15 +108,50 @@ export const Navbar: React.FC<NavbarProps> = () => {
         location.pathname === "/lost-items" ||
         location.pathname === "/found-items"
       );
-    if (link.key === "how-it-works") return location.hash === "#how-it-works";
-    if (link.key === "home") return location.pathname === "/" && !location.hash;
+    if (link.key === "how-it-works")
+      return isLanding
+        ? activeLandingSection === "how-it-works"
+        : location.hash === "#how-it-works";
+    if (link.key === "home")
+      return isLanding && activeLandingSection === "home";
     return false;
   };
+
+  const activeKey = navLinks.find((link) => getIsActive(link))?.key ?? null;
+  const linkRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [indicatorStyle, setIndicatorStyle] = useState<{
+    left: number;
+    width: number;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    const updateIndicator = () => {
+      if (!activeKey) {
+        setIndicatorStyle(null);
+        return;
+      }
+      const activeEl = linkRefs.current[activeKey];
+      if (!activeEl) {
+        setIndicatorStyle(null);
+        return;
+      }
+      setIndicatorStyle({
+        left: activeEl.offsetLeft,
+        width: activeEl.offsetWidth,
+      });
+    };
+
+    updateIndicator();
+    window.addEventListener("resize", updateIndicator);
+    return () => window.removeEventListener("resize", updateIndicator);
+  }, [activeKey, navLinks.length]);
 
   const handleNavClick = (link: (typeof navLinks)[0]) => {
     setMobileMenuOpen(false);
 
     if (link.key === "home") {
+      suppressScrollSpyBriefly();
+      setActiveLandingSection("home");
       navigate("/");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (link.key === "browse") {
@@ -84,6 +162,8 @@ export const Navbar: React.FC<NavbarProps> = () => {
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (link.key === "how-it-works") {
+      suppressScrollSpyBriefly();
+      setActiveLandingSection("how-it-works");
       if (location.pathname === "/") {
         const elem = document.getElementById("how-it-works");
         if (elem) elem.scrollIntoView({ behavior: "smooth" });
@@ -116,7 +196,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between"
+        className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between"
       >
         <button
           onClick={() => {
@@ -136,13 +216,16 @@ export const Navbar: React.FC<NavbarProps> = () => {
         </button>
 
         <nav
-          className="relative hidden md:flex items-center w-[420px] justify-between lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2"
+          className="relative hidden md:flex items-center gap-8 lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2"
         >
           {navLinks.map((link) => {
-            const isActive = getIsActive(link);
+            const isActive = link.key === activeKey;
             return (
               <button
                 key={link.name}
+                ref={(el) => {
+                  linkRefs.current[link.key] = el;
+                }}
                 onClick={() => {
                   handleNavClick(link);
                 }}
@@ -156,6 +239,18 @@ export const Navbar: React.FC<NavbarProps> = () => {
               </button>
             );
           })}
+          {indicatorStyle && (
+            <motion.span
+              aria-hidden="true"
+              initial={false}
+              animate={{
+                x: indicatorStyle.left,
+                width: indicatorStyle.width,
+              }}
+              transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              className="pointer-events-none absolute bottom-0 left-0 h-0.5 rounded-full bg-[#E5192D]"
+            />
+          )}
         </nav>
 
         <div className="hidden md:flex items-center gap-4">

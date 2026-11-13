@@ -18,6 +18,12 @@ import {
   type ListItemsParams,
   type ServerItem,
 } from "@/services/itemService";
+import { useAuth } from "@/context/useAuth";
+
+function useViewerKey() {
+  const { user } = useAuth();
+  return user ? `${user.role}:${user.id}` : "guest";
+}
 
 // ─── Query key factory ─────────────────────────────────────────────────────
 export const itemKeys = {
@@ -35,8 +41,9 @@ export function useItems(
   params?: ListItemsParams,
   options?: Omit<UseQueryOptions<ServerItem[], Error>, "queryKey" | "queryFn">,
 ) {
+  const viewerKey = useViewerKey();
   return useQuery<ServerItem[], Error>({
-    queryKey: itemKeys.list(params),
+    queryKey: [...itemKeys.list(params), viewerKey],
     queryFn: () => listItems(params),
     ...options,
   });
@@ -47,8 +54,9 @@ export function useItems(
 export function useMyItems(
   options?: Omit<UseQueryOptions<ServerItem[], Error>, "queryKey" | "queryFn">,
 ) {
+  const viewerKey = useViewerKey();
   return useQuery<ServerItem[], Error>({
-    queryKey: itemKeys.mine(),
+    queryKey: [...itemKeys.mine(), viewerKey],
     queryFn: listMyItems,
     ...options,
   });
@@ -60,9 +68,10 @@ export function useItemDetail(
   id: string,
   options?: Omit<UseQueryOptions<ServerItem, Error>, "queryKey" | "queryFn">,
 ) {
+  const viewerKey = useViewerKey();
   const isUuid = Boolean(id && UUID_RE.test(id));
   return useQuery({
-    queryKey: itemKeys.detail(id),
+    queryKey: [...itemKeys.detail(id), viewerKey],
     queryFn: () => getItemById(id),
     enabled: isUuid,
     ...options,
@@ -86,10 +95,12 @@ export function useCreateItem() {
             ? [created, ...current.filter((item) => item.id !== created.id)]
             : current,
       );
-      queryClient.setQueryData<ServerItem[]>(itemKeys.mine(), (current) =>
-        current
-          ? [created, ...current.filter((item) => item.id !== created.id)]
-          : current,
+      queryClient.setQueriesData<ServerItem[]>(
+        { queryKey: itemKeys.mine() },
+        (current) =>
+          current
+            ? [created, ...current.filter((item) => item.id !== created.id)]
+            : current,
       );
       // Invalidate both the full list and the user's own list so the new
       // item shows up immediately on the dashboard and profile pages.

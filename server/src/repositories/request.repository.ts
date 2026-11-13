@@ -98,10 +98,10 @@ export async function findClaimableItem(
      JOIN report r ON r.id = i.report_id
      WHERE i.id = $1
        AND NOT EXISTS (
-         SELECT 1 FROM request approved_claim
-         WHERE approved_claim.item_id = i.id
-           AND approved_claim.kind = 'claim'
-           AND approved_claim.status IN ('approved', 'claimed', 'returned')
+         SELECT 1 FROM request resolved_request
+         WHERE resolved_request.item_id = i.id
+           AND resolved_request.kind IN ('claim', 'return')
+           AND resolved_request.status IN ('approved', 'claimed', 'returned')
        )
      LIMIT 1`,
     [itemId],
@@ -353,7 +353,7 @@ export async function updateReturnOsaReceipt(
   return rows[0] ? findClaimById(rows[0].id, true) : null;
 }
 
-function allowedStatusPredecessors(
+export function allowedStatusPredecessors(
   kind: "claim" | "return",
   status: ClaimStatus,
 ): ClaimStatus[] {
@@ -363,7 +363,8 @@ function allowedStatusPredecessors(
   if (status === "approved" || status === "claimed" || status === "returned") {
     return status === "approved" ? ["pending"] : ["approved"];
   }
-  return ["pending"];
+  // Cancelling approval returns an approved return request back to pending.
+  return kind === "return" ? ["approved"] : [];
 }
 
 export class PhysicalItemNotReceivedError extends Error {
@@ -381,14 +382,14 @@ async function updateRequestStatusById(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    if (kind === "claim" && status === "approved") {
+    if (status === "approved") {
       await client.query(
         `SELECT item.id
          FROM item
          JOIN request ON request.item_id = item.id
-         WHERE request.id = $1 AND request.kind = 'claim'
+         WHERE request.id = $1 AND request.kind = $2
          FOR UPDATE OF item`,
-        [id],
+        [id, kind],
       );
     }
     const predecessors = allowedStatusPredecessors(kind, status);
@@ -461,26 +462,26 @@ async function updateRequestStatusById(
       });
     }
 
-    if (kind === "claim" && status === "approved") {
-      const { rows: rejectedClaims } = await client.query<{
+    if (status === "approved") {
+      const { rows: rejectedRequests } = await client.query<{
         id: string;
         user_id: string;
       }>(
         `UPDATE request
          SET status = 'rejected'
          WHERE item_id = $1
-           AND kind = 'claim'
+           AND kind = $2
            AND status = 'pending'
-           AND id <> $2
+           AND id <> $3
          RETURNING id, user_id`,
-        [current.item_id, id],
+        [current.item_id, kind, id],
       );
-      for (const rejected of rejectedClaims) {
+      for (const rejected of rejectedRequests) {
         await createRequestStatusNotification(client, {
           requestId: rejected.id,
           itemId: current.item_id,
           itemName: current.item_name,
-          kind: "claim",
+          kind,
           status: "rejected",
           requesterId: rejected.user_id,
           itemOwnerId: current.item_owner_id,

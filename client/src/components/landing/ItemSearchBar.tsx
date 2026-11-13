@@ -27,7 +27,11 @@ export const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
   return (
     <form
       onSubmit={onSubmit}
-      className={`w-full p-1 rounded-3xl border flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 transition-all focus-within:border-red-500/80 focus-within:ring-2 focus-within:ring-red-500/20 ${
+      className={`w-full p-1.5 border flex ${
+        showTypeToggle
+          ? "flex-col sm:flex-row items-stretch sm:items-center rounded-3xl"
+          : "flex-row items-center rounded-full"
+      } gap-2 sm:gap-3 transition-all focus-within:border-red-500/80 focus-within:ring-2 focus-within:ring-red-500/20 ${
         isLight
           ? "bg-white shadow-xs border-neutral-200"
           : "bg-neutral-900/90 shadow-2xl shadow-black/80 border-white/15 backdrop-blur-xl"
@@ -101,6 +105,14 @@ export const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
           </button>
         )}
       </div>
+
+      <button
+        type="submit"
+        className="h-10 sm:h-11 px-4 sm:px-6 rounded-full bg-[#E5192D] hover:bg-[#c81424] text-white text-sm font-semibold shadow-md shadow-red-500/20 transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-2"
+      >
+        <Search className="w-4 h-4 sm:hidden" />
+        <span>Search</span>
+      </button>
     </form>
   );
 };

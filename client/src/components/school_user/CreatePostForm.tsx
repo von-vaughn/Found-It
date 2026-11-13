@@ -12,6 +12,7 @@ import { toClientItem } from "@/lib/itemAdapter";
 import { useCreateItem, useUpdateItem } from "@/hooks/useItems";
 import { useCategoryMap, getCategoryUuid } from "@/hooks/useCategories";
 import { uploadFoundImage, uploadImages } from "@/services/itemService";
+import { localTodayDate } from "@/lib/date";
 import toast from "react-hot-toast";
 
 interface CreatePostFormProps {
@@ -37,11 +38,6 @@ function splitDateTime(item: Item): { date: string; time: string } {
   }
   return { date: item.date, time: "" };
 }
-
-const localDateTime = (date = new Date()) => {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
 
 const inputClass =
   "w-full h-11 px-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors";
@@ -162,7 +158,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | Blob | null>(null);
   const [lostImages, setLostImages] = useState<string[]>([]);
-  const [lostFiles, setLostFiles] = useState<(File | Blob)[]>([]);
+  const [lostFileMap, setLostFileMap] = useState<Record<string, File | Blob>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
   const lostUrlsRef = useRef<string[]>([]);
@@ -220,8 +216,14 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setCategory(initialItem.category);
         setUploadedImage(initialItem.image || null);
         setUploadedFile(null);
-        setLostImages(initialItem.image ? [initialItem.image] : []);
-        setLostFiles([]);
+        const existingLostImages =
+          initialItem.images && initialItem.images.length > 0
+            ? initialItem.images
+            : initialItem.image
+              ? [initialItem.image]
+              : [];
+        setLostImages(existingLostImages);
+        setLostFileMap({});
       } else {
         setType(initialType);
         setTitle("");
@@ -236,7 +238,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setUploadedImage(null);
         setUploadedFile(null);
         setLostImages([]);
-        setLostFiles([]);
+        setLostFileMap({});
       }
     }
   }
@@ -396,7 +398,13 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     const newUrls = addable.map((file) => URL.createObjectURL(file));
     lostUrlsRef.current.push(...newUrls);
     setLostImages((current) => [...current, ...newUrls]);
-    setLostFiles((current) => [...current, ...addable]);
+    setLostFileMap((current) => {
+      const next = { ...current };
+      newUrls.forEach((url, index) => {
+        next[url] = addable[index];
+      });
+      return next;
+    });
     setPhotoRequiredError(false);
     if (addable.length < selectedFiles.length) {
       toast.error(`You can attach up to ${MAX_POST_IMAGES} pictures.`);
@@ -405,7 +413,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   const handleRemoveLostImage = (previewToRemove: string) => {
-    const removeIndex = lostImages.indexOf(previewToRemove);
     if (previewToRemove.startsWith("blob:")) {
       URL.revokeObjectURL(previewToRemove);
     }
@@ -415,9 +422,12 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     setLostImages((current) =>
       current.filter((preview) => preview !== previewToRemove),
     );
-    if (removeIndex !== -1) {
-      setLostFiles((current) => current.filter((_, idx) => idx !== removeIndex));
-    }
+    setLostFileMap((current) => {
+      if (!(previewToRemove in current)) return current;
+      const next = { ...current };
+      delete next[previewToRemove];
+      return next;
+    });
   };
 
   const errorProps = (fieldId: FieldId) => ({
@@ -465,7 +475,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         parsedDate.toISOString().slice(0, 10) !== dateValue
       ) {
         errors["report-date"] = "Enter a valid date.";
-      } else if (parsedDate > new Date()) {
+      } else if (dateValue > localTodayDate()) {
         errors["report-date"] = "The date cannot be in the future.";
       }
     }
@@ -573,9 +583,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           const filesToUpload: (File | Blob)[] = [];
           const existingUrls: string[] = [];
 
-          lostImages.forEach((imgUrl, index) => {
-            if (imgUrl.startsWith("blob:") && lostFiles[index]) {
-              filesToUpload.push(lostFiles[index]);
+          lostImages.forEach((imgUrl) => {
+            const fileForUrl = lostFileMap[imgUrl];
+            if (fileForUrl) {
+              filesToUpload.push(fileForUrl);
             } else if (!imgUrl.startsWith("blob:")) {
               existingUrls.push(imgUrl);
             }
@@ -592,8 +603,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         }
 
         if (isEditing && initialItem) {
+          const shouldSendImages =
+            type === "lost" || Boolean(uploadedFile);
           // PATCH /api/items/:id — server-side update so the edit persists for
-          // everyone; the empty images array also clears removed photos.
+          // everyone; omit unchanged found-item images so existing blurred URLs stay intact.
           const updated = await updateItemMutation.mutateAsync({
             id: initialItem.id,
             payload: {
@@ -606,8 +619,13 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               building: building.trim() || undefined,
               location: location.trim(),
               importantDetails: importantDetails.trim(),
-              images: finalImageUrls.length > 0 ? finalImageUrls : [],
-              blurredImages: finalBlurredUrls.length > 0 ? finalBlurredUrls : undefined,
+              ...(shouldSendImages
+                ? {
+                    images: finalImageUrls.length > 0 ? finalImageUrls : [],
+                    blurredImages:
+                      finalBlurredUrls.length > 0 ? finalBlurredUrls : undefined,
+                  }
+                : {}),
             },
           });
           onUpdateItem?.(toClientItem(updated));
@@ -970,7 +988,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 type="date"
                 required
                 value={dateValue}
-                max={localDateTime().slice(0, 10)}
+                max={localTodayDate()}
                 onChange={(e) => setDateValue(e.target.value)}
                 className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
                 {...errorProps("report-date")}

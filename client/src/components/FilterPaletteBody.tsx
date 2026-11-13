@@ -10,7 +10,7 @@ import {
   PackageSearch,
   Tags,
 } from "lucide-react";
-import { ITEM_CATEGORIES, type ItemCategory } from "@/data/itemCategories";
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
 import type { Item } from "@/data/mockItems";
@@ -36,32 +36,12 @@ interface CategoryOption {
   id: string;
   name: string;
   icon: React.ComponentType<{ className?: string }>;
-  baseCount: number;
 }
-
-const CATEGORY_BASE_COUNTS: Record<ItemCategory, number> = {
-  electronics: 191,
-  id: 16,
-  cards: 0,
-  bags: 52,
-  "wallets-purses": 38,
-  keys: 25,
-  "clothing-accessories": 21,
-  "books-school-supplies": 18,
-  jewelry: 0,
-  eyewear: 0,
-  tumblers: 0,
-  umbrellas: 0,
-  "sports-gym-equipment": 0,
-  "documents-papers": 0,
-  other: 6,
-};
 
 const CATEGORY_OPTIONS: CategoryOption[] = ITEM_CATEGORIES.map((category) => ({
   id: category.id,
   name: category.label,
   icon: category.icon,
-  baseCount: CATEGORY_BASE_COUNTS[category.id],
 }));
 
 interface TypeOption {
@@ -285,14 +265,14 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
     return () => clearTimeout(timer);
   }, [active, variant]);
 
-  // Compute item counts dynamically if real items exist
+  // Compute item counts dynamically from live items
   const categoryCounts = useMemo(() => {
     const map = new Map<string, number>();
     CATEGORY_OPTIONS.forEach((cat) => {
       const liveCount = items?.filter(
         (i) => i.category.toLowerCase() === cat.id.toLowerCase(),
       ).length;
-      map.set(cat.id, liveCount !== undefined && liveCount > 0 ? liveCount : cat.baseCount);
+      map.set(cat.id, liveCount ?? 0);
     });
     return map;
   }, [items]);
@@ -561,10 +541,10 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
                   name={item.name}
                   count={
                     isCategory
-                      ? categoryCounts.get(item.id) ?? item.baseCount
+                      ? categoryCounts.get(item.id) ?? 0
                       : isType
-                        ? typeCounts.get(item.id) ?? item.baseCount
-                        : buildingCounts.get(item.id) ?? item.baseCount
+                        ? typeCounts.get(item.id) ?? 0
+                        : buildingCounts.get(item.id) ?? 0
                   }
                   checked={
                     isCategory
@@ -655,7 +635,7 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
                 checkboxId={`page-filter-categories-${category.id}`}
                 icon={category.icon}
                 name={category.name}
-                count={categoryCounts.get(category.id) ?? category.baseCount}
+                count={categoryCounts.get(category.id) ?? 0}
                 checked={filters?.categories.includes(category.id) ?? false}
                 disabled={!filters || !onFiltersChange}
                 highlighted={false}

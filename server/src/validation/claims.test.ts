@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClaimSchema } from "./claims";
+import { campusTodayDate, pastOrTodayDateSchema } from "./dates";
 
 const validClaim = {
   itemId: "3f8c1a9e-6b2d-4f5a-9c7e-1d2b3a4c5d6e",
@@ -56,5 +57,15 @@ test("rejects more than four evidence photos", () => {
       (_, index) => `https://example.com/evidence-${index}.jpg`,
     ),
   });
+  assert.equal(result.success, false);
+});
+
+test("uses Asia/Manila date after midnight UTC+8 while UTC is still previous day", () => {
+  const afterMidnightManila = new Date("2026-11-13T16:15:00Z");
+  assert.equal(campusTodayDate(afterMidnightManila), "2026-11-14");
+});
+
+test("rejects impossible calendar dates such as Feb 29 on non-leap years", () => {
+  const result = pastOrTodayDateSchema.safeParse("2026-02-29");
   assert.equal(result.success, false);
 });

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -13,6 +13,7 @@ import {
 import type { Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import { parseItemEventDate } from "@/lib/date";
 
 interface ItemModalProps {
   item: Item | null;
@@ -20,23 +21,35 @@ interface ItemModalProps {
 }
 
 export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [prevItemId, setPrevItemId] = useState<string | null>(item?.id ?? null);
+  if ((item?.id ?? null) !== prevItemId) {
+    setPrevItemId(item?.id ?? null);
+    setSelectedIndex(0);
+  }
+
   if (!item) return null;
 
   const isLost = item.type === "lost";
-  const eventDate =
-    item.dateTime && !Number.isNaN(new Date(item.dateTime).getTime())
-      ? new Date(item.dateTime)
-      : null;
+  const { eventDate, hasTime } = parseItemEventDate(item.dateTime, item.date);
   const itemDate = eventDate
     ? new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(
         eventDate,
       )
     : null;
-  const itemTime = eventDate
-    ? new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(
-        eventDate,
-      )
-    : null;
+  const itemTime =
+    eventDate && hasTime
+      ? new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(
+          eventDate,
+        )
+      : null;
+  const gallery =
+    item.images && item.images.length > 0
+      ? item.images
+      : item.image
+        ? [item.image]
+        : [];
+  const activeImage = gallery[selectedIndex] ?? gallery[0] ?? "";
   const category =
     ITEM_CATEGORIES.find(({ id }) => id === item.category) ?? null;
   const CategoryIcon = category?.icon ?? Package;
@@ -68,20 +81,45 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
           </button>
 
           <div className="grid md:grid-cols-2">
-            {item.image ? (
-              <div className="relative aspect-[16/10] w-full bg-neutral-100 overflow-hidden md:aspect-auto">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
+            {activeImage ? (
+              <div className="relative flex flex-col bg-neutral-100">
+                <div className="relative aspect-[16/10] w-full flex-1 overflow-hidden md:aspect-auto md:min-h-[320px]">
+                  <img
+                    src={activeImage}
+                    alt={item.title}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
 
-                {item.reward && (
-                  <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
-                    <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
-                      <Award className="w-3.5 h-3.5" />
-                      {item.reward}
-                    </span>
+                  {item.reward && (
+                    <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
+                      <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+                        <Award className="w-3.5 h-3.5" />
+                        {item.reward}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {gallery.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto border-t border-neutral-200/80 bg-white p-3">
+                    {gallery.map((imgUrl, index) => (
+                      <button
+                        key={`${imgUrl}-${index}`}
+                        type="button"
+                        onClick={() => setSelectedIndex(index)}
+                        aria-label={`View photo ${index + 1}`}
+                        className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition cursor-pointer ${
+                          index === selectedIndex
+                            ? "border-[#E5192D]"
+                            : "border-transparent opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>

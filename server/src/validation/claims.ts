@@ -1,11 +1,5 @@
 import { z } from "zod";
-
-const claimDateSchema = z
-  .string()
-  .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
-  .refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)), "Invalid calendar date")
-  .refine((value) => new Date(`${value}T00:00:00Z`) <= new Date(), "Date cannot be in the future");
+import { pastOrTodayDateSchema } from "./dates";
 
 const claimTimeSchema = z
   .string()
@@ -17,7 +11,7 @@ export const createClaimSchema = z.object({
   claimantTitle: z.string().trim().min(1, "What is it? is required").max(100),
   color: z.string().trim().min(1).max(50).optional(),
   building: z.string().trim().min(1).max(100).optional(),
-  dateLost: claimDateSchema,
+  dateLost: pastOrTodayDateSchema,
   timeLost: claimTimeSchema,
   location: z.string().trim().min(1, "Location lost is required").max(500),
   details: z.string().trim().max(2000).default(""),

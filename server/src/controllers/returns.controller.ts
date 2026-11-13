@@ -17,6 +17,7 @@ import {
 } from "../repositories/request.repository";
 import { findItemOwner } from "../repositories/item.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
+import { UUID_RE } from "../validation/dates";
 import { validateReturnTarget } from "../validation/returns";
 
 function zodError(res: Response, error: z.ZodError): Response {
@@ -30,7 +31,9 @@ function zodError(res: Response, error: z.ZodError): Response {
 }
 
 function requestIdParam(req: Request): string | null {
-  return typeof req.params.id === "string" ? req.params.id : null;
+  return typeof req.params.id === "string" && UUID_RE.test(req.params.id)
+    ? req.params.id
+    : null;
 }
 
 const adminReturnStatusSchema = z.object({
@@ -248,8 +251,6 @@ export async function deleteMyReturn(req: Request, res: Response): Promise<void>
   }
   res.json({ message: "Found report deleted." });
 }
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** GET /api/returns/item/:itemId — return requests for a specific item (owner or admin+). */
 export async function getItemReturns(req: Request, res: Response): Promise<void> {

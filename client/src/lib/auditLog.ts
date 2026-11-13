@@ -1,5 +1,3 @@
-import { getAccessToken } from "@/lib/api";
-
 export type AuditAction =
   | "approved"
   | "rejected"
@@ -226,33 +224,7 @@ export function appendAuditLog(
   };
   const next = [entry, ...current].slice(0, 500);
   persistAuditLogs(next);
-  // Best-effort: also report to the backend audit API when configured.
-  void postAuditToServer(input).catch(() => undefined);
   return next;
-}
-
-async function postAuditToServer(input: LogDecisionInput): Promise<void> {
-  const baseUrl =
-    (import.meta as unknown as { env?: Record<string, string | undefined> }).env
-      ?.VITE_API_URL ?? "";
-  const token = getAccessToken();
-  if (!baseUrl || !token) return;
-  await fetch(`${baseUrl.replace(/\/$/, "")}/api/audit-logs`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      action: input.action === "claimed" ? "claimed" : input.action,
-      entityType: input.entityType,
-      entityId: input.entityId,
-      entityTitle: input.itemTitle,
-      details:
-        input.details ??
-        `${input.adminName} ${input.action} ${input.entityType} ${input.entityId}`,
-    }),
-  });
 }
 
 export function actionLabel(action: AuditAction): string {

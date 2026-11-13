@@ -19,12 +19,10 @@ interface AdminRoutesOptions {
 }
 
 export function getAdminRoutes({
-  items,
   onAddItem,
-  returnRequests,
 }: AdminRoutesOptions): RouteObject[] {
   return [
-    { path: paths.admin, element: <OverviewPage items={items} returnRequests={returnRequests} /> },
+    { path: paths.admin, element: <OverviewPage /> },
     {
       path: paths.adminItems,
       element: <ReportsPage onAddItem={onAddItem} />,

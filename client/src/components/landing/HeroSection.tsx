@@ -3,7 +3,6 @@ import gsap from "gsap";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
-import type { Item } from "@/data/mockItems";
 import {
   ItemSearchBar,
   type ItemSearchType,
@@ -17,33 +16,12 @@ interface HeroSectionProps {
 export const HeroSection: React.FC<HeroSectionProps> = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<ItemSearchType>("lost");
-  const [recentPosts, setRecentPosts] = useState<Item[]>([]);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${import.meta.env.BASE_URL}data/examples.json`)
-      .then((response) => {
-        if (!response.ok) return null;
-        return response.json();
-      })
-      .then((data) => {
-        if (cancelled || !data || !Array.isArray(data.items)) return;
-        setRecentPosts(
-          (data.items as Item[]).filter((item) => item.image).slice(0, 8),
-        );
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -66,12 +44,6 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
           { opacity: 0, y: 25, scale: 0.97 },
           { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "back.out(1.1)" },
           "-=0.4",
-        )
-        .fromTo(
-          categoryRef.current,
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.7 },
-          "-=0.4",
         );
     }, heroRef);
 
@@ -88,13 +60,6 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
       navigate(targetPath);
     }
   };
-
-  const handleQuickTagClick = (tag: string) => {
-    const targetPath = `/browse?type=${searchType}`;
-    navigate(`${targetPath}&q=${encodeURIComponent(tag)}`);
-  };
-
-  const categories = ITEM_CATEGORIES;
 
   const floatingIcons = [
     { id: "electronics", className: "left-[2%] top-[32%] h-12 w-12", duration: 7 },
@@ -147,8 +112,11 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
           </motion.span>
         ))}
       </div>
-      <div className="relative z-20 w-full max-w-5xl mx-auto px-1 sm:px-1.5 lg:px-2 mt-8 md:mt-12 text-center flex flex-col items-center">
-        <div ref={badgeRef} className="mt-6 mb-5 flex w-fit max-w-full items-center justify-center gap-2.5 sm:mt-0 rounded-full border border-white/70 bg-white/20 bg-gradient-to-r from-white/40 via-white/10 to-white/30 py-1.5 pl-3 pr-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_0_rgba(255,255,255,0.3),0_12px_32px_-8px_rgba(181,18,36,0.25),0_4px_16px_rgba(0,0,0,0.08)] backdrop-blur-2xl backdrop-saturate-200 motion-reduce:bg-white motion-reduce:backdrop-blur-none sm:w-full sm:max-w-[420px] sm:gap-3 sm:pl-4 sm:pr-5">
+      <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 md:mt-12 text-center flex flex-col items-center">
+        <div
+          ref={badgeRef}
+          className="mt-6 mb-5 flex w-fit max-w-full items-center justify-center gap-2.5 sm:mt-0 sm:gap-3"
+        >
           <img
             src="/WMSU_LOGO.JPG"
             alt="Western Mindanao State University logo"
@@ -194,102 +162,6 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
             onSubmit={handleSearchSubmit}
           />
         </div>
-
-        <div
-          ref={categoryRef}
-          aria-label="Browse items by category"
-          className="relative w-full overflow-hidden text-xs sm:text-sm"
-        >
-            <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-            <motion.div
-              animate={{ x: ["-50%", "0%"] }}
-              transition={{
-                duration: 55,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              className="flex w-fit items-center gap-2"
-            >
-              {[0, 1].map((copy) => (
-                <div
-                  key={`category-copy-${copy}`}
-                  aria-hidden={copy === 1}
-                  className="flex items-center gap-2"
-                >
-                  {categories.map((category) => {
-                    const Icon = category.icon;
-                    return (
-                      <button
-                        key={`${category.id}-${copy}`}
-                        type="button"
-                        tabIndex={copy === 1 ? -1 : undefined}
-                        onClick={() => handleQuickTagClick(category.label)}
-                        className="shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-full bg-white hover:bg-neutral-50 text-neutral-600 hover:text-neutral-900 border border-neutral-200 shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                        <span>{category.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </motion.div>
-        </div>
-
-        {recentPosts.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: "easeOut", delay: 1.5 }}
-            className="relative mt-5 w-full overflow-hidden"
-          >
-            <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-            <motion.div
-              animate={{ x: ["-50%", "0%"] }}
-              transition={{
-                duration: 45,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              className="flex w-fit items-stretch gap-3"
-            >
-              {[0, 1].map((copy) => (
-                <div
-                  key={`recent-copy-${copy}`}
-                  aria-hidden={copy === 1}
-                  className="flex items-stretch gap-3"
-                >
-                  {recentPosts.map((post) => (
-                    <button
-                      key={`${post.id}-${copy}`}
-                      type="button"
-                      tabIndex={copy === 1 ? -1 : undefined}
-                      onClick={() => navigate(`/browse?type=${post.type}`)}
-                      className="w-60 shrink-0 overflow-hidden rounded-xl border border-neutral-200 bg-white text-left shadow-xs transition-colors hover:border-neutral-300 cursor-pointer"
-                    >
-                      <img
-                        src={post.image}
-                        alt=""
-                        loading="lazy"
-                        className="h-36 w-full object-cover"
-                      />
-                      <span className="block p-2.5">
-                        <span className="block truncate text-sm font-bold text-neutral-900">
-                          {post.title}
-                        </span>
-                        <span className="mt-0.5 block text-[11px] font-medium text-neutral-500">
-                          {post.type === "lost" ? "Lost" : "Found"} • {post.timeAgo}
-                        </span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </motion.div>
-          </motion.div>
-        )}
 
         <div aria-hidden="true" className="mt-8 flex w-full items-center justify-center gap-4">
           <span className="h-2 w-2 rounded-full bg-[#E5192D]/30" />

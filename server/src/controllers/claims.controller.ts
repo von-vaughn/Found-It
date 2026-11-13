@@ -13,6 +13,7 @@ import {
   updateClaimStatusById,
 } from "../repositories/request.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
+import { UUID_RE } from "../validation/dates";
 
 function zodError(res: Response, error: z.ZodError): Response {
   return res.status(400).json({
@@ -25,7 +26,9 @@ function zodError(res: Response, error: z.ZodError): Response {
 }
 
 function requestIdParam(req: Request): string | null {
-  return typeof req.params.id === "string" ? req.params.id : null;
+  return typeof req.params.id === "string" && UUID_RE.test(req.params.id)
+    ? req.params.id
+    : null;
 }
 
 const adminClaimStatusSchema = z.object({

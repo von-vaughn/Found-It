@@ -11,6 +11,7 @@ import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useCreateReturnRequest } from "@/hooks/useReturns";
 import { uploadImage } from "@/services/itemService";
+import { localTodayDate } from "@/lib/date";
 
 interface FoundReportFlowProps {
   active: boolean;
@@ -533,7 +534,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
                 type="date"
                 required
                 value={dateFound}
-                max={new Date().toISOString().slice(0, 10)}
+                max={localTodayDate()}
                 onChange={(event) => {
                   setDateFound(event.target.value);
                   setFormError(null);

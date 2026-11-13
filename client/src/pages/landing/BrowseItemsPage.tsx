@@ -3,6 +3,7 @@ import { Search, SearchX, SlidersHorizontal, Loader2 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Item } from "@/data/mockItems";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { ItemModal } from "@/components/ItemModal";
@@ -25,9 +26,7 @@ interface BrowseItemsPageProps {
 
 type BrowseTab = "all" | "lost" | "found";
 
-export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
-  items: exampleItems,
-}) => {
+export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -37,10 +36,6 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
       navigate(paths.dashboard, { replace: true });
     }
   }, [user, navigate]);
-
-  if (user?.role === "school_user") {
-    return null;
-  }
 
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [visibleCategoryCount, setVisibleCategoryCount] = useState(0);
@@ -65,7 +60,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
   const { data: serverItems, isLoading } = useItems(undefined, {
     staleTime: 30_000,
   });
-  const items = serverItems ? toClientItems(serverItems) : exampleItems;
+  const items = serverItems ? toClientItems(serverItems) : EMPTY_ITEMS;
 
   const updateParams = (patch: { type?: BrowseTab; q?: string }) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -182,7 +177,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
     items.filter((item) => {
       if (activeTab !== "all" && item.type !== activeTab) return false;
       const matchesCategory =
-        selectedCategory === "all"
+        filters.categories.length > 0 || selectedCategory === "all"
           ? true
           : item.category === selectedCategory;
       const query = searchQuery.toLowerCase().trim();
@@ -199,6 +194,10 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
 
   const activeTabLabel =
     activeTab === "all" ? "all" : activeTab === "lost" ? "lost" : "found";
+
+  if (user?.role === "school_user") {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50/50 pt-5 pb-10 sm:pt-7 sm:pb-14">
@@ -264,6 +263,9 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
                       return;
                     }
                     setSelectedCategory(cat.id);
+                    if (filters.categories.length > 0) {
+                      setFilters({ ...filters, categories: [] });
+                    }
                   }}
                   aria-pressed={isActive}
                   className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
@@ -381,7 +383,12 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = ({
         onSubmitSearch={(query) => handleSearchQueryChange(query)}
         items={items}
         filters={filters}
-        onFiltersChange={setFilters}
+        onFiltersChange={(nextFilters) => {
+          if (nextFilters.categories.length > 0 && selectedCategory !== "all") {
+            setSelectedCategory("all");
+          }
+          setFilters(nextFilters);
+        }}
         onClearFilters={() => setFilters(defaultFilters)}
         filterResultCount={filteredItems.length}
       />
