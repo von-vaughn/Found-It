@@ -33,9 +33,6 @@ export function AdminCreatePostPage({
           <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
             Post an item lost or found
           </h1>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            Create an official lost or found item report from the admin console.
-          </p>
         </header>
 
         <CreatePostForm

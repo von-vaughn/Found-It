@@ -49,8 +49,7 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="ownership-claim-title"
-        aria-describedby="ownership-claim-description"
-        className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl sm:max-h-[calc(100dvh-2.5rem)] sm:p-7"
+        className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl sm:max-h-[calc(100dvh-2.5rem)] sm:p-7"
       >
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
@@ -72,16 +71,14 @@ export const OwnershipClaimModal: React.FC<OwnershipClaimModalProps> = ({
           </button>
         </div>
 
-        <div className="[&>p:first-child]:mt-1">
-          <OwnershipClaimForm
-            itemId={itemId}
-            itemTitle={itemTitle}
-            claimant={claimant}
-            onSubmitClaim={onSubmitClaim}
-            onSubmitted={onClose}
-            onCancel={onClose}
-          />
-        </div>
+        <OwnershipClaimForm
+          itemId={itemId}
+          itemTitle={itemTitle}
+          claimant={claimant}
+          onSubmitClaim={onSubmitClaim}
+          onSubmitted={onClose}
+          onCancel={onClose}
+        />
       </section>
     </div>
   );

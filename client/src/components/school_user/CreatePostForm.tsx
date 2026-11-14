@@ -43,7 +43,7 @@ const inputClass =
   "w-full h-11 px-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors";
 
 const labelClass =
-  "block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1.5";
+  "block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 capitalize mb-1.5";
 
 type FieldId =
   | "report-title"
@@ -920,7 +920,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               )}
             </div>
             <p className="mt-2 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
-              {lostImages.length} of {MAX_POST_IMAGES} pictures selected. You can add up to 4.
+              {lostImages.length}/{MAX_POST_IMAGES} selected
             </p>
           </div>
           </>
@@ -1174,7 +1174,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             />
             <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
               <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-              Not included in the public post. Only used to verify ownership.
+              Private — used only to verify ownership.
             </p>
           </div>
 

@@ -750,12 +750,8 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 id="suggested-matches-heading"
                 className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
               >
-                Possible matches for you
+                Possible matches
               </h2>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-                Found reports in the same category that look related to your
-                lost item, ranked by color, place, timing, and title.
-              </p>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {suggestedMatches.map((suggested) => (
                   <ItemCard
@@ -922,16 +918,13 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                                 Returned to OSA office
                               </p>
                               <p className="mt-1 leading-relaxed text-cyan-800 dark:text-cyan-400">
-                                This return has been verified and received by OSA. Please visit the OSA office with your school ID to claim your item.
+                                Visit OSA with your school ID to claim.
                               </p>
                             </div>
                           )}
                           {claimStatus === "Returned" && (
                             <div className="mt-4 rounded-xl border border-teal-200 bg-teal-50/70 dark:border-teal-800/60 dark:bg-teal-950/30 p-3 text-xs text-teal-900 dark:text-teal-300">
                               <p className="font-bold">Item returned</p>
-                              <p className="mt-1 leading-relaxed text-teal-800 dark:text-teal-400">
-                                This item has been successfully claimed and marked as returned to you.
-                              </p>
                             </div>
                           )}
                         </div>

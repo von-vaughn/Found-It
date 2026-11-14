@@ -270,9 +270,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         No {reportFilter === "lost" ? "lost" : "found"} reports
                         yet
                       </h3>
-                      <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-                        You haven&apos;t reported any {reportFilter} items.
-                      </p>
                       <button
                         type="button"
                         onClick={() => setReportFilter("all")}
@@ -288,10 +285,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                     No item reports yet
                   </h3>
-                  <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-                    Items you report will appear here so you can quickly find
-                    them again.
-                  </p>
                 </div>
               )}
             </section>

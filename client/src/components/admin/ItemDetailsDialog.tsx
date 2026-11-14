@@ -329,7 +329,7 @@ export function ItemDetailsDialog({
               htmlFor="delete-report-reason"
               className="mt-3 block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
             >
-              Reason for deletion{" "}
+              Reason For Deletion{" "}
               <span className="font-normal text-neutral-400 dark:text-neutral-500">(required)</span>
             </label>
             <textarea

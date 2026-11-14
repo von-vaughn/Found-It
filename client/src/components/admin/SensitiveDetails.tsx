@@ -64,8 +64,7 @@ export function AdminPasswordModal({
           Enter admin password
         </h2>
         <p className="mt-1.5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-          These details are restricted. Enter your admin password to view
-          them.
+          Verify your password to view.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">

@@ -30,7 +30,7 @@ const inputClass =
   "w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 px-3.5 py-3 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200";
 
 const labelClass =
-  "mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400";
+  "mb-1.5 block text-[11px] font-bold capitalize text-neutral-500 dark:text-neutral-400";
 
 function useIsMobileView(): boolean {
   const [isMobile, setIsMobile] = useState(() =>
@@ -293,14 +293,9 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           </h2>
           {step !== "confirmation" && (
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              {step === "camera" ? (
-                <>
-                  Capture a photo of the item. It will be included with your
-                  report.
-                </>
-              ) : (
-                <>Add a description and where you found it. These details won&apos;t be published.</>
-              )}
+              {step === "camera"
+                ? "Take a photo of the item."
+                : "Private — never published."}
             </p>
           )}
         </div>
@@ -670,17 +665,9 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               className="mt-0.5 h-6 w-6 shrink-0 text-green-700"
               aria-hidden="true"
             />
-            <div className="space-y-3">
-              <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                Please bring the found item to the Office of Student Affairs
-                (OSA) for safekeeping and verification.
-              </p>
-              <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                Your report will be reviewed by the Office of Student Affairs
-                (OSA). If it matches the lost-item report, the OSA will
-                coordinate the item&apos;s return.
-              </p>
-            </div>
+            <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+              Bring the item to OSA for verification and safekeeping.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 border-t border-neutral-200 dark:border-neutral-800 pt-4">

@@ -22,7 +22,7 @@ const localDate = () => {
 };
 
 const labelClass =
-  "mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400";
+  "mb-1.5 block text-[11px] font-bold capitalize text-neutral-500 dark:text-neutral-400";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 px-3.5 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200";
@@ -50,6 +50,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
   const [evidenceFiles, setEvidenceFiles] = useState<
     { file: File; preview: string }[]
   >([]);
+  const [step, setStep] = useState<"evidence" | "details">("evidence");
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,8 +108,17 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
     setFormError("");
   };
 
+  const handleNextStep = () => {
+    setFormError("");
+    setStep("details");
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (step === "evidence") {
+      handleNextStep();
+      return;
+    }
     if (
       !claimTitle.trim() ||
       !importantDetails.trim() ||
@@ -158,83 +168,72 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
 
   return (
     <>
-      <p
-        id="ownership-claim-description"
-        className="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
-      >
-        Share details that can help verify this item belongs to you. Your
-        important details, lost date, time, and location are required.
-        Description and picture evidence are optional.
-      </p>
       <hr className="mt-4 border-t border-neutral-200 dark:border-neutral-800" />
 
       <form onSubmit={handleSubmit} className="mt-5">
-        <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6">
-        {/* Left: photo */}
-        <div className="min-w-0">
-          <div className="mb-1.5 flex items-center justify-between gap-3">
-            <label htmlFor="claim-evidence" className={labelClass}>
-              Picture evidence
-            </label>
-          </div>
-          <input
-            ref={fileInputRef}
-            id="claim-evidence"
-            name="evidence"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFileChange}
-            className="sr-only"
-            tabIndex={-1}
-          />
-          <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
-            <div className="grid grid-cols-2 gap-2">
-              {evidenceFiles.map(({ preview }, index) => (
-                <div
-                  key={preview}
-                  className="relative aspect-square overflow-hidden rounded-lg bg-white dark:bg-neutral-900"
-                >
-                  <img
-                    src={preview}
-                    alt={`Picture evidence ${index + 1}`}
-                    className="h-full w-full object-cover"
-                  />
+        {step === "evidence" ? (
+          <div className="min-w-0">
+            <div className="mb-1.5 flex items-center justify-between gap-3">
+              <label htmlFor="claim-evidence" className={labelClass}>
+                Picture evidence
+              </label>
+            </div>
+            <input
+              ref={fileInputRef}
+              id="claim-evidence"
+              name="evidence"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="sr-only"
+              tabIndex={-1}
+            />
+            <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {evidenceFiles.map(({ preview }, index) => (
+                  <div
+                    key={preview}
+                    className="relative aspect-square overflow-hidden rounded-lg bg-white dark:bg-neutral-900"
+                  >
+                    <img
+                      src={preview}
+                      alt={`Picture evidence ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveEvidence(preview)}
+                      aria-label={`Remove picture ${index + 1}`}
+                      className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 dark:bg-neutral-900/95 text-neutral-600 dark:text-neutral-400 shadow-sm transition-colors hover:bg-white hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                    >
+                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  </div>
+                ))}
+                {evidenceFiles.length < MAX_EVIDENCE_IMAGES && (
                   <button
                     type="button"
-                    onClick={() => handleRemoveEvidence(preview)}
-                    aria-label={`Remove picture ${index + 1}`}
-                    className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 dark:bg-neutral-900/95 text-neutral-600 dark:text-neutral-400 shadow-sm transition-colors hover:bg-white hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 px-2 text-center transition-colors hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-neutral-400"
                   >
-                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    <ImagePlus
+                      className="h-5 w-5 text-neutral-400 dark:text-neutral-500"
+                      aria-hidden="true"
+                    />
+                    <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      Add photo
+                    </span>
                   </button>
-                </div>
-              ))}
-              {evidenceFiles.length < MAX_EVIDENCE_IMAGES && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 px-2 text-center transition-colors hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-neutral-400"
-                >
-                  <ImagePlus
-                    className="h-5 w-5 text-neutral-400 dark:text-neutral-500"
-                    aria-hidden="true"
-                  />
-                  <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Add photo
-                  </span>
-                </button>
-              )}
+                )}
+              </div>
+              <p className="mt-3 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+                {evidenceFiles.length} of {MAX_EVIDENCE_IMAGES} selected
+              </p>
             </div>
-            <p className="mt-2 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
-              {evidenceFiles.length} of {MAX_EVIDENCE_IMAGES} pictures
-              selected. You can add up to 4.
-            </p>
           </div>
-        </div>
-
-        {/* Right: details */}
-        <div className="min-w-0 space-y-4">
+        ) : (
+          <div className="min-w-0 space-y-4">
         <div>
           <label htmlFor="claim-title" className={labelClass}>
             What is it? <span className="text-[#E5192D]" aria-hidden="true">*</span>
@@ -379,34 +378,59 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             className="w-full resize-y rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 p-3.5 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200"
           />
           <p className="mt-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-            Used to verify ownership against the poster&apos;s private details.
+            Used only to verify ownership.
           </p>
         </div>
         </div>
-        </div>
+        )}
 
         {formError && (
-          <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
+          <p role="alert" className="mt-4 text-sm font-medium text-red-700 dark:text-red-400">
             {formError}
           </p>
         )}
 
         <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="h-11 rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="h-11 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Claim"}
-          </button>
+          {step === "evidence" ? (
+            <>
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={isSubmitting}
+                className="h-11 rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="h-11 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+              >
+                Next
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormError("");
+                  setStep("evidence");
+                }}
+                disabled={isSubmitting}
+                className="h-11 rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-11 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Claim"}
+              </button>
+            </>
+          )}
         </div>
       </form>
     </>

@@ -98,14 +98,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
             Password change required
           </h1>
           <p className="mt-1 text-sm leading-relaxed text-neutral-600">
-            This account was created with a temporary password. Choose a new one
-            to continue.
+            Set a new password to continue.
           </p>
           <label
             className="mt-6 block text-sm font-semibold text-neutral-800"
             htmlFor="must-change-current"
           >
-            Current password
+            Current Password
           </label>
           <input
             id="must-change-current"
@@ -123,7 +122,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
             className="mt-4 block text-sm font-semibold text-neutral-800"
             htmlFor="must-change-new"
           >
-            New password
+            New Password
           </label>
           <input
             id="must-change-new"

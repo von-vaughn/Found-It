@@ -407,24 +407,31 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-neutral-100 bg-white px-5 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:block sm:border-0 sm:bg-transparent sm:p-0 sm:pr-10">
           <div className="min-w-0">
-            <p className="text-sm font-extrabold tracking-tight text-neutral-900">
-              Found<span className="text-[#E5192D]">It</span>
-            </p>
+            <div className="flex items-center gap-2">
+              <img
+                src="/logo.jpeg"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-6 object-cover rounded-none"
+              />
+              <p className="text-sm font-extrabold tracking-tight text-neutral-900">
+                Found<span className="text-[#E5192D]">It</span>
+              </p>
+            </div>
             <h2
               id="auth-modal-title"
               className="mt-3 text-2xl font-extrabold tracking-tight text-neutral-900"
             >
               {title}
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-neutral-600">
-              {mode === "signin"
-                ? "Sign in to manage your reports and claims."
-                : signupScreen === "email"
-                  ? `Start with your school email (${SCHOOL_EMAIL_DOMAINS.join(", ")}).`
-                  : signupScreen === "profile"
-                    ? "Create your account with your personal details."
-                    : `Enter the 6-digit code sent to ${email}.`}
-            </p>
+            {(signupScreen === "email" || signupScreen === "verify") &&
+              mode === "signup" && (
+                <p className="mt-1 text-sm leading-relaxed text-neutral-600">
+                  {signupScreen === "email"
+                    ? `Use ${SCHOOL_EMAIL_DOMAINS.join(", ")}.`
+                    : `Code sent to ${email}.`}
+                </p>
+              )}
           </div>
           <button
             type="button"
@@ -467,7 +474,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   className="block text-sm font-semibold text-neutral-800"
                   htmlFor="modal-signin-email"
                 >
-                  Email address
+                  Email Address
                 </label>
                 <input
                   ref={emailInputRef}
@@ -591,7 +598,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   className="block text-sm font-semibold text-neutral-800"
                   htmlFor="modal-signup-email"
                 >
-                  School email <span className="text-[#E5192D]">*</span>
+                  School Email <span className="text-[#E5192D]">*</span>
                 </label>
                 <input
                   ref={emailInputRef}
@@ -664,7 +671,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 <div className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-neutral-500">
-                      Email address
+                      Email Address
                     </p>
                     <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900">
                       {email}
@@ -858,12 +865,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 }}
               >
                 <div>
-                  <label
-                    htmlFor="modal-verification-code"
-                    className="mb-2 block text-sm font-semibold text-neutral-800"
-                  >
-                    6-digit verification code
-                  </label>
+                    <label
+                      htmlFor="modal-verification-code"
+                      className="mb-2 block text-sm font-semibold text-neutral-800"
+                    >
+                      6-Digit Verification Code
+                    </label>
                   <input
                     ref={verificationInputRef}
                     id="modal-verification-code"

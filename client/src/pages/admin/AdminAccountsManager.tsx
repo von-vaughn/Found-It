@@ -398,9 +398,6 @@ export function AdminAccountsManager({
             className="w-full max-w-md rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
             <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Create admin account</h2>
-            <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-              New admins are active immediately and can review claims and returns.
-            </p>
             <div className="mt-4 space-y-3">
               {errors.root?.server?.message && (
                 <p className="text-xs text-red-600" role="alert">
@@ -409,7 +406,7 @@ export function AdminAccountsManager({
               )}
               <div>
                 <label htmlFor="staff-name" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                  Full name
+                  Full Name
                 </label>
                 <input
                   id="staff-name"

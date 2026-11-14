@@ -97,8 +97,7 @@ export const Footer: React.FC = () => {
               Student Affairs
             </h4>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Office of Student Affairs Lost &amp; Found Central Hub. Open
-              Monday &ndash; Friday, 8:00 AM &ndash; 5:00 PM.
+              OSA Lost &amp; Found • Mon–Fri, 8 AM–5 PM
             </p>
           </div>
         </div>

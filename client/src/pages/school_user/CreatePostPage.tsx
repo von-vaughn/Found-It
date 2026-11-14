@@ -119,8 +119,8 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
                 </h1>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                   {initialItem
-                    ? "Only the person who posted this report can edit it."
-                    : "The report you are looking for may have been removed."}
+                    ? "Only the author can edit this report."
+                    : "This report may have been removed."}
                 </p>
               </div>
             ) : (
@@ -130,9 +130,6 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
                     <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                       Edit your report
                     </h1>
-                    <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                      Update the details or photos for your report.
-                    </p>
                   </header>
                 )}
 

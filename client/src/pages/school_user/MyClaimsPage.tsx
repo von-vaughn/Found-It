@@ -336,8 +336,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                       aria-hidden="true"
                     />
                     <p className="text-sm leading-relaxed">
-                      Your claim has been approved. Please visit the Office of
-                      Student Affairs (OSA) to claim your item.
+                      Claim approved — visit OSA to pick up your item.
                     </p>
                   </div>
                 )}
@@ -393,7 +392,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                     Submitted {claim.submitted}
                                   </p>
                                   <div className="mt-1.5">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                                    <h4 className="text-[10px] font-bold capitalize text-neutral-400 dark:text-neutral-500">
                                       Description
                                     </h4>
                                     <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
@@ -484,8 +483,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                               </dl>
                               {claim.importantDetails?.trim() && (
                                 <div className="mt-3">
-                                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-                                    Important details
+                                  <h4 className="text-[10px] font-bold capitalize text-neutral-400 dark:text-neutral-500">
+                                    Important Details
                                   </h4>
                                   <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
                                     {claim.importantDetails}
@@ -565,12 +564,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                       ? "No claim requests yet"
                       : `No ${statusFilter.toLowerCase()} requests`}
                 </h2>
-                {!searchQuery.trim() && myClaims.length === 0 && (
-                  <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-                    Requests you file on found posts will appear here with their
-                    approval status.
-                  </p>
-                )}
                 {!searchQuery.trim() && myClaims.length === 0 && (
                   <button
                     type="button"

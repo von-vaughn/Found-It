@@ -137,11 +137,11 @@ export function navigationFor(
 export const pageCopy: Record<AdminSection, { title: string; description: string }> = {
   overview: {
     title: "Admin dashboard",
-    description: "A current view of campus lost and found activity.",
+    description: "",
   },
   items: {
     title: "Lost & found reports",
-    description: "Search, filter, and review all lost and found item reports.",
+    description: "",
   },
   claims: {
     title: "Submitted Claims Request",
@@ -153,17 +153,15 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
   },
   users: {
     title: "User management",
-    description: "Search, filter, and manage campus account access.",
+    description: "",
   },
   options: {
     title: "Filter options",
-    description:
-      "Add category and building choices to the filters available to school users.",
+    description: "",
   },
   audit: {
     title: "Audit logs",
-    description:
-      "See which admin approved or rejected each report across all claims, returns, and items.",
+    description: "",
   },
 };
 
@@ -173,8 +171,7 @@ export const superAdminPageCopy: Partial<
 > = {
   overview: {
     title: "Super admin dashboard",
-    description:
-      "Full campus oversight — every admin workflow plus staff and audit control.",
+    description: "",
   },
   claims: {
     title: "Submitted Claims Request",
@@ -186,8 +183,7 @@ export const superAdminPageCopy: Partial<
   },
   users: {
     title: "User management",
-    description:
-      "Manage campus users and admin accounts — create admins, change roles, and control access.",
+    description: "",
   },
 };
 

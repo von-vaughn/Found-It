@@ -22,9 +22,6 @@ export function AnalyticsSection({
         >
           Recent activity
         </h2>
-        <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-          Latest submitted claims and pending return requests across campus.
-        </p>
       </div>
 
       <div className="mt-3 grid min-w-0 items-stretch gap-3 lg:grid-cols-2">

@@ -128,7 +128,7 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
                   Item not found
                 </h1>
                 <p className="mx-auto mt-2 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-                  The item you are trying to claim may have been removed.
+                  This item may have been removed.
                 </p>
                 <button
                   type="button"
@@ -145,8 +145,7 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
                   Request submitted
                 </h1>
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                  Please wait for approval. We&apos;ll notify you once your
-                  request is approved or rejected.
+                  We&apos;ll notify you once reviewed.
                 </p>
                 <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
                   <button
@@ -177,8 +176,7 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
                   Claim already submitted
                 </h1>
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                  You already have a claim request for this item. You can track
-                  its status in Claims &amp; Returned.
+                  Track status in Claims &amp; Returned.
                 </p>
                 <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
                   <button

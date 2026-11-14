@@ -355,9 +355,7 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = () => {
               No matching {activeTabLabel} items found
             </h3>
             <p className="text-xs text-neutral-500 max-w-sm mb-4">
-              We couldn&apos;t find any {activeTabLabel} items matching
-              &ldquo;{searchQuery}&rdquo;. Try searching for another term or
-              change your filters.
+              Try another search or reset filters.
             </p>
             <button
               type="button"

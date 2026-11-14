@@ -95,13 +95,12 @@ export const FiltersPage: React.FC<FiltersPageProps> = ({
               <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 Filters
               </h1>
-              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                {activeFilterCount === 0
-                  ? "Refine the feed by category, building, color, or date."
-                  : `${activeFilterCount} active · ${resultCount} matching ${
-                      resultCount === 1 ? "item" : "items"
-                    }`}
-              </p>
+              {activeFilterCount > 0 && (
+                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                  {activeFilterCount} active · {resultCount} matching{" "}
+                  {resultCount === 1 ? "item" : "items"}
+                </p>
+              )}
             </header>
 
             <div className="pb-8">

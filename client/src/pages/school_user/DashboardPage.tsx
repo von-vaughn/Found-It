@@ -343,8 +343,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 No matching items found
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mb-4">
-                We couldn&apos;t find any items matching &ldquo;{searchQuery}
-                &rdquo;. Try searching for another term or change your filters.
+                Try another search or reset filters.
               </p>
               <button
                 onClick={() => {

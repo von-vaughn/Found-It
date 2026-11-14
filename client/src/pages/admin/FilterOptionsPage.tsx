@@ -253,8 +253,7 @@ export function FilterOptionsPage() {
   return (
     <AdminLayout activeSection="options">
       <p className="mb-4 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-        Add choices to the category and building filters available to school
-        users. These additions last only for the current session.
+        Session-only filter options.
       </p>
       <div className="grid min-w-0 gap-5 lg:grid-cols-2">
         <Panel
