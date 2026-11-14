@@ -237,7 +237,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         <div className="min-w-0 space-y-4">
         <div>
           <label htmlFor="claim-title" className={labelClass}>
-            What is it? <span aria-hidden="true">*</span>
+            What is it? <span className="text-[#E5192D]" aria-hidden="true">*</span>
           </label>
           <input
             id="claim-title"
@@ -281,7 +281,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
           </div>
           <div className="min-w-0">
             <label htmlFor="claim-date-lost" className={labelClass}>
-              Date lost <span aria-hidden="true">*</span>
+              Date lost <span className="text-[#E5192D]" aria-hidden="true">*</span>
             </label>
             <input
               id="claim-date-lost"
@@ -299,7 +299,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="min-w-0">
             <label htmlFor="claim-time-lost" className={labelClass}>
-              Approximate time lost <span aria-hidden="true">*</span>
+              Approximate time lost <span className="text-[#E5192D]" aria-hidden="true">*</span>
             </label>
             <input
               id="claim-time-lost"
@@ -313,7 +313,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
           </div>
           <div className="min-w-0">
             <label htmlFor="claim-location-lost" className={labelClass}>
-              Location lost <span aria-hidden="true">*</span>
+              Location lost <span className="text-[#E5192D]" aria-hidden="true">*</span>
             </label>
             <input
               id="claim-location-lost"
@@ -366,7 +366,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
 
         <div>
           <label htmlFor="claim-important-details" className={labelClass}>
-            Important details <span aria-hidden="true">*</span>
+            Important details <span className="text-[#E5192D]" aria-hidden="true">*</span>
           </label>
           <textarea
             id="claim-important-details"

@@ -488,11 +488,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           filterResultCount={applyAdvancedFilters(items, filters).length}
         />
 
-        <div
-          className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
-        >
+        <div className="flex-1 min-w-0 w-full max-w-[1440px] mx-auto bg-white dark:bg-neutral-950 px-4 sm:px-8 lg:px-12">
+          <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
         {/* Detail actions row */}
-        <div className="px-4 sm:px-8 lg:px-12 pt-4 flex items-center justify-between max-w-[1440px] mx-auto w-full">
+        <div className="pt-4 flex items-center justify-between w-full">
           <button
             type="button"
             onClick={handleGoBack}
@@ -526,7 +525,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         </div>
         <main
           id="item-detail-main"
-          className="min-w-0 w-full max-w-[1440px] mx-auto bg-white dark:bg-neutral-950 px-4 sm:px-8 lg:px-12 py-6 space-y-6"
+          className="min-w-0 w-full py-6 space-y-6"
         >
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
@@ -945,6 +944,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           )}
 
         </main>
+          </div>
         </div>
       </div>
 

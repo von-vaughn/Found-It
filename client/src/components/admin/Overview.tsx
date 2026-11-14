@@ -87,7 +87,6 @@ export function Overview({
       </section>
 
       <AnalyticsSection
-        reports={reports}
         claims={claims}
         returnRequests={returnRequests}
         onNavigate={onNavigate}

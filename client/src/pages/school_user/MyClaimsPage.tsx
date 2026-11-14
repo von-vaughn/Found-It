@@ -278,7 +278,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
       <div
         className="sidebar-shift ml-0 flex min-h-screen min-w-0 flex-1 flex-col pb-20 md:pb-0 md:ml-20 transition-[margin] duration-300"
       >
-        <div className="hidden md:block sticky top-0 z-30">
+        <div className="hidden md:block">
           <Header
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -291,10 +291,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
           />
         </div>
 
-        <div
-          className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
-        >
-          <main className="mx-auto w-full max-w-[1440px] bg-white dark:bg-neutral-950 px-4 py-8 sm:px-8 lg:px-12">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white dark:bg-neutral-950 px-4 py-8 sm:px-8 lg:px-12">
+          <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
             <header>
               <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 Claims &amp; Returned
@@ -585,8 +583,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                 )}
               </div>
             )}
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
 
       <RequestEditDialog

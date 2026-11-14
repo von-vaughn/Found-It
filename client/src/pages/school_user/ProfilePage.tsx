@@ -130,10 +130,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           />
         </div>
 
-        <div
-          className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
-        >
-          <main className="mx-auto w-full max-w-[1440px] bg-white px-4 py-8 sm:px-8 lg:px-12 dark:bg-neutral-950">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white px-4 py-8 sm:px-8 lg:px-12 dark:bg-neutral-950">
+          <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
             <section
               aria-labelledby="profile-identity-heading"
               className="flex flex-row items-center gap-5 pb-7"
@@ -297,8 +295,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 </div>
               )}
             </section>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

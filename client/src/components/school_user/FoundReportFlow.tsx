@@ -485,7 +485,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           <div className="min-w-0 space-y-5">
           <div>
             <label htmlFor="found-item-title" className={labelClass}>
-              What is it? *
+              What is it? <span className="text-[#E5192D]" aria-hidden="true">*</span>
             </label>
             <input
               id="found-item-title"
@@ -526,7 +526,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             </div>
             <div>
               <label htmlFor="found-item-date" className={labelClass}>
-                Date found *
+                Date found <span className="text-[#E5192D]" aria-hidden="true">*</span>
               </label>
               <input
                 id="found-item-date"
@@ -547,7 +547,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="found-item-time" className={labelClass}>
-                Approximate time found *
+                Approximate time found <span className="text-[#E5192D]" aria-hidden="true">*</span>
               </label>
               <input
                 id="found-item-time"
@@ -564,7 +564,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             </div>
             <div>
               <label htmlFor="found-item-location" className={labelClass}>
-                Location found *
+                Location found <span className="text-[#E5192D]" aria-hidden="true">*</span>
               </label>
               <input
                 id="found-item-location"
@@ -622,7 +622,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
 
           <div>
             <label htmlFor="found-item-important-details" className={labelClass}>
-              Important details *
+              Important details <span className="text-[#E5192D]" aria-hidden="true">*</span>
             </label>
             <textarea
               id="found-item-important-details"

@@ -106,10 +106,8 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
           />
         </div>
 
-        <div
-          className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
-        >
-          <main className="mx-auto w-full max-w-[1440px] bg-white px-4 py-6 sm:px-8 sm:py-8 lg:px-12 dark:bg-neutral-950">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white px-4 py-6 sm:px-8 sm:py-8 lg:px-12 dark:bg-neutral-950">
+          <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
             {isEditingRoute && isItemLoading && !initialItem ? (
               <p className="mt-8 text-sm text-neutral-500 dark:text-neutral-400">
                 Loading report…
@@ -150,8 +148,8 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
                 />
               </>
             )}
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

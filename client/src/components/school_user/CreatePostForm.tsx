@@ -715,7 +715,13 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         {/* Left: photo — live camera for found items, file upload for lost */}
         <div className="min-w-0 md:sticky md:top-24">
           <span className={labelClass}>
-            Photo{type === "found" ? " *" : ""}
+            Photo
+            {type === "found" && (
+              <>
+                {" "}
+                <span className="text-[#E5192D]" aria-hidden="true">*</span>
+              </>
+            )}
           </span>
           {type === "found" ? (
             isMobileView ? (
@@ -934,7 +940,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         <div className="min-w-0 space-y-4">
           <div>
             <label htmlFor="report-title" className={labelClass}>
-              What is it? *
+              What is it? <span className="text-[#E5192D]" aria-hidden="true">*</span>
             </label>
             <input
               id="report-title"
@@ -988,7 +994,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             </div>
             <div className="min-w-0">
               <label htmlFor="report-date" className={labelClass}>
-                {type === "lost" ? "Date lost *" : "Date found *"}
+                {type === "lost" ? "Date lost" : "Date found"}{" "}
+                <span className="text-[#E5192D]" aria-hidden="true">*</span>
               </label>
               <input
                 id="report-date"
@@ -1011,7 +1018,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="min-w-0">
               <label htmlFor="report-time" className={labelClass}>
-                {type === "lost" ? "Approximate time lost *" : "Approximate time found *"}
+                {type === "lost" ? "Approximate time lost" : "Approximate time found"}{" "}
+                <span className="text-[#E5192D]" aria-hidden="true">*</span>
               </label>
               <input
                 id="report-time"
@@ -1063,7 +1071,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="min-w-0">
                 <label htmlFor="report-location" className={labelClass}>
-                  {type === "lost" ? "Location lost *" : "Location found *"}
+                  {type === "lost" ? "Location lost" : "Location found"}{" "}
+                  <span className="text-[#E5192D]" aria-hidden="true">*</span>
                 </label>
                 <input
                   id="report-location"
@@ -1089,7 +1098,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               </div>
             <div className="min-w-0">
               <label htmlFor="report-category" className={labelClass}>
-                Category *
+                Category <span className="text-[#E5192D]" aria-hidden="true">*</span>
               </label>
               <div className="relative">
                 <select
@@ -1146,7 +1155,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
           <div>
             <label htmlFor="report-important-details" className={labelClass}>
-              Important details *
+              Important details <span className="text-[#E5192D]" aria-hidden="true">*</span>
             </label>
             <textarea
               id="report-important-details"
