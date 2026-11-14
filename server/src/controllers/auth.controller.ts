@@ -9,7 +9,6 @@ import {
   findUserWithHashByEmail,
   setUserVerified,
   updateUserPassword,
-  updateUserRegistration,
 } from '../repositories/user.repository';
 import {
   findRefreshTokenRecord,
@@ -328,8 +327,12 @@ export async function login(req: Request, res: Response): Promise<void> {
       const otp = generateOtp();
       await storeOtp(user.id, otp, otpExpiryDate());
       void dispatchOtpEmail(user.email, otp, user.name);
+      res.status(403).json({ message: 'Email not verified. Enter the 6-digit code sent to your inbox.' });
+      return;
     }
-    res.status(403).json({ message: 'Email not verified. Enter the 6-digit code sent to your inbox.' });
+    res.status(403).json({
+      message: 'Email not verified. Enter your recent 6-digit code, or wait before requesting a new one.',
+    });
     return;
   }
 

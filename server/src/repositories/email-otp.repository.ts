@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import type { PoolClient } from 'pg';
 import { pool } from '../config/db';
 import { env } from '../config/env';
 
@@ -43,63 +44,92 @@ interface OtpRow {
   created_at: Date;
 }
 
-/** Invalidates older unconsumed OTPs and stores the new HMAC-hashed OTP. */
+interface UserOtpState {
+  last_resend_at: Date | null;
+  resend_count_window: number;
+  verification_failed_attempts: number;
+  verification_locked_until: Date | null;
+}
+
+/** Runs an OTP operation under a per-user row lock so concurrent requests cannot race. */
+async function withUserOtpLock<T>(
+  userId: string,
+  fn: (client: PoolClient, user: UserOtpState | undefined) => Promise<T>,
+): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query<UserOtpState>(
+      `SELECT last_resend_at, resend_count_window, verification_failed_attempts, verification_locked_until
+       FROM "user" WHERE id = $1 FOR UPDATE`,
+      [userId],
+    );
+    const result = await fn(client, rows[0]);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/** Invalidates older unconsumed OTPs, stores the new HMAC-hashed OTP, and anchors cooldown. */
 export async function storeOtp(userId: string, otp: string, expiresAt: Date): Promise<string> {
-  await pool.query(
-    `UPDATE email_otp SET consumed = TRUE WHERE user_id = $1 AND consumed = FALSE`,
-    [userId],
-  );
-  const { rows } = await pool.query<OtpRow>(
-    `INSERT INTO email_otp (user_id, otp_hash, expires_at) VALUES ($1, $2, $3) RETURNING id`,
-    [userId, hashOtp(userId, otp), expiresAt],
-  );
-  return rows[0].id;
+  return withUserOtpLock(userId, async (client) => {
+    await client.query(
+      `UPDATE email_otp SET consumed = TRUE WHERE user_id = $1 AND consumed = FALSE`,
+      [userId],
+    );
+    const { rows } = await client.query<OtpRow>(
+      `INSERT INTO email_otp (user_id, otp_hash, expires_at) VALUES ($1, $2, $3) RETURNING id`,
+      [userId, hashOtp(userId, otp), expiresAt],
+    );
+    await client.query(`UPDATE "user" SET last_resend_at = NOW() WHERE id = $1`, [userId]);
+    return rows[0].id;
+  });
 }
 
 export async function checkResendEligibility(userId: string): Promise<{
   allowed: boolean;
   message?: string;
 }> {
-  const { rows } = await pool.query<{
-    last_resend_at: Date | null;
-    resend_count_window: number;
-  }>(
-    `SELECT last_resend_at, resend_count_window FROM "user" WHERE id = $1`,
-    [userId],
-  );
-  if (!rows[0]) return { allowed: false, message: 'User not found.' };
+  return withUserOtpLock(userId, async (client, user) => {
+    if (!user) return { allowed: false, message: 'User not found.' };
 
-  const lastResend = rows[0].last_resend_at ? new Date(rows[0].last_resend_at).getTime() : 0;
-  const now = Date.now();
+    const lastResend = user.last_resend_at ? new Date(user.last_resend_at).getTime() : 0;
+    const now = Date.now();
 
-  if (now - lastResend < RESEND_COOLDOWN_MS) {
-    return {
-      allowed: false,
-      message: 'A verification code was just sent. Please wait a minute before requesting another.',
-    };
-  }
+    if (now - lastResend < RESEND_COOLDOWN_MS) {
+      return {
+        allowed: false,
+        message: 'A verification code was just sent. Please wait a minute before requesting another.',
+      };
+    }
 
-  // If last resend was over 1 hour ago, reset the hourly window counter
-  if (now - lastResend > 60 * 60 * 1000) {
-    await pool.query(
-      `UPDATE "user" SET last_resend_at = NOW(), resend_count_window = 1 WHERE id = $1`,
+    // If last resend was over 1 hour ago, reset the hourly window counter
+    if (now - lastResend > 60 * 60 * 1000) {
+      await client.query(
+        `UPDATE "user" SET last_resend_at = NOW(), resend_count_window = 1 WHERE id = $1`,
+        [userId],
+      );
+      return { allowed: true };
+    }
+
+    if (user.resend_count_window >= RESEND_HOURLY_LIMIT) {
+      return {
+        allowed: false,
+        message: 'Too many verification code requests for this account. Please wait an hour.',
+      };
+    }
+
+    await client.query(
+      `UPDATE "user" SET last_resend_at = NOW(), resend_count_window = resend_count_window + 1 WHERE id = $1`,
       [userId],
     );
     return { allowed: true };
-  }
-
-  if (rows[0].resend_count_window >= RESEND_HOURLY_LIMIT) {
-    return {
-      allowed: false,
-      message: 'Too many verification code requests for this account. Please wait an hour.',
-    };
-  }
-
-  await pool.query(
-    `UPDATE "user" SET last_resend_at = NOW(), resend_count_window = resend_count_window + 1 WHERE id = $1`,
-    [userId],
-  );
-  return { allowed: true };
+  });
 }
 
 export type OtpCheck =
@@ -108,94 +138,87 @@ export type OtpCheck =
 
 /**
  * Validates OTP against latest unconsumed code.
- * Checks per-code attempts (max 5) and cumulative failures (locks for 1h at 15).
+ * Exhausts single code at 5 failures ('expired'); locks account for 1h only at 15 cumulative failures.
  */
 export async function checkOtp(userId: string, otp: string): Promise<OtpCheck> {
-  // Check cumulative account lockout
-  const { rows: userRows } = await pool.query<{
-    verification_failed_attempts: number;
-    verification_locked_until: Date | null;
-  }>(
-    `SELECT verification_failed_attempts, verification_locked_until FROM "user" WHERE id = $1`,
-    [userId],
-  );
-  const user = userRows[0];
-  if (user?.verification_locked_until) {
-    if (new Date(user.verification_locked_until).getTime() > Date.now()) {
-      return { ok: false, reason: 'locked' };
+  return withUserOtpLock(userId, async (client, user) => {
+    if (!user) return { ok: false, reason: 'expired' };
+
+    if (user.verification_locked_until) {
+      if (new Date(user.verification_locked_until).getTime() > Date.now()) {
+        return { ok: false, reason: 'locked' };
+      }
+      // Reset expired lockout before checking attempts.
+      await client.query(
+        `UPDATE "user"
+         SET verification_failed_attempts = 0, verification_locked_until = NULL
+         WHERE id = $1`,
+        [userId],
+      );
     }
-    // Reset the lockout before recording a failed attempt to avoid immediately
-    // locking the account again.
-    await pool.query(
+
+    const { rows } = await client.query<OtpRow>(
+      `SELECT id, user_id, otp_hash, expires_at, attempts
+       FROM email_otp
+       WHERE user_id = $1 AND consumed = FALSE
+       ORDER BY created_at DESC LIMIT 1`,
+      [userId],
+    );
+    const row = rows[0];
+    if (!row || new Date(row.expires_at).getTime() <= Date.now()) {
+      return { ok: false, reason: 'expired' };
+    }
+
+    if (row.attempts >= OTP_MAX_ATTEMPTS) {
+      await client.query(`UPDATE email_otp SET consumed = TRUE WHERE id = $1`, [row.id]);
+      return { ok: false, reason: 'expired' };
+    }
+
+    const candidateHash = hashOtp(userId, otp);
+    const isMatch = safeCompareHex(candidateHash, row.otp_hash);
+
+    if (!isMatch) {
+      await client.query(
+        `UPDATE email_otp SET attempts = attempts + 1 WHERE id = $1`,
+        [row.id],
+      );
+      const { rows: updatedUser } = await client.query<{ verification_failed_attempts: number }>(
+        `UPDATE "user"
+         SET verification_failed_attempts = verification_failed_attempts + 1
+         WHERE id = $1
+         RETURNING verification_failed_attempts`,
+        [userId],
+      );
+
+      const cumulative = updatedUser[0]?.verification_failed_attempts ?? 0;
+      if (cumulative >= CUMULATIVE_MAX_ATTEMPTS) {
+        await client.query(
+          `UPDATE "user" SET verification_locked_until = NOW() + INTERVAL '1 hour' WHERE id = $1`,
+          [userId],
+        );
+        await client.query(`UPDATE email_otp SET consumed = TRUE WHERE id = $1`, [row.id]);
+        return { ok: false, reason: 'locked' };
+      }
+
+      if (row.attempts + 1 >= OTP_MAX_ATTEMPTS) {
+        await client.query(`UPDATE email_otp SET consumed = TRUE WHERE id = $1`, [row.id]);
+        return { ok: false, reason: 'expired' };
+      }
+
+      return { ok: false, reason: 'invalid' };
+    }
+
+    // Single-use: mark consumed and reset failure counters
+    await client.query(`UPDATE email_otp SET consumed = TRUE WHERE id = $1`, [row.id]);
+    await client.query(
       `UPDATE "user"
        SET verification_failed_attempts = 0, verification_locked_until = NULL
        WHERE id = $1`,
       [userId],
     );
-  }
 
-  const { rows } = await pool.query<OtpRow>(
-    `SELECT id, user_id, otp_hash, expires_at, attempts
-     FROM email_otp
-     WHERE user_id = $1 AND consumed = FALSE
-     ORDER BY created_at DESC LIMIT 1`,
-    [userId],
-  );
-  const row = rows[0];
-  if (!row || new Date(row.expires_at).getTime() <= Date.now()) {
-    return { ok: false, reason: 'expired' };
-  }
-
-  if (row.attempts >= OTP_MAX_ATTEMPTS) {
-    await pool.query(`UPDATE email_otp SET consumed = TRUE WHERE id = $1`, [row.id]);
-    return { ok: false, reason: 'locked' };
-  }
-
-  const candidateHash = hashOtp(userId, otp);
-  const isMatch = safeCompareHex(candidateHash, row.otp_hash);
-
-  if (!isMatch) {
-    // Increment both row attempts and cumulative account failures
-    await pool.query(
-      `UPDATE email_otp SET attempts = attempts + 1 WHERE id = $1`,
-      [row.id],
-    );
-    const { rows: updatedUser } = await pool.query<{ verification_failed_attempts: number }>(
-      `UPDATE "user"
-       SET verification_failed_attempts = verification_failed_attempts + 1
-       WHERE id = $1
-       RETURNING verification_failed_attempts`,
-      [userId],
-    );
-
-    const cumulative = updatedUser[0]?.verification_failed_attempts ?? 0;
-    if (cumulative >= CUMULATIVE_MAX_ATTEMPTS) {
-      await pool.query(
-        `UPDATE "user" SET verification_locked_until = NOW() + INTERVAL '1 hour' WHERE id = $1`,
-        [userId],
-      );
-      await pool.query(`UPDATE email_otp SET consumed = TRUE WHERE id = $1`, [row.id]);
-      return { ok: false, reason: 'locked' };
-    }
-
-    if (row.attempts + 1 >= OTP_MAX_ATTEMPTS) {
-      await pool.query(`UPDATE email_otp SET consumed = TRUE WHERE id = $1`, [row.id]);
-      return { ok: false, reason: 'locked' };
-    }
-
-    return { ok: false, reason: 'invalid' };
-  }
-
-  // Single-use: mark consumed and reset failure counters
-  await pool.query(`UPDATE email_otp SET consumed = TRUE WHERE id = $1`, [row.id]);
-  await pool.query(
-    `UPDATE "user"
-     SET verification_failed_attempts = 0, verification_locked_until = NULL
-     WHERE id = $1`,
-    [userId],
-  );
-
-  return { ok: true, otpId: row.id };
+    return { ok: true, otpId: row.id };
+  });
 }
 
 export async function purgeOtps(): Promise<number> {

@@ -213,7 +213,8 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
           switchMode("signup");
           setSignupScreen("verify");
           setError(
-            "Account unverified. A verification code has been dispatched to your email.",
+            res.message ||
+              "Email not verified. Enter your 6-digit verification code.",
           );
           return;
         }
@@ -352,7 +353,13 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const handleResendCode = async () => {
     if (verificationCountdown > 0) return;
-    await resendOtp(email);
+    const res = await resendOtp(email);
+    if (!res.success) {
+      setError(
+        res.message || "Could not resend code. Please wait before trying again.",
+      );
+      return;
+    }
     setVerificationCode("");
     setVerificationCountdown(60);
     setError("");
