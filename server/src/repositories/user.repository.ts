@@ -148,12 +148,12 @@ export async function updateUserRole(id: string, role: Role): Promise<SafeUser |
   const { rows } = await pool.query<SafeUserRow>(
     `UPDATE "user"
      SET role = $2,
-         is_student = ($2 = 'school_user'),
-         is_admin = ($2 IN ('admin', 'super_admin')),
+         is_student = $3,
+         is_admin = $4,
          updated_at = NOW()
      WHERE id = $1
      RETURNING ${SAFE_USER_COLUMNS}`,
-    [id, role],
+    [id, role, role === 'school_user', role !== 'school_user'],
   );
   return rows[0] ? toSafeUser(rows[0]) : null;
 }
@@ -193,7 +193,31 @@ export async function deleteUser(id: string): Promise<boolean> {
 
 export async function countSuperAdmins(): Promise<number> {
   const { rows } = await pool.query<{ count: string }>(
-    `SELECT COUNT(*)::text AS count FROM "user" WHERE role = 'super_admin'`,
+    `SELECT COUNT(*)::text AS count FROM "user" WHERE role = 'super_admin' AND is_active = TRUE`,
   );
   return Number(rows[0]?.count ?? 0);
+}
+
+/**
+ * Serializes mutations that could remove/deactivate an active super_admin so
+ * concurrent requests can never leave the system with zero active super_admins.
+ */
+export async function runWithActiveSuperAdminGuard<T>(
+  fn: (activeSuperAdminCount: number) => Promise<T>,
+): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query<{ id: string }>(
+      `SELECT id FROM "user" WHERE role = 'super_admin' AND is_active = TRUE FOR UPDATE`,
+    );
+    const result = await fn(rows.length);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }

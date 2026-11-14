@@ -10,7 +10,12 @@ import { useBuildings } from "@/hooks/useBuildings";
 import type { Item } from "@/data/mockItems";
 import { toClientItem } from "@/lib/itemAdapter";
 import { useCreateItem, useUpdateItem } from "@/hooks/useItems";
-import { useCategoryMap, getCategoryUuid } from "@/hooks/useCategories";
+import {
+  formatCategoryLabel,
+  getCategoryUuid,
+  useCategories,
+  useCategoryMap,
+} from "@/hooks/useCategories";
 import { uploadFoundImage, uploadImages } from "@/services/itemService";
 import { localTodayDate } from "@/lib/date";
 import toast from "react-hot-toast";
@@ -141,6 +146,13 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const createItemMutation = useCreateItem();
   const updateItemMutation = useUpdateItem();
   const categoryMap = useCategoryMap();
+  const { data: serverCategories } = useCategories();
+  const categoryOptions = serverCategories
+    ? serverCategories.map((entry) => ({
+        id: entry.name,
+        label: formatCategoryLabel(entry.name),
+      }))
+    : ITEM_CATEGORIES;
   const { data: buildings } = useBuildings();
   const buildingOptions = buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
   const isMobileView = useIsMobileView();
@@ -499,7 +511,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       errors["report-location"] = "Use 500 characters or fewer.";
     }
 
-    if (!ITEM_CATEGORIES.some((option) => option.id === category)) {
+    if (!categoryOptions.some((option) => option.id === category)) {
       errors["report-category"] = "Choose a category.";
     }
 
@@ -1115,7 +1127,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   <option value="" disabled>
                     Select category
                   </option>
-                  {ITEM_CATEGORIES.map((categoryOption) => (
+                  {categoryOptions.map((categoryOption) => (
                     <option key={categoryOption.id} value={categoryOption.id}>
                       {categoryOption.label}
                     </option>

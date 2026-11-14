@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
+  CannotRevokeOsaReceiptError,
   categoryExists,
   createItem,
   deleteItem,
@@ -12,6 +13,7 @@ import {
   updateItem,
   updateOsaReceipt,
 } from '../repositories/item.repository';
+import { recordAuditLog } from '../repositories/audit-log.repository';
 import { REPORT_TYPES, type ReportType } from '../types/items';
 import { fetchRemoteImageBuffer, generateBlurredImage } from '../utils/image-blur';
 import { isDriveConfigured, uploadFileToDrive } from '../utils/google-drive';
@@ -24,6 +26,30 @@ const itemTimeSchema = z
   .trim()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be HH:MM');
 
+const ALLOWED_IMAGE_HOSTS = new Set([
+  'lh3.googleusercontent.com',
+  'drive.google.com',
+  'drive.usercontent.google.com',
+]);
+
+export function isTrustedImageUrl(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith('/api/') && !trimmed.startsWith('//')) return true;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === 'https:' && ALLOWED_IMAGE_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+const imageUrlSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine(isTrustedImageUrl, 'Image URL must come from approved storage.');
+
 const createItemSchema = z.object({
   reportType: z.enum(REPORT_TYPES),
   name: z.string().trim().min(2, 'Item name must be at least 2 characters').max(100),
@@ -35,26 +61,26 @@ const createItemSchema = z.object({
   building: z.string().trim().min(1).max(100).optional(),
   location: z.string().trim().min(1).max(500).optional(),
   importantDetails: z.string().trim().min(1).max(2000).optional(),
-  image: z.string().trim().min(1).optional(),
-  images: z.array(z.string().trim().min(1)).max(10).optional(),
-  blurredImage: z.string().trim().min(1).optional(),
-  blurredImages: z.array(z.string().trim().min(1)).max(10).optional(),
+  image: imageUrlSchema.optional(),
+  images: z.array(imageUrlSchema).max(10).optional(),
+  blurredImage: imageUrlSchema.optional(),
+  blurredImages: z.array(imageUrlSchema).max(10).optional(),
 });
 
 const updateItemSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   description: z.string().trim().min(10).max(2000).optional(),
   itemDate: itemDateSchema.optional(),
-  itemTime: itemTimeSchema.optional(),
+  itemTime: z.union([itemTimeSchema, z.literal(''), z.null()]).optional(),
   categoryId: z.string().uuid('categoryId must be a UUID').optional(),
-  color: z.string().trim().min(1).max(50).optional(),
-  importantDetails: z.string().trim().min(1).max(2000).optional(),
-  building: z.string().trim().min(1).max(100).optional(),
-  location: z.string().trim().min(1).max(500).optional(),
-  image: z.string().trim().min(1).optional(),
-  images: z.array(z.string().trim().min(1)).max(10).optional(),
-  blurredImage: z.string().trim().min(1).optional(),
-  blurredImages: z.array(z.string().trim().min(1)).max(10).optional(),
+  color: z.union([z.string().trim().max(50), z.null()]).optional(),
+  importantDetails: z.union([z.string().trim().max(2000), z.null()]).optional(),
+  building: z.union([z.string().trim().max(100), z.null()]).optional(),
+  location: z.union([z.string().trim().max(500), z.null()]).optional(),
+  image: imageUrlSchema.optional(),
+  images: z.array(imageUrlSchema).max(10).optional(),
+  blurredImage: imageUrlSchema.optional(),
+  blurredImages: z.array(imageUrlSchema).max(10).optional(),
 });
 
 const updateOsaReceiptSchema = z.object({
@@ -177,12 +203,14 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
     res.status(403).json({ message: 'You can only edit your own reports.' });
     return;
   }
-  if (parsed.data.categoryId && !(await categoryExists(parsed.data.categoryId))) {
-    res.status(400).json({ message: 'Unknown categoryId.' });
+  if (owner.hasResolvedRequest) {
+    res.status(409).json({
+      message: 'Cannot edit a report with an approved, claimed, or returned request.',
+    });
     return;
   }
-  if (parsed.data.building && !parsed.data.location) {
-    res.status(400).json({ message: 'location is required when changing building.' });
+  if (parsed.data.categoryId && !(await categoryExists(parsed.data.categoryId))) {
+    res.status(400).json({ message: 'Unknown categoryId.' });
     return;
   }
   const data = parsed.data;
@@ -200,6 +228,15 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
     isAdminUser(req),
     req.user!.sub,
   );
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: 'updated',
+    entityType: 'item',
+    entityId: id,
+    summary: `Updated item report "${updated?.name ?? owner.name}"`,
+  });
   res.json({ message: 'Item report updated.', item: updated });
 }
 
@@ -212,11 +249,29 @@ export async function updateItemOsaReceipt(req: Request, res: Response): Promise
     zodError(res, parsed.error);
     return;
   }
-  const updated = await updateOsaReceipt(id, parsed.data.receivedByOsa, req.user!.sub);
+  let updated;
+  try {
+    updated = await updateOsaReceipt(id, parsed.data.receivedByOsa, req.user!.sub);
+  } catch (err) {
+    if (err instanceof CannotRevokeOsaReceiptError) {
+      res.status(409).json({ message: err.message });
+      return;
+    }
+    throw err;
+  }
   if (!updated) {
     res.status(404).json({ message: 'Found item report not found.' });
     return;
   }
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: 'updated',
+    entityType: 'item',
+    entityId: id,
+    summary: `Marked "${updated.name}" as ${parsed.data.receivedByOsa ? 'received by OSA' : 'awaiting OSA'}`,
+  });
   res.json({ message: 'OSA receipt status updated.', item: updated });
 }
 
@@ -233,7 +288,22 @@ export async function removeItemReport(req: Request, res: Response): Promise<voi
     res.status(403).json({ message: 'You can only delete your own reports.' });
     return;
   }
+  if (owner.hasResolvedRequest) {
+    res.status(409).json({
+      message: 'Cannot delete a report with an approved, claimed, or returned request.',
+    });
+    return;
+  }
   await deleteItem(id);
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: 'deleted',
+    entityType: 'item',
+    entityId: id,
+    summary: `Deleted item report "${owner.name}"`,
+  });
   res.json({ message: 'Item report deleted.' });
 }
 
@@ -255,9 +325,18 @@ export async function getBlurredItemImage(req: Request, res: Response): Promise<
     return;
   }
 
-  // If already pre-blurred in Drive, redirect to high-performance CDN
-  if (imgData.blurredImageUrl && imgData.blurredImageUrl.startsWith('http')) {
+  // Only redirect to vetted Drive HTTPS URLs (prevents open redirects)
+  if (
+    imgData.blurredImageUrl &&
+    imgData.blurredImageUrl.startsWith('https://') &&
+    isTrustedImageUrl(imgData.blurredImageUrl)
+  ) {
     res.redirect(imgData.blurredImageUrl);
+    return;
+  }
+
+  if (!imgData.imageUrl.startsWith('https://') || !isTrustedImageUrl(imgData.imageUrl)) {
+    res.status(400).json({ message: 'Untrusted source image URL.' });
     return;
   }
 

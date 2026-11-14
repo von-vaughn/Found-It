@@ -7,7 +7,7 @@ import {
   actionLabel,
   entityTypeLabel,
   filterAuditLogs,
-  loadAuditLogs,
+  useAuditLogs,
 } from "@/lib/auditLog";
 
 const PAGE_SIZE = 10;
@@ -33,9 +33,9 @@ function initials(name: string): string {
 export function AuditLogsPage() {
   const [query, setQuery] = useState("");
   const [actionFilter, setActionFilter] = useState("All actions");
-  const [entityFilter, setEntityFilter] = useState("All reports");
+  const [entityFilter, setEntityFilter] = useState("All types");
   const [currentPage, setCurrentPage] = useState(1);
-  const [logs] = useState(loadAuditLogs);
+  const { data: logs = [], isLoading, isError, refetch } = useAuditLogs();
 
   const filtered = useMemo(
     () => filterAuditLogs(logs, { query, action: actionFilter, entityType: entityFilter }),
@@ -51,26 +51,22 @@ export function AuditLogsPage() {
   const exportCsv = () => {
     const header = [
       "timestamp",
-      "admin_name",
-      "admin_email",
-      "admin_role",
+      "actor_name",
+      "actor_role",
       "action",
-      "report_type",
-      "report_id",
-      "item_title",
-      "details",
+      "entity_type",
+      "entity_id",
+      "summary",
     ];
     const rows = filtered.map((log) =>
       [
-        log.timestamp,
-        log.adminName,
-        log.adminEmail,
-        log.adminRole,
+        log.createdAt,
+        log.actorName,
+        log.actorRole,
         log.action,
         log.entityType,
         log.entityId,
-        log.itemTitle,
-        (log.details ?? "").replace(/\s+/g, " ").trim(),
+        log.summary.replace(/\s+/g, " ").trim(),
       ]
         .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
         .join(","),
@@ -95,10 +91,10 @@ export function AuditLogsPage() {
         setQuery(value);
         setCurrentPage(1);
       }}
-      searchPlaceholder="Search by admin, report ID, or item…"
+      searchPlaceholder="Search by super admin, ID, or summary…"
     >
       <Panel
-        title="Who approved or rejected what"
+        title="Super admin audit trail"
         action={
           <div className="flex items-center gap-2">
             <span className="text-xs text-neutral-500 dark:text-neutral-400">{filtered.length} events</span>
@@ -130,12 +126,15 @@ export function AuditLogsPage() {
               <option>All actions</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
-              <option value="returned">Returned</option>
               <option value="claimed">Claimed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="returned">Returned</option>
+              <option value="published">Published</option>
+              <option value="created">Created</option>
+              <option value="updated">Updated</option>
+              <option value="deleted">Deleted</option>
             </select>
             <label className="sr-only" htmlFor="audit-entity-filter">
-              Filter by report type
+              Filter by entity type
             </label>
             <select
               id="audit-entity-filter"
@@ -146,15 +145,35 @@ export function AuditLogsPage() {
               }}
               className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
-              <option>All reports</option>
+              <option>All types</option>
               <option>Claim</option>
               <option>Return</option>
               <option>Item</option>
+              <option>User</option>
+              <option>Category</option>
+              <option>Building</option>
             </select>
           </div>
         </div>
 
-        {pageLogs.length === 0 ? (
+        {isLoading ? (
+          <div className="flex min-h-[400px] items-center justify-center px-5 py-10">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading audit logs…</p>
+          </div>
+        ) : isError ? (
+          <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-5 py-10">
+            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+              Could not load audit logs.
+            </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900"
+            >
+              Retry
+            </button>
+          </div>
+        ) : pageLogs.length === 0 ? (
           <div className="flex min-h-[400px] items-center justify-center px-5 py-10">
             <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
               No audit events match these filters.
@@ -165,10 +184,10 @@ export function AuditLogsPage() {
             <table className="w-full min-w-[1020px] text-left text-xs">
               <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <tr>
-                  <th scope="col" className="px-5 py-3">Admin</th>
-                  <th scope="col" className="px-4 py-3">Decision</th>
-                  <th scope="col" className="px-4 py-3">Report</th>
-                  <th scope="col" className="px-4 py-3">Details</th>
+                  <th scope="col" className="px-5 py-3">Super Admin</th>
+                  <th scope="col" className="px-4 py-3">Action</th>
+                  <th scope="col" className="px-4 py-3">Target</th>
+                  <th scope="col" className="px-4 py-3">Summary</th>
                   <th scope="col" className="px-5 py-3">Date</th>
                 </tr>
               </thead>
@@ -181,14 +200,14 @@ export function AuditLogsPage() {
                           aria-hidden="true"
                           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-bold text-white"
                         >
-                          {initials(log.adminName)}
+                          {initials(log.actorName)}
                         </span>
                         <span className="min-w-0">
                           <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">
-                            {log.adminName}
+                            {log.actorName}
                           </span>
                           <span className="block truncate text-[11px] text-neutral-500 dark:text-neutral-400">
-                            {log.adminEmail} · {log.adminRole}
+                            {log.actorRole}
                           </span>
                         </span>
                       </div>
@@ -198,19 +217,19 @@ export function AuditLogsPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <span className="block font-semibold text-neutral-900 dark:text-neutral-100">
-                        {log.itemTitle}
+                        {entityTypeLabel(log.entityType)}
                       </span>
-                      <span className="mt-0.5 block text-[11px] text-neutral-500 dark:text-neutral-400">
-                        {entityTypeLabel(log.entityType)} · {log.entityId}
+                      <span className="mt-0.5 block font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
+                        {log.entityId}
                       </span>
                     </td>
                     <td className="max-w-72 px-4 py-3.5">
                       <span className="line-clamp-2 leading-relaxed">
-                        {log.details || "—"}
+                        {log.summary || "—"}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-5 py-3.5">
-                      {formatTimestamp(log.timestamp)}
+                      {formatTimestamp(log.createdAt)}
                     </td>
                   </tr>
                 ))}

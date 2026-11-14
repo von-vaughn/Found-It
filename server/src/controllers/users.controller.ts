@@ -1,15 +1,16 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
-  countSuperAdmins,
   createUser,
   deleteUser,
   findUserByEmail,
   findUserById,
   listUsers,
+  runWithActiveSuperAdminGuard,
   setUserActive,
   updateUserRole,
 } from '../repositories/user.repository';
+import { recordAuditLog } from '../repositories/audit-log.repository';
 import { revokeAllUserTokens } from '../repositories/refresh-token.repository';
 import { ROLES, type Role } from '../types/roles';
 import { hashPassword } from '../utils/password';
@@ -98,6 +99,16 @@ export async function createAdminUser(req: Request, res: Response): Promise<void
     throw error;
   }
 
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: 'created',
+    entityType: 'user',
+    entityId: created.id,
+    summary: `Created ${role} account for ${created.email}`,
+  });
+
   res.status(201).json({
     message: 'Admin account created.',
     user: { ...created, reportCount: 0 },
@@ -156,20 +167,47 @@ export async function changeUserRole(req: Request, res: Response): Promise<void>
     return;
   }
   if (target.role === 'super_admin' && parsed.data.role !== 'super_admin') {
-    const count = await countSuperAdmins();
-    if (count <= 1) {
-      res.status(400).json({ message: 'Cannot demote the last super_admin.' });
+    const updated = await runWithActiveSuperAdminGuard(async (count) => {
+      if (target.isActive && count <= 1) return null;
+      return updateUserRole(target.id, parsed.data.role);
+    });
+    if (!updated) {
+      res.status(400).json({ message: 'Cannot demote the last active super_admin.' });
       return;
     }
+    await revokeAllUserTokens(target.id);
+    await recordAuditLog({
+      actorId: req.user!.sub,
+      actorEmail: req.user!.email,
+      actorRole: req.user!.role,
+      action: 'updated',
+      entityType: 'user',
+      entityId: target.id,
+      summary: `Changed role for ${target.email} from ${target.role} to ${parsed.data.role}`,
+    });
+    res.json({ message: `Role updated to ${parsed.data.role}.`, user: updated });
+    return;
   }
   const updated = await updateUserRole(target.id, parsed.data.role);
+  if (updated && target.role !== parsed.data.role) {
+    await revokeAllUserTokens(target.id);
+    await recordAuditLog({
+      actorId: req.user!.sub,
+      actorEmail: req.user!.email,
+      actorRole: req.user!.role,
+      action: 'updated',
+      entityType: 'user',
+      entityId: target.id,
+      summary: `Changed role for ${target.email} from ${target.role} to ${parsed.data.role}`,
+    });
+  }
   res.json({ message: `Role updated to ${parsed.data.role}.`, user: updated });
 }
 
 /**
  * PATCH /api/users/:id/status — admin + super_admin.
  * admin may only (de)activate plain `school_user`s; super_admin may touch anyone except self.
- * Cannot deactivate the last super_admin.
+ * Cannot deactivate the last active super_admin.
  */
 export async function changeUserStatus(req: Request, res: Response): Promise<void> {
   const id = getId(req);
@@ -192,15 +230,26 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
     res.status(403).json({ message: 'Admins can only manage users with role "school_user".' });
     return;
   }
-  if (!parsed.data.isActive && target.role === 'super_admin') {
-    const count = await countSuperAdmins();
-    if (count <= 1) {
-      res.status(400).json({ message: 'Cannot deactivate the last super_admin.' });
-      return;
-    }
+  const updated = !parsed.data.isActive && target.role === 'super_admin'
+    ? await runWithActiveSuperAdminGuard(async (count) => {
+        if (target.isActive && count <= 1) return null;
+        return setUserActive(target.id, false);
+      })
+    : await setUserActive(target.id, parsed.data.isActive);
+  if (!updated && !parsed.data.isActive && target.role === 'super_admin') {
+    res.status(400).json({ message: 'Cannot deactivate the last active super_admin.' });
+    return;
   }
-  const updated = await setUserActive(target.id, parsed.data.isActive);
   if (!parsed.data.isActive) await revokeAllUserTokens(target.id);
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: 'updated',
+    entityType: 'user',
+    entityId: target.id,
+    summary: `${parsed.data.isActive ? 'Activated' : 'Deactivated'} user ${target.email}`,
+  });
   res.json({ message: parsed.data.isActive ? 'User activated.' : 'User deactivated.', user: updated });
 }
 
@@ -224,12 +273,25 @@ export async function removeUser(req: Request, res: Response): Promise<void> {
     return;
   }
   if (target.role === 'super_admin') {
-    const count = await countSuperAdmins();
-    if (count <= 1) {
-      res.status(400).json({ message: 'Cannot delete the last super_admin.' });
+    const deleted = await runWithActiveSuperAdminGuard(async (count) => {
+      if (target.isActive && count <= 1) return false;
+      return deleteUser(target.id);
+    });
+    if (!deleted) {
+      res.status(400).json({ message: 'Cannot delete the last active super_admin.' });
       return;
     }
+  } else {
+    await deleteUser(target.id);
   }
-  await deleteUser(target.id);
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: 'deleted',
+    entityType: 'user',
+    entityId: target.id,
+    summary: `Deleted user ${target.email}`,
+  });
   res.json({ message: 'User deleted.' });
 }

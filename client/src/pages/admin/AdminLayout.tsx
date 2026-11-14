@@ -260,11 +260,6 @@ export function AdminLayout({
             />
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {isSuperAdmin && (
-              <span className="hidden shrink-0 rounded-md bg-neutral-900 dark:bg-neutral-100 dark:bg-neutral-800 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white dark:text-neutral-900 dark:text-neutral-100 sm:inline-block">
-                Super admin
-              </span>
-            )}
             <AdminAccountMenu />
           </div>
         </header>
@@ -291,11 +286,6 @@ export function AdminLayout({
             activeSection !== "returns" && (
             <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div className="min-w-0">
-                {isSuperAdmin && (
-                  <p className="mb-1 inline-flex rounded-md bg-neutral-900 dark:bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white dark:text-neutral-900 dark:text-neutral-100">
-                    Super admin
-                  </p>
-                )}
                 <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-2xl">
                   {copy.title}
                 </h1>

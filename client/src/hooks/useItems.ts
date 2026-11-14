@@ -106,6 +106,7 @@ export function useCreateItem() {
       // item shows up immediately on the dashboard and profile pages.
       queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
       queryClient.invalidateQueries({ queryKey: itemKeys.mine() });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
 }
@@ -122,6 +123,7 @@ export function useUpdateItem() {
       queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
       queryClient.invalidateQueries({ queryKey: itemKeys.mine() });
       queryClient.invalidateQueries({ queryKey: itemKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
 }
@@ -136,6 +138,7 @@ export function useUpdateOsaReceipt() {
       queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
       queryClient.invalidateQueries({ queryKey: itemKeys.mine() });
       queryClient.invalidateQueries({ queryKey: itemKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
 }
@@ -151,6 +154,7 @@ export function useDeleteItem() {
       queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
       queryClient.invalidateQueries({ queryKey: itemKeys.mine() });
       queryClient.removeQueries({ queryKey: itemKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
 }

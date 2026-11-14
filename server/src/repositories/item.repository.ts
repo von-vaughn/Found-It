@@ -199,9 +199,10 @@ export async function createItemWithClient(client: PoolClient, input: {
   blurredImages?: string[];
 }): Promise<{ id: string }> {
   const buildingId = input.building ? await upsertBuilding(client, input.building) : null;
-  const locationId = input.location
-    ? await upsertLocation(client, buildingId, input.location)
-    : null;
+  const locationId =
+    input.location !== undefined || buildingId !== null
+      ? await upsertLocation(client, buildingId, input.location ?? '')
+      : null;
   const { rows: reportRows } = await client.query<{ id: string }>(
     `INSERT INTO report (user_id, report_type, date, time, important_details, location_id)
      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
@@ -322,15 +323,39 @@ export async function listItems(
   return rows.map((row) => toItem(row, isAdmin, viewerId));
 }
 
-/** Returns reporterId for ownership checks (no reporter PII attached). */
-export async function findItemOwner(id: string): Promise<{ reporterId: string } | null> {
-  const { rows } = await pool.query<{ reporter_id: string }>(
-    `SELECT r.user_id AS reporter_id
+/** Returns reporterId, item name, and resolved-request status for ownership & guard checks. */
+export async function findItemOwner(
+  id: string,
+): Promise<{ reporterId: string; name: string; hasResolvedRequest: boolean } | null> {
+  const { rows } = await pool.query<{
+    reporter_id: string;
+    name: string;
+    has_resolved_request: boolean;
+  }>(
+    `SELECT r.user_id AS reporter_id, i.name,
+       EXISTS (
+         SELECT 1 FROM request resolved_request
+         WHERE resolved_request.item_id = i.id
+           AND resolved_request.status IN ('approved', 'claimed', 'returned')
+       ) AS has_resolved_request
      FROM item i JOIN report r ON r.id = i.report_id
      WHERE i.id = $1 LIMIT 1`,
     [id],
   );
-  return rows[0] ? { reporterId: rows[0].reporter_id } : null;
+  return rows[0]
+    ? {
+        reporterId: rows[0].reporter_id,
+        name: rows[0].name,
+        hasResolvedRequest: rows[0].has_resolved_request,
+      }
+    : null;
+}
+
+export class CannotRevokeOsaReceiptError extends Error {
+  constructor() {
+    super('Cannot undo OSA receipt after a request on this item has already been approved or completed.');
+    this.name = 'CannotRevokeOsaReceiptError';
+  }
 }
 
 export async function updateItem(
@@ -339,12 +364,12 @@ export async function updateItem(
     name?: string;
     description?: string;
     itemDate?: string;
-    itemTime?: string;
+    itemTime?: string | null;
     categoryId?: string;
-    color?: string;
-    importantDetails?: string;
-    building?: string;
-    location?: string;
+    color?: string | null;
+    importantDetails?: string | null;
+    building?: string | null;
+    location?: string | null;
     images?: string[];
     blurredImages?: string[];
   },
@@ -366,7 +391,7 @@ export async function updateItem(
     itemFields.push(`category_id = $${itemValues.length + 1}`);
   }
   if (updates.color !== undefined) {
-    itemValues.push(updates.color);
+    itemValues.push(updates.color || null);
     itemFields.push(`primary_color = $${itemValues.length + 1}`);
   }
 
@@ -386,31 +411,43 @@ export async function updateItem(
       reportFields.push(`date = $${reportValues.length + 1}`);
     }
     if (updates.itemTime !== undefined) {
-      reportValues.push(updates.itemTime);
+      reportValues.push(updates.itemTime || null);
       reportFields.push(`time = $${reportValues.length + 1}`);
     }
     if (updates.importantDetails !== undefined) {
-      reportValues.push(updates.importantDetails);
+      reportValues.push(updates.importantDetails || null);
       reportFields.push(`important_details = $${reportValues.length + 1}`);
     }
-    if (updates.location !== undefined) {
-      let buildingId: string | null = null;
-      if (updates.building !== undefined) {
-        buildingId = updates.building ? await upsertBuilding(client, updates.building) : null;
+    if (updates.location !== undefined || updates.building !== undefined) {
+      const existingLoc = await client.query<{
+        building_id: string | null;
+        description: string | null;
+      }>(
+        `SELECT l.building_id, l.description
+         FROM item i
+         JOIN report r ON r.id = i.report_id
+         LEFT JOIN location l ON l.id = r.location_id
+         WHERE i.id = $1 LIMIT 1`,
+        [id],
+      );
+      const buildingId =
+        updates.building !== undefined
+          ? updates.building
+            ? await upsertBuilding(client, updates.building)
+            : null
+          : existingLoc.rows[0]?.building_id ?? null;
+      const locationDesc =
+        updates.location !== undefined
+          ? updates.location ?? ''
+          : existingLoc.rows[0]?.description ?? '';
+
+      if (!locationDesc && !buildingId) {
+        reportFields.push(`location_id = NULL`);
       } else {
-        const existingLoc = await client.query<{ building_id: string | null }>(
-          `SELECT l.building_id
-           FROM item i
-           JOIN report r ON r.id = i.report_id
-           LEFT JOIN location l ON l.id = r.location_id
-           WHERE i.id = $1 LIMIT 1`,
-          [id],
-        );
-        buildingId = existingLoc.rows[0]?.building_id ?? null;
+        const locationId = await upsertLocation(client, buildingId, locationDesc);
+        reportValues.push(locationId);
+        reportFields.push(`location_id = $${reportValues.length + 1}`);
       }
-      const locationId = await upsertLocation(client, buildingId, updates.location);
-      reportValues.push(locationId);
-      reportFields.push(`location_id = $${reportValues.length + 1}`);
     }
     if (reportFields.length > 0) {
       await client.query(
@@ -447,6 +484,19 @@ export async function updateOsaReceipt(
   receivedByOsa: boolean,
   viewerId: string,
 ): Promise<Item | null> {
+  if (!receivedByOsa) {
+    const { rows: resolved } = await pool.query<{ id: string }>(
+      `SELECT rq.id
+       FROM request rq
+       WHERE rq.item_id = $1
+         AND rq.status IN ('approved', 'claimed', 'returned')
+       LIMIT 1`,
+      [id],
+    );
+    if (resolved[0]) {
+      throw new CannotRevokeOsaReceiptError();
+    }
+  }
   const { rowCount } = await pool.query(
     `UPDATE item AS i
      SET received_by_osa = $2, updated_at = NOW()

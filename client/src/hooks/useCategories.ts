@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
+
 export interface Category {
   id: string;   // UUID
   name: string; // slug like "electronics", "bags", etc.
@@ -10,10 +12,22 @@ interface CategoriesResponse {
   categories: Category[];
 }
 
+export function formatCategoryLabel(name: string): string {
+  return (
+    ITEM_CATEGORIES.find((category) => category.id === name)?.label ??
+    name.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+  );
+}
+
 /** Fetches all categories from the server. */
 export async function fetchCategories(): Promise<Category[]> {
   const { data } = await api.get<CategoriesResponse>("/categories");
   return data.categories;
+}
+
+export async function createCategory(name: string): Promise<Category> {
+  const { data } = await api.post<{ category: Category }>("/categories", { name });
+  return data.category;
 }
 
 export async function deleteCategory(id: string): Promise<void> {
@@ -40,12 +54,27 @@ export function useCategories() {
   });
 }
 
+export function useCreateCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    },
+  });
+}
+
 export function useDeleteCategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: deleteCategory,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    },
   });
 }
 

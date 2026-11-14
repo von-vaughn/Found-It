@@ -1,9 +1,12 @@
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { Header } from "@/components/school_user/Header";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import {
+  useDeleteNotification,
+  useDeleteReadNotifications,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
@@ -12,7 +15,7 @@ import {
   formatNotificationTime,
   notificationStatusLabel,
 } from "@/services/notificationService";
-import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -22,20 +25,18 @@ import {
 import type { ClaimRequest } from "@/types/claim";
 
 interface NotificationsPageProps {
-  items?: Item[];
   submittedClaims?: ClaimRequest[];
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export const NotificationsPage: React.FC<NotificationsPageProps> = ({
-  items: propItems,
   submittedClaims = [],
   filters,
   onFiltersChange,
 }) => {
   const navigate = useNavigate();
-  const items = propItems ?? EMPTY_ITEMS;
+  const items = EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const {
@@ -45,9 +46,12 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
   } = useNotifications();
   const markNotificationRead = useMarkNotificationRead();
   const markAllNotificationsRead = useMarkAllNotificationsRead();
+  const deleteNotification = useDeleteNotification();
+  const deleteReadNotifications = useDeleteReadNotifications();
   const unreadCount = notifications.filter(
     (notification) => !notification.isRead,
   ).length;
+  const readCount = notifications.length - unreadCount;
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -115,7 +119,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
               </p>
             </header>
 
-            <div className="mb-3 flex justify-end">
+            <div className="mb-3 flex items-center justify-end gap-4">
               {unreadCount > 0 && (
                 <button
                   type="button"
@@ -130,6 +134,22 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
                   className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 >
                   Mark all as read
+                </button>
+              )}
+              {readCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    deleteReadNotifications.mutate(undefined, {
+                      onError: () =>
+                        toast.error(
+                          "Could not clear read notifications. Please try again.",
+                        ),
+                    })
+                  }
+                  className="text-xs font-semibold text-neutral-600 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-neutral-400"
+                >
+                  Clear read
                 </button>
               )}
             </div>
@@ -150,16 +170,16 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
                 {notifications.map((notification) => (
                   <li
                     key={notification.id}
-                    className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 max-md:rounded-none max-md:border-x-0 max-md:border-t-0 max-md:last:border-b-0"
+                    className={`flex items-start gap-2 rounded-2xl border border-neutral-200/80 pr-2 dark:border-neutral-800 max-md:rounded-none max-md:border-x-0 max-md:border-t-0 max-md:last:border-b-0 ${
+                      notification.isRead
+                        ? ""
+                        : "bg-red-50/60 dark:bg-red-500/10"
+                    }`}
                   >
                     <button
                       type="button"
                       onClick={() => handleNotificationSelect(notification)}
-                      className={`block w-full rounded-2xl p-4 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:hover:bg-neutral-800 max-md:rounded-none ${
-                        notification.isRead
-                          ? ""
-                          : "bg-red-50/60 dark:bg-red-500/10"
-                      }`}
+                      className="block min-w-0 flex-1 rounded-2xl p-4 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:hover:bg-neutral-800 max-md:rounded-none"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
@@ -175,6 +195,22 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
                       <span className="mt-1.5 block text-[11px] text-neutral-400 dark:text-neutral-500">
                         {formatNotificationTime(notification.createdAt)}
                       </span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Clear notification: ${notification.title}`}
+                      title="Clear notification"
+                      onClick={() =>
+                        deleteNotification.mutate(notification.id, {
+                          onError: () =>
+                            toast.error(
+                              "Could not clear this notification. Please try again.",
+                            ),
+                        })
+                      }
+                      className="mt-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:hover:bg-neutral-700 dark:hover:text-neutral-100"
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </li>
                 ))}

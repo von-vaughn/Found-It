@@ -72,8 +72,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     setIsChanging(true);
     try {
       await authService.changePassword({ currentPassword, newPassword });
+      window.dispatchEvent(new Event("foundit:auth-unauthorized"));
       toast.success("Password changed. Please sign in with your new password.");
-      await logout();
       navigate("/", { replace: true });
     } catch (err: unknown) {
       const message =

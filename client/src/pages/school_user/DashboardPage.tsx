@@ -1,4 +1,5 @@
 import { useItems } from "@/hooks/useItems";
+import { formatCategoryLabel, useCategories } from "@/hooks/useCategories";
 import { toClientItems } from "@/lib/itemAdapter";
 import React, {
   useState,
@@ -22,13 +23,12 @@ import {
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
 import { SearchX } from "lucide-react";
-import { ITEM_CATEGORIES, type ItemCategory } from "@/data/itemCategories";
-import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import type { ClaimRequest } from "@/types/claim";
 
 interface DashboardPageProps {
   submittedClaims?: ClaimRequest[];
-  onAddItem?: (newItem: Item) => void;
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
@@ -51,9 +51,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const items = apiItems ?? EMPTY_ITEMS;
 
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
-  const [selectedCategory, setSelectedCategory] = useState<
-    "all" | ItemCategory
-  >("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [visibleCategoryCount, setVisibleCategoryCount] = useState(0);
   const categoryRowRef = useRef<HTMLDivElement>(null);
   const categoryMeasureRef = useRef<HTMLDivElement>(null);
@@ -87,10 +85,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setSearchParams(searchQuery ? { q: searchQuery } : {}, { replace: true });
   }, [searchQuery, searchParams, setSearchParams]);
 
-  const categories = [
-    { id: "all", label: "All" },
-    ...ITEM_CATEGORIES,
-  ] as const;
+  const { data: serverCategories } = useCategories();
+  const categories = useMemo(
+    () => [
+      { id: "all", label: "All" },
+      ...(serverCategories
+        ? serverCategories.map((category) => ({
+            id: category.name,
+            label: formatCategoryLabel(category.name),
+          }))
+        : ITEM_CATEGORIES),
+    ],
+    [serverCategories],
+  );
   const visibleCategories = categories.slice(0, visibleCategoryCount);
   const hasHiddenSelectedCategory = filters.categories.some(
     (categoryId) =>

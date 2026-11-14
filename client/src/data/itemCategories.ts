@@ -51,4 +51,6 @@ export const ITEM_CATEGORIES = [
   icon: LucideIcon;
 }[];
 
-export type ItemCategory = (typeof ITEM_CATEGORIES)[number]["id"];
+export type ItemCategory =
+  | (typeof ITEM_CATEGORIES)[number]["id"]
+  | (string & {});

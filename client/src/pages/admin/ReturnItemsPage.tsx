@@ -28,7 +28,6 @@ import {
   LockedValue,
 } from "@/components/admin/SensitiveDetails";
 import { useSensitiveUnlock } from "@/components/admin/useSensitiveUnlock";
-import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import type { ServerClaimStatus } from "@/services/claimService";
 import { toFoundReportClaims } from "@/lib/claimAdapter";
 import { extractIdNumberFromEmail } from "@/lib/idNumber";
@@ -478,7 +477,6 @@ export function ReturnItemsPage() {
 
   const { unlocked, promptOpen, requestUnlock, submitPassword, setPromptOpen } =
     useSensitiveUnlock();
-  const logDecision = useAuditDecision();
 
   const requestStatusChange = (requestId: string, status: StatusDecision) => {
     const target = requests.find((request) => request.id === requestId);
@@ -503,13 +501,6 @@ export function ReturnItemsPage() {
           toast.success("This return request was already posted as a found item.");
           return;
         }
-        logDecision({
-          action: "published",
-          entityType: "item",
-          entityId: result.itemId,
-          itemTitle: request.claimantTitle || request.item,
-          details: `Published rejected return request ${request.id} as a public found-item post.`,
-        });
         toast.success(`Posted "${request.claimantTitle || request.item}" as a found item.`);
       },
       onError: (error) => {
@@ -556,24 +547,6 @@ export function ReturnItemsPage() {
       return;
     }
 
-    logDecision({
-      action:
-        confirmAction.status === "Pending"
-          ? "cancelled"
-          : confirmAction.status === "Approved"
-            ? "approved"
-            : confirmAction.status === "Returned"
-              ? "returned"
-              : "rejected",
-      entityType: "return_request",
-      entityId: confirmAction.requestId,
-      itemTitle: confirmTargetRequest.item,
-      details: `${
-        confirmAction.status === "Pending"
-          ? "Approval cancelled; request returned to pending"
-          : confirmAction.status
-      } by super admin for return ${confirmAction.requestId} (${confirmTargetRequest.claimant}).`,
-    });
     if (confirmAction.status === "Approved") {
       toast.success(
         `Approved return of "${confirmTargetRequest.item}" for ${confirmTargetRequest.claimant}.`,

@@ -21,7 +21,7 @@ import { ItemCard } from "@/components/school_user/ItemCard";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
-import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
 import { useItemDetail, useDeleteItem, useItems } from "@/hooks/useItems";
@@ -34,8 +34,6 @@ import { UUID_RE } from "@/services/itemService";
 import type {
   ClaimRequest,
   NewClaimRequest,
-  NewReturnItemRequest,
-  ReturnItemRequest,
 } from "@/types/claim";
 import { ClaimEvidenceGallery } from "@/components/school_user/ClaimEvidenceGallery";
 import {
@@ -51,15 +49,9 @@ import {
 } from "@/components/school_user/itemFilters";
 
 interface ItemDetailPageProps {
-  items?: Item[];
   submittedClaims?: ClaimRequest[];
   foundReports?: ClaimRequest[];
-  returnRequests?: ReturnItemRequest[];
-  onAddItem?: (newItem: Item) => void;
-  onUpdateItem?: (updatedItem: Item) => void;
-  onDeleteItem?: (id: string) => void;
   onSubmitClaim?: (claim: NewClaimRequest) => void;
-  onSubmitReturnRequest?: (request: NewReturnItemRequest) => void;
   onUpdateClaimStatus?: (
     claimId: string,
     status: ClaimRequest["status"],
@@ -73,7 +65,6 @@ const finderStatusStyles: Record<string, string> = {
     "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
   "Pending admin approval":
     "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  "Under review": "bg-violet-50 dark:bg-violet-500/10 text-violet-800 dark:text-violet-400",
   Approved: "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-800 dark:text-cyan-400",
   Unreturned: "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-800 dark:text-cyan-400",
   Claimed: "bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400",
@@ -101,11 +92,8 @@ function keywordSet(value: string): Set<string> {
 }
 
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
-  items: propItems,
   submittedClaims = [],
   foundReports = [],
-  returnRequests = [],
-  onDeleteItem: propOnDeleteItem,
   onSubmitClaim,
   filters,
   onFiltersChange,
@@ -121,7 +109,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         ? "claims"
         : "home";
   const { user } = useAuth();
-  const items = propItems ?? EMPTY_ITEMS;
+  const items = EMPTY_ITEMS;
 
   const handleGoBack = () => {
     if (window.history.length > 1) {
@@ -188,16 +176,19 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!item) return;
-    propOnDeleteItem?.(item.id);
     if (UUID_RE.test(item.id)) {
-      deleteItemMutation.mutate(item.id, {
-        onError: (err) => {
-          console.error("Failed to delete item on server:", err);
-          toast.error("Failed to delete item from server.");
-        },
-      });
+      try {
+        await deleteItemMutation.mutateAsync(item.id);
+      } catch (err) {
+        const message =
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ?? "Failed to delete item from server.";
+        console.error("Failed to delete item on server:", err);
+        toast.error(message);
+        return;
+      }
     }
     setDeleteDialogOpen(false);
     toast.success("Your report was deleted.");
@@ -801,16 +792,8 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               </h2>
               <ul className="mt-4 space-y-3">
                   {finderReports.map((claim) => {
-                    const returnRequest = returnRequests.find(
-                      (request) => request.sourceClaimId === claim.id,
-                    );
-                    const rawStatus = returnRequest
-                      ? returnRequest.status === "Pending"
-                        ? "Pending admin approval"
-                        : returnRequest.status
-                      : claim.status;
                     const claimStatus =
-                      rawStatus === "Approved" ? "Unreturned" : rawStatus;
+                      claim.status === "Approved" ? "Unreturned" : claim.status;
 
                     return (
                       <li

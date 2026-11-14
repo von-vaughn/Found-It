@@ -7,7 +7,6 @@ import {
   countActiveFilters,
   defaultFilters,
 } from "@/components/school_user/itemFilters";
-import type { Item } from "@/data/mockItems";
 import { EMPTY_ITEMS } from "@/data/mockItems";
 import { useBrowseFilters } from "./useBrowseFilters";
 import { useItems } from "@/hooks/useItems";
@@ -15,11 +14,7 @@ import { toClientItems } from "@/lib/itemAdapter";
 import { useAuth } from "@/context/useAuth";
 import { paths } from "@/routes/paths";
 
-interface BrowseFiltersPageProps {
-  items: Item[];
-}
-
-export const BrowseFiltersPage: React.FC<BrowseFiltersPageProps> = () => {
+export const BrowseFiltersPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 

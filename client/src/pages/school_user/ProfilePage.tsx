@@ -8,7 +8,7 @@ import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import { useAuth } from "@/context/useAuth";
-import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -18,9 +18,7 @@ import {
 import type { ClaimRequest } from "@/types/claim";
 
 interface ProfilePageProps {
-  items?: Item[];
   submittedClaims?: ClaimRequest[];
-  onAddItem?: (newItem: Item) => void;
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
@@ -32,14 +30,13 @@ const DEFAULT_PROFILE = {
 };
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({
-  items: propItems,
   submittedClaims = [],
   filters,
   onFiltersChange,
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const items = propItems ?? EMPTY_ITEMS;
+  const items = EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const [reportFilter, setReportFilter] = useState<"all" | "lost" | "found">(
     "all",

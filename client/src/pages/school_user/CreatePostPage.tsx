@@ -9,26 +9,20 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import { useAuth } from "@/context/useAuth";
 import { useItemDetail } from "@/hooks/useItems";
 import { toClientItem } from "@/lib/itemAdapter";
 import type { ClaimRequest } from "@/types/claim";
 
 interface CreatePostPageProps {
-  items?: Item[];
   submittedClaims?: ClaimRequest[];
-  onAddItem?: (newItem: Item) => void;
-  onUpdateItem?: (updatedItem: Item) => void;
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export const CreatePostPage: React.FC<CreatePostPageProps> = ({
-  items: propItems,
   submittedClaims = [],
-  onAddItem,
-  onUpdateItem,
   filters,
   onFiltersChange,
 }) => {
@@ -40,7 +34,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
   const { data: serverItem, isLoading: isItemLoading } = useItemDetail(
     id ?? "",
   );
-  const items = propItems ?? EMPTY_ITEMS;
+  const items = EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,10 +42,9 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
     searchParams.get("type") === "found" ? "found" : "lost";
 
   const initialItem = useMemo(() => {
-    if (!id) return null;
-    if (serverItem) return toClientItem(serverItem);
-    return items.find((entry) => entry.id === id) ?? null;
-  }, [id, serverItem, items]);
+    if (!id || !serverItem) return null;
+    return toClientItem(serverItem);
+  }, [id, serverItem]);
 
   const isOwnReport = Boolean(
     serverItem && user?.id && serverItem.reporterId === user.id,
@@ -67,13 +60,11 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
     );
   };
 
-  const handleAddItem = (newItem: Item) => {
-    onAddItem?.(newItem);
+  const handleAddItem = () => {
     navigate("/dashboard");
   };
 
-  const handleUpdateItem = (updatedItem: Item) => {
-    onUpdateItem?.(updatedItem);
+  const handleUpdateItem = () => {
     navigate(id ? `/dashboard/items/${id}` : "/dashboard");
   };
 

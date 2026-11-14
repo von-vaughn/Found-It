@@ -9,19 +9,9 @@ import { UsersPage } from "@/pages/admin/UsersPage";
 import { AuditLogsPage } from "@/pages/admin/AuditLogsPage";
 import { FilterOptionsPage } from "@/pages/admin/FilterOptionsPage";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import type { Item } from "@/data/mockItems";
-import type { ReturnItemRequest } from "@/types/claim";
 import { paths } from "./paths";
 
-interface AdminRoutesOptions {
-  items: Item[];
-  onAddItem: (newItem: Item) => void;
-  returnRequests: ReturnItemRequest[];
-}
-
-export function getAdminRoutes({
-  onAddItem,
-}: AdminRoutesOptions): RouteObject[] {
+export function getAdminRoutes(): RouteObject[] {
   return [
     { path: paths.admin, element: <OverviewPage /> },
     {
@@ -30,7 +20,7 @@ export function getAdminRoutes({
     },
     {
       path: paths.adminItemsNew,
-      element: <AdminCreatePostPage onAddItem={onAddItem} />,
+      element: <AdminCreatePostPage />,
     },
     { path: paths.adminLost, element: <Navigate to={paths.adminItems} replace /> },
     { path: paths.adminFound, element: <Navigate to={paths.adminItems} replace /> },

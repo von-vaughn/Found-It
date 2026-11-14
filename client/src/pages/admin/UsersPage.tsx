@@ -14,6 +14,9 @@ import {
   updateAdminUserRole,
   updateAdminUserStatus,
 } from "@/services/adminUserService";
+import { itemKeys } from "@/hooks/useItems";
+import { claimKeys } from "@/hooks/useClaims";
+import { returnKeys } from "@/hooks/useReturns";
 import { AdminLayout } from "./AdminLayout";
 import { AdminAccountsManager, roleLabel } from "./AdminAccountsManager";
 
@@ -39,27 +42,33 @@ export function UsersPage() {
     staleTime: 30_000,
     retry: 1,
   });
+  const invalidateUserDependents = () => {
+    void queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
+    void queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+  };
+  const invalidateDeletedOrDeactivatedDependents = () => {
+    invalidateUserDependents();
+    void queryClient.invalidateQueries({ queryKey: itemKeys.all });
+    void queryClient.invalidateQueries({ queryKey: claimKeys.all });
+    void queryClient.invalidateQueries({ queryKey: returnKeys.all });
+  };
   const createUserMutation = useMutation({
     mutationFn: createAdminUser,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
+    onSuccess: invalidateUserDependents,
   });
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       updateAdminUserStatus(id, isActive),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
+    onSuccess: invalidateDeletedOrDeactivatedDependents,
   });
   const updateRoleMutation = useMutation({
     mutationFn: ({ id, role }: { id: string; role: AdminUserRole }) =>
       updateAdminUserRole(id, role),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
+    onSuccess: invalidateUserDependents,
   });
   const deleteUserMutation = useMutation({
     mutationFn: deleteAdminUser,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
+    onSuccess: invalidateDeletedOrDeactivatedDependents,
   });
   const [searchParams, setSearchParams] = useSearchParams();
   // Tab is derived from the URL so deep links (e.g. /admin/admins redirect) work.

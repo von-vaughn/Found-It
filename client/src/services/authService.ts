@@ -118,6 +118,14 @@ export const authService = {
     broadcastAuthEvent({ type: "LOGOUT" });
     return data;
   },
+
+  async verifyPassword(password: string): Promise<boolean> {
+    const { data } = await api.post<{ verified: boolean }>(
+      "/auth/verify-password",
+      { password },
+    );
+    return data.verified;
+  },
 };
 
 export default authService;

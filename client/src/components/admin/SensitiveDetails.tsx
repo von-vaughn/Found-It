@@ -8,20 +8,26 @@ export function AdminPasswordModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (password: string) => boolean;
+  onSubmit: (password: string) => Promise<boolean> | boolean;
 }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
 
   if (!open) return null;
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (onSubmit(password)) {
-      setPassword("");
-      setError("");
-    } else {
-      setError("Incorrect password. Please try again.");
+    setIsVerifying(true);
+    try {
+      if (await onSubmit(password)) {
+        setPassword("");
+        setError("");
+      } else {
+        setError("Incorrect password. Please try again.");
+      }
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -88,9 +94,10 @@ export function AdminPasswordModal({
           )}
           <button
             type="submit"
-            className="h-11 w-full rounded-xl bg-neutral-900 dark:bg-neutral-100 px-5 text-sm font-bold text-white dark:text-neutral-900 transition-colors hover:bg-neutral-700 dark:hover:bg-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+            disabled={isVerifying}
+            className="h-11 w-full rounded-xl bg-neutral-900 dark:bg-neutral-100 px-5 text-sm font-bold text-white dark:text-neutral-900 transition-colors hover:bg-neutral-700 dark:hover:bg-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:opacity-60"
           >
-            View details
+            {isVerifying ? "Verifying..." : "View details"}
           </button>
         </form>
       </div>

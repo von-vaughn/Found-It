@@ -144,7 +144,7 @@ function ClaimRequestSection({
                         : "Approved",
                   )
                 }
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-default disabled:bg-[#E5192D]"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#E5192D] disabled:opacity-50"
               >
                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
                 {claim.status === "Returned"

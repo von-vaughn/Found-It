@@ -1,21 +1,11 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CreatePostForm } from "@/components/school_user/CreatePostForm";
-import type { Item } from "@/data/mockItems";
 import { paths } from "@/routes/paths";
 import { AdminLayout } from "./AdminLayout";
 
-export function AdminCreatePostPage({
-  onAddItem,
-}: {
-  onAddItem?: (newItem: Item) => void;
-}) {
+export function AdminCreatePostPage() {
   const navigate = useNavigate();
-
-  const handleAddItem = (newItem: Item) => {
-    onAddItem?.(newItem);
-    navigate(paths.adminItems);
-  };
 
   return (
     <AdminLayout activeSection="items">
@@ -37,7 +27,7 @@ export function AdminCreatePostPage({
 
         <CreatePostForm
           active
-          onAddItem={handleAddItem}
+          onAddItem={() => {}}
           onSubmitted={() => navigate(paths.adminItems)}
           initialType="lost"
         />

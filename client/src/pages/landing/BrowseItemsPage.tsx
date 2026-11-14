@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Search, SearchX, SlidersHorizontal, Loader2 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import { formatCategoryLabel, useCategories } from "@/hooks/useCategories";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Item } from "@/data/mockItems";
 import { EMPTY_ITEMS } from "@/data/mockItems";
@@ -19,14 +20,9 @@ import { toClientItems } from "@/lib/itemAdapter";
 import { useAuth } from "@/context/useAuth";
 import { paths } from "@/routes/paths";
 
-interface BrowseItemsPageProps {
-  items: Item[];
-  onAddItem: (newItem: Item) => void;
-}
-
 type BrowseTab = "all" | "lost" | "found";
 
-export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = () => {
+export const BrowseItemsPage: React.FC = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -100,9 +96,15 @@ export const BrowseItemsPage: React.FC<BrowseItemsPageProps> = () => {
     setFilterModalOpen(true);
   };
 
+  const { data: serverCategories } = useCategories();
   const categories = [
     { id: "all", label: "All" },
-    ...ITEM_CATEGORIES,
+    ...(serverCategories
+      ? serverCategories.map((category) => ({
+          id: category.name,
+          label: formatCategoryLabel(category.name),
+        }))
+      : ITEM_CATEGORIES),
   ];
   const visibleCategories = categories.slice(0, visibleCategoryCount);
   const hasHiddenSelectedCategory = filters.categories.some(

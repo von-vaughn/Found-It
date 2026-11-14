@@ -367,6 +367,12 @@ export async function refresh(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    if (record.expiresAt.getTime() <= Date.now()) {
+      clearRefreshTokenCookie(res);
+      res.status(401).json({ message: 'Invalid or expired refresh token.' });
+      return;
+    }
+
     if (record.revoked) {
       // Grace window check: if rotated within 25 seconds, allow concurrent tab without penalizing
       if (
@@ -375,9 +381,9 @@ export async function refresh(req: Request, res: Response): Promise<void> {
         Date.now() - record.revokedAt.getTime() < 25000
       ) {
         const user = await findUserById(record.userId);
-        if (!user) {
+        if (!user || !user.isVerified) {
           clearRefreshTokenCookie(res);
-          res.status(401).json({ message: 'User no longer exists.' });
+          res.status(401).json({ message: 'User session is not valid.' });
           return;
         }
         if (!user.isActive) {
@@ -405,9 +411,9 @@ export async function refresh(req: Request, res: Response): Promise<void> {
     }
 
     const user = await findUserById(payload.sub);
-    if (!user) {
+    if (!user || !user.isVerified) {
       clearRefreshTokenCookie(res);
-      res.status(401).json({ message: 'User no longer exists.' });
+      res.status(401).json({ message: 'User session is not valid.' });
       return;
     }
     if (!user.isActive) {
@@ -492,4 +498,32 @@ export async function changePassword(req: Request, res: Response): Promise<void>
   clearRefreshTokenCookie(res);
 
   res.json({ message: 'Password changed successfully. Please sign in again with your new password.' });
+}
+
+const verifyPasswordSchema = z.object({
+  password: z.string().min(1, 'Password is required.').max(72),
+});
+
+/** POST /api/auth/verify-password — authenticated admin password confirmation. */
+export async function verifyAdminPassword(req: Request, res: Response): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: 'Not authenticated.' });
+    return;
+  }
+  const parsed = verifyPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+  const user = await findUserWithHashByEmail(req.user.email);
+  if (!user || !user.isActive) {
+    res.status(401).json({ message: 'User not found.' });
+    return;
+  }
+  const ok = await comparePassword(parsed.data.password, user.passwordHash);
+  if (!ok) {
+    res.status(403).json({ message: 'Incorrect password.' });
+    return;
+  }
+  res.json({ verified: true });
 }

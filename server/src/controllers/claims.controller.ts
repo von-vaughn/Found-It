@@ -12,6 +12,7 @@ import {
   updateClaim,
   updateClaimStatusById,
 } from "../repositories/request.repository";
+import { recordAuditLog } from "../repositories/audit-log.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
 import { UUID_RE } from "../validation/dates";
 
@@ -121,6 +122,15 @@ export async function updateAdminClaimStatus(
     });
     return;
   }
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: parsed.data.status,
+    entityType: "claim",
+    entityId: claim.id,
+    summary: `Marked claim for "${claim.item}" (${claim.claimant}) as ${parsed.data.status}`,
+  });
   res.json({ message: "Claim status updated.", claim });
 }
 

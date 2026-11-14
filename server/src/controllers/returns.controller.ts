@@ -15,7 +15,8 @@ import {
   updateReturnOsaReceipt,
   updateReturnStatusById,
 } from "../repositories/request.repository";
-import { findItemOwner } from "../repositories/item.repository";
+import { CannotRevokeOsaReceiptError, findItemOwner } from "../repositories/item.repository";
+import { recordAuditLog } from "../repositories/audit-log.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
 import { UUID_RE } from "../validation/dates";
 import { validateReturnTarget } from "../validation/returns";
@@ -119,6 +120,17 @@ export async function publishRejectedReturnItem(
     res.status(409).json({ message: result.message });
     return;
   }
+  if (result.status === "published") {
+    await recordAuditLog({
+      actorId: req.user!.sub,
+      actorEmail: req.user!.email,
+      actorRole: req.user!.role,
+      action: "published",
+      entityType: "return",
+      entityId: requestId,
+      summary: `Published rejected return request ${requestId} as found item ${result.itemId}`,
+    });
+  }
   res.status(result.status === "published" ? 201 : 200).json({
     message:
       result.status === "published"
@@ -163,6 +175,15 @@ export async function updateAdminReturnStatus(
     });
     return;
   }
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: parsed.data.status === "pending" ? "updated" : parsed.data.status,
+    entityType: "return",
+    entityId: returnRequest.id,
+    summary: `Updated return request for "${returnRequest.item}" (${returnRequest.claimant}) to ${parsed.data.status}`,
+  });
   res.json({ message: "Return status updated.", returnRequest });
 }
 
@@ -181,14 +202,32 @@ export async function updateAdminReturnOsaReceipt(
     res.status(400).json({ message: "Invalid return request ID." });
     return;
   }
-  const returnRequest = await updateReturnOsaReceipt(
-    requestId,
-    parsed.data.receivedByOsa,
-  );
+  let returnRequest;
+  try {
+    returnRequest = await updateReturnOsaReceipt(
+      requestId,
+      parsed.data.receivedByOsa,
+    );
+  } catch (err) {
+    if (err instanceof CannotRevokeOsaReceiptError) {
+      res.status(409).json({ message: err.message });
+      return;
+    }
+    throw err;
+  }
   if (!returnRequest) {
     res.status(404).json({ message: "Found report not found." });
     return;
   }
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: "updated",
+    entityType: "return",
+    entityId: returnRequest.id,
+    summary: `Marked returned item "${returnRequest.item}" as ${parsed.data.receivedByOsa ? "received by OSA" : "awaiting OSA"}`,
+  });
   res.json({ message: "Physical item status updated.", returnRequest });
 }
 

@@ -8,40 +8,25 @@ import { ClaimPage } from "@/pages/school_user/ClaimPage";
 import { MyClaimsPage } from "@/pages/school_user/MyClaimsPage";
 import { FiltersPage } from "@/pages/school_user/FiltersPage";
 import { ProfilePage } from "@/pages/school_user/ProfilePage";
-import type { Item } from "@/data/mockItems";
 import type {
   ClaimRequest,
   NewClaimRequest,
-  NewReturnItemRequest,
-  ReturnItemRequest,
 } from "@/types/claim";
 import type { ItemFilters } from "@/components/school_user/itemFilters";
 import { paths } from "./paths";
 
 interface DashboardRoutesOptions {
-  items: Item[];
   submittedClaims: ClaimRequest[];
   foundReports: ClaimRequest[];
-  returnRequests: ReturnItemRequest[];
-  onAddItem: (newItem: Item) => void;
-  onUpdateItem: (updatedItem: Item) => void;
-  onDeleteItem: (id: string) => void;
   onSubmitClaim: (claim: NewClaimRequest) => void;
-  onSubmitReturnRequest: (request: NewReturnItemRequest) => void;
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export function getDashboardRoutes({
-  items,
   submittedClaims,
   foundReports,
-  returnRequests,
-  onAddItem,
-  onUpdateItem,
-  onDeleteItem,
   onSubmitClaim,
-  onSubmitReturnRequest,
   filters,
   onFiltersChange,
 }: DashboardRoutesOptions): RouteObject[] {
@@ -51,7 +36,6 @@ export function getDashboardRoutes({
       element: (
         <DashboardPage
           submittedClaims={submittedClaims}
-          onAddItem={onAddItem}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -61,7 +45,6 @@ export function getDashboardRoutes({
       path: paths.dashboardFilters,
       element: (
         <FiltersPage
-          items={items}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -71,9 +54,7 @@ export function getDashboardRoutes({
       path: paths.dashboardCreate,
       element: (
         <CreatePostPage
-          items={items}
           submittedClaims={submittedClaims}
-          onAddItem={onAddItem}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -83,7 +64,6 @@ export function getDashboardRoutes({
       path: paths.dashboardNotifications,
       element: (
         <NotificationsPage
-          items={items}
           submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
@@ -94,15 +74,9 @@ export function getDashboardRoutes({
       path: paths.dashboardItem,
       element: (
         <ItemDetailPage
-          items={items}
-          onAddItem={onAddItem}
-          onUpdateItem={onUpdateItem}
-          onDeleteItem={onDeleteItem}
           onSubmitClaim={onSubmitClaim}
           submittedClaims={submittedClaims}
           foundReports={foundReports}
-          returnRequests={returnRequests}
-          onSubmitReturnRequest={onSubmitReturnRequest}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -112,10 +86,7 @@ export function getDashboardRoutes({
       path: paths.dashboardItemEdit,
       element: (
         <CreatePostPage
-          items={items}
           submittedClaims={submittedClaims}
-          onAddItem={onAddItem}
-          onUpdateItem={onUpdateItem}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -125,7 +96,6 @@ export function getDashboardRoutes({
       path: paths.dashboardFoundReport,
       element: (
         <FoundReportPage
-          items={items}
           submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
@@ -136,7 +106,6 @@ export function getDashboardRoutes({
       path: paths.dashboardClaim,
       element: (
         <ClaimPage
-          items={items}
           submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
@@ -148,9 +117,7 @@ export function getDashboardRoutes({
       path: paths.dashboardProfile,
       element: (
         <ProfilePage
-          items={items}
           submittedClaims={submittedClaims}
-          onAddItem={onAddItem}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -160,10 +127,8 @@ export function getDashboardRoutes({
       path: paths.dashboardClaims,
       element: (
         <MyClaimsPage
-          items={items}
           submittedClaims={submittedClaims}
           foundReports={foundReports}
-          onAddItem={onAddItem}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />

@@ -161,6 +161,22 @@ export async function migrate(): Promise<void> {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      actor_id UUID REFERENCES "user"(id) ON DELETE SET NULL,
+      actor_name VARCHAR(120) NOT NULL,
+      actor_role VARCHAR(20) NOT NULL CHECK (actor_role IN ('super_admin')),
+      action VARCHAR(20) NOT NULL
+        CHECK (action IN ('approved', 'rejected', 'claimed', 'returned', 'published', 'deleted', 'created', 'updated')),
+      entity_type VARCHAR(20) NOT NULL
+        CHECK (entity_type IN ('item', 'claim', 'return', 'user', 'category', 'building')),
+      entity_id TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_user_email_lower ON "user" (LOWER(email));
     CREATE INDEX IF NOT EXISTS idx_user_role ON "user"(role);
     CREATE INDEX IF NOT EXISTS idx_refresh_token_user_id ON refresh_token(user_id);
@@ -174,12 +190,15 @@ export async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_request_item_id ON request(item_id);
     CREATE INDEX IF NOT EXISTS idx_request_user_id ON request(user_id);
     CREATE INDEX IF NOT EXISTS idx_notification_user_id ON notification(user_id);
-    -- One found report per user per lost item.
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_request_return_unique
-      ON request(item_id, user_id) WHERE kind = 'return';
+    CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
   `);
 
   await pool.query(`
+    DROP INDEX IF EXISTS idx_request_return_unique;
+    CREATE UNIQUE INDEX idx_request_return_unique
+      ON request(item_id, user_id)
+      WHERE kind = 'return' AND status <> 'rejected';
+
     DROP INDEX IF EXISTS idx_request_claim_unique;
     CREATE UNIQUE INDEX idx_request_claim_unique
       ON request(item_id, user_id)

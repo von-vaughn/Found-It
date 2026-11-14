@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { useAuth } from "@/context/useAuth";
 import { itemKeys } from "@/hooks/useItems";
+import { notificationKeys } from "@/hooks/useNotifications";
 import {
   createClaim,
   deleteClaim,
@@ -73,6 +74,8 @@ export function useUpdateAdminClaimStatus() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: claimKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
 }

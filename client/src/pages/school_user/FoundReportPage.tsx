@@ -10,31 +10,28 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import { useItemDetail } from "@/hooks/useItems";
 import type { ClaimRequest } from "@/types/claim";
 
 interface FoundReportPageProps {
-  items?: Item[];
   submittedClaims?: ClaimRequest[];
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export const FoundReportPage: React.FC<FoundReportPageProps> = ({
-  items: propItems,
   submittedClaims = [],
   filters,
   onFiltersChange,
 }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const items = propItems ?? EMPTY_ITEMS;
+  const items = EMPTY_ITEMS;
   const { data: serverItem, isLoading: isItemLoading } = useItemDetail(
     id ?? "",
   );
-  const lostItemTitle =
-    serverItem?.name ?? items.find((item) => item.id === id)?.title ?? "";
+  const lostItemTitle = serverItem?.name ?? "";
   const [searchQuery, setSearchQuery] = useState("");
   const [flowStep, setFlowStep] = useState<FoundFlowStep>("camera");
   const searchInputRef = useRef<HTMLInputElement>(null);

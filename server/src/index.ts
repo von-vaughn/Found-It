@@ -17,6 +17,7 @@ import claimsRoutes from './routes/claims.routes';
 import returnsRoutes from './routes/returns.routes';
 import uploadRoutes from './routes/upload.routes';
 import notificationsRoutes from './routes/notifications.routes';
+import auditLogsRoutes from './routes/audit-logs.routes';
 import { errorHandler, notFound } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
 import { assertMailConfigured } from './utils/mailer';
@@ -84,6 +85,7 @@ app.use('/api/claims', claimsRoutes);
 app.use('/api/returns', returnsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/audit-logs', auditLogsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -133,6 +135,9 @@ async function boot(): Promise<void> {
   process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
-void boot();
+if (require.main === module) {
+  void boot();
+}
 
+export { app };
 export default app;

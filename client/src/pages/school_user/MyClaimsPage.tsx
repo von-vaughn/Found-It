@@ -46,10 +46,8 @@ import {
 import type { ClaimRequest } from "@/types/claim";
 
 interface MyClaimsPageProps {
-  items?: Item[];
   submittedClaims?: ClaimRequest[];
   foundReports?: ClaimRequest[];
-  onAddItem?: (newItem: Item) => void;
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
@@ -119,7 +117,6 @@ function ClaimPhotosCarousel({
 }
 
 export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
-  items: propItems,
   submittedClaims = [],
   foundReports = [],
   filters,
@@ -143,8 +140,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               (mine) => !serverItems.some((item) => item.id === mine.id),
             ),
           ])
-        : (propItems ?? EMPTY_ITEMS),
-    [serverItems, serverMyItems, propItems],
+        : EMPTY_ITEMS,
+    [serverItems, serverMyItems],
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending");

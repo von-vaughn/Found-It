@@ -1,6 +1,6 @@
 export interface ClaimRequest {
   id: string;
-  status: "Pending" | "Under review" | "Approved" | "Claimed" | "Returned" | "Rejected";
+  status: "Pending" | "Approved" | "Claimed" | "Returned" | "Rejected";
   /** Distinguishes an ownership claim from a found report on a lost item. */
   kind?: "claim" | "return";
   item: string;

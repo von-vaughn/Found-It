@@ -1,11 +1,6 @@
 import { useMemo } from "react";
 import { Navigate, useRoutes } from "react-router-dom";
-import type { Item } from "@/data/mockItems";
-import type {
-  NewClaimRequest,
-  NewReturnItemRequest,
-  ReturnItemRequest,
-} from "@/types/claim";
+import type { NewClaimRequest } from "@/types/claim";
 import { paths } from "./paths";
 import { getPublicRoutes } from "./publicRoutes";
 import { getDashboardRoutes } from "./dashboardRoutes";
@@ -17,12 +12,6 @@ import { useMyReturns } from "@/hooks/useReturns";
 import { toClaimRequests, toFoundReportClaims } from "@/lib/claimAdapter";
 
 interface AppRoutesProps {
-  items: Item[];
-  returnRequests: ReturnItemRequest[];
-  onAddItem: (newItem: Item) => void;
-  onUpdateItem: (updatedItem: Item) => void;
-  onDeleteItem: (id: string, reason?: string) => void;
-  onSubmitReturnRequest: (request: NewReturnItemRequest) => void;
   onBrowseLost: () => void;
   onBrowseFound: () => void;
   filters: ItemFilters;
@@ -30,12 +19,6 @@ interface AppRoutesProps {
 }
 
 export function AppRoutes({
-  items,
-  returnRequests,
-  onAddItem,
-  onUpdateItem,
-  onDeleteItem,
-  onSubmitReturnRequest,
   onBrowseLost,
   onBrowseFound,
   filters,
@@ -69,22 +52,14 @@ export function AppRoutes({
   };
 
   const publicRoutes = getPublicRoutes({
-    items,
-    onAddItem,
     onBrowseLost,
     onBrowseFound,
   });
 
   const dashboardRoutes = getDashboardRoutes({
-    items,
     submittedClaims,
     foundReports,
-    returnRequests,
-    onAddItem,
-    onUpdateItem,
-    onDeleteItem,
     onSubmitClaim: handleSubmitClaim,
-    onSubmitReturnRequest,
     filters,
     onFiltersChange,
   }).map((route) => ({
@@ -96,11 +71,7 @@ export function AppRoutes({
     ),
   }));
 
-  const adminRoutes = getAdminRoutes({
-    items,
-    onAddItem,
-    returnRequests,
-  }).map((route) => ({
+  const adminRoutes = getAdminRoutes().map((route) => ({
     ...route,
     element: (
       <ProtectedRoute allowedRoles={["admin", "super_admin"]}>

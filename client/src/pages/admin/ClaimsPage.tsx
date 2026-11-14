@@ -4,7 +4,6 @@ import type { ClaimRequest } from "@/types/claim";
 import type { ServerClaimStatus } from "@/services/claimService";
 import { ClaimsView } from "@/components/admin/ClaimsView";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
-import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import { toClaimRequests } from "@/lib/claimAdapter";
 import { useAdminClaims, useUpdateAdminClaimStatus } from "@/hooks/useClaims";
 import toast from "react-hot-toast";
@@ -25,7 +24,6 @@ export function ClaimsPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [manualClaimId, setManualClaimId] = useState<string | null>(null);
-  const logDecision = useAuditDecision();
   const {
     data: serverClaims = [],
     isLoading: claimsLoading,
@@ -110,29 +108,8 @@ export function ClaimsPage() {
   ): Promise<void> => {
     const serverStatus = ADMIN_STATUS[status];
     if (!serverStatus) return;
-    const claim = allClaims.find((entry) => entry.id === id);
-    const action =
-      status === "Approved"
-        ? "approved"
-        : status === "Rejected"
-          ? "rejected"
-          : status === "Returned"
-            ? "returned"
-            : status === "Claimed"
-              ? "claimed"
-              : null;
 
     await updateClaimStatus.mutateAsync({ id, status: serverStatus });
-    if (!action) return;
-    logDecision({
-      action,
-      entityType: "claim",
-      entityId: id,
-      itemTitle: claim?.item ?? id,
-      details: `${status} by super admin for claim ${id}${
-        claim ? ` (${claim.claimant})` : ""
-      }.`,
-    });
   };
 
   const handleOsaReceiptChange = (id: string, receivedByOsa: boolean) => {
@@ -215,6 +192,7 @@ export function ClaimsPage() {
           "Pending",
           "Approved",
           "Claimed",
+          "Returned",
           "Rejected",
         ]}
         onClaimStatusChange={handleClaimStatusChange}

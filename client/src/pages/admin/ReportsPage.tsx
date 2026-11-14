@@ -9,10 +9,10 @@ import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { useBuildings } from "@/hooks/useBuildings";
+import { formatCategoryLabel, useCategories } from "@/hooks/useCategories";
 import { paths } from "@/routes/paths";
 import { AdminLayout } from "./AdminLayout";
 import { useSelectedReport } from "@/components/admin/useSelectedReport";
-import { useAuditDecision } from "@/components/admin/useAuditDecision";
 import {
   useDeleteItem,
   useItems,
@@ -32,9 +32,19 @@ export function ReportsPage() {
     useSelectedReport();
   const { data: items = [], isLoading, isError, refetch } = useItems();
   const { data: buildings } = useBuildings();
+  const { data: categories } = useCategories();
   const buildingOptions = buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
+  const categoryOptions = useMemo(
+    () =>
+      categories
+        ? categories.map((entry) => ({
+            id: entry.name,
+            label: formatCategoryLabel(entry.name),
+          }))
+        : ITEM_CATEGORIES,
+    [categories],
+  );
   const reports = useMemo(() => items.map(serverItemToAdminReport), [items]);
-  const logDecision = useAuditDecision();
   const deleteItem = useDeleteItem();
   const updateOsaReceipt = useUpdateOsaReceipt();
 
@@ -61,24 +71,17 @@ export function ReportsPage() {
     );
   };
 
-  const handleDelete = (id: string, reason?: string) => {
-    const target = reports.find((report) => report.id === id);
+  const handleDelete = (id: string) => {
     deleteItem.mutate(id, {
       onSuccess: () => {
-        logDecision({
-          action: "rejected",
-          entityType: "item",
-          entityId: id,
-          itemTitle: target?.title ?? id,
-          details: reason
-            ? `Report removed: ${reason}`
-            : "Report removed by super admin.",
-        });
         toast.success("Item report deleted.");
         setSelectedReport(null);
       },
-      onError: () => {
-        toast.error("Could not delete this report. Please try again.");
+      onError: (err) => {
+        const message = (
+          err as { response?: { data?: { message?: string } } }
+        )?.response?.data?.message;
+        toast.error(message ?? "Could not delete this report. Please try again.");
       },
     });
   };
@@ -236,7 +239,7 @@ export function ReportsPage() {
               className="h-9 max-w-48 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option value="All categories">All categories</option>
-              {ITEM_CATEGORIES.map((category) => (
+              {categoryOptions.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.label}
                 </option>

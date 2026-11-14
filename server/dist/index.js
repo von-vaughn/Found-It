@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.app = void 0;
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -22,11 +23,13 @@ const claims_routes_1 = __importDefault(require("./routes/claims.routes"));
 const returns_routes_1 = __importDefault(require("./routes/returns.routes"));
 const upload_routes_1 = __importDefault(require("./routes/upload.routes"));
 const notifications_routes_1 = __importDefault(require("./routes/notifications.routes"));
+const audit_logs_routes_1 = __importDefault(require("./routes/audit-logs.routes"));
 const error_handler_1 = require("./middleware/error-handler");
 const rate_limit_1 = require("./middleware/rate-limit");
 const mailer_1 = require("./utils/mailer");
 const google_drive_1 = require("./utils/google-drive");
 const app = (0, express_1.default)();
+exports.app = app;
 // Trust first proxy hop (correct client IP for rate-limiting behind docker/nginx proxy)
 app.set('trust proxy', 1);
 app.use((0, helmet_1.default)({
@@ -78,6 +81,7 @@ app.use('/api/claims', claims_routes_1.default);
 app.use('/api/returns', returns_routes_1.default);
 app.use('/api/upload', upload_routes_1.default);
 app.use('/api/notifications', notifications_routes_1.default);
+app.use('/api/audit-logs', audit_logs_routes_1.default);
 app.use(error_handler_1.notFound);
 app.use(error_handler_1.errorHandler);
 async function boot() {
@@ -122,6 +126,8 @@ async function boot() {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
 }
-void boot();
+if (require.main === module) {
+    void boot();
+}
 exports.default = app;
 //# sourceMappingURL=index.js.map

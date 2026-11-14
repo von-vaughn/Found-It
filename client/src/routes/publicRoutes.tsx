@@ -5,19 +5,14 @@ import { BrowseFiltersPage } from "@/pages/landing/BrowseFiltersPage";
 import { RedirectIfAuthenticated } from "@/components/auth/RedirectIfAuthenticated";
 import { RedirectIfSchoolUser } from "@/components/auth/RedirectIfSchoolUser";
 import { LegacyItemsRedirect } from "./LegacyItemsRedirect";
-import type { Item } from "@/data/mockItems";
 import { paths } from "./paths";
 
 interface PublicRoutesOptions {
-  items: Item[];
-  onAddItem: (newItem: Item) => void;
   onBrowseLost: () => void;
   onBrowseFound: () => void;
 }
 
 export function getPublicRoutes({
-  items,
-  onAddItem,
   onBrowseLost,
   onBrowseFound,
 }: PublicRoutesOptions): RouteObject[] {
@@ -34,7 +29,7 @@ export function getPublicRoutes({
       path: paths.browse,
       element: (
         <RedirectIfSchoolUser>
-          <BrowseItemsPage items={items} onAddItem={onAddItem} />
+          <BrowseItemsPage />
         </RedirectIfSchoolUser>
       ),
     },
@@ -42,7 +37,7 @@ export function getPublicRoutes({
       path: paths.browseFilters,
       element: (
         <RedirectIfSchoolUser>
-          <BrowseFiltersPage items={items} />
+          <BrowseFiltersPage />
         </RedirectIfSchoolUser>
       ),
     },

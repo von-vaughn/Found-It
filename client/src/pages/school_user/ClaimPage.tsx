@@ -14,14 +14,13 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import { useAuth } from "@/context/useAuth";
 import { useItemDetail } from "@/hooks/useItems";
 import { toClientItem } from "@/lib/itemAdapter";
 import type { ClaimRequest, NewClaimRequest } from "@/types/claim";
 
 interface ClaimPageProps {
-  items?: Item[];
   submittedClaims?: ClaimRequest[];
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
@@ -29,7 +28,6 @@ interface ClaimPageProps {
 }
 
 export const ClaimPage: React.FC<ClaimPageProps> = ({
-  items: propItems,
   submittedClaims = [],
   filters,
   onFiltersChange,
@@ -38,7 +36,7 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const items = propItems ?? EMPTY_ITEMS;
+  const items = EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -47,9 +45,8 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
     id ?? "",
   );
   const item = useMemo(
-    () =>
-      serverItem ? toClientItem(serverItem) : items.find((entry) => entry.id === id),
-    [serverItem, items, id],
+    () => (serverItem ? toClientItem(serverItem) : undefined),
+    [serverItem],
   );
   const existingClaim = useMemo(() => {
     if (!item) return null;

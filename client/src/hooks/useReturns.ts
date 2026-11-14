@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { useAuth } from "@/context/useAuth";
 import { itemKeys } from "@/hooks/useItems";
+import { notificationKeys } from "@/hooks/useNotifications";
 import type { ServerClaim, ServerClaimStatus } from "@/services/claimService";
 import {
   createReturnRequest,
@@ -122,6 +123,8 @@ export function useUpdateAdminReturnStatus() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
 }
@@ -135,6 +138,7 @@ export function usePublishRejectedReturn() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
 }
@@ -159,6 +163,8 @@ export function useUpdateAdminReturnOsaReceipt() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
 }

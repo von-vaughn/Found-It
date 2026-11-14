@@ -4,24 +4,29 @@ import { Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Panel } from "@/components/admin/Panel";
 import { AdminLayout } from "./AdminLayout";
-import { ITEM_CATEGORIES } from "@/data/itemCategories";
-import { ITEM_BUILDINGS } from "@/data/itemBuildings";
-import { useCategories, useDeleteCategory } from "@/hooks/useCategories";
-import { useBuildings, useDeleteBuilding } from "@/hooks/useBuildings";
+import {
+  formatCategoryLabel,
+  useCategories,
+  useCreateCategory,
+  useDeleteCategory,
+} from "@/hooks/useCategories";
+import {
+  useBuildings,
+  useCreateBuilding,
+  useDeleteBuilding,
+} from "@/hooks/useBuildings";
 
 type OptionKind = "category" | "building";
 
 function OptionList({
   values,
-  addedValues,
   itemLabel,
   onRemove,
   isRemoving,
 }: {
   values: string[];
-  addedValues: string[];
   itemLabel: string;
-  onRemove?: (value: string, isAdded: boolean) => void;
+  onRemove?: (value: string) => void;
   isRemoving?: boolean;
 }) {
   return (
@@ -32,38 +37,30 @@ function OptionList({
         </p>
       ) : (
         <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
-          {values.map((value) => {
-            const isAdded = addedValues.includes(value);
-            return (
-              <li
-                key={value}
-                className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5"
-              >
-                <span className="min-w-0 break-words text-xs font-medium text-neutral-800 dark:text-neutral-200">
-                  {value}
-                </span>
-                <div className="flex shrink-0 items-center gap-2">
-                  {isAdded && (
-                    <span className="rounded-md bg-red-50 px-2 py-1 text-[10px] font-semibold text-[#b81626] dark:bg-red-500/10 dark:text-red-300">
-                      This session
-                    </span>
-                  )}
-                  {onRemove && (
-                    <button
-                      type="button"
-                      aria-label={`Remove ${value} ${itemLabel}`}
-                      title={`Remove ${value}`}
-                      disabled={isRemoving && !isAdded}
-                      onClick={() => onRemove(value, isAdded)}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 transition-colors hover:bg-red-50 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {values.map((value) => (
+            <li
+              key={value}
+              className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5"
+            >
+              <span className="min-w-0 break-words text-xs font-medium text-neutral-800 dark:text-neutral-200">
+                {value}
+              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                {onRemove && (
+                  <button
+                    type="button"
+                    aria-label={`Remove ${value} ${itemLabel}`}
+                    title={`Remove ${value}`}
+                    disabled={isRemoving}
+                    onClick={() => onRemove(value)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 transition-colors hover:bg-red-50 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
         </ul>
       )}
     </div>
@@ -72,29 +69,36 @@ function OptionList({
 
 function AddOptionForm({
   kind,
+  isSubmitting,
   onAdd,
 }: {
   kind: OptionKind;
-  onAdd: (value: string) => boolean;
+  isSubmitting?: boolean;
+  onAdd: (value: string) => Promise<string | null>;
 }) {
   const [value, setValue] = useState("");
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
   const label = kind === "category" ? "category" : "building";
   const inputId = `new-${kind}`;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedValue = value.trim();
     if (!trimmedValue) {
+      setIsError(true);
       setMessage(`Enter a ${label} name before adding it.`);
       return;
     }
-    if (!onAdd(trimmedValue)) {
-      setMessage(`That ${label} is already in the list.`);
+    const errorMessage = await onAdd(trimmedValue);
+    if (errorMessage) {
+      setIsError(true);
+      setMessage(errorMessage);
       return;
     }
     setValue("");
-    setMessage(`${trimmedValue} added for this session.`);
+    setIsError(false);
+    setMessage(`${trimmedValue} added.`);
   };
 
   return (
@@ -114,6 +118,7 @@ function AddOptionForm({
           value={value}
           onChange={(event) => {
             setValue(event.target.value);
+            setIsError(false);
             setMessage("");
           }}
           maxLength={80}
@@ -122,7 +127,8 @@ function AddOptionForm({
         />
         <button
           type="submit"
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+          disabled={isSubmitting}
+          className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-50"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
           Add {label}
@@ -132,9 +138,9 @@ function AddOptionForm({
         <p
           aria-live="polite"
           className={`mt-1.5 text-[11px] ${
-            message.includes("added")
-              ? "text-emerald-700 dark:text-emerald-400"
-              : "text-red-700 dark:text-red-400"
+            isError
+              ? "text-red-700 dark:text-red-400"
+              : "text-emerald-700 dark:text-emerald-400"
           }`}
         >
           {message}
@@ -148,40 +154,37 @@ export function FilterOptionsPage() {
   const queryClient = useQueryClient();
   const categoriesQuery = useCategories();
   const buildingsQuery = useBuildings();
+  const createCategoryMutation = useCreateCategory();
+  const createBuildingMutation = useCreateBuilding();
   const deleteCategoryMutation = useDeleteCategory();
   const deleteBuildingMutation = useDeleteBuilding();
-  const [addedCategories, setAddedCategories] = useState<string[]>([]);
-  const [addedBuildings, setAddedBuildings] = useState<string[]>([]);
   const categoryRecords = categoriesQuery.data ?? [];
-  const getCategoryLabel = (name: string) =>
-    ITEM_CATEGORIES.find((category) => category.id === name)?.label ??
-    name.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-  const categoryNames = [
-    ...categoryRecords.map((category) => getCategoryLabel(category.name)),
-    ...addedCategories,
-  ];
+  const categoryNames = categoryRecords.map((category) =>
+    formatCategoryLabel(category.name),
+  );
   const buildingRecords = buildingsQuery.data ?? [];
-  const buildingNames = [
-    ...(buildingsQuery.data?.map((building) => building.name) ?? ITEM_BUILDINGS),
-    ...addedBuildings,
-  ];
+  const buildingNames = buildingRecords.map((building) => building.name);
 
-  const addCategory = (value: string) => {
-    if (categoryNames.some((name) => name.toLowerCase() === value.toLowerCase())) {
-      return false;
+  const extractErrorMessage = (error: unknown, fallback: string) =>
+    (error as { response?: { data?: { message?: string } } })?.response?.data
+      ?.message ?? fallback;
+
+  const addCategory = async (value: string): Promise<string | null> => {
+    try {
+      await createCategoryMutation.mutateAsync(value);
+      toast.success(`${value} category added.`);
+      return null;
+    } catch (error) {
+      return extractErrorMessage(
+        error,
+        "We couldn't add this category. Please try again.",
+      );
     }
-    setAddedCategories((current) => [...current, value]);
-    return true;
   };
 
-  const removeCategory = async (value: string, isAdded: boolean) => {
-    if (isAdded) {
-      setAddedCategories((current) => current.filter((name) => name !== value));
-      return;
-    }
-
+  const removeCategory = async (value: string) => {
     const category = categoryRecords.find(
-      (entry) => getCategoryLabel(entry.name) === value,
+      (entry) => formatCategoryLabel(entry.name) === value,
     );
     if (!category) {
       toast.error("That category could not be found. Refresh and try again.");
@@ -200,29 +203,29 @@ export function FilterOptionsPage() {
       await deleteCategoryMutation.mutateAsync(category.id);
       toast.success(`${value} category removed.`);
     } catch (error) {
-      const message = (
-        error as { response?: { data?: { message?: string } } }
-      )?.response?.data?.message;
       toast.error(
-        message ?? "We couldn't remove this category. Please try again.",
+        extractErrorMessage(
+          error,
+          "We couldn't remove this category. Please try again.",
+        ),
       );
     }
   };
 
-  const addBuilding = (value: string) => {
-    if (buildingNames.some((name) => name.toLowerCase() === value.toLowerCase())) {
-      return false;
+  const addBuilding = async (value: string): Promise<string | null> => {
+    try {
+      await createBuildingMutation.mutateAsync(value);
+      toast.success(`${value} building added.`);
+      return null;
+    } catch (error) {
+      return extractErrorMessage(
+        error,
+        "We couldn't add this building. Please try again.",
+      );
     }
-    setAddedBuildings((current) => [...current, value]);
-    return true;
   };
 
-  const removeBuilding = async (value: string, isAdded: boolean) => {
-    if (isAdded) {
-      setAddedBuildings((current) => current.filter((name) => name !== value));
-      return;
-    }
-
+  const removeBuilding = async (value: string) => {
     const building = buildingRecords.find((entry) => entry.name === value);
     if (!building) {
       toast.error("That building could not be found. Refresh and try again.");
@@ -241,20 +244,17 @@ export function FilterOptionsPage() {
       await deleteBuildingMutation.mutateAsync(building.id);
       toast.success(`${value} building removed.`);
     } catch (error) {
-      const message = (
-        error as { response?: { data?: { message?: string } } }
-      )?.response?.data?.message;
       toast.error(
-        message ?? "We couldn't remove this building. Please try again.",
+        extractErrorMessage(
+          error,
+          "We couldn't remove this building. Please try again.",
+        ),
       );
     }
   };
 
   return (
     <AdminLayout activeSection="options">
-      <p className="mb-4 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-        Session-only filter options.
-      </p>
       <div className="grid min-w-0 gap-5 lg:grid-cols-2">
         <Panel
           title="Categories"
@@ -264,7 +264,11 @@ export function FilterOptionsPage() {
             </span>
           }
         >
-          <AddOptionForm kind="category" onAdd={addCategory} />
+          <AddOptionForm
+            kind="category"
+            isSubmitting={createCategoryMutation.isPending}
+            onAdd={addCategory}
+          />
           {categoriesQuery.isPending ? (
             <p className="px-4 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400">
               Loading categories…
@@ -285,9 +289,8 @@ export function FilterOptionsPage() {
           ) : (
             <OptionList
               values={categoryNames}
-              addedValues={addedCategories}
               itemLabel="category"
-              onRemove={(value, isAdded) => void removeCategory(value, isAdded)}
+              onRemove={(value) => void removeCategory(value)}
               isRemoving={deleteCategoryMutation.isPending}
             />
           )}
@@ -301,7 +304,11 @@ export function FilterOptionsPage() {
             </span>
           }
         >
-          <AddOptionForm kind="building" onAdd={addBuilding} />
+          <AddOptionForm
+            kind="building"
+            isSubmitting={createBuildingMutation.isPending}
+            onAdd={addBuilding}
+          />
           {buildingsQuery.isPending ? (
             <p className="px-4 py-6 text-center text-xs text-neutral-500 dark:text-neutral-400">
               Loading buildings…
@@ -322,9 +329,8 @@ export function FilterOptionsPage() {
           ) : (
             <OptionList
               values={buildingNames}
-              addedValues={addedBuildings}
               itemLabel="building"
-              onRemove={(value, isAdded) => void removeBuilding(value, isAdded)}
+              onRemove={(value) => void removeBuilding(value)}
               isRemoving={deleteBuildingMutation.isPending}
             />
           )}

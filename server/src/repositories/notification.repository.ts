@@ -182,19 +182,29 @@ export async function createClaimedNotifications(
     itemName: string;
     requesterId: string;
     itemOwnerId: string;
+    status?: "claimed" | "returned";
   },
 ): Promise<void> {
+  const claimantTitle =
+    input.status === "returned" ? "Item returned" : "Claim approved";
+  const claimantMessage =
+    input.status === "returned"
+      ? `${input.itemName} has been returned to you.`
+      : "You have successfully claimed this item.";
+
   await client.query(
     `INSERT INTO notification (
        user_id, item_id, request_id, kind, event, title, message
      ) VALUES
-       ($1, $2, $3, 'claim', 'approved', 'Claim approved', $4),
-       ($5, $2, $3, 'claim', 'returned', 'Item returned', $6)`,
+       ($1, $2, $3, 'claim', $4, $5, $6),
+       ($7, $2, $3, 'claim', 'returned', 'Item returned', $8)`,
     [
       input.requesterId,
       input.itemId,
       input.requestId,
-      "You have successfully claimed this item.",
+      input.status === "returned" ? "returned" : "approved",
+      claimantTitle,
+      claimantMessage,
       input.itemOwnerId,
       `${input.itemName} has been successfully returned to its rightful owner.`,
     ],

@@ -228,7 +228,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
                 )}
               </div>
               <p className="mt-3 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
-                {evidenceFiles.length} of {MAX_EVIDENCE_IMAGES} selected
+                {evidenceFiles.length} of {MAX_EVIDENCE_IMAGES}
               </p>
             </div>
           </div>

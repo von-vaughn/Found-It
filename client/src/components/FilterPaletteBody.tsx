@@ -13,6 +13,7 @@ import {
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
+import { formatCategoryLabel, useCategories } from "@/hooks/useCategories";
 import type { Item } from "@/data/mockItems";
 import {
   countActiveFilters,
@@ -213,6 +214,20 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
   onClearFilters,
   filterResultCount,
 }) => {
+  const { data: serverCategories } = useCategories();
+  const categoryOptions = useMemo<CategoryOption[]>(
+    () =>
+      serverCategories
+        ? serverCategories.map((category) => ({
+            id: category.name,
+            name: formatCategoryLabel(category.name),
+            icon:
+              ITEM_CATEGORIES.find((entry) => entry.id === category.name)?.icon ??
+              Tags,
+          }))
+        : CATEGORY_OPTIONS,
+    [serverCategories],
+  );
   const { data: buildings } = useBuildings();
   const buildingOptions = useMemo(
     () =>
@@ -268,14 +283,14 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
   // Compute item counts dynamically from live items
   const categoryCounts = useMemo(() => {
     const map = new Map<string, number>();
-    CATEGORY_OPTIONS.forEach((cat) => {
+    categoryOptions.forEach((cat) => {
       const liveCount = items?.filter(
         (i) => i.category.toLowerCase() === cat.id.toLowerCase(),
       ).length;
       map.set(cat.id, liveCount ?? 0);
     });
     return map;
-  }, [items]);
+  }, [categoryOptions, items]);
 
   const buildingCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -301,9 +316,9 @@ export const FilterPaletteBody: React.FC<FilterPaletteBodyProps> = ({
   // Filter lists based on query
   const filteredCategories = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return CATEGORY_OPTIONS;
-    return CATEGORY_OPTIONS.filter((c) => c.name.toLowerCase().includes(q));
-  }, [query]);
+    if (!q) return categoryOptions;
+    return categoryOptions.filter((c) => c.name.toLowerCase().includes(q));
+  }, [categoryOptions, query]);
 
   const filteredBuildings = useMemo(() => {
     const q = query.trim().toLowerCase();

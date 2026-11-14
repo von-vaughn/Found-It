@@ -1,5 +1,11 @@
 import { pool } from "../config/db";
-import { createItemWithClient } from "./item.repository";
+import {
+  CannotRevokeOsaReceiptError,
+  createItemWithClient,
+  saveBlurredImageUrl,
+} from "./item.repository";
+import { isDriveConfigured, uploadFileToDrive } from "../utils/google-drive";
+import { fetchRemoteImageBuffer, generateBlurredImage } from "../utils/image-blur";
 import {
   createClaimedNotifications,
   createAdminSubmissionNotifications,
@@ -164,7 +170,7 @@ export function findReturnForUserAndItem(
   userId: string,
   itemId: string,
 ): Promise<Claim | null> {
-  return findRequestForUserAndItem(userId, itemId, "return");
+  return findRequestForUserAndItem(userId, itemId, "return", true);
 }
 
 export function findClaimForUserById(
@@ -330,6 +336,28 @@ export async function publishRejectedReturn(
       [requestId, created.id],
     );
     await client.query("COMMIT");
+
+    if (isDriveConfigured()) {
+      const { rows: insertedImages } = await pool.query<{ id: string; image_url: string }>(
+        `SELECT id, image_url FROM image WHERE item_id = $1 AND blurred_image_url IS NULL`,
+        [created.id],
+      );
+      for (const img of insertedImages) {
+        try {
+          const remoteBuffer = await fetchRemoteImageBuffer(img.image_url);
+          const blurredBuffer = await generateBlurredImage(remoteBuffer);
+          const uploaded = await uploadFileToDrive({
+            name: `blurred-${Date.now()}-${created.id}.jpg`,
+            mimeType: "image/jpeg",
+            content: blurredBuffer,
+          });
+          await saveBlurredImageUrl(img.id, uploaded.directUrl);
+        } catch (err) {
+          console.warn(`[Publish] Could not generate blurred image for ${img.id}:`, err);
+        }
+      }
+    }
+
     return { status: "published", itemId: created.id };
   } catch (error) {
     await client.query("ROLLBACK");
@@ -343,6 +371,16 @@ export async function updateReturnOsaReceipt(
   requestId: string,
   receivedByOsa: boolean,
 ): Promise<Claim | null> {
+  if (!receivedByOsa) {
+    const { rows: existing } = await pool.query<{ status: ClaimStatus }>(
+      `SELECT status FROM request WHERE id = $1 AND kind = 'return' LIMIT 1`,
+      [requestId],
+    );
+    if (!existing[0]) return null;
+    if (existing[0].status === "approved" || existing[0].status === "returned") {
+      throw new CannotRevokeOsaReceiptError();
+    }
+  }
   const { rows } = await pool.query<{ id: string }>(
     `UPDATE request
      SET received_by_osa = $2
@@ -438,13 +476,14 @@ async function updateRequestStatusById(
       return null;
     }
 
-    if (kind === "claim" && status === "claimed") {
+    if (kind === "claim" && (status === "claimed" || status === "returned")) {
       await createClaimedNotifications(client, {
         requestId: id,
         itemId: current.item_id,
         itemName: current.item_name,
         requesterId: current.user_id,
         itemOwnerId: current.item_owner_id,
+        status,
       });
     } else if (
       status === "approved" ||

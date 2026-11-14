@@ -8,15 +8,10 @@ import { AuthProvider } from "@/context/AuthContext";
 import { useAuth } from "@/context/useAuth";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AppRoutes } from "@/routes/AppRoutes";
-import type { Item } from "@/data/mockItems";
 import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import type {
-  NewReturnItemRequest,
-  ReturnItemRequest,
-} from "@/types/claim";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -37,48 +32,10 @@ export function App() {
 }
 
 function AppContent() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [returnRequests, setReturnRequests] = useState<ReturnItemRequest[]>(
-    [],
-  );
   const [filters, setFilters] = useState<ItemFilters>(defaultFilters);
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-
-  const handleAddItem = (newItem: Item) => {
-    setItems((prev) => [newItem, ...prev]);
-  };
-
-  const handleUpdateItem = (updatedItem: Item) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)),
-    );
-  };
-
-  const handleDeleteItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const handleSubmitReturnRequest = (request: NewReturnItemRequest) => {
-    setReturnRequests((current) => {
-      if (current.some((entry) => entry.sourceClaimId === request.sourceClaimId)) {
-        return current;
-      }
-      return [
-        {
-          ...request,
-          id: `RT-${String(Date.now()).slice(-6)}`,
-          status: "Pending",
-          submitted: new Intl.DateTimeFormat("en", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }).format(new Date()),
-        },
-        ...current,
-      ];
-    });
-  };
 
 
   const handleBrowseLost = () => {
@@ -125,12 +82,6 @@ function AppContent() {
 
       <div className="flex-1">
         <AppRoutes
-          items={items}
-          onAddItem={handleAddItem}
-          onUpdateItem={handleUpdateItem}
-          onDeleteItem={handleDeleteItem}
-          returnRequests={returnRequests}
-          onSubmitReturnRequest={handleSubmitReturnRequest}
           onBrowseLost={handleBrowseLost}
           onBrowseFound={handleBrowseFound}
           filters={filters}

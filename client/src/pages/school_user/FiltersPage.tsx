@@ -10,12 +10,11 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
+import { EMPTY_ITEMS } from "@/data/mockItems";
 import { useItems } from "@/hooks/useItems";
 import { toClientItems } from "@/lib/itemAdapter";
 
 interface FiltersPageProps {
-  items?: Item[];
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }

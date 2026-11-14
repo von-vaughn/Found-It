@@ -9,9 +9,11 @@ import {
   refresh,
   register,
   resendOtp,
+  verifyAdminPassword,
   verifyEmail,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/authenticate';
+import { requireAdmin } from '../middleware/authorize';
 import { apiLimiter, authLimiter, resendOtpLimiter } from '../middleware/rate-limit';
 import { csrfProtection } from '../middleware/csrf';
 
@@ -31,5 +33,6 @@ router.post('/logout', csrfProtection, logout);
 router.get('/me', authenticate, me);
 router.post('/logout-all', authenticate, logoutAll);
 router.patch('/change-password', authenticate, changePassword);
+router.post('/verify-password', authenticate, requireAdmin, verifyAdminPassword);
 
 export default router;
