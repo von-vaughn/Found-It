@@ -67,7 +67,6 @@ const finderStatusStyles: Record<string, string> = {
   "Pending admin approval":
     "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
   Approved: "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-800 dark:text-cyan-400",
-  Unreturned: "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-800 dark:text-cyan-400",
   Claimed: "bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400",
   Returned: "bg-teal-50 dark:bg-teal-500/10 text-teal-800 dark:text-teal-400",
   Rejected: "bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-400",
@@ -335,9 +334,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     : null;
   const foundReportStatusStyle =
     foundReportStatus !== null
-      ? simplifiedClaimStatusStyles[
-          foundReportStatus === "Unreturned" ? "Approved" : foundReportStatus
-        ]
+      ? simplifiedClaimStatusStyles[foundReportStatus]
       : "";
 
   if (isItemLoading && !item) {
@@ -793,8 +790,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               </h2>
               <ul className="mt-4 space-y-3">
                   {finderReports.map((claim) => {
-                    const claimStatus =
-                      claim.status === "Approved" ? "Unreturned" : claim.status;
+                    const claimStatus = claim.status;
 
                     return (
                       <li
@@ -895,7 +891,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </div>
                             )}
                           </dl>
-                          {claimStatus === "Unreturned" && (
+                          {claimStatus === "Approved" && (
                             <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50/70 dark:border-cyan-800/60 dark:bg-cyan-950/30 p-3 text-xs text-cyan-900 dark:text-cyan-300">
                               <p className="font-bold flex items-center gap-1.5">
                                 <Award className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />

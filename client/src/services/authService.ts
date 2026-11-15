@@ -11,7 +11,6 @@ export interface AuthResponse {
   message: string;
   user: SafeAuthUser;
   accessToken: string;
-  mustChangePassword?: boolean;
 }
 
 export const authService = {
@@ -126,20 +125,6 @@ export const authService = {
       setInMemoryUser(null);
       broadcastAuthEvent({ type: "LOGOUT" });
     }
-  },
-
-  async changePassword(payload: {
-    currentPassword: string;
-    newPassword: string;
-  }): Promise<{ message: string }> {
-    const { data } = await api.patch<{ message: string }>(
-      "/auth/change-password",
-      payload,
-    );
-    setAccessToken(null);
-    setInMemoryUser(null);
-    broadcastAuthEvent({ type: "LOGOUT" });
-    return data;
   },
 
   async verifyPassword(password: string): Promise<boolean> {

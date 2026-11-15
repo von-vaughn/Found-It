@@ -191,131 +191,99 @@ function ClaimRequestSection({
             {claim.details}
           </p>
           <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 py-3 text-xs">
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <CalendarDays className="h-3 w-3" aria-hidden="true" />
-              Submitted
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {claim.submitted}
-            </dd>
-          </div>
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Palette className="h-3 w-3" aria-hidden="true" />
-              Primary color
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {claim.color?.trim() || "None"}
-            </dd>
-          </div>
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <CalendarDays className="h-3 w-3" aria-hidden="true" />
-              {itemType === "Lost" ? "Date found" : "Date lost"}
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {claim.dateLost}
-            </dd>
-          </div>
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Clock3 className="h-3 w-3" aria-hidden="true" />
-              {itemType === "Lost" ? "Time found" : "Time lost"}
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {claim.timeLost}
-            </dd>
-          </div>
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <MapPin className="h-3 w-3" aria-hidden="true" />
-              {itemType === "Lost" ? "Location found" : "Location lost"}
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {claim.location}
-            </dd>
-          </div>
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Building2 className="h-3 w-3" aria-hidden="true" />
-              Building
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {claim.building?.trim() || "None"}
-            </dd>
-          </div>
-          <div className="col-span-2">
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Lock className="h-3 w-3" aria-hidden="true" />
-              Important details
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              <LockedValue
-                value={claim.importantDetails}
-                unlocked={unlocked}
-                onUnlock={onRequestUnlock}
-              />
-            </dd>
-          </div>
-        </dl>
+            <div>
+              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                <CalendarDays className="h-3 w-3" aria-hidden="true" />
+                Submitted
+              </dt>
+              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                {claim.submitted}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                <Palette className="h-3 w-3" aria-hidden="true" />
+                Primary color
+              </dt>
+              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                {claim.color?.trim() || "None"}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                <CalendarDays className="h-3 w-3" aria-hidden="true" />
+                {itemType === "Lost" ? "Date found" : "Date lost"}
+              </dt>
+              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                {claim.dateLost}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                <Clock3 className="h-3 w-3" aria-hidden="true" />
+                {itemType === "Lost" ? "Time found" : "Time lost"}
+              </dt>
+              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                {claim.timeLost}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                <MapPin className="h-3 w-3" aria-hidden="true" />
+                {itemType === "Lost" ? "Location found" : "Location lost"}
+              </dt>
+              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                {claim.location}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                <Building2 className="h-3 w-3" aria-hidden="true" />
+                Building
+              </dt>
+              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                {claim.building?.trim() || "None"}
+              </dd>
+            </div>
+            <div className="col-span-2">
+              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                <Lock className="h-3 w-3" aria-hidden="true" />
+                Important details
+              </dt>
+              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                <LockedValue
+                  value={claim.importantDetails}
+                  unlocked={unlocked}
+                  onUnlock={onRequestUnlock}
+                />
+              </dd>
+            </div>
+          </dl>
         </div>
       </div>
     </section>
   );
 }
 
-export function ClaimsView({
+/** Full-page list of grouped found-item claim requests. */
+export function ClaimsListPanel({
   claims: claimRequests,
   reports,
-  onClaimStatusChange,
   query,
-  selectedClaimId,
-  onSelectClaim,
   statusFilter,
   onStatusFilterChange,
   statusOptions,
-  plainDetails = false,
-  onOsaReceiptChange,
-  isUpdatingOsaReceipt = false,
+  onSelectClaim,
 }: {
   claims: ClaimRequest[];
   reports: AdminReport[];
-  onClaimStatusChange: (
-    id: string,
-    status: ClaimRequest["status"],
-  ) => Promise<void>;
   query: string;
-  selectedClaimId: string;
-  onSelectClaim: (id: string) => void;
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
   statusOptions?: string[];
-  plainDetails?: boolean;
-  onOsaReceiptChange: (id: string, receivedByOsa: boolean) => void;
-  isUpdatingOsaReceipt?: boolean;
+  onSelectClaim: (id: string) => void;
 }) {
   const [page, setPage] = useState(1);
-  const [pendingStatusChange, setPendingStatusChange] = useState<{
-    claimId: string;
-    status: StatusDecision;
-  } | null>(null);
-  const [savingStatusChange, setSavingStatusChange] = useState(false);
-  const approvalDialogRef = useRef<HTMLDialogElement>(null);
-  const claimForStatusChange = claimRequests.find(
-    (claim) => claim.id === pendingStatusChange?.claimId,
-  );
-
-  useEffect(() => {
-    const dialog = approvalDialogRef.current;
-    if (!dialog) return;
-
-    if (pendingStatusChange && !dialog.open) {
-      dialog.showModal();
-    } else if (!pendingStatusChange && dialog.open) {
-      dialog.close();
-    }
-  }, [pendingStatusChange]);
 
   const filteredClaims = claimRequests.filter(
     (claim) =>
@@ -362,21 +330,189 @@ export function ClaimsView({
   const rangeStart =
     claimGroups.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(safePage * PAGE_SIZE, claimGroups.length);
-  const visibleSelectedClaim =
-    filteredClaims.find((claim) => claim.id === selectedClaimId) ?? null;
-  // Other requests filed for the same item, so competing claims can be
-  // compared side by side before approving one.
-  const siblingClaims = visibleSelectedClaim
-    ? claimRequests.filter(
-        (claim) =>
-          claim.itemId === visibleSelectedClaim.itemId &&
-          claim.id !== visibleSelectedClaim.id,
-      )
-    : [];
-  const baseItemPost = visibleSelectedClaim
-    ? reports.find((report) => report.id === visibleSelectedClaim.itemId)
-    : undefined;
-  const selectedItemPost = baseItemPost;
+
+  return (
+    <Panel
+      title="Submitted Claims Request"
+      titleAdornment={
+        <span className="shrink-0 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+          {claimGroups.length}
+        </span>
+      }
+      action={
+        <div className="flex items-center">
+          <StatusFilter
+            value={statusFilter}
+            onChange={onStatusFilterChange}
+            options={statusOptions}
+          />
+        </div>
+      }
+    >
+      {filteredClaims.length === 0 ? (
+        <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
+          No claim requests match this search.
+        </p>
+      ) : (
+        <>
+          <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+            {pagedClaims.map((group) => {
+              const claim = group.representative;
+              const itemImage =
+                reports.find((report) => report.id === claim.itemId)
+                  ?.image ?? "";
+              const claimantNames = group.claims
+                .map((request) => request.claimant)
+                .filter((name, index, names) => names.indexOf(name) === index);
+
+              return (
+                <button
+                  key={claim.itemId}
+                  type="button"
+                  onClick={() => onSelectClaim(claim.id)}
+                  className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5"
+                >
+                  {itemImage ? (
+                    <img
+                      src={itemImage}
+                      alt={`${claim.item} item`}
+                      loading="lazy"
+                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <NoItemImage compact className="h-12 w-12" />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-normal text-sm font-bold leading-snug text-neutral-900 dark:text-neutral-100">
+                      {claim.item}
+                    </span>
+                    <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
+                      {claimantNames.join(", ")}
+                      {group.claims.length > 1 && (
+                        <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
+                          {group.claims.length} requests
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-3">
+                    <StatusBadge status={claim.status} />
+                    <span className="hidden text-right sm:block">
+                      <span className="block text-[10px] text-neutral-500 dark:text-neutral-400">
+                        Submitted
+                      </span>
+                      <span className="mt-1 block text-[10px] font-medium text-neutral-700 dark:text-neutral-300">
+                        {claim.submitted}
+                      </span>
+                    </span>
+                    <ChevronRight
+                      className="h-4 w-4 text-neutral-400 dark:text-neutral-500"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-between gap-2 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 sm:px-5">
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+              Showing {rangeStart}–{rangeEnd} of {claimGroups.length} posts
+            </p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPage(safePage - 1)}
+                  disabled={safePage <= 1}
+                  aria-label="Previous page"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+                >
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                </button>
+                {Array.from({ length: totalPages }, (_, index) => (
+                  <button
+                    key={index + 1}
+                    type="button"
+                    onClick={() => setPage(index + 1)}
+                    aria-label={`Page ${index + 1}`}
+                    aria-current={
+                      safePage === index + 1 ? "page" : undefined
+                    }
+                    className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors ${
+                      safePage === index + 1
+                        ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                        : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPage(safePage + 1)}
+                  disabled={safePage >= totalPages}
+                  aria-label="Next page"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+                >
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </Panel>
+  );
+}
+
+/** Detail and review panel for a single claim and its sibling item claims. */
+export function ClaimDetailPanel({
+  claim,
+  siblingClaims,
+  allClaims,
+  reports,
+  onClaimStatusChange,
+  onOsaReceiptChange,
+  isUpdatingOsaReceipt = false,
+  plainDetails = false,
+}: {
+  claim: ClaimRequest;
+  siblingClaims: ClaimRequest[];
+  allClaims: ClaimRequest[];
+  reports: AdminReport[];
+  onClaimStatusChange: (
+    id: string,
+    status: ClaimRequest["status"],
+  ) => Promise<void>;
+  onOsaReceiptChange: (id: string, receivedByOsa: boolean) => void;
+  isUpdatingOsaReceipt?: boolean;
+  plainDetails?: boolean;
+}) {
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    claimId: string;
+    status: StatusDecision;
+  } | null>(null);
+  const [savingStatusChange, setSavingStatusChange] = useState(false);
+  const approvalDialogRef = useRef<HTMLDialogElement>(null);
+
+  const claimForStatusChange = allClaims.find(
+    (item) => item.id === pendingStatusChange?.claimId,
+  );
+
+  useEffect(() => {
+    const dialog = approvalDialogRef.current;
+    if (!dialog) return;
+
+    if (pendingStatusChange && !dialog.open) {
+      dialog.showModal();
+    } else if (!pendingStatusChange && dialog.open) {
+      dialog.close();
+    }
+  }, [pendingStatusChange]);
+
+  const selectedItemPost = reports.find(
+    (report) => report.id === claim.itemId,
+  );
   const selectedItemImage = selectedItemPost?.image ?? "";
 
   const { unlocked, promptOpen, requestUnlock, submitPassword, setPromptOpen } =
@@ -384,11 +520,11 @@ export function ClaimsView({
 
   const claimsToAutoReject =
     claimForStatusChange && pendingStatusChange?.status === "Approved"
-      ? claimRequests.filter(
-          (claim) =>
-            claim.id !== claimForStatusChange.id &&
-            claim.itemId === claimForStatusChange.itemId &&
-            claim.status === "Pending",
+      ? allClaims.filter(
+          (item) =>
+            item.id !== claimForStatusChange.id &&
+            item.itemId === claimForStatusChange.itemId &&
+            item.status === "Pending",
         )
       : [];
 
@@ -397,8 +533,7 @@ export function ClaimsView({
     if (approvalDialogRef.current?.open) approvalDialogRef.current.close();
   };
 
-  const isAcceptDecision =
-    pendingStatusChange?.status === "Approved";
+  const isAcceptDecision = pendingStatusChange?.status === "Approved";
 
   const confirmStatusChange = async () => {
     if (!pendingStatusChange || !claimForStatusChange || savingStatusChange) {
@@ -518,220 +653,80 @@ export function ClaimsView({
                 {savingStatusChange
                   ? "Saving…"
                   : pendingStatusChange.status === "Approved"
-                  ? "Confirm"
-                  : pendingStatusChange.status === "ItemClaimed"
-                    ? "Confirm claimed"
-                    : pendingStatusChange.status === "Rejected"
-                      ? "Confirm"
-                      : "Confirm returned"}
+                    ? "Confirm"
+                    : pendingStatusChange.status === "ItemClaimed"
+                      ? "Confirm claimed"
+                      : pendingStatusChange.status === "Rejected"
+                        ? "Confirm"
+                        : "Confirm returned"}
               </button>
             </div>
           </div>
         </dialog>
       )}
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,0.7fr)_minmax(360px,1.3fr)]">
-        <Panel
-          title="Submitted Claims Request"
-          titleAdornment={
-            <span className="shrink-0 text-xs font-normal text-neutral-500 dark:text-neutral-400">
-              {claimGroups.length}
-            </span>
-          }
-          stickyHeader
-          className="overflow-x-clip no-scrollbar xl:sticky xl:top-20 xl:flex xl:h-[min(53.5rem,calc(100dvh-6rem))] xl:flex-col xl:self-start xl:overflow-y-auto"
-          action={
-            <div className="flex items-center">
-              <StatusFilter
-                value={statusFilter}
-                onChange={onStatusFilterChange}
-                options={statusOptions}
-              />
-            </div>
+      <Panel
+        title={claim.item}
+        titleSize="large"
+        borderless
+        plain={plainDetails}
+      >
+        <div
+          className={
+            plainDetails ? "space-y-4" : "space-y-4 p-4 sm:p-5"
           }
         >
-          {filteredClaims.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              No claim requests match this search.
-            </p>
-          ) : (
-            <>
-            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {pagedClaims.map((group) => {
-                const claim = group.representative;
-                const itemImage =
-                  reports.find((report) => report.id === claim.itemId)
-                    ?.image ?? "";
-                const claimantNames = group.claims
-                  .map((request) => request.claimant)
-                  .filter((name, index, names) => names.indexOf(name) === index);
-
-                return (
-                  <button
-                    key={claim.itemId}
-                    type="button"
-                    aria-pressed={
-                      visibleSelectedClaim?.itemId === claim.itemId
-                    }
-                    onClick={() => onSelectClaim(claim.id)}
-                    className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5 ${
-                      visibleSelectedClaim?.itemId === claim.itemId
-                        ? "bg-neutral-50 dark:bg-neutral-800"
-                        : "hover:bg-neutral-50 dark:bg-neutral-800/70 dark:hover:bg-neutral-800"
-                    }`}
-                  >
-                    {itemImage ? (
-                      <img
-                        src={itemImage}
-                        alt={`${claim.item} item`}
-                        loading="lazy"
-                        className="h-12 w-12 shrink-0 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <NoItemImage compact className="h-12 w-12" />
-                    )}
-                    <span className="min-w-0 flex-1">
-                      <span className="block break-normal text-sm font-bold leading-snug text-neutral-900 dark:text-neutral-100">
-                        {claim.item}
-                      </span>
-                    <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
-                        {claimantNames.join(", ")}
-                        {group.claims.length > 1 && (
-                          <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
-                            {group.claims.length} requests
-                        </span>
-                      )}
-                    </span>
-                    </span>
-                    <span className="hidden text-right sm:block">
-                      <span className="block text-[10px] text-neutral-500 dark:text-neutral-400">
-                        Submitted
-                      </span>
-                      <span className="mt-1 block text-[10px] font-medium text-neutral-700 dark:text-neutral-300">
-                        {claim.submitted}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="sticky bottom-0 z-10 mt-auto flex items-center justify-between gap-2 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 sm:px-5">
-              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                Showing {rangeStart}–{rangeEnd} of {claimGroups.length} posts
-              </p>
-              {totalPages > 1 && (
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setPage(safePage - 1)}
-                    disabled={safePage <= 1}
-                    aria-label="Previous page"
- className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
-                  >
-                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, index) => (
-                    <button
-                      key={index + 1}
-                      type="button"
-                      onClick={() => setPage(index + 1)}
-                      aria-label={`Page ${index + 1}`}
-                      aria-current={
-                        safePage === index + 1 ? "page" : undefined
-                      }
-                      className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors ${
-                        safePage === index + 1
-                          ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
-                          : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setPage(safePage + 1)}
-                    disabled={safePage >= totalPages}
-                    aria-label="Next page"
- className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
-                  >
-                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </div>
+          <section aria-labelledby="claim-item-post-heading">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2
+                id="claim-item-post-heading"
+                className="text-sm font-bold text-neutral-900 dark:text-neutral-100"
+              >
+                {selectedItemPost?.type === "Found"
+                  ? "Found item"
+                  : "Lost item"}
+              </h2>
+              {selectedItemPost && (
+                <StatusBadge status={selectedItemPost.type} />
               )}
             </div>
-            </>
-          )}
-        </Panel>
-
-        <Panel
-          title={visibleSelectedClaim?.item ?? ""}
-          titleSize="large"
-          borderless
-          plain={plainDetails}
-          className={
-            plainDetails
-              ? "min-h-[min(36rem,calc(100dvh-8rem))] xl:min-h-[min(53.5rem,calc(100dvh-6rem))]"
-              : ""
-          }
-        >
-          {visibleSelectedClaim ? (
-            <div
-              className={
-                plainDetails ? "space-y-4" : "space-y-4 p-4 sm:p-5"
-              }
-            >
-              <section aria-labelledby="claim-item-post-heading">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h2
-                    id="claim-item-post-heading"
-                    className="text-sm font-bold text-neutral-900 dark:text-neutral-100"
-                  >
-                    {selectedItemPost?.type === "Found"
-                      ? "Found item"
-                      : "Lost item"}
-                  </h2>
-                  {selectedItemPost && (
-                    <StatusBadge status={selectedItemPost.type} />
-                  )}
-                </div>
-                <div className="grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                  <div className="min-w-0">
-                    {selectedItemImage ? (
-                      <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800">
-                        <img
-                          src={selectedItemImage}
-                          alt={`${visibleSelectedClaim.item} item`}
-                          className="h-full max-w-full object-contain"
-                        />
-                      </div>
-                    ) : (
-                      <NoItemImage
-                        title="No item photo provided"
-                        subtitle="This report did not include any photos of the item."
-                        className="h-72 w-full"
-                      />
-                    )}
+            <div className="grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+              <div className="min-w-0">
+                {selectedItemImage ? (
+                  <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800">
+                    <img
+                      src={selectedItemImage}
+                      alt={`${claim.item} item`}
+                      className="h-full max-w-full object-contain"
+                    />
                   </div>
-                  <div className="min-w-0">
-                    {selectedItemPost ? (
-                      <>
-                        <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                          {selectedItemPost.reportedBy}
-                        </p>
-                        <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                          Id number: {resolveIdNumber(selectedItemPost.reporterSchoolId, selectedItemPost.reporterEmail) || "N/A"}
-                        </p>
-                        <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
-                          {selectedItemPost.description}
-                        </p>
-                        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 py-3 text-xs">
+                ) : (
+                  <NoItemImage
+                    title="No item photo provided"
+                    subtitle="This report did not include any photos of the item."
+                    className="h-72 w-full"
+                  />
+                )}
+              </div>
+              <div className="min-w-0">
+                {selectedItemPost ? (
+                  <>
+                    <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                      {selectedItemPost.reportedBy}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
+                      Id number: {resolveIdNumber(selectedItemPost.reporterSchoolId, selectedItemPost.reporterEmail) || "N/A"}
+                    </p>
+                    <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
+                      {selectedItemPost.description}
+                    </p>
+                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 py-3 text-xs">
                       <div>
                         <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
                           <Tag className="h-3 w-3" aria-hidden="true" />
                           Item name
                         </dt>
                         <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          {selectedItemPost.title || visibleSelectedClaim.item || "None"}
+                          {selectedItemPost.title || claim.item || "None"}
                         </dd>
                       </div>
                       <div>
@@ -846,67 +841,55 @@ export function ClaimsView({
                         </dd>
                       </div>
                     </dl>
-                      </>
-                    ) : (
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        The original item post could not be found.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </section>
-              <ClaimRequestSection
-                claim={visibleSelectedClaim}
-                headingId="claim-request-heading"
-                title={
-                  siblingClaims.length > 0
-                    ? `Claim request (${siblingClaims.length + 1})`
-                    : "Claim request"
-                }
-                itemType={selectedItemPost?.type}
-                itemClaimed={selectedItemPost?.status === "Claimed"}
-                itemReceived={selectedItemPost?.receivedByOsa ?? false}
-                onRequestStatus={(claimId, status) =>
-                  setPendingStatusChange({ claimId, status })
-                }
-                unlocked={unlocked}
-                onRequestUnlock={requestUnlock}
-              />
-              {siblingClaims.length > 0 && (
-                <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
-                  <div className="space-y-2">
-                    {siblingClaims.map((sibling) => (
-                      <ClaimRequestSection
-                        key={sibling.id}
-                        claim={sibling}
-                        headingId={`claim-request-${sibling.id}`}
-                        itemType={selectedItemPost?.type}
-                        itemClaimed={selectedItemPost?.status === "Claimed"}
-                        itemReceived={selectedItemPost?.receivedByOsa ?? false}
-                        onRequestStatus={(claimId, status) =>
-                          setPendingStatusChange({ claimId, status })
-                        }
-                        unlocked={unlocked}
-                        onRequestUnlock={requestUnlock}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+                  </>
+                ) : (
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    The original item post could not be found.
+                  </p>
+                )}
+              </div>
             </div>
-          ) : (
-            <p
-              className={
-                plainDetails
-                  ? "flex flex-1 items-center justify-center py-10 text-center text-sm text-neutral-500 dark:text-neutral-400"
-                  : "px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400"
-              }
-            >
-              No selected claim matches this search.
-            </p>
+          </section>
+          <ClaimRequestSection
+            claim={claim}
+            headingId="claim-request-heading"
+            title={
+              siblingClaims.length > 0
+                ? `Claim request (${siblingClaims.length + 1})`
+                : "Claim request"
+            }
+            itemType={selectedItemPost?.type}
+            itemClaimed={selectedItemPost?.status === "Claimed"}
+            itemReceived={selectedItemPost?.receivedByOsa ?? false}
+            onRequestStatus={(claimId, status) =>
+              setPendingStatusChange({ claimId, status })
+            }
+            unlocked={unlocked}
+            onRequestUnlock={requestUnlock}
+          />
+          {siblingClaims.length > 0 && (
+            <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
+              <div className="space-y-2">
+                {siblingClaims.map((sibling) => (
+                  <ClaimRequestSection
+                    key={sibling.id}
+                    claim={sibling}
+                    headingId={`claim-request-${sibling.id}`}
+                    itemType={selectedItemPost?.type}
+                    itemClaimed={selectedItemPost?.status === "Claimed"}
+                    itemReceived={selectedItemPost?.receivedByOsa ?? false}
+                    onRequestStatus={(claimId, status) =>
+                      setPendingStatusChange({ claimId, status })
+                    }
+                    unlocked={unlocked}
+                    onRequestUnlock={requestUnlock}
+                  />
+                ))}
+              </div>
+            </div>
           )}
-        </Panel>
-      </div>
+        </div>
+      </Panel>
       <AdminPasswordModal
         open={promptOpen}
         onClose={() => setPromptOpen(false)}

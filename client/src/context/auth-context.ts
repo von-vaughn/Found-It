@@ -16,7 +16,6 @@ export interface User {
   role: Role;
   isActive: boolean;
   isVerified: boolean;
-  mustChangePassword?: boolean;
   schoolId?: string;
   studentId?: string;
   avatar?: string;

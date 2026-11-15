@@ -45,8 +45,8 @@ function initials(name: string): string {
 }
 
 export function roleLabel(role: AdminUserRole): string {
-  if (role === "super_admin") return "Super admin";
-  if (role === "admin") return "Admin";
+  if (role === "super_admin") return "Admin";
+  if (role === "admin") return "Staff";
   return "School user";
 }
 
@@ -188,7 +188,7 @@ export function AdminAccountsManager({
   return (
     <>
       <Panel
-        title="Admin accounts"
+        title="Staff & Admin accounts"
         action={
           <div className="flex items-center gap-2">
             <span className="text-xs text-neutral-500 dark:text-neutral-400">{filteredStaff.length} staff</span>
@@ -198,7 +198,7 @@ export function AdminAccountsManager({
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              Create admin
+              Create account
             </button>
           </div>
         }
@@ -234,8 +234,8 @@ export function AdminAccountsManager({
               className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             >
               <option>All roles</option>
+              <option>Staff</option>
               <option>Admin</option>
-              <option>Super admin</option>
             </select>
           </div>
         </div>
@@ -243,7 +243,7 @@ export function AdminAccountsManager({
         {pageStaff.length === 0 ? (
           <div className="flex min-h-[400px] items-center justify-center px-5 py-10">
             <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
-              No admin accounts match these filters.
+              No staff or admin accounts match these filters.
             </p>
           </div>
         ) : (
@@ -251,7 +251,7 @@ export function AdminAccountsManager({
             <table className="w-full min-w-[980px] text-left text-xs">
               <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <tr>
-                  <th scope="col" className="px-5 py-3">Admin</th>
+                  <th scope="col" className="px-5 py-3">Account</th>
                   <th scope="col" className="px-4 py-3">Role</th>
                   <th scope="col" className="px-4 py-3">Status</th>
                   <th scope="col" className="px-4 py-3">Joined</th>
@@ -283,7 +283,7 @@ export function AdminAccountsManager({
                     <td className="px-4 py-3.5">
                       <button
                         type="button"
-                        title="Toggle admin / super admin role"
+                        title="Toggle staff / admin role"
                         onClick={() => onToggleRole(admin)}
                         disabled={isSavingRole}
                         className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
@@ -397,7 +397,7 @@ export function AdminAccountsManager({
             onSubmit={handleSubmit(onCreate)}
             className="w-full max-w-md rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
-            <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Create admin account</h2>
+            <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Create staff or admin account</h2>
             <div className="mt-4 space-y-3">
               {errors.root?.server?.message && (
                 <p className="text-xs text-red-600" role="alert">
@@ -460,8 +460,8 @@ export function AdminAccountsManager({
                     className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                     disabled={isSubmitting}
                   >
-                    <option value="admin">Admin</option>
-                    <option value="super_admin">Super admin</option>
+                    <option value="admin">Staff</option>
+                    <option value="super_admin">Admin</option>
                   </select>
                 </div>
               </div>
@@ -504,13 +504,13 @@ export function AdminAccountsManager({
             className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
             <h2 id="staff-status-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              {pendingUser.isActive ? "Deactivate admin?" : "Activate admin?"}
+              {pendingUser.isActive ? "Deactivate account?" : "Activate account?"}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
               <span className="font-semibold text-neutral-900 dark:text-neutral-100">{pendingUser.name}</span>{" "}
               {pendingUser.isActive
                 ? "will lose access immediately and be signed out."
-                : "will regain access to the admin workspace."}
+                : "will regain access to the workspace."}
             </p>
             <div className="mt-6 flex justify-end gap-2">
               <button
@@ -556,11 +556,11 @@ export function AdminAccountsManager({
             className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
             <h2 id="staff-delete-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              Remove admin?
+              Remove account?
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
               <span className="font-semibold text-neutral-900 dark:text-neutral-100">{deleteTarget.name}</span> will
-              be permanently removed from staff. This cannot be undone.
+              be permanently removed from staff &amp; admin accounts. This cannot be undone.
             </p>
             <div className="mt-6 flex justify-end gap-2">
               <button

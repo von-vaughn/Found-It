@@ -17,6 +17,12 @@ import { hashPassword } from '../utils/password';
 
 const roleSchema = z.object({ role: z.enum(ROLES) });
 const activeSchema = z.object({ isActive: z.boolean() });
+
+function roleDisplay(role: Role): string {
+  if (role === 'super_admin') return 'Admin';
+  if (role === 'admin') return 'Staff';
+  return 'School user';
+}
 const createAdminSchema = z.object({
   name: z
     .string()
@@ -106,11 +112,11 @@ export async function createAdminUser(req: Request, res: Response): Promise<void
     action: 'created',
     entityType: 'user',
     entityId: created.id,
-    summary: `Created ${role} account for ${created.email}`,
+    summary: `Created ${roleDisplay(role)} account for ${created.email}`,
   });
 
   res.status(201).json({
-    message: 'Admin account created.',
+    message: 'Account created.',
     user: { ...created, reportCount: 0 },
   });
 }
@@ -172,7 +178,7 @@ export async function changeUserRole(req: Request, res: Response): Promise<void>
       return updateUserRole(target.id, parsed.data.role);
     });
     if (!updated) {
-      res.status(400).json({ message: 'Cannot demote the last active super_admin.' });
+      res.status(400).json({ message: 'Cannot demote the last active admin.' });
       return;
     }
     await revokeAllUserTokens(target.id);
@@ -183,9 +189,9 @@ export async function changeUserRole(req: Request, res: Response): Promise<void>
       action: 'updated',
       entityType: 'user',
       entityId: target.id,
-      summary: `Changed role for ${target.email} from ${target.role} to ${parsed.data.role}`,
+      summary: `Changed role for ${target.email} from ${roleDisplay(target.role)} to ${roleDisplay(parsed.data.role)}`,
     });
-    res.json({ message: `Role updated to ${parsed.data.role}.`, user: updated });
+    res.json({ message: `Role updated to ${roleDisplay(parsed.data.role)}.`, user: updated });
     return;
   }
   const updated = await updateUserRole(target.id, parsed.data.role);
@@ -198,10 +204,10 @@ export async function changeUserRole(req: Request, res: Response): Promise<void>
       action: 'updated',
       entityType: 'user',
       entityId: target.id,
-      summary: `Changed role for ${target.email} from ${target.role} to ${parsed.data.role}`,
+      summary: `Changed role for ${target.email} from ${roleDisplay(target.role)} to ${roleDisplay(parsed.data.role)}`,
     });
   }
-  res.json({ message: `Role updated to ${parsed.data.role}.`, user: updated });
+  res.json({ message: `Role updated to ${roleDisplay(parsed.data.role)}.`, user: updated });
 }
 
 /**
@@ -227,7 +233,7 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
     return;
   }
   if (req.user!.role === 'admin' && target.role !== 'school_user') {
-    res.status(403).json({ message: 'Admins can only manage users with role "school_user".' });
+    res.status(403).json({ message: 'Staff can only manage users with role "school_user".' });
     return;
   }
   const updated = !parsed.data.isActive && target.role === 'super_admin'
@@ -237,7 +243,7 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
       })
     : await setUserActive(target.id, parsed.data.isActive);
   if (!updated && !parsed.data.isActive && target.role === 'super_admin') {
-    res.status(400).json({ message: 'Cannot deactivate the last active super_admin.' });
+    res.status(400).json({ message: 'Cannot deactivate the last active admin.' });
     return;
   }
   if (!parsed.data.isActive) await revokeAllUserTokens(target.id);
@@ -269,7 +275,7 @@ export async function removeUser(req: Request, res: Response): Promise<void> {
     return;
   }
   if (req.user!.role === 'admin' && target.role !== 'school_user') {
-    res.status(403).json({ message: 'Admins can only delete users with role "school_user".' });
+    res.status(403).json({ message: 'Staff can only delete users with role "school_user".' });
     return;
   }
   if (target.role === 'super_admin') {
@@ -278,7 +284,7 @@ export async function removeUser(req: Request, res: Response): Promise<void> {
       return deleteUser(target.id);
     });
     if (!deleted) {
-      res.status(400).json({ message: 'Cannot delete the last active super_admin.' });
+      res.status(400).json({ message: 'Cannot delete the last active admin.' });
       return;
     }
   } else {

@@ -4,7 +4,9 @@ import { OverviewPage } from "@/pages/admin/OverviewPage";
 import { ReportsPage } from "@/pages/admin/ReportsPage";
 import { AdminCreatePostPage } from "@/pages/admin/AdminCreatePostPage";
 import { ClaimsPage } from "@/pages/admin/ClaimsPage";
+import { ClaimDetailPage } from "@/pages/admin/ClaimDetailPage";
 import { ReturnItemsPage } from "@/pages/admin/ReturnItemsPage";
+import { ReturnItemDetailPage } from "@/pages/admin/ReturnItemDetailPage";
 import { UsersPage } from "@/pages/admin/UsersPage";
 import { AuditLogsPage } from "@/pages/admin/AuditLogsPage";
 import { FilterOptionsPage } from "@/pages/admin/FilterOptionsPage";
@@ -29,8 +31,16 @@ export function getAdminRoutes(): RouteObject[] {
       element: <ClaimsPage />,
     },
     {
+      path: paths.adminClaimDetail,
+      element: <ClaimDetailPage />,
+    },
+    {
       path: paths.adminReturns,
       element: <ReturnItemsPage />,
+    },
+    {
+      path: paths.adminReturnDetail,
+      element: <ReturnItemDetailPage />,
     },
     {
       path: paths.adminUsers,

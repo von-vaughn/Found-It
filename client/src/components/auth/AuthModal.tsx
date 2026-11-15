@@ -743,39 +743,43 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       Dev Demo Accounts (One-Click Fill)
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEmail("user@foundit.local");
-                          setPassword("User12345!");
-                          setError("");
-                        }}
-                        className="inline-flex min-h-8 items-center justify-center rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                      >
-                        Demo Student
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEmail("admin@foundit.local");
-                          setPassword("Admin123!");
-                          setError("");
-                        }}
-                        className="inline-flex min-h-8 items-center justify-center rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                      >
-                        Demo Admin
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEmail("founditsuperadmin@foundit.local");
-                          setPassword("founditSuperAdminOSA!");
-                          setError("");
-                        }}
-                        className="col-span-2 inline-flex min-h-8 items-center justify-center rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                      >
-                        Demo Super Admin
-                      </button>
+                      {(
+                        [
+                          {
+                            label: "Demo Student",
+                            email: "user@foundit.local",
+                            password: "User12345!",
+                          },
+                          {
+                            label: "Demo Student 2",
+                            email: "user2@foundit.local",
+                            password: "User12345!",
+                          },
+                          {
+                            label: "Demo Staff",
+                            email: "admin@foundit.local",
+                            password: "Admin123!",
+                          },
+                          {
+                            label: "Demo Admin",
+                            email: "founditsuperadmin@foundit.local",
+                            password: "founditSuperAdminOSA!",
+                          },
+                        ] as const
+                      ).map((demo) => (
+                        <button
+                          key={demo.email}
+                          type="button"
+                          onClick={() => {
+                            setEmail(demo.email);
+                            setPassword(demo.password);
+                            setError("");
+                          }}
+                          className="inline-flex min-h-8 items-center justify-center rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                        >
+                          {demo.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}

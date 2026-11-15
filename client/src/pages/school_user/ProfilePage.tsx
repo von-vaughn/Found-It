@@ -3,8 +3,8 @@ import { toClientItems } from "@/lib/itemAdapter";
 import { resolveIdNumber } from "@/lib/idNumber";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, KeyRound, LogOut, PlusCircle } from "lucide-react";
-import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
+import { motion, useReducedMotion } from "motion/react";
+import { ChevronDown, LogOut, Plus } from "lucide-react";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
@@ -27,8 +27,50 @@ interface ProfilePageProps {
 const DEFAULT_PROFILE = {
   name: "Vaughn Evangelista",
   email: "ve202100318@wmsu.edu.ph",
-  avatar: "/images/avatars/vaughn_evangelista.svg",
 };
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function EmptySearchIllustration() {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex h-52 w-full shrink-0 items-center justify-center rounded-3xl border border-neutral-200/70 bg-neutral-50/40 sm:h-56 sm:w-64 dark:border-neutral-800 dark:bg-neutral-900/40"
+    >
+      <svg
+        viewBox="0 0 88 88"
+        fill="none"
+        className="h-24 w-24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle
+          cx="38"
+          cy="38"
+          r="21"
+          className="stroke-neutral-500 dark:stroke-neutral-400"
+          strokeWidth="2.5"
+        />
+        <path
+          d="M53.5 53.5L70 70"
+          stroke="#E5192D"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <path
+          d="M38 29V47M29 38H47"
+          stroke="#E5192D"
+          strokeWidth="2.75"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>
+  );
+}
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({
   submittedClaims = [],
@@ -38,14 +80,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const items = EMPTY_ITEMS;
+  const reduceMotion = useReducedMotion();
   const [searchQuery, setSearchQuery] = useState("");
   const [reportFilter, setReportFilter] = useState<"all" | "lost" | "found">(
     "all",
   );
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   // Close the mobile account menu on outside click or Escape.
   useEffect(() => {
@@ -72,7 +115,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const name = user?.name || DEFAULT_PROFILE.name;
   const email = user?.email || DEFAULT_PROFILE.email;
   const idNumber = resolveIdNumber(user?.schoolId ?? user?.studentId, email);
-  const avatar = user?.avatar || DEFAULT_PROFILE.avatar;
+  const initials = getInitials(name);
+  const customAvatar = !avatarFailed ? user?.avatar : undefined;
 
   // Fetch the current user's own reports from the API.
   const { data: serverMyItems } = useMyItems({
@@ -113,9 +157,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         onOpenCreateModal={() => navigate("/dashboard/create")}
       />
 
-      <div
-        className="sidebar-shift ml-0 flex min-h-screen min-w-0 flex-1 flex-col pb-20 md:pb-0 md:ml-20 transition-[margin] duration-300"
-      >
+      <div className="sidebar-shift ml-0 flex min-h-screen min-w-0 flex-1 flex-col pb-20 transition-[margin] duration-300 md:ml-20 md:pb-0">
         <div className="hidden md:block">
           <Header
             searchQuery={searchQuery}
@@ -131,186 +173,256 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
         <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white px-4 py-8 sm:px-8 lg:px-12 dark:bg-neutral-950">
           <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
-            <section
-              aria-labelledby="profile-identity-heading"
-              className="flex flex-row items-center gap-5 pb-7"
-            >
-              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-                <img
-                  src={avatar}
-                  alt={`${name}'s profile`}
-                  className="h-full w-full object-cover"
-                  onError={(event) => {
-                    event.currentTarget.src = DEFAULT_PROFILE.avatar;
-                  }}
-                />
-              </div>
-              <div className="relative min-w-0 flex-1" ref={profileMenuRef}>
-                <span className="flex items-center gap-1.5">
-                  <h2
-                    id="profile-identity-heading"
-                    className="break-words text-xl font-bold text-neutral-900 dark:text-neutral-100"
-                  >
-                    {name}
-                  </h2>
-                  <span className="shrink-0 md:hidden">
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[290px_minmax(0,1fr)] lg:gap-14">
+              {/* Left Profile Rail */}
+              <section aria-labelledby="profile-identity-heading">
+                <div className="relative inline-block">
+                  <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[22px] bg-neutral-900 text-2xl font-bold tracking-tight text-white dark:bg-neutral-100 dark:text-neutral-900">
+                    {customAvatar ? (
+                      <img
+                        src={customAvatar}
+                        alt={`${name}'s profile`}
+                        className="h-full w-full object-cover"
+                        onError={() => setAvatarFailed(true)}
+                      />
+                    ) : (
+                      <span aria-hidden="true">{initials}</span>
+                    )}
+                  </div>
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-neutral-950"
+                  />
+                </div>
+
+                <div className="relative mt-5" ref={profileMenuRef}>
+                  <div className="flex items-center justify-between gap-2">
+                    <h1
+                      id="profile-identity-heading"
+                      className="break-words text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
+                    >
+                      {name}
+                    </h1>
                     <button
                       type="button"
                       onClick={() => setProfileMenuOpen((open) => !open)}
                       aria-label="Open account menu"
                       aria-expanded={profileMenuOpen}
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 md:hidden dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
                     >
                       <ChevronDown
                         className={`h-4 w-4 transition-transform duration-150 ${profileMenuOpen ? "rotate-180" : ""}`}
                         aria-hidden="true"
                       />
                     </button>
-                  </span>
-                </span>
-                {profileMenuOpen && (
-                  <span className="absolute right-0 top-full z-30 mt-2 block w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden dark:border-neutral-800 dark:bg-neutral-900">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        setChangePasswordOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-neutral-300 dark:hover:bg-neutral-800"
-                    >
-                      <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
-                      Change password
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                            setProfileMenuOpen(false);
-                            await logout();
-                            navigate("/");
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-red-400 dark:hover:bg-red-500/10"
-                    >
-                      <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-                      Sign out
-                    </button>
-                  </span>
-                )}
-                <p className="mt-1 break-all text-sm text-neutral-600 dark:text-neutral-400">
-                  {email}
-                </p>
-                <p className="mt-0.5 break-all text-sm text-neutral-500 dark:text-neutral-400">
-                  ID Number: {idNumber || "N/A"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setChangePasswordOpen(true)}
-                className="hidden md:inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-              >
-                <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
-                Change password
-              </button>
-            </section>
+                  </div>
 
-            <ChangePasswordModal
-              open={changePasswordOpen}
-              onClose={() => setChangePasswordOpen(false)}
-            />
-
-            <section aria-labelledby="profile-reports-heading" className="pb-10">
-              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-4 dark:border-neutral-800">
-                <div>
-                  <h2
-                    id="profile-reports-heading"
-                    className="text-base font-bold text-neutral-900 dark:text-neutral-100"
-                  >
-                    Your item reports
-                  </h2>
-                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                    {userItems.length} total · {lostItems} lost · {foundItems}{" "}
-                    found
-                  </p>
+                  {profileMenuOpen && (
+                    <div className="absolute right-0 top-full z-30 mt-2 w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden dark:border-neutral-800 dark:bg-neutral-900">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setProfileMenuOpen(false);
+                          await logout();
+                          navigate("/");
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-red-400 dark:hover:bg-red-500/10"
+                      >
+                        <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                        Sign out
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => navigate("/dashboard/create")}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-                >
-                  <PlusCircle className="h-4 w-4" aria-hidden="true" />
-                  Post an item
-                </button>
-              </div>
 
-              {userItems.length > 0 ? (
-                <>
-                  <nav
-                    aria-label="Filter your reports by type"
-                    className="mt-5 flex items-center gap-4"
+                <dl className="mt-6 divide-y divide-neutral-200/80 border-y border-neutral-200/80 text-sm dark:divide-neutral-800 dark:border-neutral-800">
+                  <div className="flex items-center justify-between gap-4 py-3.5">
+                    <dt className="shrink-0 text-neutral-500 dark:text-neutral-400">
+                      ID number
+                    </dt>
+                    <dd className="break-all text-right font-mono text-xs font-medium text-neutral-900 dark:text-neutral-100">
+                      {idNumber || "N/A"}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 py-3.5">
+                    <dt className="shrink-0 text-neutral-500 dark:text-neutral-400">
+                      Email
+                    </dt>
+                    <dd className="break-all text-right font-mono text-xs font-medium text-neutral-900 dark:text-neutral-100">
+                      {email}
+                    </dd>
+                  </div>
+                </dl>
+
+                <dl className="grid grid-cols-3 divide-x divide-neutral-200/80 pt-5 dark:divide-neutral-800">
+                  <div className="pr-4">
+                    <dd className="font-mono text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+                      {userItems.length}
+                    </dd>
+                    <dt className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+                      Total
+                    </dt>
+                  </div>
+                  <div className="px-4">
+                    <dd className="font-mono text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+                      {lostItems}
+                    </dd>
+                    <dt className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+                      Lost
+                    </dt>
+                  </div>
+                  <div className="pl-4">
+                    <dd className="font-mono text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+                      {foundItems}
+                    </dd>
+                    <dt className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+                      Found
+                    </dt>
+                  </div>
+                </dl>
+              </section>
+
+              {/* Right Reports Column */}
+              <section
+                aria-labelledby="profile-reports-heading"
+                className="min-w-0 pb-10"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
+                      My reports
+                    </p>
+                    <h2
+                      id="profile-reports-heading"
+                      className="mt-1 text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
+                    >
+                      Your item reports
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/create")}
+                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                   >
-                    {(
-                      [
-                        { id: "all", label: "All" },
-                        { id: "lost", label: "Lost Item" },
-                        { id: "found", label: "Found Item" },
-                      ] as const
-                    ).map((tab) => (
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    Post an item
+                  </button>
+                </div>
+
+                <nav
+                  aria-label="Filter your reports by type"
+                  className="mt-6 flex items-center gap-7 border-b border-neutral-200/80 dark:border-neutral-800"
+                >
+                  {(
+                    [
+                      { id: "all", label: "All", count: userItems.length },
+                      { id: "lost", label: "Lost", count: lostItems },
+                      { id: "found", label: "Found", count: foundItems },
+                    ] as const
+                  ).map((tab) => {
+                    const isActive = reportFilter === tab.id;
+                    return (
                       <button
                         key={tab.id}
                         type="button"
                         onClick={() => setReportFilter(tab.id)}
-                        aria-pressed={reportFilter === tab.id}
-                        className={`relative px-1 py-1 text-sm font-bold transition-colors ${
-                          reportFilter === tab.id
-                            ? "text-neutral-900 dark:text-neutral-100"
-                            : "text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300"
+                        aria-pressed={isActive}
+                        className={`relative inline-flex items-baseline gap-1.5 pb-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-4 dark:focus-visible:ring-offset-neutral-950 ${
+                          isActive
+                            ? "font-semibold text-neutral-900 dark:text-neutral-100"
+                            : "font-medium text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
                         }`}
                       >
-                        {tab.label}
-                        {reportFilter === tab.id && (
-                          <span className="absolute -bottom-1 left-0 right-0 h-[2.5px] rounded-full bg-neutral-900 dark:bg-neutral-100" />
+                        <span>{tab.label}</span>
+                        <span
+                          className={`font-mono text-xs tabular-nums ${
+                            isActive
+                              ? "text-neutral-500 dark:text-neutral-400"
+                              : "text-neutral-400 dark:text-neutral-500"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                        {isActive && (
+                          <motion.span
+                            layoutId="profile-report-filter-bar"
+                            transition={
+                              reduceMotion
+                                ? { duration: 0 }
+                                : { type: "spring", stiffness: 500, damping: 38 }
+                            }
+                            aria-hidden="true"
+                            className="absolute -bottom-px left-0 right-0 h-[2px] rounded-full bg-[#E5192D]"
+                          />
                         )}
                       </button>
-                    ))}
-                  </nav>
+                    );
+                  })}
+                </nav>
 
-                  {filteredUserItems.length > 0 ? (
-                    <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                  {filteredUserItems.map((item) => (
-                    <ItemCard
-                      key={item.id}
-                      item={item}
-                      onItemClick={(selected) =>
-                        navigate(`/dashboard/items/${selected.id}`, {
-                          state: { from: "/dashboard/profile" },
-                        })
-                      }
-                    />
-                  ))}
-                    </div>
-                  ) : (
-                    <div className="py-10 text-center">
-                      <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                        No {reportFilter === "lost" ? "lost" : "found"} reports
-                        yet
+                {userItems.length === 0 ? (
+                  <div className="mt-7 flex flex-col-reverse gap-8 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="max-w-md">
+                      <h3 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                        Nothing reported yet.
                       </h3>
-                      <button
-                        type="button"
-                        onClick={() => setReportFilter("all")}
-                        className="mt-4 text-xs font-bold text-[#E5192D] hover:underline"
-                      >
-                        Show all reports
-                      </button>
+                      <p className="mt-2.5 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
+                        Lost something, or found something that isn&apos;t yours?
+                        Post it here and the people looking can find it.
+                      </p>
+                      <div className="mt-6 flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => navigate("/dashboard/create?type=lost")}
+                          className="inline-flex h-10 items-center justify-center rounded-full bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                        >
+                          I lost something
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate("/dashboard/create?type=found")
+                          }
+                          className="inline-flex h-10 items-center justify-center rounded-full border border-neutral-200 bg-white px-5 text-xs font-bold text-neutral-900 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                        >
+                          I found something
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="py-10 text-center">
-                  <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                    No item reports yet
-                  </h3>
-                </div>
-              )}
-            </section>
+
+                    <EmptySearchIllustration />
+                  </div>
+                ) : filteredUserItems.length > 0 ? (
+                  <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {filteredUserItems.map((item) => (
+                      <ItemCard
+                        key={item.id}
+                        item={item}
+                        onItemClick={(selected) =>
+                          navigate(`/dashboard/items/${selected.id}`, {
+                            state: { from: "/dashboard/profile" },
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-7 py-10 text-center">
+                    <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                      No {reportFilter === "lost" ? "lost" : "found"} reports
+                      yet
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setReportFilter("all")}
+                      className="mt-4 text-xs font-bold text-[#E5192D] hover:underline"
+                    >
+                      Show all reports
+                    </button>
+                  </div>
+                )}
+              </section>
+            </div>
           </div>
         </main>
       </div>

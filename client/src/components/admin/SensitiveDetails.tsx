@@ -67,7 +67,7 @@ export function AdminPasswordModal({
           id="admin-password-title"
           className="mt-4 text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
         >
-          Enter admin password
+          Verify your password
         </h2>
         <p className="mt-1.5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
           Verify your password to view.
@@ -83,8 +83,8 @@ export function AdminPasswordModal({
               setPassword(event.target.value);
               setError("");
             }}
-            placeholder="Admin password"
-            aria-label="Admin password"
+            placeholder="Account password"
+            aria-label="Account password"
             className="h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 px-3.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
           />
           {error && (
@@ -123,14 +123,14 @@ export function LockedValue({
     <button
       type="button"
       onClick={onUnlock}
-      title="Enter admin password to view"
+      title="Verify password to view"
       className="inline-flex cursor-pointer items-center gap-1.5 text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-600 dark:hover:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] rounded"
     >
       <Lock className="h-3 w-3 shrink-0" aria-hidden="true" />
       <span aria-hidden="true" className="tracking-widest">
         ••••••
       </span>
-      <span className="sr-only">Hidden — enter admin password to view</span>
+      <span className="sr-only">Hidden — verify password to view</span>
     </button>
   );
 }

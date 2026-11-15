@@ -7,7 +7,6 @@ export interface SafeAuthUser {
   role: "school_user" | "admin" | "super_admin";
   isActive: boolean;
   isVerified: boolean;
-  mustChangePassword?: boolean;
   schoolId?: string;
   studentId?: string;
   avatar?: string;

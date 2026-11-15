@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import {
-  changePassword,
   checkEmail,
   forgotPassword,
   login,
@@ -36,7 +35,6 @@ router.post('/logout', csrfProtection, logout);
 // Authenticated
 router.get('/me', authenticate, me);
 router.post('/logout-all', authenticate, logoutAll);
-router.patch('/change-password', authenticate, changePassword);
 router.post('/verify-password', authenticate, requireAdmin, verifyAdminPassword);
 
 export default router;

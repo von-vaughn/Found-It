@@ -52,7 +52,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         onSuccess: () => {
           setFlagDialogOpen(false);
           setFlagReason("");
-          toast.success("Post reported to admin");
+          toast.success("Post reported to staff");
         },
         onError: (err) => {
           const data = (
@@ -299,7 +299,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 Report this post
               </h2>
               <p className="mt-1.5 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400 break-words">
-                Tell OSA administrators what is wrong with &ldquo;{item.title}&rdquo;.
+                Tell OSA staff what is wrong with &ldquo;{item.title}&rdquo;.
               </p>
               <form onSubmit={confirmFlag} className="mt-4 space-y-4">
                 <div>

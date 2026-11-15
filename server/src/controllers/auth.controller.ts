@@ -91,13 +91,6 @@ const loginSchema = z
   })
   .strict();
 
-const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'currentPassword is required').max(72),
-    newPassword: passwordSchema,
-  })
-  .strict();
-
 const verifyEmailSchema = z
   .object({
     email: z.string().trim().toLowerCase().email('Invalid email address'),
@@ -557,35 +550,6 @@ export async function me(req: Request, res: Response): Promise<void> {
     return;
   }
   res.json({ user });
-}
-
-/** PATCH /api/auth/change-password — authenticated. Revokes all active refresh tokens. */
-export async function changePassword(req: Request, res: Response): Promise<void> {
-  if (!req.user) {
-    res.status(401).json({ message: 'Not authenticated.' });
-    return;
-  }
-  const parsed = changePasswordSchema.safeParse(req.body);
-  if (!parsed.success) {
-    zodError(res, parsed.error);
-    return;
-  }
-  const user = await findUserWithHashByEmail(req.user.email);
-  if (!user) {
-    res.status(404).json({ message: 'User not found.' });
-    return;
-  }
-  const ok = await comparePassword(parsed.data.currentPassword, user.passwordHash);
-  if (!ok) {
-    res.status(400).json({ message: 'Current password is incorrect.' });
-    return;
-  }
-
-  await updateUserPassword(user.id, await hashPassword(parsed.data.newPassword));
-  await revokeAllUserTokens(user.id);
-  clearRefreshTokenCookie(res);
-
-  res.json({ message: 'Password changed successfully. Please sign in again with your new password.' });
 }
 
 const verifyPasswordSchema = z.object({

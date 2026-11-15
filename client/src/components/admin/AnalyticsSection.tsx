@@ -96,13 +96,7 @@ export function AnalyticsSection({
                     {request.claimant} · {request.submitted}
                   </span>
                 </span>
-                <StatusBadge
-                  status={
-                    request.status === "Approved"
-                      ? "Unreturned"
-                      : request.status
-                  }
-                />
+                <StatusBadge status={request.status} />
               </li>
             ))}
             {returnRequests.every(

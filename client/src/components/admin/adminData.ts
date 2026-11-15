@@ -135,7 +135,7 @@ export function navigationFor(
 
 export const pageCopy: Record<AdminSection, { title: string; description: string }> = {
   overview: {
-    title: "Admin dashboard",
+    title: "Staff dashboard",
     description: "",
   },
   items: {
@@ -164,12 +164,12 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
   },
 };
 
-/** Copy that differs when a super admin views the same section. */
+/** Copy that differs when an admin views the same section. */
 export const superAdminPageCopy: Partial<
   Record<AdminSection, { title: string; description: string }>
 > = {
   overview: {
-    title: "Super admin dashboard",
+    title: "Admin dashboard",
     description: "",
   },
   claims: {
@@ -343,7 +343,7 @@ export const adminUsers: AdminUser[] = [
   },
   {
     id: "USR-1003",
-    name: "Campus Admin",
+    name: "Campus Staff",
     email: "admin@wmsu.edu.ph",
     role: "admin",
     isActive: true,
@@ -352,7 +352,7 @@ export const adminUsers: AdminUser[] = [
   },
   {
     id: "USR-1001",
-    name: "System Owner",
+    name: "System Admin",
     email: "owner@wmsu.edu.ph",
     role: "super_admin",
     isActive: true,

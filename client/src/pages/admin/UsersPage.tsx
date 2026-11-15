@@ -125,7 +125,7 @@ export function UsersPage() {
       !pendingUser.isActive === false &&
       allUsers.filter((u) => u.role === "super_admin" && u.isActive).length <= 1
     ) {
-      toast.error("Cannot deactivate the last super admin.");
+      toast.error("Cannot deactivate the last admin.");
       setPendingUser(null);
       return;
     }
@@ -149,7 +149,7 @@ export function UsersPage() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     if (deleteTarget.role === "super_admin" && allUsers.filter((u) => u.role === "super_admin").length <= 1) {
-      toast.error("Cannot delete the last super admin.");
+      toast.error("Cannot delete the last admin.");
       setDeleteTarget(null);
       return;
     }
@@ -164,7 +164,7 @@ export function UsersPage() {
 
   const handleToggleRole = async (target: AdminUser) => {
     if (target.role === "super_admin" && allUsers.filter((u) => u.role === "super_admin").length <= 1) {
-      toast.error("Cannot demote the last super admin.");
+      toast.error("Cannot demote the last admin.");
       return;
     }
     const nextRole: AdminUserRole = target.role === "admin" ? "super_admin" : "admin";
@@ -192,7 +192,9 @@ export function UsersPage() {
       query={query}
       onQueryChange={updateQuery}
       searchPlaceholder={
-        tab === "admins" ? "Search admins by name or email…" : "Search users by name or email…"
+        tab === "admins"
+          ? "Search staff & admins by name or email…"
+          : "Search users by name or email…"
       }
     >
       {isSuperAdmin && (
@@ -217,13 +219,13 @@ export function UsersPage() {
               tab === "admins" ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900" : "border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800"
             }`}
           >
-            Admin accounts ({staffUsers.length})
+            Staff &amp; Admin accounts ({staffUsers.length})
           </button>
         </div>
       )}
 
       {usersQuery.isPending ? (
-        <Panel title={tab === "school" ? "User Management" : "Admin accounts"}>
+        <Panel title={tab === "school" ? "User Management" : "Staff & Admin accounts"}>
           <div
             className="flex min-h-[400px] items-center justify-center px-5 py-10"
             role="status"

@@ -18,7 +18,7 @@ export const env = {
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   SUPER_ADMIN_EMAIL: (process.env.SUPER_ADMIN_EMAIL || 'superadmin@foundit.local').toLowerCase(),
   SUPER_ADMIN_PASSWORD: process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin123!',
-  SUPER_ADMIN_NAME: process.env.SUPER_ADMIN_NAME || 'Super Admin',
+  SUPER_ADMIN_NAME: process.env.SUPER_ADMIN_NAME || 'Admin',
   SEED_DEMO_USERS: (process.env.SEED_DEMO_USERS || 'true').toLowerCase() === 'true',
   /** Comma-separated CORS allowlist. Empty = allow all (dev default). Set in production. */
   ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || '')

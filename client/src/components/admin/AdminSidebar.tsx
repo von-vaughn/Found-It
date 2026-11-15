@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { NotificationKind } from "@/services/notificationService";
 import { StatusBadge } from "./StatusBadge";
 import {
@@ -30,7 +31,6 @@ export interface AdminSidebarItem<TSection extends string = string> {
 
 interface AdminSidebarProps<TSection extends string> {
   activeSection: TSection;
-  isSuperAdmin?: boolean;
   navigation: AdminSidebarItem<TSection>[];
   notifications: AdminNotification[];
   onSectionChange: (section: TSection) => void;
@@ -42,7 +42,6 @@ interface AdminSidebarProps<TSection extends string> {
 
 export function AdminSidebar<TSection extends string>({
   activeSection,
-  isSuperAdmin = false,
   navigation,
   notifications,
   onSectionChange,
@@ -182,11 +181,6 @@ export function AdminSidebar<TSection extends string>({
             }`}
           >
             Found<span className="text-[#E5192D]">It</span>
-            {!isSuperAdmin && (
-              <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                OSA
-              </span>
-            )}
           </span>
         </Link>
 
@@ -257,12 +251,13 @@ export function AdminSidebar<TSection extends string>({
             />
             <span className="sr-only">Notifications</span>
             {unreadCount > 0 && (
-              <span
+              <Badge
+                variant="notification"
                 aria-hidden="true"
-                className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border-2 border-white dark:border-neutral-900 bg-[#E5192D] px-0.5 text-[9px] font-bold leading-none text-white"
+                className="absolute top-1 right-1 min-w-4 h-4 rounded-md px-0.5 text-[9px] leading-none border-2 border-white dark:border-neutral-900"
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
+              </Badge>
             )}
             <span
               aria-hidden="true"
@@ -288,7 +283,7 @@ export function AdminSidebar<TSection extends string>({
             exit={{ opacity: 0, x: -16 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             style={{ left: collapsedWidth, willChange: "transform, opacity" }}
-            className="fixed bottom-0 top-0 z-40 flex w-[min(20rem,calc(100vw-4rem))] flex-col bg-white dark:bg-neutral-950 border-r border-neutral-200 dark:border-neutral-800 shadow-xl"
+            className="fixed bottom-0 top-0 z-40 flex w-[min(20rem,calc(100vw-4rem))] flex-col border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 max-md:shadow-xl md:shadow-none"
           >
             <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 px-5 py-5">
               <div>
@@ -328,67 +323,52 @@ export function AdminSidebar<TSection extends string>({
                 </button>
               )}
             </div>
-            {notifications.length > 0 ? (
-              <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 pt-0">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`flex w-full items-start gap-2 rounded-xl p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
-                      notification.read ? "" : "bg-red-50/60 dark:bg-red-500/10"
-                    }`}
+            <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`flex w-full items-start gap-2 rounded-xl p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
+                    notification.read ? "" : "bg-red-50/60 dark:bg-red-500/10"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNotificationSelect(notification);
+                      setPanelOpen(false);
+                    }}
+                    className="min-w-0 flex-1 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
                   >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onNotificationSelect(notification);
-                        setPanelOpen(false);
-                      }}
-                      className="flex min-w-0 flex-1 items-start gap-3 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                          notification.read ? "bg-transparent" : "bg-[#E5192D]"
-                        }`}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex min-w-0 items-center justify-between gap-2">
-                          <span
-                            className={`min-w-0 truncate text-xs ${
-                              notification.read
-                                ? "font-medium text-neutral-700 dark:text-neutral-300"
-                                : "font-bold text-neutral-900 dark:text-neutral-100"
-                            }`}
-                          >
-                            {notification.title}
-                          </span>
-                          <StatusBadge status={notification.status} />
-                        </span>
-                        <span className="mt-1 line-clamp-2 block text-xs text-neutral-500 dark:text-neutral-400">
-                          {notification.description}
-                        </span>
-                        <span className="mt-1.5 block text-[10px] text-neutral-400 dark:text-neutral-500">
-                          {notification.time}
-                        </span>
+                    <span className="flex min-w-0 items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                        {notification.title}
                       </span>
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Clear notification: ${notification.title}`}
-                      title="Clear notification"
-                      onClick={() => onClearNotification(notification.id)}
-                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:hover:bg-neutral-700 dark:hover:text-neutral-100"
-                    >
-                      <X className="h-3.5 w-3.5" aria-hidden="true" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="px-5 py-8 text-center text-xs text-neutral-500 dark:text-neutral-400">
-                You’re all caught up.
-              </p>
-            )}
+                      <StatusBadge status={notification.status} />
+                    </span>
+                    <span className="mt-1 line-clamp-2 block text-xs text-neutral-500 dark:text-neutral-400">
+                      {notification.description}
+                    </span>
+                    <span className="mt-1.5 block text-[10px] text-neutral-400 dark:text-neutral-500">
+                      {notification.time}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Clear notification: ${notification.title}`}
+                    title="Clear notification"
+                    onClick={() => onClearNotification(notification.id)}
+                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:hover:bg-neutral-700 dark:hover:text-neutral-100"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+              {notifications.length === 0 && (
+                <p className="px-5 py-8 text-center text-xs text-neutral-500 dark:text-neutral-400">
+                  You’re all caught up.
+                </p>
+              )}
+            </div>
           </motion.aside>
         )}
       </AnimatePresence>

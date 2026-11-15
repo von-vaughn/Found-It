@@ -151,7 +151,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         color: color.trim() || undefined,
         building: building.trim() || undefined,
       });
-      toast.success("Claim request submitted for admin review.");
+      toast.success("Claim request submitted for OSA staff review.");
       onSubmitted();
     } catch (error) {
       const message = (
