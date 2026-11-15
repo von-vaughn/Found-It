@@ -390,7 +390,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
             >
             <nav
               aria-label="Filter requests by status"
-              className="mt-5 flex items-center gap-x-5 gap-y-2 overflow-x-auto border-b border-neutral-200 pb-3 sm:flex-wrap sm:overflow-visible dark:border-neutral-800"
+              className="mt-5 flex flex-wrap items-center gap-1.5"
             >
               {SECTION_STATUS_TABS[activeSection].map((tab) => {
                 const count = counts[tab.id];
@@ -406,20 +406,14 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                       }))
                     }
                     aria-pressed={isActive}
-                    className={`relative shrink-0 whitespace-nowrap px-1 py-1 text-sm font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
+                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                       isActive
-                        ? "text-neutral-900 dark:text-neutral-100"
-                        : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                        ? "border-[#E5192D] bg-[#E5192D] text-white"
+                        : "border-neutral-200 bg-transparent text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
                     }`}
                   >
                     <span>{tab.label}</span>
-                    <span
-                      className={`ml-1.5 text-xs font-semibold ${
-                        isActive
-                          ? "text-neutral-500 dark:text-neutral-400"
-                          : "text-neutral-400/80 dark:text-neutral-600"
-                      }`}
-                    >
+                    <span className="font-mono tabular-nums opacity-80">
                       {count}
                     </span>
                   </button>

@@ -3,7 +3,6 @@ import { toClientItems } from "@/lib/itemAdapter";
 import { resolveIdNumber } from "@/lib/idNumber";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, useReducedMotion } from "motion/react";
 import { ChevronDown, LogOut, Plus } from "lucide-react";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
@@ -80,7 +79,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const items = EMPTY_ITEMS;
-  const reduceMotion = useReducedMotion();
   const [searchQuery, setSearchQuery] = useState("");
   const [reportFilter, setReportFilter] = useState<"all" | "lost" | "found">(
     "all",
@@ -311,7 +309,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
                 <nav
                   aria-label="Filter your reports by type"
-                  className="mt-6 flex items-center gap-7 border-b border-neutral-200/80 dark:border-neutral-800"
+                  className="mt-6 flex flex-wrap items-center gap-1.5"
                 >
                   {(
                     [
@@ -327,34 +325,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         type="button"
                         onClick={() => setReportFilter(tab.id)}
                         aria-pressed={isActive}
-                        className={`relative inline-flex items-baseline gap-1.5 pb-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-4 dark:focus-visible:ring-offset-neutral-950 ${
+                        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                           isActive
-                            ? "font-semibold text-neutral-900 dark:text-neutral-100"
-                            : "font-medium text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+                            ? "border-[#E5192D] bg-[#E5192D] text-white"
+                            : "border-neutral-200 bg-transparent text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
                         }`}
                       >
                         <span>{tab.label}</span>
-                        <span
-                          className={`font-mono text-xs tabular-nums ${
-                            isActive
-                              ? "text-neutral-500 dark:text-neutral-400"
-                              : "text-neutral-400 dark:text-neutral-500"
-                          }`}
-                        >
+                        <span className="font-mono tabular-nums opacity-80">
                           {tab.count}
                         </span>
-                        {isActive && (
-                          <motion.span
-                            layoutId="profile-report-filter-bar"
-                            transition={
-                              reduceMotion
-                                ? { duration: 0 }
-                                : { type: "spring", stiffness: 500, damping: 38 }
-                            }
-                            aria-hidden="true"
-                            className="absolute -bottom-px left-0 right-0 h-[2px] rounded-full bg-[#E5192D]"
-                          />
-                        )}
                       </button>
                     );
                   })}

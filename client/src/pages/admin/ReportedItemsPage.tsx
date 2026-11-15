@@ -153,7 +153,6 @@ export function ReportedItemsPage() {
               replace: true,
             });
           }}
-          hasActiveFilters={Boolean(query.trim()) || typeFilter !== "All"}
           onResetFilters={resetFilters}
           onBrowseAllItems={() => navigate(paths.adminItems)}
           onDismissFlags={handleDismissFlags}
