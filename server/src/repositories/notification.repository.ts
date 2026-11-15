@@ -1,12 +1,14 @@
 import type { PoolClient } from "pg";
 import { pool } from "../config/db";
 
-export type NotificationKind = "claim" | "return";
+export type NotificationKind = "claim" | "return" | "item" | "flag";
 export type NotificationEvent =
   | "submitted"
   | "approved"
   | "rejected"
-  | "returned";
+  | "returned"
+  | "deleted"
+  | "flagged";
 
 export interface Notification {
   id: string;
@@ -271,5 +273,47 @@ export async function deleteReadNotificationsForUser(
   await pool.query(
     "DELETE FROM notification WHERE user_id = $1 AND is_read = TRUE",
     [userId],
+  );
+}
+
+export async function createAdminItemFlagNotifications(input: {
+  itemId: string;
+  itemName: string;
+  reporterId: string;
+  reason: string;
+}): Promise<void> {
+  await pool.query(
+    `INSERT INTO notification (
+       user_id, item_id, request_id, kind, event, title, message
+     )
+     SELECT admin.id, $1, NULL, 'flag', 'flagged',
+            'Item report flagged for review',
+            flagger.first_name || ' ' || flagger.last_name ||
+              ' flagged "' || $2 || '": ' || $4
+     FROM "user" flagger
+     CROSS JOIN "user" admin
+     WHERE flagger.id = $3
+       AND admin.role IN ('admin', 'super_admin')
+       AND admin.is_active = TRUE
+       AND admin.is_verified = TRUE`,
+    [input.itemId, input.itemName, input.reporterId, input.reason],
+  );
+}
+
+export async function createItemDeletedNotification(input: {
+  userId: string;
+  itemName: string;
+  reason: string;
+}): Promise<void> {
+  await pool.query(
+    `INSERT INTO notification (
+       user_id, item_id, request_id, kind, event, title, message
+     )
+     VALUES ($1, NULL, NULL, 'item', 'deleted', $2, $3)`,
+    [
+      input.userId,
+      'Your item report was removed',
+      `Your report "${input.itemName}" was removed by an administrator. Reason: ${input.reason}`,
+    ],
   );
 }

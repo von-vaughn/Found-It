@@ -13,6 +13,7 @@ import {
 import type { Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import { formatCategoryLabel } from "@/hooks/useCategories";
 import { parseItemEventDate } from "@/lib/date";
 
 interface ItemModalProps {
@@ -238,7 +239,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
                 <div className="min-w-0">
                   <dt className="font-bold text-neutral-900">Category</dt>
                   <dd className="mt-1 text-neutral-500">
-                    {category?.label ?? "Other"}
+                    {formatCategoryLabel(item.category)}
                   </dd>
                 </div>
               </div>

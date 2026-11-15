@@ -155,6 +155,11 @@ export function ItemTable({
                     <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">
                       {row.title}
                     </span>
+                    {(row.flagCount ?? 0) > 0 && (
+                      <span className="mt-0.5 inline-flex items-center rounded-md bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-400">
+                        Flagged ({row.flagCount})
+                      </span>
+                    )}
                   </span>
                 </div>
               </td>

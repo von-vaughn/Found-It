@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { NotificationKind } from "@/services/notificationService";
 import { StatusBadge } from "./StatusBadge";
 import {
   rememberAdminSidebarExpanded,
@@ -15,7 +16,7 @@ export interface AdminNotification {
   description: string;
   time: string;
   requestId: string | null;
-  kind: "claim" | "return";
+  kind: NotificationKind;
   status: string;
   read: boolean;
 }
@@ -29,6 +30,7 @@ export interface AdminSidebarItem<TSection extends string = string> {
 
 interface AdminSidebarProps<TSection extends string> {
   activeSection: TSection;
+  isSuperAdmin?: boolean;
   navigation: AdminSidebarItem<TSection>[];
   notifications: AdminNotification[];
   onSectionChange: (section: TSection) => void;
@@ -40,6 +42,7 @@ interface AdminSidebarProps<TSection extends string> {
 
 export function AdminSidebar<TSection extends string>({
   activeSection,
+  isSuperAdmin = false,
   navigation,
   notifications,
   onSectionChange,
@@ -179,9 +182,11 @@ export function AdminSidebar<TSection extends string>({
             }`}
           >
             Found<span className="text-[#E5192D]">It</span>
-            <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-              OSA
-            </span>
+            {!isSuperAdmin && (
+              <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                OSA
+              </span>
+            )}
           </span>
         </Link>
 

@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Clock3,
   FileText,
+  Flag,
   Mail,
   MapPin,
   Package,
@@ -55,6 +56,8 @@ export function ItemDetailsDialog({
   dialogRef,
   onClose,
   onDelete,
+  onDismissFlags,
+  isDismissingFlags = false,
   onOsaReceiptChange,
   isUpdatingOsaReceipt = false,
 }: {
@@ -62,6 +65,8 @@ export function ItemDetailsDialog({
   dialogRef: RefObject<HTMLDialogElement | null>;
   onClose: () => void;
   onDelete?: (id: string, reason?: string) => void;
+  onDismissFlags?: (id: string) => void;
+  isDismissingFlags?: boolean;
   onOsaReceiptChange?: (id: string, receivedByOsa: boolean) => void;
   isUpdatingOsaReceipt?: boolean;
 }) {
@@ -248,6 +253,46 @@ export function ItemDetailsDialog({
             </div>
           )}
         </dl>
+        {(report.flags?.length ?? 0) > 0 && (
+          <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-300">
+                <Flag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>
+                  User flags ({report.flags?.length ?? 0})
+                </span>
+              </div>
+              {onDismissFlags && (
+                <button
+                  type="button"
+                  disabled={isDismissingFlags}
+                  onClick={() => onDismissFlags(report.id)}
+                  className="inline-flex h-7 items-center rounded-md border border-amber-300 dark:border-amber-500/40 bg-white dark:bg-neutral-900 px-2.5 text-[11px] font-semibold text-amber-900 dark:text-amber-300 transition-colors hover:bg-amber-100 dark:hover:bg-amber-500/20 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {isDismissingFlags ? "Dismissing…" : "Dismiss flags"}
+                </button>
+              )}
+            </div>
+            <ul className="space-y-2">
+              {report.flags?.map((flag) => (
+                <li
+                  key={flag.id}
+                  className="rounded-lg bg-white/80 dark:bg-neutral-900/70 px-3 py-2 text-xs"
+                >
+                  <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {flag.reporterName}{" "}
+                    <span className="font-normal text-neutral-500 dark:text-neutral-400">
+                      ({flag.reporterEmail})
+                    </span>
+                  </p>
+                  <p className="mt-0.5 text-neutral-700 dark:text-neutral-300 break-words">
+                    {flag.reason}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {(onDelete || (report.type === "Found" && onOsaReceiptChange)) && (
           <div className="flex flex-wrap justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
             {report.type === "Found" && onOsaReceiptChange && (

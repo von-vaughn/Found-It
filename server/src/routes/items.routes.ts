@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import {
   createItemReport,
+  dismissItemFlagsReport,
+  flagItemReport,
   getAllItems,
   getBlurredItemImage,
   getItemById,
@@ -20,8 +22,10 @@ router.get('/:id', optionalAuthenticate, getItemById);
 
 // Write routes require authentication
 router.post('/', authenticate, createItemReport);
+router.post('/:id/flag', authenticate, flagItemReport);
 router.patch('/:id', authenticate, updateItemReport); // owner or admin+ (checked in controller)
 router.patch('/:id/osa-receipt', authenticate, requireAdmin, updateItemOsaReceipt);
+router.patch('/:id/flags/dismiss', authenticate, requireAdmin, dismissItemFlagsReport);
 router.delete('/:id', authenticate, removeItemReport); // owner or admin+ (checked in controller)
 
 export default router;

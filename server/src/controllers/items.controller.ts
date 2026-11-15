@@ -2,9 +2,12 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
   CannotRevokeOsaReceiptError,
+  DuplicateItemFlagError,
   categoryExists,
   createItem,
+  createItemFlag,
   deleteItem,
+  dismissItemFlags,
   findItemById,
   findItemImageForBlur,
   findItemOwner,
@@ -13,6 +16,10 @@ import {
   updateItem,
   updateOsaReceipt,
 } from '../repositories/item.repository';
+import {
+  createAdminItemFlagNotifications,
+  createItemDeletedNotification,
+} from '../repositories/notification.repository';
 import { recordAuditLog } from '../repositories/audit-log.repository';
 import { REPORT_TYPES, type ReportType } from '../types/items';
 import { fetchRemoteImageBuffer, generateBlurredImage } from '../utils/image-blur';
@@ -85,6 +92,22 @@ const updateItemSchema = z.object({
 
 const updateOsaReceiptSchema = z.object({
   receivedByOsa: z.boolean(),
+});
+
+const flagItemSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Please provide at least 5 characters explaining the issue.')
+    .max(500, 'Reason must be at most 500 characters.'),
+});
+
+const deleteItemSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .max(500, 'Deletion reason must be at most 500 characters.')
+    .optional(),
 });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -279,6 +302,11 @@ export async function updateItemOsaReceipt(req: Request, res: Response): Promise
 export async function removeItemReport(req: Request, res: Response): Promise<void> {
   const id = getId(req);
   if (invalidId(res, id)) return;
+  const parsed = deleteItemSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
   const owner = await findItemOwner(id);
   if (!owner) {
     res.status(404).json({ message: 'Item not found.' });
@@ -288,6 +316,12 @@ export async function removeItemReport(req: Request, res: Response): Promise<voi
     res.status(403).json({ message: 'You can only delete your own reports.' });
     return;
   }
+  const isDeletingOthersReport = owner.reporterId !== req.user!.sub;
+  const reason = parsed.data.reason?.trim() || undefined;
+  if (isDeletingOthersReport && !reason) {
+    res.status(400).json({ message: 'Please provide a reason for deleting this report.' });
+    return;
+  }
   if (owner.hasResolvedRequest) {
     res.status(409).json({
       message: 'Cannot delete a report with an approved, claimed, or returned request.',
@@ -295,6 +329,13 @@ export async function removeItemReport(req: Request, res: Response): Promise<voi
     return;
   }
   await deleteItem(id);
+  if (isDeletingOthersReport && reason) {
+    await createItemDeletedNotification({
+      userId: owner.reporterId,
+      itemName: owner.name,
+      reason,
+    });
+  }
   await recordAuditLog({
     actorId: req.user!.sub,
     actorEmail: req.user!.email,
@@ -302,9 +343,72 @@ export async function removeItemReport(req: Request, res: Response): Promise<voi
     action: 'deleted',
     entityType: 'item',
     entityId: id,
-    summary: `Deleted item report "${owner.name}"`,
+    summary: reason
+      ? `Deleted item report "${owner.name}" (Reason: ${reason})`
+      : `Deleted item report "${owner.name}"`,
   });
   res.json({ message: 'Item report deleted.' });
+}
+
+/** POST /api/items/:id/flag — report a post to admins */
+export async function flagItemReport(req: Request, res: Response): Promise<void> {
+  const id = getId(req);
+  if (invalidId(res, id)) return;
+  const parsed = flagItemSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+  const owner = await findItemOwner(id);
+  if (!owner) {
+    res.status(404).json({ message: 'Item not found.' });
+    return;
+  }
+  if (owner.reporterId === req.user!.sub) {
+    res.status(400).json({ message: 'You cannot report your own post.' });
+    return;
+  }
+  try {
+    await createItemFlag(id, req.user!.sub, parsed.data.reason);
+  } catch (err) {
+    if (err instanceof DuplicateItemFlagError) {
+      res.status(409).json({ message: err.message });
+      return;
+    }
+    throw err;
+  }
+  await createAdminItemFlagNotifications({
+    itemId: id,
+    itemName: owner.name,
+    reporterId: req.user!.sub,
+    reason: parsed.data.reason,
+  });
+  res.status(201).json({ message: 'Post reported to admin.' });
+}
+
+/** PATCH /api/items/:id/flags/dismiss — dismiss all open flags on an item (admin+) */
+export async function dismissItemFlagsReport(req: Request, res: Response): Promise<void> {
+  const id = getId(req);
+  if (invalidId(res, id)) return;
+  const owner = await findItemOwner(id);
+  if (!owner) {
+    res.status(404).json({ message: 'Item not found.' });
+    return;
+  }
+  const dismissedCount = await dismissItemFlags(id, req.user!.sub);
+  if (dismissedCount > 0) {
+    await recordAuditLog({
+      actorId: req.user!.sub,
+      actorEmail: req.user!.email,
+      actorRole: req.user!.role,
+      action: 'updated',
+      entityType: 'item',
+      entityId: id,
+      summary: `Dismissed ${dismissedCount} flag(s) on item report "${owner.name}"`,
+    });
+  }
+  const updated = await findItemById(id, true, req.user!.sub);
+  res.json({ message: 'Flags dismissed.', dismissedCount, item: updated });
 }
 
 /**

@@ -1,6 +1,6 @@
 import type { PoolClient } from 'pg';
 import { pool } from '../config/db';
-import type { Item, ReportType } from '../types/items';
+import type { Item, ItemFlag, ReportType } from '../types/items';
 
 interface ItemRow {
   id: string;
@@ -22,6 +22,7 @@ interface ItemRow {
   reporter_name: string;
   reporter_email: string;
   images: Array<{ url: string; blurred_url: string | null }> | null;
+  flags: ItemFlag[] | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -68,6 +69,22 @@ const ITEM_COLUMNS = `
     ) FROM image img WHERE img.item_id = i.id),
     '[]'::json
   ) AS images,
+  COALESCE(
+    (SELECT json_agg(
+      json_build_object(
+        'id', f.id,
+        'reporterId', f.reporter_id,
+        'reporterName', fu.first_name || ' ' || fu.last_name,
+        'reporterEmail', fu.email,
+        'reason', f.reason,
+        'createdAt', to_char(f.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+      ) ORDER BY f.created_at DESC
+    )
+    FROM item_flag f
+    JOIN "user" fu ON fu.id = f.reporter_id
+    WHERE f.item_id = i.id AND f.dismissed_at IS NULL),
+    '[]'::json
+  ) AS flags,
   i.created_at, i.updated_at
 `;
 const ITEM_JOIN = `
@@ -133,6 +150,12 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
     user: isAdmin
       ? { id: row.reporter_id, name: row.reporter_name, email: row.reporter_email }
       : { id: row.reporter_id, name: row.reporter_name },
+    ...(isAdmin
+      ? {
+          flagCount: Array.isArray(row.flags) ? row.flags.length : 0,
+          flags: Array.isArray(row.flags) ? row.flags : [],
+        }
+      : {}),
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
   };
@@ -557,4 +580,44 @@ export async function findItemImageForBlur(
  */
 export async function saveBlurredImageUrl(imageId: string, blurredUrl: string): Promise<void> {
   await pool.query(`UPDATE image SET blurred_image_url = $1 WHERE id = $2`, [blurredUrl, imageId]);
+}
+
+export class DuplicateItemFlagError extends Error {
+  constructor() {
+    super('You have already reported this post.');
+    this.name = 'DuplicateItemFlagError';
+  }
+}
+
+/** Creates an open moderation flag on an item; throws DuplicateItemFlagError if already open. */
+export async function createItemFlag(
+  itemId: string,
+  reporterId: string,
+  reason: string,
+): Promise<{ id: string }> {
+  try {
+    const { rows } = await pool.query<{ id: string }>(
+      `INSERT INTO item_flag (item_id, reporter_id, reason)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [itemId, reporterId, reason],
+    );
+    return { id: rows[0].id };
+  } catch (err) {
+    if ((err as { code?: string }).code === '23505') {
+      throw new DuplicateItemFlagError();
+    }
+    throw err;
+  }
+}
+
+/** Marks all open flags on an item as dismissed by the acting admin. */
+export async function dismissItemFlags(itemId: string, adminId: string): Promise<number> {
+  const { rowCount } = await pool.query(
+    `UPDATE item_flag
+     SET dismissed_at = NOW(), dismissed_by = $2
+     WHERE item_id = $1 AND dismissed_at IS NULL`,
+    [itemId, adminId],
+  );
+  return rowCount ?? 0;
 }

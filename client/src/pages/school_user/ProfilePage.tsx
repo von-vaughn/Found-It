@@ -3,7 +3,8 @@ import { toClientItems } from "@/lib/itemAdapter";
 import { extractIdNumberFromEmail } from "@/lib/idNumber";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, LogOut, PlusCircle } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, PlusCircle } from "lucide-react";
+import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
@@ -44,6 +45,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   // Close the mobile account menu on outside click or Escape.
   useEffect(() => {
@@ -170,6 +172,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   <span className="absolute right-0 top-full z-30 mt-2 block w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden dark:border-neutral-800 dark:bg-neutral-900">
                     <button
                       type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        setChangePasswordOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-neutral-300 dark:hover:bg-neutral-800"
+                    >
+                      <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
+                      Change password
+                    </button>
+                    <button
+                      type="button"
                       onClick={async () => {
                             setProfileMenuOpen(false);
                             await logout();
@@ -189,7 +202,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   ID Number: {idNumber || "N/A"}
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setChangePasswordOpen(true)}
+                className="hidden md:inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+              >
+                <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
+                Change password
+              </button>
             </section>
+
+            <ChangePasswordModal
+              open={changePasswordOpen}
+              onClose={() => setChangePasswordOpen(false)}
+            />
 
             <section aria-labelledby="profile-reports-heading" className="pb-10">
               <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-4 dark:border-neutral-800">

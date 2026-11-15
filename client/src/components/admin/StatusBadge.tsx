@@ -9,6 +9,8 @@ export function StatusBadge({ status }: { status: string }) {
     Returned: "bg-teal-50 dark:bg-teal-500/10 text-teal-800 dark:text-teal-400",
     Pending: "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400",
     Rejected: "bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-400",
+    Deleted: "bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-400",
+    Flagged: "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400",
     Active: "bg-lime-50 dark:bg-lime-500/10 text-lime-800 dark:text-lime-400",
     Inactive: "bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300",
     school_user: "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300",

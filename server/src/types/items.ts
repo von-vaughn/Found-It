@@ -1,6 +1,15 @@
 export const REPORT_TYPES = ['lost', 'found'] as const;
 export type ReportType = (typeof REPORT_TYPES)[number];
 
+export interface ItemFlag {
+  id: string;
+  reporterId: string;
+  reporterName: string;
+  reporterEmail: string;
+  reason: string;
+  createdAt: string;
+}
+
 export interface Item {
   id: string;
   reporterId: string;
@@ -28,6 +37,9 @@ export interface Item {
   importantDetails?: string;
   /** Reporter identity. Email is included for admin/super_admin only. */
   user: { id: string; name: string; email?: string };
+  /** Open flag count and details (present for admin/super_admin only). */
+  flagCount?: number;
+  flags?: ItemFlag[];
   createdAt: string;
   updatedAt: string;
 }

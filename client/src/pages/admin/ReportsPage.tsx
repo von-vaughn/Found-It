@@ -15,6 +15,7 @@ import { AdminLayout } from "./AdminLayout";
 import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import {
   useDeleteItem,
+  useDismissItemFlags,
   useItems,
   useUpdateOsaReceipt,
 } from "@/hooks/useItems";
@@ -46,7 +47,22 @@ export function ReportsPage() {
   );
   const reports = useMemo(() => items.map(serverItemToAdminReport), [items]);
   const deleteItem = useDeleteItem();
+  const dismissItemFlags = useDismissItemFlags();
   const updateOsaReceipt = useUpdateOsaReceipt();
+
+  const handleDismissFlags = (id: string) => {
+    dismissItemFlags.mutate(id, {
+      onSuccess: () => {
+        setSelectedReport((current) =>
+          current?.id === id ? { ...current, flagCount: 0, flags: [] } : current,
+        );
+        toast.success("Flags dismissed.");
+      },
+      onError: () => {
+        toast.error("Could not dismiss flags. Please try again.");
+      },
+    });
+  };
 
   const handleOsaReceiptChange = (id: string, receivedByOsa: boolean) => {
     updateOsaReceipt.mutate(
@@ -71,26 +87,34 @@ export function ReportsPage() {
     );
   };
 
-  const handleDelete = (id: string) => {
-    deleteItem.mutate(id, {
-      onSuccess: () => {
-        toast.success("Item report deleted.");
-        setSelectedReport(null);
+  const handleDelete = (id: string, reason?: string) => {
+    deleteItem.mutate(
+      { id, reason },
+      {
+        onSuccess: () => {
+          toast.success("Item report deleted.");
+          setSelectedReport(null);
+        },
+        onError: (err) => {
+          const message = (
+            err as { response?: { data?: { message?: string } } }
+          )?.response?.data?.message;
+          toast.error(message ?? "Could not delete this report. Please try again.");
+        },
       },
-      onError: (err) => {
-        const message = (
-          err as { response?: { data?: { message?: string } } }
-        )?.response?.data?.message;
-        toast.error(message ?? "Could not delete this report. Please try again.");
-      },
-    });
+    );
   };
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return reports.filter((report) => {
-      if (statusFilter !== "All statuses" && report.status !== statusFilter) {
+      if (statusFilter === "Flagged") {
+        if ((report.flagCount ?? 0) === 0) return false;
+      } else if (
+        statusFilter !== "All statuses" &&
+        report.status !== statusFilter
+      ) {
         return false;
       }
       if (
@@ -102,7 +126,7 @@ export function ReportsPage() {
       }
       if (
         categoryFilter !== "All categories" &&
-        !ITEM_CATEGORIES.some(
+        !categoryOptions.some(
           (category) =>
             category.id === categoryFilter &&
             report.category === category.label,
@@ -130,7 +154,15 @@ export function ReportsPage() {
         report.id,
       ].some((value) => value.toLowerCase().includes(normalizedQuery));
     });
-  }, [buildingFilter, categoryFilter, osaReceiptFilter, query, reports, statusFilter]);
+  }, [
+    buildingFilter,
+    categoryFilter,
+    categoryOptions,
+    osaReceiptFilter,
+    query,
+    reports,
+    statusFilter,
+  ]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const page = Math.min(currentPage, pageCount);
@@ -211,6 +243,7 @@ export function ReportsPage() {
               <option>Found</option>
               <option>Returned</option>
               <option>Claimed</option>
+              <option>Flagged</option>
             </select>
 
             <label className="sr-only" htmlFor="report-osa-receipt-filter">
@@ -347,6 +380,8 @@ export function ReportsPage() {
           dialogRef={dialogRef}
           onClose={() => setSelectedReport(null)}
           onDelete={handleDelete}
+          onDismissFlags={handleDismissFlags}
+          isDismissingFlags={dismissItemFlags.isPending}
           onOsaReceiptChange={handleOsaReceiptChange}
           isUpdatingOsaReceipt={updateOsaReceipt.isPending}
         />

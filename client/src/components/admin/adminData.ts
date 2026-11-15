@@ -7,7 +7,7 @@ import {
   RotateCcw,
   Users,
 } from "lucide-react";
-import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import { formatCategoryLabel } from "@/hooks/useCategories";
 import type { Item } from "@/data/mockItems";
 import type { ServerItem } from "@/services/itemService";
 import type { AdminSidebarItem } from "./AdminSidebar";
@@ -24,9 +24,7 @@ export const itemToAdminReport = (item: Item): AdminReport => ({
   type: item.type === "lost" ? "Lost" : "Found",
   receivedByOsa: false,
   image: item.image,
-  category:
-    ITEM_CATEGORIES.find((category) => category.id === item.category)?.label ??
-    "Other",
+  category: formatCategoryLabel(item.category),
   description: item.description,
   building: item.building || item.location,
   buildingName: item.building,
@@ -57,9 +55,7 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   type: item.reportType === "lost" ? "Lost" : "Found",
   receivedByOsa: item.receivedByOsa ?? false,
   image: item.image || item.images?.[0] || "",
-  category:
-    ITEM_CATEGORIES.find((category) => category.id === item.category)?.label ??
-    item.category,
+  category: formatCategoryLabel(item.category),
   description: item.description,
   building: item.building || item.location || "",
   buildingName: item.building ?? undefined,
@@ -79,6 +75,8 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
     ? `${item.itemDate}T${item.itemTime}`
     : undefined,
   confidentialInfo: item.importantDetails,
+  flagCount: item.flagCount ?? 0,
+  flags: item.flags ?? [],
 });
 
 export const claims: AdminClaim[] = [];

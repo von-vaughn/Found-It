@@ -152,12 +152,24 @@ export async function migrate(): Promise<void> {
       user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
       item_id UUID REFERENCES item(id) ON DELETE SET NULL,
       request_id UUID REFERENCES request(id) ON DELETE SET NULL,
-      kind VARCHAR(10) NOT NULL CHECK (kind IN ('claim', 'return')),
+      kind VARCHAR(10) NOT NULL CHECK (kind IN ('claim', 'return', 'item', 'flag')),
       event VARCHAR(20) NOT NULL
-        CHECK (event IN ('submitted', 'approved', 'rejected', 'returned')),
+        CHECK (event IN ('submitted', 'approved', 'rejected', 'returned', 'deleted', 'flagged')),
       title TEXT NOT NULL,
       message TEXT NOT NULL,
       is_read BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS item_flag (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      item_id UUID NOT NULL REFERENCES item(id) ON DELETE CASCADE,
+      reporter_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      reason TEXT NOT NULL CHECK (char_length(trim(reason)) > 0),
+      dismissed_at TIMESTAMPTZ,
+      dismissed_by UUID REFERENCES "user"(id) ON DELETE SET NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
@@ -192,7 +204,30 @@ export async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_request_item_id ON request(item_id);
     CREATE INDEX IF NOT EXISTS idx_request_user_id ON request(user_id);
     CREATE INDEX IF NOT EXISTS idx_notification_user_id ON notification(user_id);
+    CREATE INDEX IF NOT EXISTS idx_item_flag_item_id ON item_flag(item_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_item_flag_open_unique
+      ON item_flag(item_id, reporter_id)
+      WHERE dismissed_at IS NULL;
     CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
+  `);
+
+  await pool.query(`
+    DO $$
+    DECLARE
+      c RECORD;
+    BEGIN
+      FOR c IN
+        SELECT conname
+        FROM pg_constraint
+        WHERE conrelid = 'notification'::regclass
+          AND contype = 'c'
+      LOOP
+        EXECUTE format('ALTER TABLE notification DROP CONSTRAINT IF EXISTS %I', c.conname);
+      END LOOP;
+    END $$;
+    ALTER TABLE notification
+      ADD CONSTRAINT notification_kind_check CHECK (kind IN ('claim', 'return', 'item', 'flag')),
+      ADD CONSTRAINT notification_event_check CHECK (event IN ('submitted', 'approved', 'rejected', 'returned', 'deleted', 'flagged'));
   `);
 
   await pool.query(`

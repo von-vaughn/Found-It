@@ -11,6 +11,8 @@ import {
   getItemById,
   updateItem,
   updateOsaReceipt,
+  flagItem,
+  dismissItemFlags,
   deleteItem,
   UUID_RE,
   type CreateItemPayload,
@@ -143,18 +145,53 @@ export function useUpdateOsaReceipt() {
   });
 }
 
+// ─── POST /api/items/:id/flag (flag an item post for admin review) ─────────
+
+export function useFlagItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      flagItem(id, reason),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: itemKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+// ─── PATCH /api/items/:id/flags/dismiss (dismiss open flags) ────────────────
+
+export function useDismissItemFlags() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => dismissItemFlags(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: itemKeys.mine() });
+      queryClient.invalidateQueries({ queryKey: itemKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    },
+  });
+}
+
 // ─── DELETE /api/items/:id (delete an item report) ───────────────────────────
 
 export function useDeleteItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteItem(id),
-    onSuccess: (_, id) => {
+    mutationFn: (input: string | { id: string; reason?: string }) =>
+      deleteItem(input),
+    onSuccess: (_, variables) => {
+      const id = typeof variables === "string" ? variables : variables.id;
       queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
       queryClient.invalidateQueries({ queryKey: itemKeys.mine() });
       queryClient.removeQueries({ queryKey: itemKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }

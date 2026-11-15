@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, LogOut, Moon, Search, Sun } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, Moon, Search, Sun } from "lucide-react";
 import toast from "react-hot-toast";
+import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
 import { useTheme } from "@/context/useTheme";
 import { useAuth } from "@/context/useAuth";
 import {
@@ -32,6 +33,7 @@ function AdminAccountMenu() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -134,6 +136,18 @@ function AdminAccountMenu() {
           <button
             type="button"
             role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              setChangePasswordOpen(true);
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+          >
+            <KeyRound className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+            Change password
+          </button>
+          <button
+            type="button"
+            role="menuitem"
             onClick={handleSignOut}
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-red-400 dark:hover:bg-red-500/10"
           >
@@ -142,6 +156,10 @@ function AdminAccountMenu() {
           </button>
         </div>
       )}
+      <ChangePasswordModal
+        open={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
     </div>
   );
 }
@@ -196,6 +214,10 @@ export function AdminLayout({
           toast.error("Could not update this notification. Please try again."),
       });
     }
+    if (notification.kind === "flag" || notification.kind === "item") {
+      navigate(adminSectionPaths.items);
+      return;
+    }
     const section = notification.kind === "claim" ? "claims" : "returns";
     const parameter = notification.kind === "claim" ? "claimId" : "returnId";
     const suffix = notification.requestId
@@ -208,6 +230,7 @@ export function AdminLayout({
     <div className="min-h-screen bg-white dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <AdminSidebar
         activeSection={activeSection}
+        isSuperAdmin={isSuperAdmin}
         navigation={navigationFor(isSuperAdmin)}
         notifications={notifications}
         onSectionChange={(newSection: AdminSection) => {

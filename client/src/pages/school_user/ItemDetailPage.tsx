@@ -21,6 +21,7 @@ import { ItemCard } from "@/components/school_user/ItemCard";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
+import { formatCategoryLabel } from "@/hooks/useCategories";
 import { EMPTY_ITEMS } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
@@ -703,7 +704,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 <div className="min-w-0">
                   <dt className="font-bold text-neutral-900 dark:text-neutral-100">Category</dt>
                   <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
-                    {category?.label ?? "Other"}
+                    {formatCategoryLabel(item.category)}
                   </dd>
                 </div>
               </div>
@@ -765,7 +766,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
               >
                 Related {isLost ? "lost" : "found"}{" "}
-                {category?.label.toLowerCase() ?? "item"} reports
+                {formatCategoryLabel(item.category).toLowerCase()} reports
               </h2>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {relatedItems.map((related) => (

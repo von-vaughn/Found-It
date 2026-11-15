@@ -1,4 +1,5 @@
 import type { ClaimRequest } from "@/types/claim";
+import type { ItemFlag } from "@/services/itemService";
 
 export type AdminSection =
   | "overview"
@@ -41,6 +42,8 @@ export interface AdminReport {
   date: string;
   eventDateTime?: string;
   confidentialInfo?: string;
+  flagCount?: number;
+  flags?: ItemFlag[];
 }
 
 export type AdminClaim = ClaimRequest;

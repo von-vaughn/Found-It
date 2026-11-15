@@ -1,11 +1,13 @@
 import api from "@/lib/api";
 
-export type NotificationKind = "claim" | "return";
+export type NotificationKind = "claim" | "return" | "item" | "flag";
 export type NotificationEvent =
   | "submitted"
   | "approved"
   | "rejected"
-  | "returned";
+  | "returned"
+  | "deleted"
+  | "flagged";
 
 export interface ServerNotification {
   id: string;

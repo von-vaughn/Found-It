@@ -1,5 +1,14 @@
 import api from "@/lib/api";
 
+export interface ItemFlag {
+  id: string;
+  reporterId: string;
+  reporterName: string;
+  reporterEmail: string;
+  reason: string;
+  createdAt: string;
+}
+
 // ─── Server response shapes ────────────────────────────────────────────────
 export interface ServerItem {
   id: string;
@@ -21,6 +30,8 @@ export interface ServerItem {
   image?: string | null;
   images?: string[];
   user: { id: string; name: string; email?: string };
+  flagCount?: number;
+  flags?: ItemFlag[];
   createdAt: string;
   updatedAt: string;
 }
@@ -249,9 +260,31 @@ export async function updateOsaReceipt(
   return data.item;
 }
 
-/** DELETE /api/items/:id — delete an item report. */
-export async function deleteItem(id: string): Promise<void> {
-  await api.delete<{ message: string }>(`/items/${id}`);
+/** POST /api/items/:id/flag — report a post to admins with a reason. */
+export async function flagItem(id: string, reason: string): Promise<{ message: string }> {
+  const { data } = await api.post<{ message: string }>(`/items/${id}/flag`, {
+    reason,
+  });
+  return data;
+}
+
+/** PATCH /api/items/:id/flags/dismiss — dismiss all open flags on an item (admin+). */
+export async function dismissItemFlags(id: string): Promise<ServerItem> {
+  const { data } = await api.patch<{ message: string; item: ServerItem }>(
+    `/items/${id}/flags/dismiss`,
+  );
+  return data.item;
+}
+
+/** DELETE /api/items/:id — delete an item report (with optional/admin deletion reason). */
+export async function deleteItem(
+  input: string | { id: string; reason?: string },
+): Promise<void> {
+  const id = typeof input === "string" ? input : input.id;
+  const reason = typeof input === "string" ? undefined : input.reason;
+  await api.delete<{ message: string }>(`/items/${id}`, {
+    ...(reason ? { data: { reason } } : {}),
+  });
 }
 
 export default {
@@ -260,6 +293,9 @@ export default {
   getItemById,
   listMyItems,
   updateItem,
+  updateOsaReceipt,
+  flagItem,
+  dismissItemFlags,
   deleteItem,
   uploadImage,
   uploadFoundImage,
