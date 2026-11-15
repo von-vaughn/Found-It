@@ -7,6 +7,7 @@ export interface ClaimRequest {
   itemId: string;
   claimant: string;
   email?: string;
+  schoolId?: string;
   dateLost: string;
   timeLost: string;
   location: string;

@@ -8,6 +8,7 @@ export interface SafeAuthUser {
   isActive: boolean;
   isVerified: boolean;
   mustChangePassword?: boolean;
+  schoolId?: string;
   studentId?: string;
   avatar?: string;
   createdAt: string;

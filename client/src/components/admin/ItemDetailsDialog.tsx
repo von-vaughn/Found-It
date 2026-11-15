@@ -18,7 +18,7 @@ import {
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import { NoItemImage } from "@/components/NoItemImage";
 import type { AdminReport } from "./types";
-import { extractIdNumberFromEmail } from "@/lib/idNumber";
+import { resolveIdNumber } from "@/lib/idNumber";
 
 function formatEventDate(report: AdminReport): string {
   const eventDate = report.eventDateTime
@@ -161,7 +161,7 @@ export function ItemDetailsDialog({
             </p>
             <p className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
               <Mail className="h-3 w-3" aria-hidden="true" />
-              ID Number: {extractIdNumberFromEmail(report.reporterEmail) || "N/A"}
+              ID Number: {resolveIdNumber(report.reporterSchoolId, report.reporterEmail) || "N/A"}
             </p>
           </div>
           <div>

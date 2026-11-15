@@ -29,7 +29,7 @@ export interface ServerItem {
   importantDetails?: string;
   image?: string | null;
   images?: string[];
-  user: { id: string; name: string; email?: string };
+  user: { id: string; name: string; email?: string; schoolId?: string };
   flagCount?: number;
   flags?: ItemFlag[];
   createdAt: string;

@@ -41,6 +41,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const [firstName, setFirstName] = useState("");
   const [middleInitial, setMiddleInitial] = useState("");
   const [lastName, setLastName] = useState("");
+  const [schoolId, setSchoolId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -56,6 +57,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const [skipScreenAnimation, setSkipScreenAnimation] = useState(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const firstNameInputRef = useRef<HTMLInputElement>(null);
+  const schoolIdInputRef = useRef<HTMLInputElement>(null);
   const verificationInputRef = useRef<HTMLInputElement>(null);
   const resetCodeInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -351,6 +353,21 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       setError("Enter your last name.");
       return;
     }
+    const trimmedSchoolId = schoolId.trim();
+    if (!trimmedSchoolId) {
+      setError("Enter your school ID.");
+      schoolIdInputRef.current?.focus();
+      return;
+    }
+    if (
+      trimmedSchoolId.length < 3 ||
+      trimmedSchoolId.length > 30 ||
+      !/^[A-Za-z0-9-]+$/.test(trimmedSchoolId)
+    ) {
+      setError("Enter a valid school ID (3–30 letters, numbers, or hyphens).");
+      schoolIdInputRef.current?.focus();
+      return;
+    }
     if (password.length < 8 || new TextEncoder().encode(password).length > 72) {
       setError("Enter a password between 8 and 72 characters.");
       return;
@@ -369,6 +386,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       const res = await signup({
         name: fullName,
         email,
+        schoolId: trimmedSchoolId,
         password,
       });
       if (!res.success) {
@@ -1193,6 +1211,38 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 <div>
                   <label
                     className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    htmlFor="modal-school-id"
+                  >
+                    School ID <span className="text-[#E5192D]">*</span>
+                  </label>
+                  <input
+                    ref={schoolIdInputRef}
+                    id="modal-school-id"
+                    type="text"
+                    placeholder="e.g. 2021-00318"
+                    value={schoolId}
+                    onChange={(event) => {
+                      setSchoolId(event.target.value);
+                      setError("");
+                    }}
+                    required
+                    maxLength={30}
+                    aria-invalid={error.toLowerCase().includes("school id")}
+                    className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                  />
+                  {error.toLowerCase().includes("school id") && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-sm font-medium text-red-700"
+                    >
+                      {error}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
                     htmlFor="modal-signup-password"
                   >
                     Password
@@ -1226,6 +1276,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 {error &&
                   !error.includes("first name") &&
                   error !== "Enter your last name." &&
+                  !error.toLowerCase().includes("school id") &&
                   !error.toLowerCase().includes("password") && (
                     <p
                       role="alert"

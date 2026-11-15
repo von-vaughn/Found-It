@@ -14,3 +14,13 @@ export function extractIdNumberFromEmail(email?: string | null): string | null {
   const digits = localPart.replace(/\D/g, "");
   return digits.length > 0 ? digits : null;
 }
+
+/** Prefers an explicitly stored school ID and falls back to email-derived digits. */
+export function resolveIdNumber(
+  schoolId?: string | null,
+  email?: string | null,
+): string | null {
+  const trimmed = schoolId?.trim();
+  if (trimmed) return trimmed;
+  return extractIdNumberFromEmail(email);
+}

@@ -38,6 +38,7 @@ export function toClaimRequest(claim: ServerClaim): ClaimRequest {
     item: claim.item,
     claimant: claim.claimant,
     email: claim.email,
+    schoolId: claim.schoolId,
     dateLost: formatDateOnly(claim.dateLost),
     timeLost: claim.timeLost ?? "",
     location: claim.location ?? "",

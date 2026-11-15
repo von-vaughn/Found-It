@@ -30,7 +30,7 @@ import {
 import { useSensitiveUnlock } from "@/components/admin/useSensitiveUnlock";
 import type { ServerClaimStatus } from "@/services/claimService";
 import { toFoundReportClaims } from "@/lib/claimAdapter";
-import { extractIdNumberFromEmail } from "@/lib/idNumber";
+import { resolveIdNumber } from "@/lib/idNumber";
 import {
   useAdminReturns,
   usePublishRejectedReturn,
@@ -213,7 +213,7 @@ function ReturnRequestSection({
             {request.claimant}
           </p>
           <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-            Id number: {extractIdNumberFromEmail(request.email) || "N/A"}
+            Id number: {resolveIdNumber(request.schoolId, request.email) || "N/A"}
           </p>
           <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
             {request.details || "None"}
@@ -823,7 +823,7 @@ export function ReturnItemsPage() {
                       {selectedLostReport?.reportedBy || "None"}
                     </p>
                     <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                      Id number: {extractIdNumberFromEmail(selectedLostReport?.reporterEmail) || "N/A"}
+                      Id number: {resolveIdNumber(selectedLostReport?.reporterSchoolId, selectedLostReport?.reporterEmail) || "N/A"}
                     </p>
                     <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                       {selectedLostReport?.description || "None"}

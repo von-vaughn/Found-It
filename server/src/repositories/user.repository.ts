@@ -6,6 +6,7 @@ interface SafeUserRow {
   first_name: string;
   last_name: string;
   email: string;
+  school_id: string | null;
   role: Role;
   is_active: boolean;
   is_verified: boolean;
@@ -26,7 +27,7 @@ export interface UserWithHash extends SafeUser {
 }
 
 const SAFE_USER_COLUMNS = `
-  id, first_name, last_name, email, role, is_active, is_verified,
+  id, first_name, last_name, email, school_id, role, is_active, is_verified,
   created_at, updated_at
 `;
 
@@ -35,6 +36,7 @@ function toSafeUser(row: SafeUserRow): SafeUser {
     id: row.id,
     name: `${row.first_name} ${row.last_name}`.trim(),
     email: row.email,
+    ...(row.school_id ? { schoolId: row.school_id } : {}),
     role: row.role,
     isActive: row.is_active,
     isVerified: row.is_verified,
@@ -79,20 +81,23 @@ export async function createUser(input: {
   firstName: string;
   lastName: string;
   email: string;
+  schoolId?: string | null;
   passwordHash: string;
   role?: Role;
   isVerified?: boolean;
 }): Promise<SafeUser> {
   const role = input.role ?? 'school_user';
   const isVerified = input.isVerified ?? false;
+  const schoolId = input.schoolId?.trim() || null;
   const { rows } = await pool.query<SafeUserRow>(
-    `INSERT INTO "user" (first_name, last_name, email, password_hash, role, is_student, is_admin, is_verified)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO "user" (first_name, last_name, email, school_id, password_hash, role, is_student, is_admin, is_verified)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING ${SAFE_USER_COLUMNS}`,
     [
       input.firstName.trim(),
       input.lastName.trim(),
       input.email.trim().toLowerCase(),
+      schoolId,
       input.passwordHash,
       role,
       role === 'school_user',

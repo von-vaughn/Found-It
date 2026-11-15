@@ -17,6 +17,7 @@ export interface User {
   isActive: boolean;
   isVerified: boolean;
   mustChangePassword?: boolean;
+  schoolId?: string;
   studentId?: string;
   avatar?: string;
   createdAt: string;
@@ -41,6 +42,7 @@ export interface AuthContextType {
   signup: (userData: {
     name: string;
     email: string;
+    schoolId: string;
     password: string;
   }) => Promise<{ success: boolean; message?: string }>;
   checkEmailAvailability?: (

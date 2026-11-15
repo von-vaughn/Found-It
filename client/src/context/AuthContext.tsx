@@ -146,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signup = async (userData: {
     name: string;
     email: string;
+    schoolId: string;
     password: string;
   }): Promise<{ success: boolean; message?: string }> => {
     const normalizedEmail = userData.email.trim().toLowerCase();
@@ -153,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const data = await registerMutation.mutateAsync({
         name: userData.name.trim(),
         email: normalizedEmail,
+        schoolId: userData.schoolId.trim(),
         password: userData.password,
       });
       setPendingEmailState(normalizedEmail);

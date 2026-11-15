@@ -14,6 +14,7 @@ export interface Claim {
   item: string;
   claimant: string;
   email: string;
+  schoolId?: string;
   dateLost: string | null;
   timeLost: string | null;
   location: string | null;

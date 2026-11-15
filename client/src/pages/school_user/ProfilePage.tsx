@@ -1,6 +1,6 @@
 import { useMyItems } from "@/hooks/useItems";
 import { toClientItems } from "@/lib/itemAdapter";
-import { extractIdNumberFromEmail } from "@/lib/idNumber";
+import { resolveIdNumber } from "@/lib/idNumber";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, KeyRound, LogOut, PlusCircle } from "lucide-react";
@@ -71,7 +71,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   const name = user?.name || DEFAULT_PROFILE.name;
   const email = user?.email || DEFAULT_PROFILE.email;
-  const idNumber = extractIdNumberFromEmail(email);
+  const idNumber = resolveIdNumber(user?.schoolId ?? user?.studentId, email);
   const avatar = user?.avatar || DEFAULT_PROFILE.avatar;
 
   // Fetch the current user's own reports from the API.

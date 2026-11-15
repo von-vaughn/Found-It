@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { extractIdNumberFromEmail } from "./idNumber.ts";
+import { extractIdNumberFromEmail, resolveIdNumber } from "./idNumber.ts";
 
 test("extracts ID number from typical WMSU student email", () => {
   assert.equal(extractIdNumberFromEmail("ty202500492@wmsu.edu.ph"), "202500492");
@@ -32,4 +32,11 @@ test("returns null for null input", () => {
 
 test("returns null for undefined input", () => {
   assert.equal(extractIdNumberFromEmail(undefined), null);
+});
+
+test("resolveIdNumber prefers stored schoolId over email fallback", () => {
+  assert.equal(resolveIdNumber("2024-01234", "vaughn@wmsu.edu.ph"), "2024-01234");
+  assert.equal(resolveIdNumber("2024-01234", "ve202100318@wmsu.edu.ph"), "2024-01234");
+  assert.equal(resolveIdNumber("", "ve202100318@wmsu.edu.ph"), "202100318");
+  assert.equal(resolveIdNumber(null, "vaughn@wmsu.edu.ph"), null);
 });

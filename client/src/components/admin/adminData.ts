@@ -63,6 +63,7 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   color: item.color ?? "",
   reportedBy: item.user.name,
   reporterEmail: item.user.email ?? "",
+  reporterSchoolId: item.user.schoolId,
   status: item.isReturned
     ? "Returned"
     : item.isClaimed

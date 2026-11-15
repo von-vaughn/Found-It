@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it, before, after } from 'node:test';
 import { pool } from '../config/db';
 import { checkEmail, register } from './auth.controller';
-import { createUser } from '../repositories/user.repository';
+import { createUser, findUserByEmail } from '../repositories/user.repository';
 import { hashPassword } from '../utils/password';
 
 function createMockRes() {
@@ -92,6 +92,7 @@ describe('Duplicate Email Prevention in Account Creation', () => {
       body: {
         name: 'Another Student',
         email: EXISTING_EMAIL,
+        schoolId: '2025-00001',
         password: 'Password987!',
       },
       query: {},
@@ -102,6 +103,50 @@ describe('Duplicate Email Prevention in Account Creation', () => {
 
     assert.equal(res.statusCode, 409);
     assert.equal(res.body.message, 'An account with this email already exists.');
+  });
+
+  it('rejects account registration when schoolId is missing or invalid', async () => {
+    const req = {
+      method: 'POST',
+      body: {
+        name: 'Student One',
+        email: NEW_EMAIL,
+        schoolId: 'a',
+        password: 'Password987!',
+      },
+      query: {},
+    } as any;
+    const res = createMockRes();
+
+    await register(req, res as any);
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.message, 'Validation failed');
+  });
+
+  it('stores manually provided schoolId on registration', async () => {
+    const schoolUserEmail = `manual.id.${Date.now()}@wmsu.edu.ph`;
+    const req = {
+      method: 'POST',
+      body: {
+        name: 'Student Two',
+        email: schoolUserEmail,
+        schoolId: '2024-01234',
+        password: 'Password987!',
+      },
+      query: {},
+    } as any;
+    const res = createMockRes();
+
+    try {
+      await register(req, res as any);
+      assert.equal(res.statusCode, 200);
+      const saved = await findUserByEmail(schoolUserEmail);
+      assert.ok(saved, 'Registered user should exist in DB');
+      assert.equal(saved.schoolId, '2024-01234');
+    } finally {
+      await pool.query('DELETE FROM "user" WHERE email = $1', [schoolUserEmail]);
+    }
   });
 
   it('is case-insensitive when checking duplicate email', async () => {

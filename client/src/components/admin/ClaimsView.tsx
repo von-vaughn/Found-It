@@ -31,7 +31,7 @@ import { StatusFilter } from "./StatusFilter";
 import type { AdminReport } from "./types";
 import type { ClaimRequest } from "@/types/claim";
 import { getClaimantEmail } from "@/types/claim";
-import { extractIdNumberFromEmail } from "@/lib/idNumber";
+import { resolveIdNumber } from "@/lib/idNumber";
 
 function formatEventDate(value: string | undefined): string {
   if (!value) return "None";
@@ -185,7 +185,7 @@ function ClaimRequestSection({
             {claim.claimant}
           </p>
           <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-            Id number: {extractIdNumberFromEmail(getClaimantEmail(claim)) || "N/A"}
+            Id number: {resolveIdNumber(claim.schoolId, getClaimantEmail(claim)) || "N/A"}
           </p>
           <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
             {claim.details}
@@ -719,7 +719,7 @@ export function ClaimsView({
                           {selectedItemPost.reportedBy}
                         </p>
                         <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                          Id number: {extractIdNumberFromEmail(selectedItemPost.reporterEmail) || "N/A"}
+                          Id number: {resolveIdNumber(selectedItemPost.reporterSchoolId, selectedItemPost.reporterEmail) || "N/A"}
                         </p>
                         <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                           {selectedItemPost.description}

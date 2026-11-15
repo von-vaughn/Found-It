@@ -35,8 +35,8 @@ export interface Item {
   images: string[];
   /** Ownership-verification marker. Present for the report owner and admin+ only. */
   importantDetails?: string;
-  /** Reporter identity. Email is included for admin/super_admin only. */
-  user: { id: string; name: string; email?: string };
+  /** Reporter identity. Email and schoolId are included for admin/super_admin only. */
+  user: { id: string; name: string; email?: string; schoolId?: string };
   /** Open flag count and details (present for admin/super_admin only). */
   flagCount?: number;
   flags?: ItemFlag[];

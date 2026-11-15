@@ -18,6 +18,7 @@ export async function migrate(): Promise<void> {
       first_name VARCHAR(50) NOT NULL,
       last_name VARCHAR(50) NOT NULL,
       email VARCHAR(255) NOT NULL,
+      school_id VARCHAR(30),
       password_hash TEXT NOT NULL,
       role VARCHAR(20) NOT NULL DEFAULT 'school_user'
         CHECK (role IN ('school_user', 'admin', 'super_admin')),
@@ -247,6 +248,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS verification_locked_until TIMESTAMPTZ;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS last_resend_at TIMESTAMPTZ;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS resend_count_window INT NOT NULL DEFAULT 0;
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS school_id VARCHAR(30);
 
     ALTER TABLE email_otp ADD COLUMN IF NOT EXISTS purpose VARCHAR(20) NOT NULL DEFAULT 'verify_email';
 

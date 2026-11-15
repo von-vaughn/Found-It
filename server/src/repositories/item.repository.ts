@@ -21,6 +21,7 @@ interface ItemRow {
   category_name: string;
   reporter_name: string;
   reporter_email: string;
+  reporter_school_id: string | null;
   images: Array<{ url: string; blurred_url: string | null }> | null;
   flags: ItemFlag[] | null;
   created_at: Date;
@@ -61,7 +62,7 @@ const ITEM_COLUMNS = `
   r.important_details,
   loc.description AS location, b.name AS building,
   c.id AS category_id, c.name AS category_name,
-  u.first_name || ' ' || u.last_name AS reporter_name, u.email AS reporter_email,
+  u.first_name || ' ' || u.last_name AS reporter_name, u.email AS reporter_email, u.school_id AS reporter_school_id,
   COALESCE(
     (SELECT json_agg(
       json_build_object('url', img.image_url, 'blurred_url', img.blurred_image_url)
@@ -148,7 +149,12 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
       ? { importantDetails: row.important_details }
       : {}),
     user: isAdmin
-      ? { id: row.reporter_id, name: row.reporter_name, email: row.reporter_email }
+      ? {
+          id: row.reporter_id,
+          name: row.reporter_name,
+          email: row.reporter_email,
+          ...(row.reporter_school_id ? { schoolId: row.reporter_school_id } : {}),
+        }
       : { id: row.reporter_id, name: row.reporter_name },
     ...(isAdmin
       ? {

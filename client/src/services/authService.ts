@@ -58,6 +58,7 @@ export const authService = {
   async register(payload: {
     name: string;
     email: string;
+    schoolId: string;
     password: string;
   }): Promise<{ message: string }> {
     const { data } = await api.post<{ message: string }>(

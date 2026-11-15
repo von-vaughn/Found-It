@@ -19,6 +19,7 @@ interface ClaimRow {
   item_name: string;
   claimant: string;
   email: string;
+  school_id: string | null;
   date_lost: Date | string | null;
   time_lost: string | null;
   location_lost: string | null;
@@ -36,7 +37,7 @@ interface ClaimRow {
 
 const CLAIM_COLUMNS = `
   rq.id, rq.item_id, i.name AS item_name,
-  u.first_name || ' ' || u.last_name AS claimant, u.email,
+  u.first_name || ' ' || u.last_name AS claimant, u.email, u.school_id,
   rq.date_lost, rq.time_lost, rq.location_lost, rq.details,
   rq.important_details, rq.evidence, rq.claimant_title,
   rq.primary_color, rq.building, rq.received_by_osa, rq.published_item_id,
@@ -76,6 +77,7 @@ function toClaim(row: ClaimRow, includeOsaReceipt = false): Claim {
     item: row.item_name,
     claimant: row.claimant,
     email: row.email,
+    ...(row.school_id ? { schoolId: row.school_id } : {}),
     dateLost: toDateOnly(row.date_lost),
     timeLost: row.time_lost ? row.time_lost.slice(0, 5) : null,
     location: row.location_lost,

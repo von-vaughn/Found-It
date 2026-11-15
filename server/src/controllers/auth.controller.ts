@@ -74,6 +74,12 @@ const registerSchema = z
       .email('Invalid email address')
       .max(EMAIL_MAX, 'Email address is too long')
       .refine(isStrictSchoolEmail, { message: 'Registration is restricted to @wmsu.edu.ph school emails' }),
+    schoolId: z
+      .string()
+      .trim()
+      .min(3, 'School ID must be at least 3 characters')
+      .max(30, 'School ID must be at most 30 characters')
+      .regex(/^[A-Za-z0-9-]+$/, 'School ID may only contain letters, numbers, and hyphens'),
     password: passwordSchema,
   })
   .strict();
@@ -214,7 +220,7 @@ export async function register(req: Request, res: Response): Promise<void> {
     zodError(res, parsed.error);
     return;
   }
-  const { name, email, password } = parsed.data;
+  const { name, email, schoolId, password } = parsed.data;
 
   // Duplicate email check: duplicate emails already existing within the system are strictly not allowed
   const existing = await findUserByEmail(email);
@@ -235,6 +241,7 @@ export async function register(req: Request, res: Response): Promise<void> {
       firstName,
       lastName,
       email,
+      schoolId,
       passwordHash,
       role: 'school_user',
       isVerified: false,

@@ -12,6 +12,7 @@ export interface SafeUser {
   id: string;
   name: string;
   email: string;
+  schoolId?: string;
   role: Role;
   isActive: boolean;
   isVerified: boolean;

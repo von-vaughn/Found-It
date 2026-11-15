@@ -38,6 +38,7 @@ export interface AdminReport {
   color: string;
   reportedBy: string;
   reporterEmail: string;
+  reporterSchoolId?: string;
   status: RecordStatus;
   date: string;
   eventDateTime?: string;
