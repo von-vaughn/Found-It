@@ -176,33 +176,6 @@ export function ItemDetailsDialog({
         <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-4 text-xs">
           <div>
             <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Tag className="h-3 w-3" aria-hidden="true" />
-              Category
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {report.category}
-            </dd>
-          </div>
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Building2 className="h-3 w-3" aria-hidden="true" />
-              Building
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {report.building}
-            </dd>
-          </div>
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <MapPin className="h-3 w-3" aria-hidden="true" />
-              {report.type === "Lost" ? "Lost location" : "Found location"}
-            </dt>
-            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {report.specificLocation || "Not provided"}
-            </dd>
-          </div>
-          <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               <Palette className="h-3 w-3" aria-hidden="true" />
               Primary color
             </dt>
@@ -212,15 +185,20 @@ export function ItemDetailsDialog({
           </div>
           <div>
             <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <CalendarDays className="h-3 w-3" aria-hidden="true" />
-              Date reported
+              <MapPin className="h-3 w-3" aria-hidden="true" />
+              Specific location
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-              {new Intl.DateTimeFormat("en", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              }).format(new Date(`${report.date}T12:00:00`))}
+              {report.specificLocation || "Not provided"}
+            </dd>
+          </div>
+          <div>
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+              <Building2 className="h-3 w-3" aria-hidden="true" />
+              Building
+            </dt>
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+              {report.building}
             </dd>
           </div>
           <div>
@@ -241,11 +219,33 @@ export function ItemDetailsDialog({
               {formatEventTime(report)}
             </dd>
           </div>
+          <div>
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+              <Tag className="h-3 w-3" aria-hidden="true" />
+              Category
+            </dt>
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+              {report.category}
+            </dd>
+          </div>
+          <div>
+            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+              <CalendarDays className="h-3 w-3" aria-hidden="true" />
+              Date reported
+            </dt>
+            <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+              {new Intl.DateTimeFormat("en", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              }).format(new Date(`${report.date}T12:00:00`))}
+            </dd>
+          </div>
           {report.type === "Found" && (
             <div>
               <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
                 <Package className="mr-1 inline h-3 w-3" aria-hidden="true" />
-                Physical Item
+                Physical item
               </dt>
               <dd className="mt-1">
                 <OsaReceiptStatus received={report.receivedByOsa} />

@@ -29,7 +29,6 @@ import { AdminPasswordModal, LockedValue } from "./SensitiveDetails";
 import { StatusBadge } from "./StatusBadge";
 import type { AdminReport } from "./types";
 import {
-  compareRequestWithPost,
   formatAdminEventDate,
   formatAdminEventTime,
 } from "./requestComparison";
@@ -287,13 +286,10 @@ export function ReturnsListPanel({
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
-                    <StatusBadge status={request.status} />
-                    <span className="hidden text-right sm:block">
-                      <span className="block text-[10px] uppercase tracking-[0.06em] text-neutral-500 dark:text-neutral-400">
-                        Submitted
-                      </span>
-                      <span className="mt-0.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                        {request.submitted}
+                    <span className="flex flex-col items-end gap-1">
+                      <StatusBadge status={request.status} />
+                      <span className="hidden text-[10px] uppercase tracking-[0.06em] text-neutral-500 sm:block dark:text-neutral-400">
+                        Submitted {request.submitted}
                       </span>
                     </span>
                     <ChevronRight
@@ -312,6 +308,7 @@ export function ReturnsListPanel({
             rangeStart={rangeStart}
             rangeEnd={rangeEnd}
             totalItems={filteredRequests.length}
+            showRange={false}
             onPageChange={setPage}
           />
         </>
@@ -508,9 +505,6 @@ export function ReturnDetailPanel({
     ? `Owner · ID ${ownerId}`
     : "Original post details unavailable";
 
-  const activeComparison = activeRequest
-    ? compareRequestWithPost(activeRequest, selectedLostReport)
-    : null;
   const updatingActiveOsa = Boolean(
     activeRequest &&
       isUpdatingOsaReceipt &&
@@ -523,17 +517,40 @@ export function ReturnDetailPanel({
   const activeFactRows: ReviewFactRow[] = activeRequest
     ? [
         {
-          id: "item-name",
-          icon: Tag,
-          label: "Item name",
-          value: activeRequest.item || "None",
-        },
-        {
           id: "color",
           icon: Palette,
           label: "Primary color",
           value: activeRequest.color?.trim() || "None",
-          note: activeComparison?.color.note,
+        },
+        {
+          id: "location-found",
+          icon: MapPin,
+          label: "Location found",
+          value: activeRequest.location || "None",
+        },
+        {
+          id: "building",
+          icon: Building2,
+          label: "Building",
+          value: activeRequest.building?.trim() || "None",
+        },
+        {
+          id: "date-found",
+          icon: CalendarDays,
+          label: "Date found",
+          value: formatDate(activeRequest.dateLost),
+        },
+        {
+          id: "time-found",
+          icon: Clock3,
+          label: "Time found",
+          value: activeRequest.timeLost || "None",
+        },
+        {
+          id: "item-name",
+          icon: Tag,
+          label: "Item name",
+          value: activeRequest.item || "None",
         },
         {
           id: "physical-item",
@@ -567,34 +584,6 @@ export function ReturnDetailPanel({
               )}
             </div>
           ),
-        },
-        {
-          id: "date-found",
-          icon: CalendarDays,
-          label: "Date found",
-          value: formatDate(activeRequest.dateLost),
-          note: activeComparison?.date.note,
-        },
-        {
-          id: "time-found",
-          icon: Clock3,
-          label: "Time found",
-          value: activeRequest.timeLost || "None",
-          note: activeComparison?.time.note,
-        },
-        {
-          id: "location-found",
-          icon: MapPin,
-          label: "Location found",
-          value: activeRequest.location || "None",
-          note: activeComparison?.location.note,
-        },
-        {
-          id: "building",
-          icon: Building2,
-          label: "Building",
-          value: activeRequest.building?.trim() || "None",
-          note: activeComparison?.building.note,
         },
         {
           id: "important-details",

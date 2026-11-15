@@ -76,7 +76,11 @@ export function AdminLayout({
           toast.error("Could not update this notification. Please try again."),
       });
     }
-    if (notification.kind === "flag" || notification.kind === "item") {
+    if (notification.kind === "flag") {
+      navigate(adminSectionPaths.reported);
+      return;
+    }
+    if (notification.kind === "item") {
       navigate(adminSectionPaths.items);
       return;
     }
@@ -123,8 +127,13 @@ export function AdminLayout({
       />
 
       <div
-        className="sidebar-shift min-h-screen min-w-0 pl-16 md:ml-20 transition-[margin] duration-300 ease-in-out"
+        className={`sidebar-shift min-h-screen min-w-0 pl-16 transition-[margin] duration-300 ease-in-out ${
+          activeSection === "post" ? "flex flex-col md:ml-20 md:pl-0" : "md:ml-20"
+        }`}
       >
+      {activeSection === "post" && (
+        <div className="hidden h-20 md:block" aria-hidden="true" />
+      )}
       {showSearch && onQueryChange && (
         <header
           className="notifications-shift sticky top-0 z-20 flex h-16 w-full items-center justify-between gap-3 bg-white/95 dark:bg-neutral-950/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8"
@@ -150,7 +159,11 @@ export function AdminLayout({
 
         <main
           id="admin-main"
-          className="notifications-shift min-w-0 w-full px-4 py-6 transition-[margin,width] duration-300 sm:px-6 lg:px-8 lg:py-8"
+          className={
+            activeSection === "post"
+              ? "notifications-shift mx-auto min-w-0 w-full max-w-[1440px] flex-1 px-4 py-6 transition-[margin,width] duration-300 sm:px-8 sm:py-8 lg:px-12"
+              : "notifications-shift min-w-0 w-full px-4 py-6 transition-[margin,width] duration-300 sm:px-6 lg:px-8 lg:py-8"
+          }
         >
           <a
             href="#admin-main"
@@ -159,6 +172,8 @@ export function AdminLayout({
             Skip to main content
           </a>
           {activeSection !== "items" &&
+            activeSection !== "post" &&
+            activeSection !== "reported" &&
             activeSection !== "users" &&
             activeSection !== "claims" &&
             activeSection !== "returns" && (

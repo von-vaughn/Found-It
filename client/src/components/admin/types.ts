@@ -3,6 +3,8 @@ import type { ItemFlag } from "@/services/itemService";
 export type AdminSection =
   | "overview"
   | "items"
+  | "post"
+  | "reported"
   | "claims"
   | "returns"
   | "users"

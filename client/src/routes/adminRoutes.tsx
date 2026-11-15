@@ -2,6 +2,7 @@ import type { RouteObject } from "react-router-dom";
 import { Navigate } from "react-router-dom";
 import { OverviewPage } from "@/pages/admin/OverviewPage";
 import { ReportsPage } from "@/pages/admin/ReportsPage";
+import { ReportedItemsPage } from "@/pages/admin/ReportedItemsPage";
 import { AdminCreatePostPage } from "@/pages/admin/AdminCreatePostPage";
 import { ClaimsPage } from "@/pages/admin/ClaimsPage";
 import { ClaimDetailPage } from "@/pages/admin/ClaimDetailPage";
@@ -23,6 +24,14 @@ export function getAdminRoutes(): RouteObject[] {
     {
       path: paths.adminItemsNew,
       element: <AdminCreatePostPage />,
+    },
+    {
+      path: paths.adminReported,
+      element: <ReportedItemsPage />,
+    },
+    {
+      path: paths.adminReportedDetail,
+      element: <ReportedItemsPage />,
     },
     { path: paths.adminLost, element: <Navigate to={paths.adminItems} replace /> },
     { path: paths.adminFound, element: <Navigate to={paths.adminItems} replace /> },

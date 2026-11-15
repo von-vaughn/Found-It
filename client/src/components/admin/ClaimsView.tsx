@@ -10,6 +10,7 @@ import {
   Clock3,
   Lock,
   MapPin,
+  Package,
   Palette,
   Tag,
   X,
@@ -276,13 +277,10 @@ export function ClaimsListPanel({
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
-                    <StatusBadge status={claim.status} />
-                    <span className="hidden text-right sm:block">
-                      <span className="block text-[10px] uppercase tracking-[0.06em] text-neutral-500 dark:text-neutral-400">
-                        Submitted
-                      </span>
-                      <span className="mt-0.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                        {claim.submitted}
+                    <span className="flex flex-col items-end gap-1">
+                      <StatusBadge status={claim.status} />
+                      <span className="hidden text-[10px] uppercase tracking-[0.06em] text-neutral-500 sm:block dark:text-neutral-400">
+                        Submitted {claim.submitted}
                       </span>
                     </span>
                     <ChevronRight
@@ -302,6 +300,7 @@ export function ClaimsListPanel({
             rangeEnd={rangeEnd}
             totalItems={claimGroups.length}
             itemUnitLabel="posts"
+            showRange={false}
             onPageChange={setPage}
           />
         </>
@@ -482,6 +481,44 @@ export function ClaimDetailPanel({
     unlocked,
     requestUnlock,
   );
+  if (selectedItemPost?.type === "Found") {
+    postFacts.push({
+      id: "physical-item",
+      icon: Package,
+      label: "Physical item",
+      value: (
+        <div className="flex flex-wrap items-center gap-3">
+          <OsaReceiptStatus received={selectedItemPost.receivedByOsa} />
+          <button
+            type="button"
+            disabled={isUpdatingOsaReceipt || cannotRevokeOsa}
+            title={
+              cannotRevokeOsa
+                ? "Cannot undo OSA receipt after a request on this item has been approved or completed."
+                : undefined
+            }
+            onClick={() =>
+              onOsaReceiptChange(
+                selectedItemPost.id,
+                !selectedItemPost.receivedByOsa,
+              )
+            }
+            className={`inline-flex h-8 items-center justify-center rounded-[10px] border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 ${
+              selectedItemPost.receivedByOsa
+                ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                : "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+            }`}
+          >
+            {isUpdatingOsaReceipt
+              ? "Updating…"
+              : selectedItemPost.receivedByOsa
+                ? "Mark not yet received"
+                : "Mark received"}
+          </button>
+        </div>
+      ),
+    });
+  }
   const reporterId = selectedItemPost
     ? resolveIdNumber(
         selectedItemPost.reporterSchoolId,
@@ -492,10 +529,6 @@ export function ClaimDetailPanel({
     ? `${isLostItem ? "Owner" : "Finder"} · ID ${reporterId}`
     : "Original post details unavailable";
 
-  const activeComparison = activeClaim
-    ? compareRequestWithPost(activeClaim, selectedItemPost)
-    : null;
-
   const activeFactRows: ReviewFactRow[] = activeClaim
     ? [
         {
@@ -503,35 +536,30 @@ export function ClaimDetailPanel({
           icon: Palette,
           label: "Primary color",
           value: activeClaim.color?.trim() || "None",
-          note: activeComparison?.color.note,
-        },
-        {
-          id: "date",
-          icon: CalendarDays,
-          label: isLostItem ? "Date found" : "Date lost",
-          value: activeClaim.dateLost || "None",
-          note: activeComparison?.date.note,
-        },
-        {
-          id: "time",
-          icon: Clock3,
-          label: isLostItem ? "Time found" : "Time lost",
-          value: activeClaim.timeLost || "None",
-          note: activeComparison?.time.note,
         },
         {
           id: "location",
           icon: MapPin,
           label: isLostItem ? "Location found" : "Location lost",
           value: activeClaim.location || "None",
-          note: activeComparison?.location.note,
         },
         {
           id: "building",
           icon: Building2,
           label: "Building",
           value: activeClaim.building?.trim() || "None",
-          note: activeComparison?.building.note,
+        },
+        {
+          id: "date",
+          icon: CalendarDays,
+          label: isLostItem ? "Date found" : "Date lost",
+          value: activeClaim.dateLost || "None",
+        },
+        {
+          id: "time",
+          icon: Clock3,
+          label: isLostItem ? "Time found" : "Time lost",
+          value: activeClaim.timeLost || "None",
         },
         {
           id: "important-details",
@@ -650,44 +678,6 @@ export function ClaimDetailPanel({
         reporterMeta={reporterMeta}
         facts={postFacts}
         notes={selectedItemPost?.description}
-        footer={
-          selectedItemPost?.type === "Found" ? (
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <div className="flex items-center gap-2.5">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                  Physical item
-                </p>
-                <OsaReceiptStatus received={selectedItemPost.receivedByOsa} />
-              </div>
-              <button
-                type="button"
-                disabled={isUpdatingOsaReceipt || cannotRevokeOsa}
-                title={
-                  cannotRevokeOsa
-                    ? "Cannot undo OSA receipt after a request on this item has been approved or completed."
-                    : undefined
-                }
-                onClick={() =>
-                  onOsaReceiptChange(
-                    selectedItemPost.id,
-                    !selectedItemPost.receivedByOsa,
-                  )
-                }
-                className={`inline-flex h-9 shrink-0 items-center justify-center rounded-[10px] border px-3.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 ${
-                  selectedItemPost.receivedByOsa
-                    ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
-                    : "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
-                }`}
-              >
-                {isUpdatingOsaReceipt
-                  ? "Updating…"
-                  : selectedItemPost.receivedByOsa
-                    ? "Mark not yet received"
-                    : "Mark received"}
-              </button>
-            </div>
-          ) : undefined
-        }
       />
 
       <div className="mt-8 space-y-6">
@@ -747,6 +737,7 @@ export function ClaimDetailPanel({
               rangeStart={rangeStart}
               rangeEnd={rangeEnd}
               totalItems={sortedPostClaims.length}
+              showRange={false}
               onPageChange={(nextPage) => {
                 setPage(nextPage);
                 const nextVisible = sortedPostClaims.slice(

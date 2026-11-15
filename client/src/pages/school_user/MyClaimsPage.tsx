@@ -516,18 +516,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:grid-cols-3">
                                 <div>
                                   <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
-                                    <Tag
-                                      className="h-3 w-3"
-                                      aria-hidden="true"
-                                    />
-                                    What is it?
-                                  </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                    {claim.claimantTitle?.trim() || claim.item}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
                                     <Palette
                                       className="h-3 w-3"
                                       aria-hidden="true"
@@ -536,6 +524,30 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   </dt>
                                   <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
                                     {claim.color?.trim() || "Not provided"}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
+                                    <MapPin
+                                      className="h-3 w-3"
+                                      aria-hidden="true"
+                                    />
+                                    Location {isFoundReport ? "found" : "lost"}
+                                  </dt>
+                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                                    {claim.location}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
+                                    <Building2
+                                      className="h-3 w-3"
+                                      aria-hidden="true"
+                                    />
+                                    Building
+                                  </dt>
+                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                                    {claim.building?.trim() || "Not provided"}
                                   </dd>
                                 </div>
                                 <div>
@@ -564,26 +576,14 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                 </div>
                                 <div>
                                   <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
-                                    <MapPin
+                                    <Tag
                                       className="h-3 w-3"
                                       aria-hidden="true"
                                     />
-                                    Location {isFoundReport ? "found" : "lost"}
+                                    What is it?
                                   </dt>
                                   <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                    {claim.location}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
-                                    <Building2
-                                      className="h-3 w-3"
-                                      aria-hidden="true"
-                                    />
-                                    Building
-                                  </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                    {claim.building?.trim() || "Not provided"}
+                                    {claim.claimantTitle?.trim() || claim.item}
                                   </dd>
                                 </div>
                               </dl>

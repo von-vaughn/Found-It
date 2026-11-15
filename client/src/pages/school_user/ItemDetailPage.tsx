@@ -832,33 +832,17 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                             </p>
                           </div>
                           <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                            <div>
-                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                <CalendarDays className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
-                                Submitted
-                              </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                {claim.submitted}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                <CalendarDays className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
-                                Date found
-                              </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                {claim.dateLost}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                <Clock3 className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
-                                Time found
-                              </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                {claim.timeLost || "None"}
-                              </dd>
-                            </div>
+                            {claim.color && (
+                              <div>
+                                <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                  <Palette className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                                  Primary color
+                                </dt>
+                                <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
+                                  {claim.color}
+                                </dd>
+                              </div>
+                            )}
                             <div>
                               <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
                                 <MapPin className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
@@ -879,17 +863,33 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                                 </dd>
                               </div>
                             )}
-                            {claim.color && (
-                              <div>
-                                <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                  <Palette className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
-                                  Primary color
-                                </dt>
-                                <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
-                                  {claim.color}
-                                </dd>
-                              </div>
-                            )}
+                            <div>
+                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                <CalendarDays className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                                Date found
+                              </dt>
+                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                                {claim.dateLost}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                <Clock3 className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                                Time found
+                              </dt>
+                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                                {claim.timeLost || "None"}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                                <CalendarDays className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                                Submitted
+                              </dt>
+                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                                {claim.submitted}
+                              </dd>
+                            </div>
                           </dl>
                           {claimStatus === "Approved" && (
                             <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50/70 dark:border-cyan-800/60 dark:bg-cyan-950/30 p-3 text-xs text-cyan-900 dark:text-cyan-300">

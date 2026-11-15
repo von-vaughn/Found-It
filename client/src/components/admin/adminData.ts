@@ -1,9 +1,11 @@
 import {
   BadgeCheck,
+  Flag,
   History,
   LayoutDashboard,
   ListFilter,
   PackageSearch,
+  PlusCircle,
   RotateCcw,
   Users,
 } from "lucide-react";
@@ -57,12 +59,24 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
     compactLabel: "Items",
     icon: PackageSearch,
   },
+  {
+    id: "post",
+    label: "Post Item",
+    compactLabel: "Post",
+    icon: PlusCircle,
+  },
   { id: "claims", label: "Claims", compactLabel: "Claims", icon: BadgeCheck },
   {
     id: "returns",
     label: "Return Items",
     compactLabel: "Returns",
     icon: RotateCcw,
+  },
+  {
+    id: "reported",
+    label: "Reported Items",
+    compactLabel: "Reported",
+    icon: Flag,
   },
   {
     id: "users",
@@ -108,12 +122,20 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
     title: "Lost & found reports",
     description: "",
   },
+  post: {
+    title: "Post an item lost or found",
+    description: "",
+  },
   claims: {
     title: "Submitted Claims Request",
     description: "",
   },
   returns: {
     title: "Return Item",
+    description: "",
+  },
+  reported: {
+    title: "Reported items",
     description: "",
   },
   users: {
@@ -144,6 +166,10 @@ export const superAdminPageCopy: Partial<
   },
   returns: {
     title: "Return Item",
+    description: "",
+  },
+  reported: {
+    title: "Reported items",
     description: "",
   },
   users: {

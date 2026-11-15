@@ -13,6 +13,8 @@ export const paths = {
   admin: "/admin",
   adminItems: "/admin/items",
   adminItemsNew: "/admin/items/new",
+  adminReported: "/admin/reported",
+  adminReportedDetail: "/admin/reported/:itemId",
   adminLost: "/admin/lost",
   adminFound: "/admin/found",
   adminClaims: "/admin/claims",

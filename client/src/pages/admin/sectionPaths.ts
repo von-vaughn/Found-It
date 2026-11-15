@@ -4,6 +4,8 @@ import { paths } from "@/routes/paths";
 export const adminSectionPaths: Record<AdminSection, string> = {
   overview: paths.admin,
   items: paths.adminItems,
+  post: paths.adminItemsNew,
+  reported: paths.adminReported,
   claims: paths.adminClaims,
   returns: paths.adminReturns,
   users: paths.adminUsers,
