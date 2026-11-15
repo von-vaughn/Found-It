@@ -53,9 +53,9 @@ export function ReviewHeader({
     NonNullable<typeof stateTone>,
     string
   > = {
-    ok: "bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warn: "bg-amber-50 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
-    bad: "bg-rose-50 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300",
+    ok: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+    warn: "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
+    bad: "bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-200",
     neutral:
       "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
   };
@@ -143,7 +143,7 @@ export function OriginalPostFacts({
   notes?: string;
 }) {
   return (
-    <>
+    <div>
       {image ? (
         <div className="aspect-[4/3] w-full overflow-hidden rounded-[14px] border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
           <img
@@ -160,58 +160,62 @@ export function OriginalPostFacts({
         />
       )}
 
-      <div className="mt-4">
-        <p className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
-          {reporterName}
-        </p>
-        <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-          {reporterMeta}
-        </p>
-      </div>
-
-      <dl className="mt-4 border-t border-neutral-200 dark:border-neutral-800">
-        {facts.map((fact) => {
-          const Icon = fact.icon;
-          return (
-            <div
-              key={fact.id}
-              className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 border-b border-neutral-200 py-2.5 text-sm dark:border-neutral-800"
-            >
-              <dt className="flex items-start gap-2 text-xs text-neutral-500 dark:text-neutral-400 pt-0.5">
-                {Icon && (
-                  <Icon
-                    className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500"
-                    aria-hidden="true"
-                  />
-                )}
-                <span>{fact.label}</span>
-              </dt>
-              <dd className="min-w-0 font-medium text-neutral-900 dark:text-neutral-100">
-                <div className="break-words">{fact.value}</div>
-                {fact.note && (
-                  <span className="mt-0.5 block text-xs font-normal text-amber-700 dark:text-amber-300">
-                    {fact.note}
-                  </span>
-                )}
-              </dd>
-            </div>
-          );
-        })}
-        <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 border-b border-neutral-200 py-2.5 text-sm dark:border-neutral-800">
-          <dt className="text-xs text-neutral-500 dark:text-neutral-400 pt-0.5">
-            Notes
-          </dt>
-          <dd className="min-w-0 text-xs leading-relaxed font-normal text-neutral-600 dark:text-neutral-400">
-            {notes?.trim() || "No additional description provided."}
-          </dd>
+      <div>
+        <div className="mt-4">
+          <p className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            {reporterName}
+          </p>
+          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
+            {reporterMeta}
+          </p>
         </div>
-      </dl>
-    </>
+
+        <dl className="mt-4 border-t border-neutral-200 dark:border-neutral-800">
+          {facts.map((fact) => {
+            const Icon = fact.icon;
+            return (
+              <div
+                key={fact.id}
+                className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 border-b border-neutral-200 py-2.5 text-sm dark:border-neutral-800"
+              >
+                <dt className="flex items-start gap-2 pt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  {Icon && (
+                    <Icon
+                      className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span>{fact.label}</span>
+                </dt>
+                <dd className="min-w-0 font-medium text-neutral-900 dark:text-neutral-100">
+                  <div className="break-words">{fact.value}</div>
+                  {fact.note && (
+                    <span className="mt-0.5 block text-xs font-normal text-amber-700 dark:text-amber-300">
+                      {fact.note}
+                    </span>
+                  )}
+                </dd>
+              </div>
+            );
+          })}
+          <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 border-b border-neutral-200 py-2.5 text-sm dark:border-neutral-800">
+            <dt className="pt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+              Description
+            </dt>
+            <dd className="min-w-0 text-xs leading-relaxed font-normal text-neutral-600 dark:text-neutral-400">
+              {notes?.trim() || "No additional description provided."}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
   );
 }
 
 export function OriginalPostCard({
   postedDateLabel,
+  itemTitle,
+  reportTypeLabel = "Original post",
   image,
   imageAlt,
   reporterName,
@@ -219,8 +223,11 @@ export function OriginalPostCard({
   facts,
   notes,
   footer,
+  layout = "stacked",
 }: {
   postedDateLabel: string;
+  itemTitle?: string;
+  reportTypeLabel?: string;
   image?: string;
   imageAlt: string;
   reporterName: string;
@@ -228,9 +235,88 @@ export function OriginalPostCard({
   facts: ReviewFactRow[];
   notes?: string;
   footer?: ReactNode;
+  layout?: "stacked" | "horizontal";
 }) {
+  if (layout === "horizontal") {
+    const heroFacts = facts.filter((fact) => fact.id !== "item-name");
+    return (
+      <section aria-label="Original post" className="px-5 sm:px-6">
+        <div className="grid gap-8 md:grid-cols-[280px_minmax(0,1fr)] md:items-start lg:grid-cols-[340px_minmax(0,1fr)]">
+          <div className="min-w-0">
+          {image ? (
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
+              <img
+                src={image}
+                alt={imageAlt}
+                className="h-full w-full object-contain"
+              />
+            </div>
+          ) : (
+            <NoItemImage
+              title="No image attached to this report."
+              className="aspect-[4/3] w-full rounded-3xl"
+            />
+          )}
+        </div>
+
+        <article className="min-w-0">
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+              {itemTitle || imageAlt}
+            </h1>
+            <p className="mt-0.5 truncate text-xs text-neutral-400 dark:text-neutral-500">
+              {reporterName} · {reporterMeta} · {postedDateLabel}
+            </p>
+          </div>
+
+          <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+            {reportTypeLabel}
+          </p>
+          <p className="mt-3 text-xs font-bold text-neutral-900 dark:text-neutral-100">
+            Description
+          </p>
+          <p className="mt-1 break-words text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+            {notes?.trim() || "No additional description provided."}
+          </p>
+
+          <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 text-xs sm:grid-cols-2 dark:border-neutral-800">
+            {heroFacts.map((fact) => {
+              const Icon = fact.icon;
+              return (
+                <div key={fact.id} className="flex items-start gap-2.5 py-3">
+                  {Icon && (
+                    <Icon
+                      className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <dt className="font-bold text-neutral-900 dark:text-neutral-100">
+                      {fact.label}
+                    </dt>
+                    <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
+                      {fact.value}
+                    </dd>
+                    {fact.note && (
+                      <span className="mt-0.5 block text-xs font-normal text-amber-700 dark:text-amber-300">
+                        {fact.note}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </dl>
+
+          {footer && <div className="mt-4">{footer}</div>}
+        </article>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <aside className="rounded-[20px] border border-neutral-200 bg-white p-5 shadow-[0_20px_40px_-20px_rgba(24,24,27,0.10)] lg:sticky lg:top-6 lg:self-start dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none">
+    <aside className="rounded-[18px] border border-neutral-200 bg-white p-4 shadow-[0_16px_32px_-20px_rgba(24,24,27,0.12)] lg:sticky lg:top-6 lg:self-start dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none">
       <div className="mb-3.5 flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">
           Original post
@@ -281,7 +367,7 @@ export function FilterChips<T extends string>({
             onClick={() => onChange(option.key)}
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
               pressed
-                ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
+                ? "border-[#E5192D] bg-[#E5192D] text-white"
                 : "border-neutral-200 bg-transparent text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
             }`}
           >
@@ -366,6 +452,7 @@ export function ReviewPager({
   rangeEnd,
   totalItems,
   itemUnitLabel = "requests",
+  showRange = true,
   onPageChange,
 }: {
   page: number;
@@ -374,18 +461,21 @@ export function ReviewPager({
   rangeEnd: number;
   totalItems: number;
   itemUnitLabel?: string;
+  showRange?: boolean;
   onPageChange: (nextPage: number) => void;
 }) {
-  if (totalItems === 0) return null;
+  if (totalItems === 0 || (!showRange && totalPages <= 1)) return null;
 
   return (
     <nav
       aria-label="Request pages"
       className="flex flex-wrap items-center justify-between gap-3"
     >
-      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 tabular-nums dark:text-neutral-400">
-        Showing {rangeStart}–{rangeEnd} of {totalItems} {itemUnitLabel}
-      </span>
+      {showRange && (
+        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 tabular-nums dark:text-neutral-400">
+          Showing {rangeStart}–{rangeEnd} of {totalItems} {itemUnitLabel}
+        </span>
+      )}
       {totalPages > 1 && (
         <div className="flex items-center gap-1.5">
           <button

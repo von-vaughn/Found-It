@@ -63,13 +63,13 @@ interface ItemDetailPageProps {
 
 const finderStatusStyles: Record<string, string> = {
   Pending:
-    "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-200",
   "Pending admin approval":
-    "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  Approved: "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-800 dark:text-cyan-400",
-  Claimed: "bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400",
-  Returned: "bg-teal-50 dark:bg-teal-500/10 text-teal-800 dark:text-teal-400",
-  Rejected: "bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-400",
+    "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-200",
+  Approved: "bg-cyan-50 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-200",
+  Claimed: "bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200",
+  Returned: "bg-teal-50 dark:bg-teal-950 text-teal-800 dark:text-teal-200",
+  Rejected: "bg-rose-50 dark:bg-rose-950 text-rose-800 dark:text-rose-200",
 };
 
 function keywordSet(value: string): Set<string> {

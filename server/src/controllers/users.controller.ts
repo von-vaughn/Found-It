@@ -133,7 +133,7 @@ export async function getAllUsers(req: Request, res: Response): Promise<void> {
   res.json({ users, count: users.length });
 }
 
-/** GET /api/users/:id — self, admin, super_admin */
+/** GET /api/users/:id — self or super_admin */
 export async function getUserById(req: Request, res: Response): Promise<void> {
   const id = getId(req);
   if (invalidId(res, id)) return;
@@ -143,8 +143,8 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
     return;
   }
   const isSelf = req.user!.sub === target.id;
-  const isPrivileged = req.user!.role === 'admin' || req.user!.role === 'super_admin';
-  if (!isSelf && !isPrivileged) {
+  const isSuperAdmin = req.user!.role === 'super_admin';
+  if (!isSelf && !isSuperAdmin) {
     res.status(403).json({ message: 'Forbidden.' });
     return;
   }
@@ -211,8 +211,7 @@ export async function changeUserRole(req: Request, res: Response): Promise<void>
 }
 
 /**
- * PATCH /api/users/:id/status — admin + super_admin.
- * admin may only (de)activate plain `school_user`s; super_admin may touch anyone except self.
+ * PATCH /api/users/:id/status — super_admin only.
  * Cannot deactivate the last active super_admin.
  */
 export async function changeUserStatus(req: Request, res: Response): Promise<void> {
@@ -230,10 +229,6 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
   }
   if (target.id === req.user!.sub) {
     res.status(400).json({ message: 'You cannot change your own status.' });
-    return;
-  }
-  if (req.user!.role === 'admin' && target.role !== 'school_user') {
-    res.status(403).json({ message: 'Staff can only manage users with role "school_user".' });
     return;
   }
   const updated = !parsed.data.isActive && target.role === 'super_admin'
@@ -260,7 +255,7 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
 }
 
 /**
- * DELETE /api/users/:id — admin (school_user-role targets only) + super_admin (anyone except self/last super_admin).
+ * DELETE /api/users/:id — super_admin only (anyone except self/last super_admin).
  */
 export async function removeUser(req: Request, res: Response): Promise<void> {
   const id = getId(req);
@@ -272,10 +267,6 @@ export async function removeUser(req: Request, res: Response): Promise<void> {
   }
   if (target.id === req.user!.sub) {
     res.status(400).json({ message: 'You cannot delete your own account.' });
-    return;
-  }
-  if (req.user!.role === 'admin' && target.role !== 'school_user') {
-    res.status(403).json({ message: 'Staff can only delete users with role "school_user".' });
     return;
   }
   if (target.role === 'super_admin') {

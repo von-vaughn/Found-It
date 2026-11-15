@@ -1,11 +1,29 @@
+import type { Request } from 'express';
 import { rateLimit } from 'express-rate-limit';
+import { env } from '../config/env';
+import { verifyAccessToken } from '../utils/jwt';
 
-/** General API protection: 300 req / 15 min per IP (in-memory; use Redis in prod). */
+function isAuthenticatedRequest(req: Request): boolean {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) return false;
+  try {
+    verifyAccessToken(header.slice(7));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** General API protection for unauthenticated/IP traffic; signed-in requests with a verified JWT and /api/auth/* are not counted here. */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: env.NODE_ENV === 'production' ? 2000 : 10000,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
+  skip: (req: Request) =>
+    // Auth endpoints manage their own dedicated limiters; verified signed-in sessions skip the IP quota.
+    (req.baseUrl === '/api' && req.path.startsWith('/auth')) ||
+    isAuthenticatedRequest(req),
   message: { message: 'Too many requests, please try again later.' },
 });
 

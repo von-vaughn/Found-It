@@ -295,22 +295,36 @@ export function ItemDetailsDialog({
         )}
         {(onDelete || (report.type === "Found" && onOsaReceiptChange)) && (
           <div className="flex flex-wrap justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
-            {report.type === "Found" && onOsaReceiptChange && (
-              <button
-                type="button"
-                disabled={isUpdatingOsaReceipt}
-                onClick={() =>
-                  onOsaReceiptChange(report.id, !report.receivedByOsa)
-                }
-                className="inline-flex h-9 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60"
-              >
-                {isUpdatingOsaReceipt
-                  ? "Updating…"
-                  : report.receivedByOsa
-                    ? "Mark not yet received"
+            {report.type === "Found" && onOsaReceiptChange && (() => {
+              const cannotRevokeOsa =
+                Boolean(report.receivedByOsa) &&
+                (report.status === "Claimed" || report.status === "Returned");
+              return (
+                <button
+                  type="button"
+                  disabled={isUpdatingOsaReceipt || cannotRevokeOsa}
+                  title={
+                    cannotRevokeOsa
+                      ? "Cannot undo OSA receipt after a request on this item has been approved or completed."
+                      : undefined
+                  }
+                  onClick={() =>
+                    onOsaReceiptChange(report.id, !report.receivedByOsa)
+                  }
+                  className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 ${
+                    report.receivedByOsa
+                      ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                      : "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                  }`}
+                >
+                  {isUpdatingOsaReceipt
+                    ? "Updating…"
+                    : report.receivedByOsa
+                      ? "Mark not yet received"
                       : "Mark received"}
-              </button>
-            )}
+                </button>
+              );
+            })()}
             {onDelete && (
               <button
                 type="button"

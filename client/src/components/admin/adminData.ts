@@ -8,45 +8,9 @@ import {
   Users,
 } from "lucide-react";
 import { formatCategoryLabel } from "@/hooks/useCategories";
-import type { Item } from "@/data/mockItems";
 import type { ServerItem } from "@/services/itemService";
 import type { AdminSidebarItem } from "./AdminSidebar";
-import type {
-  AdminReport,
-  AdminSection,
-  AdminClaim,
-  AdminUser,
-} from "./types";
-
-export const itemToAdminReport = (item: Item): AdminReport => ({
-  id: item.id,
-  title: item.title,
-  type: item.type === "lost" ? "Lost" : "Found",
-  receivedByOsa: false,
-  image: item.image,
-  category: formatCategoryLabel(item.category),
-  description: item.description,
-  building: item.building || item.location,
-  buildingName: item.building,
-  specificLocation: item.location,
-  color: item.color ?? "",
-  reportedBy: item.contactName,
-  reporterEmail: `${(
-    item.username ||
-    item.contactName.toLowerCase().replace(/\s+/g, "_")
-  ).toLowerCase()}@wmsu.edu.ph`,
-  status:
-    item.status === "reunited"
-      ? item.type === "lost"
-        ? "Returned"
-        : "Claimed"
-      : item.type === "lost"
-        ? "Lost"
-        : "Found",
-  date: item.date,
-  eventDateTime: item.dateTime,
-  confidentialInfo: item.confidentialInfo,
-});
+import type { AdminReport, AdminSection } from "./types";
 
 /** Maps a backend item report (including the admin-only reporter email) to an admin row. */
 export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
@@ -79,8 +43,6 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   flagCount: item.flagCount ?? 0,
   flags: item.flags ?? [],
 });
-
-export const claims: AdminClaim[] = [];
 
 export const navigation: AdminSidebarItem<AdminSection>[] = [
   {
@@ -123,7 +85,11 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
 ];
 
 /** Sections only a super admin may reach; hidden from the sidebar and route-guarded. */
-export const superAdminOnlySections: AdminSection[] = ["options", "audit"];
+export const superAdminOnlySections: AdminSection[] = [
+  "users",
+  "options",
+  "audit",
+];
 
 export function navigationFor(
   isSuperAdmin: boolean,
@@ -196,167 +162,3 @@ export function getPageCopy(
   );
 }
 
-export const adminUsers: AdminUser[] = [
-  {
-    id: "USR-1042",
-    name: "Vaughn Evangelista",
-    email: "vaughn@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Aug 12, 2026",
-    reportCount: 4,
-  },
-  {
-    id: "USR-1038",
-    name: "Mika Ross",
-    email: "mika.ross@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Aug 28, 2026",
-    reportCount: 2,
-  },
-  {
-    id: "USR-1031",
-    name: "Janelle Cruz",
-    email: "janelle.cruz@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Sep 2, 2026",
-    reportCount: 1,
-  },
-  {
-    id: "USR-1027",
-    name: "Alyssa Moore",
-    email: "alyssa.moore@wmsu.edu.ph",
-    role: "school_user",
-    isActive: false,
-    joined: "Sep 9, 2026",
-    reportCount: 3,
-  },
-  {
-    id: "USR-1022",
-    name: "Rohan Patel",
-    email: "rohan.patel@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Sep 15, 2026",
-    reportCount: 0,
-  },
-  {
-    id: "USR-1019",
-    name: "Sofia Reyes",
-    email: "sofia.reyes@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Sep 21, 2026",
-    reportCount: 5,
-  },
-  {
-    id: "USR-1014",
-    name: "Gabriel Santos",
-    email: "gabriel.santos@wmsu.edu.ph",
-    role: "school_user",
-    isActive: false,
-    joined: "Sep 30, 2026",
-    reportCount: 1,
-  },
-  {
-    id: "USR-1011",
-    name: "Denise Ocampo",
-    email: "denise.ocampo@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Oct 1, 2026",
-    reportCount: 2,
-  },
-  {
-    id: "USR-1009",
-    name: "Marco Villanueva",
-    email: "marco.villanueva@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Oct 2, 2026",
-    reportCount: 0,
-  },
-  {
-    id: "USR-1006",
-    name: "Lena Torres",
-    email: "lena.torres@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Oct 3, 2026",
-    reportCount: 3,
-  },
-  {
-    id: "USR-1004",
-    name: "Paolo Gutierrez",
-    email: "paolo.gutierrez@wmsu.edu.ph",
-    role: "school_user",
-    isActive: false,
-    joined: "Oct 4, 2026",
-    reportCount: 1,
-  },
-  {
-    id: "USR-0998",
-    name: "Katrina Lim",
-    email: "katrina.lim@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Oct 5, 2026",
-    reportCount: 2,
-  },
-  {
-    id: "USR-0995",
-    name: "Diego Ramos",
-    email: "diego.ramos@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Oct 6, 2026",
-    reportCount: 0,
-  },
-  {
-    id: "USR-0991",
-    name: "Bianca Aquino",
-    email: "bianca.aquino@wmsu.edu.ph",
-    role: "school_user",
-    isActive: true,
-    joined: "Oct 7, 2026",
-    reportCount: 4,
-  },
-  {
-    id: "USR-0988",
-    name: "Rafael Mendoza",
-    email: "rafael.mendoza@wmsu.edu.ph",
-    role: "school_user",
-    isActive: false,
-    joined: "Oct 8, 2026",
-    reportCount: 1,
-  },
-  {
-    id: "USR-1007",
-    name: "OSA Staff",
-    email: "osa@wmsu.edu.ph",
-    role: "admin",
-    isActive: true,
-    joined: "Jul 1, 2026",
-    reportCount: 6,
-  },
-  {
-    id: "USR-1003",
-    name: "Campus Staff",
-    email: "admin@wmsu.edu.ph",
-    role: "admin",
-    isActive: true,
-    joined: "Jul 1, 2026",
-    reportCount: 0,
-  },
-  {
-    id: "USR-1001",
-    name: "System Admin",
-    email: "owner@wmsu.edu.ph",
-    role: "super_admin",
-    isActive: true,
-    joined: "Jun 20, 2026",
-    reportCount: 0,
-  },
-];

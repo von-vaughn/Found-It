@@ -8,20 +8,18 @@ import {
   removeUser,
 } from '../controllers/users.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requireAdmin, requireSuperAdmin } from '../middleware/authorize';
+import { requireSuperAdmin } from '../middleware/authorize';
 
 const router = Router();
 
 // All user-management routes require authentication
 router.use(authenticate);
 
-// Admin + super_admin
-router.get('/', requireAdmin, getAllUsers);
-router.get('/:id', getUserById); // self or admin+ (checked in controller)
-router.patch('/:id/status', requireAdmin, changeUserStatus);
-router.delete('/:id', requireAdmin, removeUser);
-
 // Super_admin only
+router.get('/', requireSuperAdmin, getAllUsers);
+router.get('/:id', getUserById); // self or super_admin (checked in controller)
+router.patch('/:id/status', requireSuperAdmin, changeUserStatus);
+router.delete('/:id', requireSuperAdmin, removeUser);
 router.post('/', requireSuperAdmin, createAdminUser);
 router.patch('/:id/role', requireSuperAdmin, changeUserRole);
 

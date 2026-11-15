@@ -349,6 +349,23 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const deniedUser = await api('GET', '/api/audit-logs', { token: schoolAuth.token });
     assert.equal(deniedUser.status, 403);
 
+    // User management is super_admin only: staff can read themselves but nothing else.
+    const staffList = await api('GET', '/api/users', { token: adminAuth.token });
+    assert.equal(staffList.status, 403, 'Staff must not list users');
+    const staffReadOther = await api('GET', `/api/users/${ownerUserId}`, { token: adminAuth.token });
+    assert.equal(staffReadOther.status, 403, 'Staff must not read other users');
+    const staffReadSelf = await api('GET', `/api/users/${adminUserId}`, { token: adminAuth.token });
+    assert.equal(staffReadSelf.status, 200, 'Staff may still read their own account');
+    const staffStatus = await api('PATCH', `/api/users/${ownerUserId}/status`, {
+      token: adminAuth.token,
+      body: { isActive: false },
+    });
+    assert.equal(staffStatus.status, 403, 'Staff must not change user status');
+    const staffDelete = await api('DELETE', `/api/users/${ownerUserId}`, { token: adminAuth.token });
+    assert.equal(staffDelete.status, 403, 'Staff must not delete users');
+    const superList = await api('GET', '/api/users', { token: superAuth.token });
+    assert.equal(superList.status, 200, 'Super admin still manages users');
+
     const allowedSuper = await api<{ logs: Array<{ actorId: string; entityType: string }> }>(
       'GET',
       '/api/audit-logs?limit=50',

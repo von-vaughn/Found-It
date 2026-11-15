@@ -84,7 +84,6 @@ export function ClaimsPage() {
           "Pending",
           "Approved",
           "Claimed",
-          "Returned",
           "Rejected",
         ]}
         onSelectClaim={handleSelectClaim}

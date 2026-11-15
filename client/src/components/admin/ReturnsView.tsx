@@ -2,12 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   Building2,
-  CalendarClock,
   CalendarDays,
   Check,
   ChevronRight,
   Clock3,
-  FileText,
   Lock,
   MapPin,
   Package,
@@ -23,16 +21,9 @@ import type { ClaimRequest } from "@/types/claim";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import {
   FilterChips,
-  OriginalPostButton,
   OriginalPostCard,
-  OriginalPostDialog,
-  RequestSelectorCard,
-  ReviewHeader,
   ReviewPager,
-  SubmittedAnswersLedger,
   type ReviewFactRow,
-  type ReviewLedgerRow,
-  type ReviewStep,
 } from "./ReviewLayout";
 import { AdminPasswordModal, LockedValue } from "./SensitiveDetails";
 import { StatusBadge } from "./StatusBadge";
@@ -41,12 +32,10 @@ import {
   compareRequestWithPost,
   formatAdminEventDate,
   formatAdminEventTime,
-  sortRequestsByPostMatch,
 } from "./requestComparison";
 import { useSensitiveUnlock } from "./useSensitiveUnlock";
 
 const LIST_PAGE_SIZE = 10;
-const DETAIL_PAGE_SIZE = 4;
 
 const DEFAULT_RETURN_FILTERS = [
   "All",
@@ -86,17 +75,29 @@ function buildLostPostFacts(
       id: "item-name",
       icon: Tag,
       label: "Item name",
-      value: report.title || fallbackTitle || "None",
+      value: report.title || fallbackTitle || "Not provided",
     },
     {
-      id: "category",
-      icon: Tag,
-      label: "Category",
-      value: report.category || "None",
+      id: "color",
+      icon: Palette,
+      label: "Primary color",
+      value: report.color?.trim() || "Not provided",
+    },
+    {
+      id: "location-lost",
+      icon: MapPin,
+      label: "Specific location",
+      value: report.specificLocation?.trim() || "Not provided",
+    },
+    {
+      id: "building",
+      icon: Building2,
+      label: "Building",
+      value: report.buildingName?.trim() || "Not provided",
     },
     {
       id: "date-lost",
-      icon: CalendarClock,
+      icon: CalendarDays,
       label: "Date lost",
       value: formatAdminEventDate(report.eventDateTime),
     },
@@ -107,22 +108,10 @@ function buildLostPostFacts(
       value: formatAdminEventTime(report.eventDateTime),
     },
     {
-      id: "building",
-      icon: Building2,
-      label: "Building",
-      value: report.buildingName?.trim() || "None",
-    },
-    {
-      id: "location-lost",
-      icon: MapPin,
-      label: "Location lost",
-      value: report.specificLocation || "None",
-    },
-    {
-      id: "color",
-      icon: Palette,
-      label: "Color",
-      value: report.color?.trim() || "None",
+      id: "category",
+      icon: Tag,
+      label: "Category",
+      value: report.category || "Not provided",
     },
     {
       id: "important-details",
@@ -237,12 +226,9 @@ export function ReturnsListPanel({
     <section aria-labelledby="returns-list-heading" className="space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
-            Lost items · Returns queue
-          </p>
           <h1
             id="returns-list-heading"
-            className="mt-1 flex items-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100"
+            className="flex items-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100"
           >
             <span>Return Item</span>
             <span className="font-mono text-base font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
@@ -337,7 +323,6 @@ export function ReturnsListPanel({
 /** Detail and review panel for a single return request and its lost item post. */
 export function ReturnDetailPanel({
   request: selectedRequest,
-  siblingRequests,
   allRequests,
   reports,
   physicalItemReceived,
@@ -350,7 +335,7 @@ export function ReturnDetailPanel({
   publishingId,
 }: {
   request: ClaimRequest;
-  siblingRequests: ClaimRequest[];
+  siblingRequests?: ClaimRequest[];
   allRequests: ClaimRequest[];
   reports: AdminReport[];
   physicalItemReceived: (request: ClaimRequest) => boolean;
@@ -374,11 +359,6 @@ export function ReturnDetailPanel({
   isPublishing: boolean;
   publishingId?: string;
 }) {
-  const [selectedRequestId, setSelectedRequestId] = useState(
-    selectedRequest.id,
-  );
-  const [page, setPage] = useState(1);
-  const [postModalOpen, setPostModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     requestId: string;
     status: StatusDecision;
@@ -386,49 +366,12 @@ export function ReturnDetailPanel({
   const [confirmPublishRequest, setConfirmPublishRequest] =
     useState<ClaimRequest | null>(null);
 
-  const [prevRouteRequestId, setPrevRouteRequestId] = useState(
-    selectedRequest.id,
-  );
-  if (selectedRequest.id !== prevRouteRequestId) {
-    setPrevRouteRequestId(selectedRequest.id);
-    setSelectedRequestId(selectedRequest.id);
-    setPage(1);
-  }
-
   const selectedLostReport = reports.find(
     (report) => report.id === selectedRequest.itemId,
   );
 
-  const sortedPostRequests = useMemo(
-    () =>
-      sortRequestsByPostMatch(
-        [selectedRequest, ...siblingRequests],
-        selectedLostReport,
-      ),
-    [selectedRequest, siblingRequests, selectedLostReport],
-  );
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(sortedPostRequests.length / DETAIL_PAGE_SIZE),
-  );
-  const safePage = Math.min(page, totalPages);
-  const visibleRequests = sortedPostRequests.slice(
-    (safePage - 1) * DETAIL_PAGE_SIZE,
-    safePage * DETAIL_PAGE_SIZE,
-  );
-  const rangeStart =
-    sortedPostRequests.length === 0 ? 0 : (safePage - 1) * DETAIL_PAGE_SIZE + 1;
-  const rangeEnd = Math.min(
-    safePage * DETAIL_PAGE_SIZE,
-    sortedPostRequests.length,
-  );
-
-  const activeRequest =
-    visibleRequests.find((item) => item.id === selectedRequestId) ??
-    sortedPostRequests.find((item) => item.id === selectedRequestId) ??
-    visibleRequests[0] ??
-    null;
+  const activeRequest = selectedRequest;
+  const activeReceived = physicalItemReceived(activeRequest);
 
   const confirmTargetRequest = confirmAction
     ? (allRequests.find((item) => item.id === confirmAction.requestId) ?? null)
@@ -549,58 +492,6 @@ export function ReturnDetailPanel({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [confirmAction, confirmPublishRequest]);
 
-  const hasReturned =
-    selectedLostReport?.status === "Returned" ||
-    sortedPostRequests.some((item) => item.status === "Returned");
-  const hasApproved = sortedPostRequests.some(
-    (item) => item.status === "Approved",
-  );
-  const pendingCount = sortedPostRequests.filter(
-    (item) => item.status === "Pending",
-  ).length;
-  const activeReceived = activeRequest
-    ? physicalItemReceived(activeRequest)
-    : false;
-  const anyReceived = sortedPostRequests.some((item) =>
-    physicalItemReceived(item),
-  );
-
-  const steps: ReviewStep[] = [
-    {
-      label: "Lost posted",
-      detail: selectedLostReport?.date || selectedRequest.submitted || "Recorded",
-      state: "done",
-    },
-    {
-      label: "Return requests",
-      detail: `${sortedPostRequests.length} ${
-        sortedPostRequests.length === 1 ? "request" : "requests"
-      }`,
-      state: sortedPostRequests.length > 0 ? "done" : "current",
-    },
-    {
-      label: "Received by OSA",
-      detail: activeReceived || anyReceived ? "Item in custody" : "Awaiting drop-off",
-      state:
-        activeReceived || hasApproved || hasReturned
-          ? "done"
-          : "current",
-    },
-    {
-      label: "Returned",
-      detail: hasReturned
-        ? "Returned"
-        : hasApproved
-          ? "Approved"
-          : `${pendingCount} to review`,
-      state: hasReturned
-        ? "done"
-        : hasApproved || activeReceived
-          ? "current"
-          : "upcoming",
-    },
-  ];
-
   const postFacts = buildLostPostFacts(
     selectedLostReport,
     selectedRequest.item,
@@ -629,7 +520,7 @@ export function ReturnDetailPanel({
     activeRequest && isPublishing && publishingId === activeRequest.id,
   );
 
-  const activeLedgerRows: ReviewLedgerRow[] = activeRequest
+  const activeFactRows: ReviewFactRow[] = activeRequest
     ? [
         {
           id: "item-name",
@@ -661,7 +552,11 @@ export function ReturnDetailPanel({
                       !(activeRequest.receivedByOsa ?? false),
                     )
                   }
-                  className="inline-flex h-8 items-center justify-center rounded-[10px] border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-800 transition-colors hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-500"
+                  className={`inline-flex h-8 items-center justify-center rounded-[10px] border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 ${
+                    activeRequest.receivedByOsa
+                      ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                      : "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                  }`}
                 >
                   {updatingActiveOsa
                     ? "Updating…"
@@ -702,13 +597,6 @@ export function ReturnDetailPanel({
           note: activeComparison?.building.note,
         },
         {
-          id: "details",
-          icon: FileText,
-          label: "Details",
-          value:
-            activeRequest.details?.trim() || "No additional details provided.",
-        },
-        {
           id: "important-details",
           icon: Lock,
           label: "Important details",
@@ -728,297 +616,216 @@ export function ReturnDetailPanel({
 
   return (
     <>
-      <ReviewHeader
-        eyebrow="Lost item · Return review"
-        title={selectedRequest.item}
-        itemType="Lost"
-        stateLabel={
-          hasReturned
-            ? "Returned"
-            : hasApproved
-              ? "Approved"
-              : "Open for returns"
+      <OriginalPostCard
+        layout="horizontal"
+        itemTitle={selectedLostReport?.title || selectedRequest.item}
+        reportTypeLabel="Lost item report"
+        postedDateLabel={
+          selectedLostReport?.date
+            ? `Posted ${selectedLostReport.date}`
+            : "Original post"
         }
-        stateTone={hasReturned || hasApproved ? "ok" : "warn"}
-        subtitle={`One post, ${sortedPostRequests.length} ${
-          sortedPostRequests.length === 1 ? "return request" : "return requests"
-        } to review.`}
-        steps={steps}
+        image={selectedLostReport?.image}
+        imageAlt={`${selectedRequest.item} item`}
+        reporterName={selectedLostReport?.reportedBy || "Unavailable"}
+        reporterMeta={ownerMeta}
+        facts={postFacts}
+        notes={selectedLostReport?.description}
       />
 
-      <div className="grid gap-8 lg:grid-cols-[380px_minmax(0,1fr)] xl:gap-12">
-        <OriginalPostCard
-          postedDateLabel={
-            selectedLostReport?.date
-              ? `Posted ${selectedLostReport.date}`
-              : "Original post"
-          }
-          image={selectedLostReport?.image}
-          imageAlt={`${selectedRequest.item} item`}
-          reporterName={selectedLostReport?.reportedBy || "Unavailable"}
-          reporterMeta={ownerMeta}
-          facts={postFacts}
-          notes={selectedLostReport?.description}
-        />
-
-        <section
-          aria-labelledby="return-requests-list-heading"
-          className="min-w-0"
-        >
-          <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-            <h2
-              id="return-requests-list-heading"
-              className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100"
-            >
-              Return requests{" "}
-              <span className="font-mono font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
-                {sortedPostRequests.length}
-              </span>
-            </h2>
-          </div>
-
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
-            {selectedLostReport
-              ? "Sorted by match with the post"
-              : "Submitted return requests"}
-          </p>
-
-          {sortedPostRequests.length === 0 ? (
-            <div className="mt-3.5 mb-6 rounded-[14px] border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-              No return requests submitted for this post yet.
-            </div>
-          ) : (
-            <>
-              <div className="mt-3.5 mb-4 grid gap-2.5">
-                {visibleRequests.map((item) => {
-                  const comparison = compareRequestWithPost(
-                    item,
-                    selectedLostReport,
-                  );
-                  const tones = selectedLostReport
-                    ? [
-                        comparison.color.status,
-                        comparison.date.status,
-                        comparison.location.status,
-                        comparison.building.status,
-                      ]
-                    : undefined;
-                  const idNum =
-                    resolveIdNumber(item.schoolId, item.email) || "N/A";
-                  return (
-                    <RequestSelectorCard
-                      key={item.id}
-                      name={item.claimant}
-                      subtitle={`ID ${idNum} · ${item.submitted}`}
-                      status={item.status}
-                      selected={activeRequest?.id === item.id}
-                      matchTones={tones}
-                      onClick={() => setSelectedRequestId(item.id)}
-                    />
-                  );
-                })}
-              </div>
-
-              <div className="mb-7">
-                <ReviewPager
-                  page={safePage}
-                  totalPages={totalPages}
-                  rangeStart={rangeStart}
-                  rangeEnd={rangeEnd}
-                  totalItems={sortedPostRequests.length}
-                  onPageChange={(nextPage) => {
-                    setPage(nextPage);
-                    const nextVisible = sortedPostRequests.slice(
-                      (nextPage - 1) * DETAIL_PAGE_SIZE,
-                      nextPage * DETAIL_PAGE_SIZE,
-                    );
-                    if (nextVisible[0]) {
-                      setSelectedRequestId(nextVisible[0].id);
-                    }
-                  }}
-                />
-              </div>
-            </>
-          )}
-
-          {activeRequest && (
-            <div className="rounded-[20px] border border-neutral-200 bg-white p-5 shadow-[0_20px_40px_-20px_rgba(24,24,27,0.10)] sm:p-6 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none">
-              <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] xl:gap-8">
-                <div className="min-w-0">
-                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-[17px] font-semibold tracking-[-0.01em] text-neutral-900 dark:text-neutral-100">
-                        {activeRequest.claimant}
-                      </h3>
-                      <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                        ID{" "}
-                        {resolveIdNumber(
-                          activeRequest.schoolId,
-                          activeRequest.email,
-                        ) || "N/A"}{" "}
-                        · Submitted {activeRequest.submitted}
-                      </p>
-                      {selectedLostReport && (
-                        <OriginalPostButton onClick={() => setPostModalOpen(true)} />
-                      )}
-                    </div>
-                    <StatusBadge status={activeRequest.status} />
+      <div className="mt-8">
+        {activeRequest && (
+          <div className="rounded-[20px] border border-neutral-200 bg-white p-5 shadow-[0_20px_40px_-20px_rgba(24,24,27,0.10)] sm:p-6 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none">
+            <div className="grid gap-8 md:grid-cols-[280px_minmax(0,1fr)] md:items-start lg:grid-cols-[340px_minmax(0,1fr)]">
+              <div className="min-w-0">
+                {activeRequest.evidence?.length ? (
+                  <div
+                    className={`grid gap-3 ${
+                      activeRequest.evidence.length > 1
+                        ? "sm:grid-cols-2 md:grid-cols-1"
+                        : ""
+                    }`}
+                  >
+                    {activeRequest.evidence.map((image, index) => (
+                      <div
+                        key={`${activeRequest.id}-evidence-${index}`}
+                        className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800"
+                      >
+                        <img
+                          src={image}
+                          alt={`Evidence ${index + 1} from ${activeRequest.claimant}`}
+                          loading="lazy"
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                    ))}
                   </div>
-
-                  {activeRequest.status === "Pending" &&
-                    !activeRequest.receivedByOsa && (
-                      <div className="mb-4 rounded-[12px] border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
-                        Approval is unavailable until the physical item is
-                        received by OSA.
-                      </div>
-                    )}
-
-                  {activeRequest.status === "Rejected" &&
-                    activeRequest.publishedItemId && (
-                      <div className="mb-4 rounded-[12px] border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300">
-                        This found-item post is already available in the public
-                        listings.
-                      </div>
-                    )}
-
-                  <SubmittedAnswersLedger
-                    submittedByLabel="Submitted by finder"
-                    rows={activeLedgerRows}
+                ) : (
+                  <NoItemImage
+                    title="No photo evidence provided"
+                    subtitle="The finder did not attach any photos to this request."
+                    className="aspect-[4/3] w-full rounded-3xl"
                   />
-
-                  {activeRequest.status === "Pending" && (
-                    <div className="mt-7 flex flex-wrap justify-end gap-2.5 border-t border-neutral-200 pt-5 dark:border-neutral-800">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          requestStatusChange(activeRequest.id, "Rejected")
-                        }
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
-                      >
-                        <X className="h-3.5 w-3.5" aria-hidden="true" />
-                        Reject
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!activeRequest.receivedByOsa}
-                        title={
-                          !activeRequest.receivedByOsa
-                            ? "Item must be received by OSA before approving"
-                            : undefined
-                        }
-                        onClick={() =>
-                          requestStatusChange(activeRequest.id, "Approved")
-                        }
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-                      >
-                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                        Approve
-                      </button>
-                    </div>
-                  )}
-
-                  {activeRequest.status === "Approved" && (
-                    <div className="mt-7 flex flex-wrap justify-end gap-2.5 border-t border-neutral-200 pt-5 dark:border-neutral-800">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          requestStatusChange(activeRequest.id, "Pending")
-                        }
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          requestStatusChange(activeRequest.id, "Returned")
-                        }
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
-                      >
-                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                        Mark as returned
-                      </button>
-                    </div>
-                  )}
-
-                  {activeRequest.status === "Rejected" && (
-                    <div className="mt-7 flex flex-wrap justify-end gap-2.5 border-t border-neutral-200 pt-5 dark:border-neutral-800">
-                      <button
-                        type="button"
-                        onClick={() => setConfirmPublishRequest(activeRequest)}
-                        disabled={
-                          Boolean(activeRequest.publishedItemId) ||
-                          publishingActive
-                        }
-                        className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55"
-                      >
-                        <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                        {activeRequest.publishedItemId
-                          ? "Posted as found item"
-                          : publishingActive
-                            ? "Posting item…"
-                            : "Post as found item"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="min-w-0 border-t border-neutral-200 pt-5 dark:border-neutral-800 xl:border-t-0 xl:border-l xl:pl-8 xl:pt-0">
-                  <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
-                    Finder evidence
-                  </p>
-                  {activeRequest.evidence?.length ? (
-                    <div
-                      className={`grid gap-3 ${
-                        activeRequest.evidence.length > 1
-                          ? "sm:grid-cols-2 xl:grid-cols-1"
-                          : ""
-                      }`}
-                    >
-                      {activeRequest.evidence.map((image, index) => (
-                        <div
-                          key={`${activeRequest.id}-evidence-${index}`}
-                          className="aspect-[4/3] overflow-hidden rounded-[14px] border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800"
-                        >
-                          <img
-                            src={image}
-                            alt={`Evidence ${index + 1} from ${activeRequest.claimant}`}
-                            loading="lazy"
-                            className="h-full w-full object-contain"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <NoItemImage
-                      title="No photo evidence provided"
-                      subtitle="The finder did not attach any photos to this request."
-                      className="aspect-[4/3] rounded-[14px]"
-                    />
-                  )}
-                </div>
+                )}
               </div>
-            </div>
-          )}
-        </section>
-      </div>
 
-      {selectedLostReport && (
-        <OriginalPostDialog
-          open={postModalOpen}
-          onClose={() => setPostModalOpen(false)}
-          image={selectedLostReport.image}
-          imageAlt={`${selectedRequest.item} item`}
-          reporterName={selectedLostReport.reportedBy}
-          reporterMeta={`${ownerMeta}${
-            selectedLostReport.date
-              ? ` · Posted ${selectedLostReport.date}`
-              : ""
-          }`}
-          facts={postFacts}
-          notes={selectedLostReport.description}
-        />
-      )}
+              <article className="min-w-0">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                      {activeRequest.claimant}
+                    </h2>
+                    <p className="mt-0.5 truncate text-xs text-neutral-400 dark:text-neutral-500">
+                      ID{" "}
+                      {resolveIdNumber(
+                        activeRequest.schoolId,
+                        activeRequest.email,
+                      ) || "N/A"}{" "}
+                      · Submitted {activeRequest.submitted}
+                    </p>
+                  </div>
+                  <StatusBadge status={activeRequest.status} />
+                </div>
+
+                {activeRequest.status === "Pending" &&
+                  !activeRequest.receivedByOsa && (
+                    <div className="mt-4 rounded-[12px] border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+                      Approval is unavailable until the physical item is
+                      received by OSA.
+                    </div>
+                  )}
+
+                {activeRequest.status === "Rejected" &&
+                  activeRequest.publishedItemId && (
+                    <div className="mt-4 rounded-[12px] border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300">
+                      This found-item post is already available in the public
+                      listings.
+                    </div>
+                  )}
+
+                <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                  Finder return report
+                </p>
+                <p className="mt-3 text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                  Description
+                </p>
+                <p className="mt-1 break-words text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  {activeRequest.details?.trim() ||
+                    "No additional details provided."}
+                </p>
+
+                <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 text-xs sm:grid-cols-2 dark:border-neutral-800">
+                  {activeFactRows.map((fact) => {
+                    const Icon = fact.icon;
+                    return (
+                      <div
+                        key={fact.id}
+                        className="flex items-start gap-2.5 py-3"
+                      >
+                        {Icon && (
+                          <Icon
+                            className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <dt className="font-bold text-neutral-900 dark:text-neutral-100">
+                            {fact.label}
+                          </dt>
+                          <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
+                            {fact.value}
+                          </dd>
+                          {fact.note && (
+                            <span className="mt-0.5 block text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                              {fact.note}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </dl>
+
+                {activeRequest.status === "Pending" && (
+                  <div className="mt-6 flex flex-wrap justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        requestStatusChange(activeRequest.id, "Rejected")
+                      }
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                    >
+                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                      Reject
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!activeRequest.receivedByOsa}
+                      title={
+                        !activeRequest.receivedByOsa
+                          ? "Item must be received by OSA before approving"
+                          : undefined
+                      }
+                      onClick={() =>
+                        requestStatusChange(activeRequest.id, "Approved")
+                      }
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                      Approve
+                    </button>
+                  </div>
+                )}
+
+                {activeRequest.status === "Approved" && (
+                  <div className="mt-6 flex flex-wrap justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        requestStatusChange(activeRequest.id, "Pending")
+                      }
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        requestStatusChange(activeRequest.id, "Returned")
+                      }
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
+                    >
+                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                      Mark as returned
+                    </button>
+                  </div>
+                )}
+
+                {activeRequest.status === "Rejected" && (
+                  <div className="mt-6 flex flex-wrap justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmPublishRequest(activeRequest)}
+                      disabled={
+                        Boolean(activeRequest.publishedItemId) ||
+                        publishingActive
+                      }
+                      className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55"
+                    >
+                      <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                      {activeRequest.publishedItemId
+                        ? "Posted as found item"
+                        : publishingActive
+                          ? "Posting item…"
+                          : "Post as found item"}
+                    </button>
+                  </div>
+                )}
+              </article>
+            </div>
+          </div>
+        )}
+      </div>
 
       {confirmAction && confirmTargetRequest && (
         <div

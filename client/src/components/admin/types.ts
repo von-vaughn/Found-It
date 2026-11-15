@@ -1,4 +1,3 @@
-import type { ClaimRequest } from "@/types/claim";
 import type { ItemFlag } from "@/services/itemService";
 
 export type AdminSection =
@@ -46,5 +45,3 @@ export interface AdminReport {
   flagCount?: number;
   flags?: ItemFlag[];
 }
-
-export type AdminClaim = ClaimRequest;

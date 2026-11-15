@@ -43,8 +43,13 @@ export function getAdminRoutes(): RouteObject[] {
       element: <ReturnItemDetailPage />,
     },
     {
+      // User management is super-admin only; plain admins bounce back to the dashboard.
       path: paths.adminUsers,
-      element: <UsersPage />,
+      element: (
+        <ProtectedRoute allowedRoles={["super_admin"]}>
+          <UsersPage />
+        </ProtectedRoute>
+      ),
     },
     {
       path: paths.adminFilterOptions,

@@ -166,11 +166,15 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);
       } catch (refreshErr) {
-        setAccessToken(null);
-        setInMemoryUser(null);
-        broadcastAuthEvent({ type: "LOGOUT" });
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("foundit:auth-unauthorized"));
+        const status = (refreshErr as { response?: { status?: number } })
+          ?.response?.status;
+        if (status === 401 || status === 403) {
+          setAccessToken(null);
+          setInMemoryUser(null);
+          broadcastAuthEvent({ type: "LOGOUT" });
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("foundit:auth-unauthorized"));
+          }
         }
         return Promise.reject(refreshErr);
       }
