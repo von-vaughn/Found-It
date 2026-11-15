@@ -174,7 +174,7 @@ export function AdminSidebar<TSection extends string>({
           />
           <span
             aria-hidden="true"
-            className={`absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 transition-opacity duration-200 ${
+            className={`absolute left-full top-1/2 ml-2.5 -translate-y-1/2 whitespace-nowrap text-left font-sans text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 transition-opacity duration-200 ${
               labelsVisible ? "opacity-100" : "opacity-0"
             }`}
           >

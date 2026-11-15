@@ -6,6 +6,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import axios from "axios";
 import { Eye, EyeOff, KeyRound, RotateCcw, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
@@ -13,8 +14,9 @@ import { isSchoolEmail, SCHOOL_EMAIL_DOMAINS } from "@/context/auth-context";
 import { authService } from "@/services/authService";
 import { paths } from "@/routes/paths";
 
-type AuthMode = "signin" | "signup";
+type AuthMode = "signin" | "signup" | "forgot";
 type SignupScreen = "email" | "profile" | "verify";
+type ForgotScreen = "email" | "reset";
 type ScreenTransition = { direction: number; immediate: boolean };
 
 interface AuthModalProps {
@@ -32,32 +34,46 @@ const actionDockClass = "mt-4 sm:mt-0";
 export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [signupScreen, setSignupScreen] = useState<SignupScreen>("email");
+  const [forgotScreen, setForgotScreen] = useState<ForgotScreen>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [middleInitial, setMiddleInitial] = useState("");
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [verificationCountdown, setVerificationCountdown] = useState(30);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [resetCode, setResetCode] = useState("");
+  const [resetCountdown, setResetCountdown] = useState(0);
   const [transitionDirection, setTransitionDirection] = useState<1 | -1>(1);
   const [isSwitchingAuthMode, setIsSwitchingAuthMode] = useState(false);
   const [skipScreenAnimation, setSkipScreenAnimation] = useState(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const verificationInputRef = useRef<HTMLInputElement>(null);
+  const resetCodeInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const { login, signup, verifyOtp, resendOtp, checkEmailAvailability } =
     useAuth();
 
-  const screenKey = mode === "signin" ? "signin" : `signup-${signupScreen}`;
+  const screenKey =
+    mode === "signin"
+      ? "signin"
+      : mode === "forgot"
+        ? `forgot-${forgotScreen}`
+        : `signup-${signupScreen}`;
   const screenOrder: Record<string, number> = {
     signin: 0,
+    "forgot-email": 1,
+    "forgot-reset": 2,
     "signup-email": 1,
     "signup-profile": 2,
     "signup-verify": 3,
@@ -91,22 +107,34 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   }, []);
 
   useEffect(() => {
-    if (mode === "signin" || signupScreen === "email") {
+    if (
+      mode === "signin" ||
+      (mode === "signup" && signupScreen === "email") ||
+      (mode === "forgot" && forgotScreen === "email")
+    ) {
       emailInputRef.current?.focus();
-    } else if (signupScreen === "profile") {
+    } else if (mode === "signup" && signupScreen === "profile") {
       firstNameInputRef.current?.focus();
-    } else if (signupScreen === "verify") {
+    } else if (mode === "signup" && signupScreen === "verify") {
       verificationInputRef.current?.focus();
+    } else if (mode === "forgot" && forgotScreen === "reset") {
+      resetCodeInputRef.current?.focus();
     }
-  }, [mode, signupScreen]);
+  }, [mode, signupScreen, forgotScreen]);
 
   const focusActiveField = () => {
-    if (mode === "signin" || signupScreen === "email") {
+    if (
+      mode === "signin" ||
+      (mode === "signup" && signupScreen === "email") ||
+      (mode === "forgot" && forgotScreen === "email")
+    ) {
       emailInputRef.current?.focus();
-    } else if (signupScreen === "profile") {
+    } else if (mode === "signup" && signupScreen === "profile") {
       firstNameInputRef.current?.focus();
-    } else {
+    } else if (mode === "signup" && signupScreen === "verify") {
       verificationInputRef.current?.focus();
+    } else {
+      resetCodeInputRef.current?.focus();
     }
   };
 
@@ -118,6 +146,17 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     );
     return () => window.clearTimeout(timer);
   }, [signupScreen, verificationCountdown]);
+
+  useEffect(() => {
+    if (mode !== "forgot" || forgotScreen !== "reset" || resetCountdown <= 0) {
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setResetCountdown((value) => value - 1),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [mode, forgotScreen, resetCountdown]);
 
   const handleDialogKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
@@ -144,7 +183,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   };
 
   const switchMode = (nextMode: AuthMode) => {
-    const nextKey = nextMode === "signin" ? "signin" : "signup-email";
+    const nextKey =
+      nextMode === "signin"
+        ? "signin"
+        : nextMode === "forgot"
+          ? "forgot-email"
+          : "signup-email";
     setIsSwitchingAuthMode(true);
     setSkipScreenAnimation(false);
     setTransitionDirection(
@@ -152,8 +196,14 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     );
     setMode(nextMode);
     setSignupScreen("email");
+    setForgotScreen("email");
     setError("");
+    setNotice("");
     setPassword("");
+    setConfirmPassword("");
+    setResetCode("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   };
 
   const changeSignupScreen = (nextScreen: SignupScreen) => {
@@ -167,6 +217,23 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       screenOrder[nextKey] > screenOrder[screenKey] ? 1 : -1,
     );
     setSignupScreen(nextScreen);
+  };
+
+  const changeForgotScreen = (nextScreen: ForgotScreen) => {
+    const nextKey = `forgot-${nextScreen}`;
+    setIsSwitchingAuthMode(false);
+    setSkipScreenAnimation(false);
+    setTransitionDirection(
+      screenOrder[nextKey] > screenOrder[screenKey] ? 1 : -1,
+    );
+    setForgotScreen(nextScreen);
+  };
+
+  const extractErrorMessage = (err: unknown, fallback: string) => {
+    if (axios.isAxiosError<{ message?: string }>(err)) {
+      return err.response?.data?.message || fallback;
+    }
+    return fallback;
   };
 
   const getSafeRedirect = (defaultRolePath: string): string => {
@@ -365,14 +432,117 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
     setError("");
   };
 
+  const handleForgotEmailSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !emailPattern.test(normalizedEmail)) {
+      setError("Enter a valid email address.");
+      emailInputRef.current?.focus();
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authService.forgotPassword({ email: normalizedEmail });
+      setEmail(normalizedEmail);
+      setResetCode("");
+      setPassword("");
+      setConfirmPassword("");
+      setResetCountdown(60);
+      changeForgotScreen("reset");
+    } catch (err) {
+      setError(
+        extractErrorMessage(
+          err,
+          "Unable to send reset code. Please check your connection and try again.",
+        ),
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+
+    if (!/^\d{6}$/.test(resetCode)) {
+      setError("Enter the complete 6-digit reset code.");
+      resetCodeInputRef.current?.focus();
+      return;
+    }
+    if (password.length < 8 || new TextEncoder().encode(password).length > 72) {
+      setError("Enter a password between 8 and 72 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await authService.resetPassword({
+        email,
+        otp: resetCode,
+        newPassword: password,
+      });
+      setIsSwitchingAuthMode(true);
+      setSkipScreenAnimation(false);
+      setTransitionDirection(-1);
+      setMode("signin");
+      setForgotScreen("email");
+      setResetCode("");
+      setPassword("");
+      setConfirmPassword("");
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+      setError("");
+      setNotice(
+        res.message || "Password reset successfully. Sign in with your new password.",
+      );
+    } catch (err) {
+      setError(
+        extractErrorMessage(
+          err,
+          "Reset failed. Check your code and try again.",
+        ),
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendResetCode = async () => {
+    if (resetCountdown > 0) return;
+    setError("");
+    try {
+      await authService.forgotPassword({ email });
+      setResetCode("");
+      setResetCountdown(60);
+    } catch (err) {
+      setError(
+        extractErrorMessage(
+          err,
+          "Could not resend code. Please wait before trying again.",
+        ),
+      );
+    }
+  };
+
   const title =
     mode === "signin"
       ? "Welcome back"
-      : signupScreen === "email"
-        ? "Join FoundIt"
-        : signupScreen === "profile"
-          ? "Your details"
-          : "Verify your email";
+      : mode === "forgot"
+        ? forgotScreen === "email"
+          ? "Reset password"
+          : "Enter reset code"
+        : signupScreen === "email"
+          ? "Join FoundIt"
+          : signupScreen === "profile"
+            ? "Your details"
+            : "Verify your email";
 
   return (
     <motion.div
@@ -432,6 +602,13 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     : `Code sent to ${email}.`}
                 </p>
               )}
+            {mode === "forgot" && (
+              <p className="mt-1 text-sm leading-relaxed text-neutral-600">
+                {forgotScreen === "email"
+                  ? "Enter your account email and we'll send a 6-digit reset code."
+                  : `If an account exists for ${email}, enter the code and choose a new password.`}
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -470,6 +647,14 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   ease: [0.16, 1, 0.3, 1],
                 }}
               >
+                {notice && (
+                  <p
+                    role="status"
+                    className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm font-medium text-emerald-800"
+                  >
+                    {notice}
+                  </p>
+                )}
                 <label
                   className="block text-sm font-semibold text-neutral-800"
                   htmlFor="modal-signin-email"
@@ -485,6 +670,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   onChange={(event) => {
                     setEmail(event.target.value);
                     setError("");
+                    setNotice("");
                   }}
                   required
                   maxLength={254}
@@ -492,16 +678,29 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
                   placeholder="you@example.com"
                 />
-                <label
-                  className="block text-sm font-semibold text-neutral-800"
-                  htmlFor="modal-signin-password"
-                >
-                  Password
-                </label>
+                <div className="flex items-center justify-between">
+                  <label
+                    className="block text-sm font-semibold text-neutral-800"
+                    htmlFor="modal-signin-password"
+                  >
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => switchMode("forgot")}
+                    className="rounded-sm text-xs font-bold text-[#B42332] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <PasswordInput
                   id="modal-signin-password"
                   value={password}
-                  onChange={setPassword}
+                  onChange={(value) => {
+                    setPassword(value);
+                    setError("");
+                    setNotice("");
+                  }}
                   showPassword={showPassword}
                   onToggleVisibility={() => setShowPassword((shown) => !shown)}
                   autoComplete="current-password"
@@ -572,6 +771,226 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     Sign Up
                   </button>
                 </p>
+              </motion.form>
+            ) : mode === "forgot" && forgotScreen === "email" ? (
+              <motion.form
+                key="forgot-email"
+                className="mt-6 flex flex-col gap-4"
+                noValidate
+                onSubmit={handleForgotEmailSubmit}
+                custom={screenTransition}
+                variants={screenVariants}
+                initial={isSwitchingAuthMode ? false : "enter"}
+                animate="center"
+                exit="exit"
+                transition={{
+                  duration: reduceMotion || isSwitchingAuthMode ? 0 : 0.2,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+              >
+                <label
+                  className="block text-sm font-semibold text-neutral-800"
+                  htmlFor="modal-forgot-email"
+                >
+                  Email Address
+                </label>
+                <input
+                  ref={emailInputRef}
+                  id="modal-forgot-email"
+                  type="email"
+                  autoComplete="email"
+                  spellCheck={false}
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    setError("");
+                  }}
+                  required
+                  maxLength={254}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? "forgot-email-error" : undefined}
+                  className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                  placeholder="you@wmsu.edu.ph"
+                />
+                {error && (
+                  <p
+                    id="forgot-email-error"
+                    role="alert"
+                    className="text-sm font-medium text-red-700"
+                  >
+                    {error}
+                  </p>
+                )}
+                <div className={actionDockClass}>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {isLoading ? "Sending code…" : "Send Reset Code"}
+                  </button>
+                </div>
+                <p className="pt-1 text-center text-sm text-neutral-600">
+                  Remembered your password?{" "}
+                  <button
+                    type="button"
+                    onClick={() => switchMode("signin")}
+                    className="rounded-sm font-bold text-[#B42332] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  >
+                    Sign In
+                  </button>
+                </p>
+              </motion.form>
+            ) : mode === "forgot" ? (
+              <motion.form
+                key="forgot-reset"
+                className="mt-6 flex flex-col gap-4"
+                noValidate
+                onSubmit={handleResetPassword}
+                custom={screenTransition}
+                variants={screenVariants}
+                initial={isSwitchingAuthMode ? false : "enter"}
+                animate="center"
+                exit="exit"
+                transition={{
+                  duration: reduceMotion || isSwitchingAuthMode ? 0 : 0.2,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+              >
+                <div className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-neutral-500">
+                      Email Address
+                    </p>
+                    <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900">
+                      {email}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError("");
+                      changeForgotScreen("email");
+                    }}
+                    className="ml-3 shrink-0 text-xs font-semibold text-[#E5192D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  >
+                    Change
+                  </button>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="modal-reset-code"
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                  >
+                    6-Digit Reset Code
+                  </label>
+                  <input
+                    ref={resetCodeInputRef}
+                    id="modal-reset-code"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    value={resetCode}
+                    onChange={(event) => {
+                      setResetCode(
+                        event.target.value.replace(/\D/g, "").slice(0, 6),
+                      );
+                      setError("");
+                    }}
+                    className="h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-center font-mono text-2xl font-bold tracking-[0.4em] text-neutral-900 outline-none transition placeholder:tracking-normal focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                    placeholder="000000"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    htmlFor="modal-reset-password"
+                  >
+                    New Password
+                  </label>
+                  <PasswordInput
+                    id="modal-reset-password"
+                    value={password}
+                    onChange={(value) => {
+                      setPassword(value);
+                      setError("");
+                    }}
+                    showPassword={showPassword}
+                    onToggleVisibility={() =>
+                      setShowPassword((shown) => !shown)
+                    }
+                    autoComplete="new-password"
+                  />
+                  <p className="mt-1.5 text-xs text-neutral-600">
+                    Use 8–72 characters.
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    htmlFor="modal-reset-confirm-password"
+                  >
+                    Confirm New Password
+                  </label>
+                  <PasswordInput
+                    id="modal-reset-confirm-password"
+                    value={confirmPassword}
+                    onChange={(value) => {
+                      setConfirmPassword(value);
+                      setError("");
+                    }}
+                    showPassword={showConfirmPassword}
+                    onToggleVisibility={() =>
+                      setShowConfirmPassword((shown) => !shown)
+                    }
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                {error && (
+                  <p role="alert" className="text-sm font-medium text-red-700">
+                    {error}
+                  </p>
+                )}
+
+                <div className={actionDockClass}>
+                  <button
+                    type="submit"
+                    disabled={isLoading || resetCode.length !== 6}
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isLoading ? (
+                      "Resetting password…"
+                    ) : (
+                      <>
+                        <KeyRound className="h-4 w-4" aria-hidden="true" />
+                        Reset Password
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-4 text-sm">
+                  <span className="text-neutral-600">
+                    Didn&apos;t get the code?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleResendResetCode}
+                    disabled={resetCountdown > 0}
+                    className="inline-flex items-center gap-1.5 rounded-sm font-bold text-[#B42332] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:text-neutral-500"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                    {resetCountdown > 0
+                      ? `Resend in ${resetCountdown}s`
+                      : "Resend code"}
+                  </button>
+                </div>
               </motion.form>
             ) : signupScreen === "email" ? (
               <motion.form

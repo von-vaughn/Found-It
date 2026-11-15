@@ -89,6 +89,28 @@ export const authService = {
     return data;
   },
 
+  async forgotPassword(payload: {
+    email: string;
+  }): Promise<{ message: string }> {
+    const { data } = await api.post<{ message: string }>(
+      "/auth/forgot-password",
+      payload,
+    );
+    return data;
+  },
+
+  async resetPassword(payload: {
+    email: string;
+    otp: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    const { data } = await api.post<{ message: string }>(
+      "/auth/reset-password",
+      payload,
+    );
+    return data;
+  },
+
   async getMe(): Promise<{ user: SafeAuthUser }> {
     const { data } = await api.get<{ user: SafeAuthUser }>("/auth/me");
     setInMemoryUser(data.user);

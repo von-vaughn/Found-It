@@ -23,10 +23,11 @@ import {
   generateOtp,
   otpExpiryDate,
   storeOtp,
+  type OtpPurpose,
 } from '../repositories/email-otp.repository';
 import { comparePassword, dummyComparePassword, hashPassword } from '../utils/password';
 import { refreshExpiryDate, signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
-import { sendOtpEmail } from '../utils/mailer';
+import { sendOtpEmail, sendPasswordResetOtpEmail } from '../utils/mailer';
 
 function isStrictSchoolEmail(email: string): boolean {
   const parts = email.trim().toLowerCase().split('@');
@@ -37,6 +38,9 @@ function isStrictSchoolEmail(email: string): boolean {
 const NAME_PART_MAX = 50;
 const EMAIL_MAX = 255;
 const GENERIC_OTP_RESPONSE = { message: 'If this email is eligible, a verification code was sent.' };
+const GENERIC_RESET_RESPONSE = {
+  message: 'If an eligible account exists for this email, a password reset code has been sent.',
+};
 const GENERIC_OTP_ERROR = 'Invalid code or code expired.';
 
 function nameFitsColumns(name: string): boolean {
@@ -101,6 +105,25 @@ const resendOtpSchema = z
   })
   .strict();
 
+const forgotPasswordSchema = z
+  .object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email('Invalid email address')
+      .max(EMAIL_MAX, 'Email address is too long'),
+  })
+  .strict();
+
+const resetPasswordSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email('Invalid email address'),
+    otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be 6 digits'),
+    newPassword: passwordSchema,
+  })
+  .strict();
+
 const checkEmailSchema = z
   .object({
     email: z
@@ -143,8 +166,14 @@ function clearRefreshTokenCookie(res: Response): void {
 }
 
 /** Fire-and-forget OTP dispatch: a mail failure is logged, never an unhandled rejection. */
-function dispatchOtpEmail(email: string, otp: string, name: string): void {
-  void sendOtpEmail(email, otp, name).catch((err) => {
+function dispatchOtpEmail(
+  email: string,
+  otp: string,
+  name: string,
+  purpose: OtpPurpose = 'verify_email',
+): void {
+  const send = purpose === 'reset_password' ? sendPasswordResetOtpEmail : sendOtpEmail;
+  void send(email, otp, name).catch((err) => {
     console.error('Failed to send OTP email:', err);
   });
 }
@@ -289,6 +318,58 @@ export async function resendOtp(req: Request, res: Response): Promise<void> {
   }
 
   res.status(200).json(GENERIC_OTP_RESPONSE);
+}
+
+/** POST /api/auth/forgot-password — public. Sends a rate-limited reset OTP without enumerating emails. */
+export async function forgotPassword(req: Request, res: Response): Promise<void> {
+  const parsed = forgotPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+
+  const user = await findUserByEmail(parsed.data.email);
+  if (user && user.isActive && user.isVerified) {
+    const eligibility = await checkResendEligibility(user.id);
+    if (eligibility.allowed) {
+      const otp = generateOtp();
+      await storeOtp(user.id, otp, otpExpiryDate(), 'reset_password');
+      void dispatchOtpEmail(user.email, otp, user.name, 'reset_password');
+    }
+  }
+
+  res.status(200).json(GENERIC_RESET_RESPONSE);
+}
+
+/** POST /api/auth/reset-password — public. Verifies reset OTP, updates password, and revokes sessions. */
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+  const parsed = resetPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+
+  const user = await findUserByEmail(parsed.data.email);
+  if (!user || !user.isActive || !user.isVerified) {
+    res.status(400).json({ message: GENERIC_OTP_ERROR });
+    return;
+  }
+
+  const check = await checkOtp(user.id, parsed.data.otp, 'reset_password');
+  if (!check.ok) {
+    if (check.reason === 'locked') {
+      res.status(429).json({ message: 'Too many failed attempts. Try again in an hour.' });
+      return;
+    }
+    res.status(400).json({ message: GENERIC_OTP_ERROR });
+    return;
+  }
+
+  await updateUserPassword(user.id, await hashPassword(parsed.data.newPassword));
+  await revokeAllUserTokens(user.id);
+  clearRefreshTokenCookie(res);
+
+  res.json({ message: 'Password reset successfully. Please sign in with your new password.' });
 }
 
 /** POST /api/auth/login — public. Progressive throttling and timing-safe dummy comparisons. */

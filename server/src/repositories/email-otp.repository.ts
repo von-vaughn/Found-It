@@ -8,6 +8,8 @@ export const CUMULATIVE_MAX_ATTEMPTS = 15;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const RESEND_HOURLY_LIMIT = 3;
 
+export type OtpPurpose = 'verify_email' | 'reset_password';
+
 /** 6-digit numeric OTP (allows leading zeros). */
 export function generateOtp(): string {
   return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
@@ -17,11 +19,15 @@ export function otpExpiryDate(): Date {
   return new Date(Date.now() + env.OTP_EXPIRES_MINUTES * 60 * 1000);
 }
 
-/** HMAC-SHA256 keyed with server OTP_SECRET and bound to userId */
-export function hashOtp(userId: string, otp: string): string {
+/** HMAC-SHA256 keyed with server OTP_SECRET and bound to userId and purpose */
+export function hashOtp(
+  userId: string,
+  otp: string,
+  purpose: OtpPurpose = 'verify_email',
+): string {
   return crypto
     .createHmac('sha256', env.OTP_SECRET)
-    .update(`${userId}:${otp.trim()}`)
+    .update(`${userId}:${purpose}:${otp.trim()}`)
     .digest('hex');
 }
 
@@ -75,16 +81,21 @@ async function withUserOtpLock<T>(
   }
 }
 
-/** Invalidates older unconsumed OTPs, stores the new HMAC-hashed OTP, and anchors cooldown. */
-export async function storeOtp(userId: string, otp: string, expiresAt: Date): Promise<string> {
+/** Invalidates older unconsumed OTPs for this purpose, stores the new HMAC-hashed OTP, and anchors cooldown. */
+export async function storeOtp(
+  userId: string,
+  otp: string,
+  expiresAt: Date,
+  purpose: OtpPurpose = 'verify_email',
+): Promise<string> {
   return withUserOtpLock(userId, async (client) => {
     await client.query(
-      `UPDATE email_otp SET consumed = TRUE WHERE user_id = $1 AND consumed = FALSE`,
-      [userId],
+      `UPDATE email_otp SET consumed = TRUE WHERE user_id = $1 AND purpose = $2 AND consumed = FALSE`,
+      [userId, purpose],
     );
     const { rows } = await client.query<OtpRow>(
-      `INSERT INTO email_otp (user_id, otp_hash, expires_at) VALUES ($1, $2, $3) RETURNING id`,
-      [userId, hashOtp(userId, otp), expiresAt],
+      `INSERT INTO email_otp (user_id, otp_hash, expires_at, purpose) VALUES ($1, $2, $3, $4) RETURNING id`,
+      [userId, hashOtp(userId, otp, purpose), expiresAt, purpose],
     );
     await client.query(`UPDATE "user" SET last_resend_at = NOW() WHERE id = $1`, [userId]);
     return rows[0].id;
@@ -137,10 +148,14 @@ export type OtpCheck =
   | { ok: false; reason: 'expired' | 'invalid' | 'locked' };
 
 /**
- * Validates OTP against latest unconsumed code.
+ * Validates OTP against latest unconsumed code for the given purpose.
  * Exhausts single code at 5 failures ('expired'); locks account for 1h only at 15 cumulative failures.
  */
-export async function checkOtp(userId: string, otp: string): Promise<OtpCheck> {
+export async function checkOtp(
+  userId: string,
+  otp: string,
+  purpose: OtpPurpose = 'verify_email',
+): Promise<OtpCheck> {
   return withUserOtpLock(userId, async (client, user) => {
     if (!user) return { ok: false, reason: 'expired' };
 
@@ -160,9 +175,9 @@ export async function checkOtp(userId: string, otp: string): Promise<OtpCheck> {
     const { rows } = await client.query<OtpRow>(
       `SELECT id, user_id, otp_hash, expires_at, attempts
        FROM email_otp
-       WHERE user_id = $1 AND consumed = FALSE
+       WHERE user_id = $1 AND purpose = $2 AND consumed = FALSE
        ORDER BY created_at DESC LIMIT 1`,
-      [userId],
+      [userId, purpose],
     );
     const row = rows[0];
     if (!row || new Date(row.expires_at).getTime() <= Date.now()) {
@@ -174,7 +189,7 @@ export async function checkOtp(userId: string, otp: string): Promise<OtpCheck> {
       return { ok: false, reason: 'expired' };
     }
 
-    const candidateHash = hashOtp(userId, otp);
+    const candidateHash = hashOtp(userId, otp, purpose);
     const isMatch = safeCompareHex(candidateHash, row.otp_hash);
 
     if (!isMatch) {

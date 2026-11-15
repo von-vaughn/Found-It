@@ -76,34 +76,36 @@ async function getAccessToken(): Promise<string> {
   return data.access_token;
 }
 
-export async function sendOtpEmail(to: string, otp: string, name: string): Promise<void> {
+async function dispatchGmailMessage(input: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  devLog: string;
+}): Promise<void> {
   const mailConfigured = isMailConfigured();
   if (env.NODE_ENV !== 'production') {
-    console.log(`[dev-mail] OTP for ${to}: ${otp} (expires in ${env.OTP_EXPIRES_MINUTES} min)`);
+    console.log(input.devLog);
   }
 
   if (!mailConfigured) return;
 
   const boundary = `foundit-${Date.now()}`;
-  const html =
-    `<p>Hi ${name},</p><p>Your FoundIt verification code is: ` +
-    `<strong style="font-size:20px;letter-spacing:4px">${otp}</strong></p>` +
-    `<p>It expires in ${env.OTP_EXPIRES_MINUTES} minutes. If you didn't request this, ignore this email.</p>`;
   const rfc822 = [
     `From: ${env.MAIL_FROM}`,
-    `To: ${to}`,
-    `Subject: Your FoundIt verification code`,
+    `To: ${input.to}`,
+    `Subject: ${input.subject}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
     '',
     `--${boundary}`,
     'Content-Type: text/plain; charset=utf-8',
     '',
-    `Hi ${name},\n\nYour FoundIt verification code is: ${otp}\n\nIt expires in ${env.OTP_EXPIRES_MINUTES} minutes. If you didn't request this, ignore this email.`,
+    input.text,
     `--${boundary}`,
     'Content-Type: text/html; charset=utf-8',
     '',
-    html,
+    input.html,
     `--${boundary}--`,
     '',
   ].join('\r\n');
@@ -119,4 +121,30 @@ export async function sendOtpEmail(to: string, otp: string, name: string): Promi
   if (!res.ok) {
     throw new Error(`Gmail send failed: ${res.status} ${await res.text()}`);
   }
+}
+
+export async function sendOtpEmail(to: string, otp: string, name: string): Promise<void> {
+  await dispatchGmailMessage({
+    to,
+    subject: 'Your FoundIt verification code',
+    devLog: `[dev-mail] OTP for ${to}: ${otp} (expires in ${env.OTP_EXPIRES_MINUTES} min)`,
+    text: `Hi ${name},\n\nYour FoundIt verification code is: ${otp}\n\nIt expires in ${env.OTP_EXPIRES_MINUTES} minutes. If you didn't request this, ignore this email.`,
+    html:
+      `<p>Hi ${name},</p><p>Your FoundIt verification code is: ` +
+      `<strong style="font-size:20px;letter-spacing:4px">${otp}</strong></p>` +
+      `<p>It expires in ${env.OTP_EXPIRES_MINUTES} minutes. If you didn't request this, ignore this email.</p>`,
+  });
+}
+
+export async function sendPasswordResetOtpEmail(to: string, otp: string, name: string): Promise<void> {
+  await dispatchGmailMessage({
+    to,
+    subject: 'Your FoundIt password reset code',
+    devLog: `[dev-mail] Password reset OTP for ${to}: ${otp} (expires in ${env.OTP_EXPIRES_MINUTES} min)`,
+    text: `Hi ${name},\n\nYour FoundIt password reset code is: ${otp}\n\nIt expires in ${env.OTP_EXPIRES_MINUTES} minutes. If you didn't request a password reset, you can safely ignore this email.`,
+    html:
+      `<p>Hi ${name},</p><p>Your FoundIt password reset code is: ` +
+      `<strong style="font-size:20px;letter-spacing:4px">${otp}</strong></p>` +
+      `<p>It expires in ${env.OTP_EXPIRES_MINUTES} minutes. If you didn't request a password reset, you can safely ignore this email.</p>`,
+  });
 }

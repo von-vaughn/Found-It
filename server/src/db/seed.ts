@@ -70,48 +70,7 @@ const DEMO_ITEMS: Array<{
   importantDetails?: string;
   daysAgo: number;
   time: string;
-}> = [
-  {
-    reporterEmail: 'user@foundit.local',
-    reportType: 'lost',
-    categoryName: 'electronics',
-    name: 'Black JBL Tune 510BT Headphones',
-    description: 'Black wireless headphones with a folded earcup. The left hinge is a little loose.',
-    color: 'Black',
-    building: 'CCS - College of Computing Studies',
-    location: 'Room 204, third floor',
-    importantDetails: 'Left earcup has a scratch near the hinge.',
-    daysAgo: 1,
-    time: '14:30',
-  },
-  {
-    reporterEmail: 'user@foundit.local',
-    reportType: 'found',
-    categoryName: 'id',
-    name: 'WMSU Student ID - A. Dela Cruz',
-    description: 'Student ID card turned over by the front desk. Name is partially worn off.',
-    color: 'White',
-    building: 'Library',
-    location: 'Ground floor study area',
-    daysAgo: 2,
-    time: '09:15',
-  },
-  {
-    reporterEmail: 'user@foundit.local',
-    reportType: 'lost',
-    categoryName: 'wallets-purses',
-    name: 'Brown Bifold Leather Wallet',
-    description: 'Brown bifold wallet with a coin pocket. Holds my library card and fare money.',
-    color: 'Brown',
-    building: 'Canteen A - Near COL',
-    location: 'Table near the counter',
-    importantDetails: 'Initials J.M. embossed on the bottom corner.',
-    daysAgo: 3,
-    time: '12:05',
-  },
-
-
-];
+}> = [];
 
 /** Demo posts are planted only once: any that already exist by name are left alone. */
 async function seedDemoItems(): Promise<void> {

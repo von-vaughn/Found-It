@@ -358,7 +358,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   setSelectedCategory("all");
                   setFilters(defaultFilters);
                 }}
-                className="px-4 py-2 bg-neutral-900 text-white rounded-xl text-xs font-semibold hover:bg-neutral-800 transition-colors"
+                className="px-4 py-2 bg-[#E5192D] text-white rounded-xl text-xs font-semibold hover:bg-[#c81424] transition-colors cursor-pointer"
               >
                 Reset Filters
               </button>

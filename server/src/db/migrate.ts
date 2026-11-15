@@ -47,6 +47,8 @@ export async function migrate(): Promise<void> {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
       otp_hash TEXT NOT NULL,
+      purpose VARCHAR(20) NOT NULL DEFAULT 'verify_email'
+        CHECK (purpose IN ('verify_email', 'reset_password')),
       expires_at TIMESTAMPTZ NOT NULL,
       consumed BOOLEAN NOT NULL DEFAULT FALSE,
       attempts INT NOT NULL DEFAULT 0,
@@ -210,6 +212,8 @@ export async function migrate(): Promise<void> {
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS verification_locked_until TIMESTAMPTZ;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS last_resend_at TIMESTAMPTZ;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS resend_count_window INT NOT NULL DEFAULT 0;
+
+    ALTER TABLE email_otp ADD COLUMN IF NOT EXISTS purpose VARCHAR(20) NOT NULL DEFAULT 'verify_email';
 
     ALTER TABLE refresh_token ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;
     ALTER TABLE refresh_token ADD COLUMN IF NOT EXISTS revoked_reason VARCHAR(20);

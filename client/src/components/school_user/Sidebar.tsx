@@ -255,7 +255,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           alt="FoundIt Logo"
           className="w-10 h-10 object-contain rounded-xl group-hover:scale-105 transition-transform"
         />
-        <span className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 transition-opacity duration-200 pointer-events-none ${labelsVisible ? "opacity-100" : "opacity-0"}`}>
+        <span className={`absolute left-full ml-2.5 top-1/2 -translate-y-1/2 whitespace-nowrap text-left font-sans text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 transition-opacity duration-200 pointer-events-none ${labelsVisible ? "opacity-100" : "opacity-0"}`}>
           Found<span className="text-[#E5192D]">It</span>
         </span>
       </button>
@@ -302,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }
                 className={`relative w-11 h-11 flex items-center justify-center rounded-xl cursor-pointer group border-0 p-0 ${
                   isActive || (item.id === "notifications" && notificationsOpen)
-                    ? "text-[#E5192D]"
+                    ? "text-[#E5192D] hover:text-[#E5192D] hover:bg-transparent dark:hover:bg-transparent"
                     : "text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/80 dark:hover:bg-neutral-800"
                 }`}
               >
@@ -373,7 +373,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
               className={`relative flex flex-col items-center gap-1 py-2.5 h-auto border-0 px-0 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
                 isActive
-                  ? "text-[#E5192D]"
+                  ? "text-[#E5192D] hover:text-[#E5192D] hover:bg-transparent dark:hover:bg-transparent"
                   : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100"
               }`}
             >

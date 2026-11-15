@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   changePassword,
   checkEmail,
+  forgotPassword,
   login,
   logout,
   logoutAll,
@@ -9,6 +10,7 @@ import {
   refresh,
   register,
   resendOtp,
+  resetPassword,
   verifyAdminPassword,
   verifyEmail,
 } from '../controllers/auth.controller';
@@ -25,6 +27,8 @@ router.get('/check-email', apiLimiter, checkEmail);
 router.post('/register', authLimiter, register);
 router.post('/verify-email', authLimiter, verifyEmail);
 router.post('/resend-otp', authLimiter, resendOtpLimiter, resendOtp);
+router.post('/forgot-password', authLimiter, resendOtpLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 router.post('/login', authLimiter, csrfProtection, login);
 router.post('/refresh', authLimiter, csrfProtection, refresh);
 router.post('/logout', csrfProtection, logout);
