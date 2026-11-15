@@ -1,268 +1,125 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-
-const PAGE_SIZE = 10;
 import {
   Building2,
   CalendarClock,
   CalendarDays,
   Check,
-  ChevronLeft,
   ChevronRight,
   Clock3,
+  FileText,
   Lock,
   MapPin,
-  Package,
   Palette,
   Tag,
   X,
 } from "lucide-react";
-import { Panel } from "./Panel";
 import { NoItemImage } from "@/components/NoItemImage";
-import {
-  AdminPasswordModal,
-  LockedValue,
-} from "./SensitiveDetails";
-import { useSensitiveUnlock } from "./useSensitiveUnlock";
-import { StatusBadge } from "./StatusBadge";
-import { OsaReceiptStatus } from "./OsaReceiptStatus";
-import { StatusFilter } from "./StatusFilter";
-import type { AdminReport } from "./types";
-import type { ClaimRequest } from "@/types/claim";
-import { getClaimantEmail } from "@/types/claim";
 import { resolveIdNumber } from "@/lib/idNumber";
+import { getClaimantEmail, type ClaimRequest } from "@/types/claim";
+import { OsaReceiptStatus } from "./OsaReceiptStatus";
+import {
+  FilterChips,
+  OriginalPostButton,
+  OriginalPostCard,
+  OriginalPostDialog,
+  RequestSelectorCard,
+  ReviewHeader,
+  ReviewPager,
+  SubmittedAnswersLedger,
+  type ReviewFactRow,
+  type ReviewLedgerRow,
+  type ReviewStep,
+} from "./ReviewLayout";
+import { AdminPasswordModal, LockedValue } from "./SensitiveDetails";
+import { StatusBadge } from "./StatusBadge";
+import type { AdminReport } from "./types";
+import {
+  compareRequestWithPost,
+  formatAdminEventDate,
+  formatAdminEventTime,
+  sortRequestsByPostMatch,
+} from "./requestComparison";
+import { useSensitiveUnlock } from "./useSensitiveUnlock";
 
-function formatEventDate(value: string | undefined): string {
-  if (!value) return "None";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "None";
-  return new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(date);
-}
+const LIST_PAGE_SIZE = 10;
+const DETAIL_PAGE_SIZE = 4;
 
-function formatEventTime(value: string | undefined): string {
-  if (!value) return "None";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "None";
-  return new Intl.DateTimeFormat("en-PH", { timeStyle: "short" }).format(date);
-}
+const DEFAULT_CLAIM_FILTERS = [
+  "All",
+  "Pending",
+  "Approved",
+  "Claimed",
+  "Rejected",
+];
 
-type StatusDecision =
-  | "Approved"
-  | "Returned"
-  | "ItemClaimed"
-  | "Rejected";
+type StatusDecision = "Approved" | "Returned" | "ItemClaimed" | "Rejected";
 
-function ClaimRequestSection({
-  claim,
-  headingId,
-  title,
-  itemType,
-  itemClaimed,
-  itemReceived,
-  onRequestStatus,
-  unlocked,
-  onRequestUnlock,
-}: {
-  claim: ClaimRequest;
-  headingId: string;
-  title?: string;
-  itemType: "Lost" | "Found" | undefined;
-  itemClaimed: boolean;
-  itemReceived: boolean;
-  onRequestStatus: (claimId: string, status: StatusDecision) => void;
-  unlocked: boolean;
-  onRequestUnlock: () => void;
-}) {
-  const isLostItem = itemType === "Lost";
-  return (
-    <section
-      {...(title
-        ? { "aria-labelledby": headingId }
-        : { "aria-label": `${claim.claimant}'s request` })}
-      className="border-t border-neutral-100 dark:border-neutral-800 pt-4"
-    >
-      <div className="mb-3 flex items-center justify-between gap-3">
-        {title && (
-          <h2 id={headingId} className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-            {title}
-          </h2>
-        )}
-        <span className={title ? "" : "ml-auto"}>
-          <StatusBadge status={claim.status} />
-        </span>
-      </div>
-      <div className="mt-3 grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <div className="min-w-0">
-          {claim.evidence && claim.evidence.length > 0 ? (
-            <div
-              className={`mt-2 grid gap-2 ${
-                claim.evidence.length > 1 ? "grid-cols-2" : "grid-cols-1"
-              }`}
-            >
-              {claim.evidence.map((image, index) => (
-                <div
-                  key={`${claim.id}-evidence-${index}`}
-                  className={`flex ${
-                    (claim.evidence?.length ?? 0) > 1 ? "h-48" : "h-72"
-                  } w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800`}
-                >
-                  <img
-                    src={image}
-                    alt={`Photo evidence ${index + 1} submitted by ${claim.claimant}`}
-                    loading="lazy"
-                    className="h-full max-w-full object-contain"
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <NoItemImage
-              title="No photo evidence provided"
-              subtitle="The claimant did not attach any photos to this request."
-              className="mt-2 h-72"
-            />
-          )}
-          {claim.status !== "Claimed" && claim.status !== "Rejected" && (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={
-                  claim.status === "Returned" ||
-                  (!isLostItem &&
-                    claim.status !== "Approved" &&
-                    !itemReceived) ||
-                  (!isLostItem && itemClaimed && claim.status !== "Approved")
-                }
-                onClick={() =>
-                  onRequestStatus(
-                    claim.id,
-                    !isLostItem && claim.status === "Approved"
-                      ? "ItemClaimed"
-                      : isLostItem
-                        ? "Returned"
-                        : "Approved",
-                  )
-                }
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#E5192D] disabled:opacity-50"
-              >
-                <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                {claim.status === "Returned"
-                  ? "Returned"
-                  : claim.status === "Approved" && !isLostItem
-                    ? "Claimed"
-                    : isLostItem
-                      ? "Mark as returned"
-                      : "Approve request"}
-              </button>
-              <button
-                type="button"
-                disabled={
-                  claim.status !== "Pending" && claim.status !== "Approved"
-                }
-                onClick={() => onRequestStatus(claim.id, "Rejected")}
-                className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default ${
-                  claim.status === "Pending" || claim.status === "Approved"
-                    ? "border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
-                    : "border-neutral-200 dark:border-neutral-800 text-neutral-400 dark:text-neutral-500"
-                }`}
-              >
-                <X className="h-3.5 w-3.5" aria-hidden="true" />
-                Reject
-              </button>
-            </div>
-          )}
-          {!isLostItem &&
-            claim.status === "Pending" &&
-            !itemReceived && (
-              <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
-                Approval is unavailable until the physical item is received by OSA.
-              </p>
-            )}
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-            {claim.claimant}
-          </p>
-          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-            Id number: {resolveIdNumber(claim.schoolId, getClaimantEmail(claim)) || "N/A"}
-          </p>
-          <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
-            {claim.details}
-          </p>
-          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 py-3 text-xs">
-            <div>
-              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                <CalendarDays className="h-3 w-3" aria-hidden="true" />
-                Submitted
-              </dt>
-              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                {claim.submitted}
-              </dd>
-            </div>
-            <div>
-              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                <Palette className="h-3 w-3" aria-hidden="true" />
-                Primary color
-              </dt>
-              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                {claim.color?.trim() || "None"}
-              </dd>
-            </div>
-            <div>
-              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                <CalendarDays className="h-3 w-3" aria-hidden="true" />
-                {itemType === "Lost" ? "Date found" : "Date lost"}
-              </dt>
-              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                {claim.dateLost}
-              </dd>
-            </div>
-            <div>
-              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                <Clock3 className="h-3 w-3" aria-hidden="true" />
-                {itemType === "Lost" ? "Time found" : "Time lost"}
-              </dt>
-              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                {claim.timeLost}
-              </dd>
-            </div>
-            <div>
-              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                <MapPin className="h-3 w-3" aria-hidden="true" />
-                {itemType === "Lost" ? "Location found" : "Location lost"}
-              </dt>
-              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                {claim.location}
-              </dd>
-            </div>
-            <div>
-              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                <Building2 className="h-3 w-3" aria-hidden="true" />
-                Building
-              </dt>
-              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                {claim.building?.trim() || "None"}
-              </dd>
-            </div>
-            <div className="col-span-2">
-              <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                <Lock className="h-3 w-3" aria-hidden="true" />
-                Important details
-              </dt>
-              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                <LockedValue
-                  value={claim.importantDetails}
-                  unlocked={unlocked}
-                  onUnlock={onRequestUnlock}
-                />
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-    </section>
-  );
+function buildPostFacts(
+  post: AdminReport | undefined,
+  fallbackTitle: string,
+  unlocked: boolean,
+  onUnlock: () => void,
+): ReviewFactRow[] {
+  if (!post) return [];
+  const isFound = post.type === "Found";
+  return [
+    {
+      id: "item-name",
+      icon: Tag,
+      label: "Item name",
+      value: post.title || fallbackTitle || "None",
+    },
+    {
+      id: "category",
+      icon: Tag,
+      label: "Category",
+      value: post.category || "None",
+    },
+    {
+      id: "event-date",
+      icon: CalendarClock,
+      label: isFound ? "Date found" : "Date lost",
+      value: formatAdminEventDate(post.eventDateTime),
+    },
+    {
+      id: "event-time",
+      icon: Clock3,
+      label: isFound ? "Time found" : "Time lost",
+      value: formatAdminEventTime(post.eventDateTime),
+    },
+    {
+      id: "building",
+      icon: Building2,
+      label: "Building",
+      value: post.buildingName?.trim() || "None",
+    },
+    {
+      id: "location",
+      icon: MapPin,
+      label: isFound ? "Location found" : "Location lost",
+      value: post.specificLocation || "None",
+    },
+    {
+      id: "color",
+      icon: Palette,
+      label: "Color",
+      value: post.color?.trim() || "None",
+    },
+    {
+      id: "important-details",
+      icon: Lock,
+      label: "Important details",
+      value: (
+        <LockedValue
+          value={post.confidentialInfo}
+          unlocked={unlocked}
+          onUnlock={onUnlock}
+        />
+      ),
+    },
+  ];
 }
 
 /** Full-page list of grouped found-item claim requests. */
@@ -272,7 +129,7 @@ export function ClaimsListPanel({
   query,
   statusFilter,
   onStatusFilterChange,
-  statusOptions,
+  statusOptions = DEFAULT_CLAIM_FILTERS,
   onSelectClaim,
 }: {
   claims: ClaimRequest[];
@@ -285,17 +142,19 @@ export function ClaimsListPanel({
 }) {
   const [page, setPage] = useState(1);
 
-  const filteredClaims = claimRequests.filter(
-    (claim) =>
-      (statusFilter === "All" || claim.status === statusFilter) &&
+  const queryMatchedClaims = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return claimRequests.filter((claim) =>
       [claim.id, claim.item, claim.claimant, claim.location]
         .join(" ")
         .toLowerCase()
-        .includes(query),
-  );
-  const claimGroups = useMemo(() => {
+        .includes(normalizedQuery),
+    );
+  }, [claimRequests, query]);
+
+  const groupClaims = (items: ClaimRequest[]) => {
     const groups = new Map<string, ClaimRequest[]>();
-    for (const claim of filteredClaims) {
+    for (const claim of items) {
       const group = groups.get(claim.itemId) ?? [];
       group.push(claim);
       groups.set(claim.itemId, group);
@@ -304,9 +163,30 @@ export function ClaimsListPanel({
       representative: claims[0],
       claims,
     }));
-  }, [filteredClaims]);
+  };
 
-  // Reset to the first page whenever the list inputs change (derived state).
+  const chipOptions = useMemo(
+    () =>
+      statusOptions.map((option) => ({
+        key: option,
+        label: option,
+        count: groupClaims(
+          option === "All"
+            ? queryMatchedClaims
+            : queryMatchedClaims.filter((claim) => claim.status === option),
+        ).length,
+      })),
+    [queryMatchedClaims, statusOptions],
+  );
+
+  const claimGroups = useMemo(() => {
+    const filtered =
+      statusFilter === "All"
+        ? queryMatchedClaims
+        : queryMatchedClaims.filter((claim) => claim.status === statusFilter);
+    return groupClaims(filtered);
+  }, [queryMatchedClaims, statusFilter]);
+
   const [prevListKey, setPrevListKey] = useState({
     query: "",
     statusFilter: "",
@@ -321,46 +201,56 @@ export function ClaimsListPanel({
     setPage(1);
   }
 
-  const totalPages = Math.max(1, Math.ceil(claimGroups.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(claimGroups.length / LIST_PAGE_SIZE),
+  );
   const safePage = Math.min(page, totalPages);
   const pagedClaims = claimGroups.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE,
+    (safePage - 1) * LIST_PAGE_SIZE,
+    safePage * LIST_PAGE_SIZE,
   );
   const rangeStart =
-    claimGroups.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
-  const rangeEnd = Math.min(safePage * PAGE_SIZE, claimGroups.length);
+    claimGroups.length === 0 ? 0 : (safePage - 1) * LIST_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * LIST_PAGE_SIZE, claimGroups.length);
 
   return (
-    <Panel
-      title="Submitted Claims Request"
-      titleAdornment={
-        <span className="shrink-0 text-xs font-normal text-neutral-500 dark:text-neutral-400">
-          {claimGroups.length}
-        </span>
-      }
-      action={
-        <div className="flex items-center">
-          <StatusFilter
-            value={statusFilter}
-            onChange={onStatusFilterChange}
-            options={statusOptions}
-          />
+    <section aria-labelledby="claims-list-heading" className="space-y-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
+            Found items · Claims queue
+          </p>
+          <h1
+            id="claims-list-heading"
+            className="mt-1 flex items-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100"
+          >
+            <span>Submitted Claims Request</span>
+            <span className="font-mono text-base font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
+              {claimGroups.length}
+            </span>
+          </h1>
         </div>
-      }
-    >
-      {filteredClaims.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
-          No claim requests match this search.
-        </p>
+        <FilterChips
+          options={chipOptions}
+          value={statusFilter}
+          onChange={onStatusFilterChange}
+          ariaLabel="Filter claims by status"
+        />
+      </div>
+
+      {claimGroups.length === 0 ? (
+        <div className="rounded-[14px] border border-dashed border-neutral-300 bg-white px-5 py-12 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
+          No claim requests match this filter.
+        </div>
       ) : (
         <>
-          <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+          <div className="grid gap-2.5">
             {pagedClaims.map((group) => {
               const claim = group.representative;
               const itemImage =
-                reports.find((report) => report.id === claim.itemId)
-                  ?.image ?? "";
+                reports.find((report) => report.id === claim.itemId)?.image ??
+                "";
               const claimantNames = group.claims
                 .map((request) => request.claimant)
                 .filter((name, index, names) => names.indexOf(name) === index);
@@ -370,26 +260,26 @@ export function ClaimsListPanel({
                   key={claim.itemId}
                   type="button"
                   onClick={() => onSelectClaim(claim.id)}
-                  className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] sm:px-5"
+                  className="flex w-full items-center gap-3.5 rounded-[14px] border border-neutral-200 bg-white px-4 py-3.5 text-left transition-colors hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600"
                 >
                   {itemImage ? (
                     <img
                       src={itemImage}
                       alt={`${claim.item} item`}
                       loading="lazy"
-                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                      className="h-12 w-12 shrink-0 rounded-[10px] object-cover"
                     />
                   ) : (
-                    <NoItemImage compact className="h-12 w-12" />
+                    <NoItemImage compact className="h-12 w-12 rounded-[10px]" />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block break-normal text-sm font-bold leading-snug text-neutral-900 dark:text-neutral-100">
+                    <span className="block truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                       {claim.item}
                     </span>
-                    <span className="mt-1 block max-h-8 truncate text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {claimantNames.join(", ")}
+                    <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                      <span className="truncate">{claimantNames.join(", ")}</span>
                       {group.claims.length > 1 && (
-                        <span className="ml-1.5 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
                           {group.claims.length} requests
                         </span>
                       )}
@@ -398,10 +288,10 @@ export function ClaimsListPanel({
                   <span className="flex shrink-0 items-center gap-3">
                     <StatusBadge status={claim.status} />
                     <span className="hidden text-right sm:block">
-                      <span className="block text-[10px] text-neutral-500 dark:text-neutral-400">
+                      <span className="block text-[10px] uppercase tracking-[0.06em] text-neutral-500 dark:text-neutral-400">
                         Submitted
                       </span>
-                      <span className="mt-1 block text-[10px] font-medium text-neutral-700 dark:text-neutral-300">
+                      <span className="mt-0.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
                         {claim.submitted}
                       </span>
                     </span>
@@ -414,58 +304,23 @@ export function ClaimsListPanel({
               );
             })}
           </div>
-          <div className="flex items-center justify-between gap-2 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 sm:px-5">
-            <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-              Showing {rangeStart}–{rangeEnd} of {claimGroups.length} posts
-            </p>
-            {totalPages > 1 && (
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setPage(safePage - 1)}
-                  disabled={safePage <= 1}
-                  aria-label="Previous page"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
-                >
-                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                </button>
-                {Array.from({ length: totalPages }, (_, index) => (
-                  <button
-                    key={index + 1}
-                    type="button"
-                    onClick={() => setPage(index + 1)}
-                    aria-label={`Page ${index + 1}`}
-                    aria-current={
-                      safePage === index + 1 ? "page" : undefined
-                    }
-                    className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors ${
-                      safePage === index + 1
-                        ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
-                        : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setPage(safePage + 1)}
-                  disabled={safePage >= totalPages}
-                  aria-label="Next page"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
-                >
-                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </div>
-            )}
-          </div>
+
+          <ReviewPager
+            page={safePage}
+            totalPages={totalPages}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            totalItems={claimGroups.length}
+            itemUnitLabel="posts"
+            onPageChange={setPage}
+          />
         </>
       )}
-    </Panel>
+    </section>
   );
 }
 
-/** Detail and review panel for a single claim and its sibling item claims. */
+/** Detail and review panel for a claim request and any competing claims on the same post. */
 export function ClaimDetailPanel({
   claim,
   siblingClaims,
@@ -474,7 +329,6 @@ export function ClaimDetailPanel({
   onClaimStatusChange,
   onOsaReceiptChange,
   isUpdatingOsaReceipt = false,
-  plainDetails = false,
 }: {
   claim: ClaimRequest;
   siblingClaims: ClaimRequest[];
@@ -488,12 +342,53 @@ export function ClaimDetailPanel({
   isUpdatingOsaReceipt?: boolean;
   plainDetails?: boolean;
 }) {
+  const [selectedRequestId, setSelectedRequestId] = useState(claim.id);
+  const [page, setPage] = useState(1);
+  const [postModalOpen, setPostModalOpen] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<{
     claimId: string;
     status: StatusDecision;
   } | null>(null);
   const [savingStatusChange, setSavingStatusChange] = useState(false);
   const approvalDialogRef = useRef<HTMLDialogElement>(null);
+
+  const [prevRouteClaimId, setPrevRouteClaimId] = useState(claim.id);
+  if (claim.id !== prevRouteClaimId) {
+    setPrevRouteClaimId(claim.id);
+    setSelectedRequestId(claim.id);
+    setPage(1);
+  }
+
+  const selectedItemPost = reports.find(
+    (report) => report.id === claim.itemId,
+  );
+  const sortedPostClaims = useMemo(
+    () =>
+      sortRequestsByPostMatch([claim, ...siblingClaims], selectedItemPost),
+    [claim, siblingClaims, selectedItemPost],
+  );
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedPostClaims.length / DETAIL_PAGE_SIZE),
+  );
+  const safePage = Math.min(page, totalPages);
+  const visibleClaims = sortedPostClaims.slice(
+    (safePage - 1) * DETAIL_PAGE_SIZE,
+    safePage * DETAIL_PAGE_SIZE,
+  );
+  const rangeStart =
+    sortedPostClaims.length === 0 ? 0 : (safePage - 1) * DETAIL_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(
+    safePage * DETAIL_PAGE_SIZE,
+    sortedPostClaims.length,
+  );
+
+  const activeClaim =
+    visibleClaims.find((item) => item.id === selectedRequestId) ??
+    sortedPostClaims.find((item) => item.id === selectedRequestId) ??
+    visibleClaims[0] ??
+    null;
 
   const claimForStatusChange = allClaims.find(
     (item) => item.id === pendingStatusChange?.claimId,
@@ -509,11 +404,6 @@ export function ClaimDetailPanel({
       dialog.close();
     }
   }, [pendingStatusChange]);
-
-  const selectedItemPost = reports.find(
-    (report) => report.id === claim.itemId,
-  );
-  const selectedItemImage = selectedItemPost?.image ?? "";
 
   const { unlocked, promptOpen, requestUnlock, submitPassword, setPromptOpen } =
     useSensitiveUnlock();
@@ -583,6 +473,138 @@ export function ClaimDetailPanel({
     }
   };
 
+  const isLostItem = selectedItemPost?.type === "Lost";
+  const itemReceived = selectedItemPost?.receivedByOsa ?? false;
+  const itemClaimed = selectedItemPost?.status === "Claimed";
+  const hasClaimed =
+    itemClaimed || sortedPostClaims.some((item) => item.status === "Claimed");
+  const hasApproved = sortedPostClaims.some(
+    (item) => item.status === "Approved",
+  );
+  const hasReturned = sortedPostClaims.some(
+    (item) => item.status === "Returned",
+  );
+  const pendingCount = sortedPostClaims.filter(
+    (item) => item.status === "Pending",
+  ).length;
+
+  const steps: ReviewStep[] = [
+    {
+      label: isLostItem ? "Lost posted" : "Found posted",
+      detail: selectedItemPost?.date || claim.submitted || "Recorded",
+      state: "done",
+    },
+    {
+      label: "Received by OSA",
+      detail: itemReceived ? "Item in custody" : "Awaiting drop-off",
+      state: itemReceived ? "done" : "current",
+    },
+    {
+      label: "Claims in",
+      detail: `${sortedPostClaims.length} ${
+        sortedPostClaims.length === 1 ? "request" : "requests"
+      }`,
+      state: sortedPostClaims.length > 0 ? "done" : "current",
+    },
+    {
+      label: isLostItem ? "Returned" : "Claimed",
+      detail: hasClaimed
+        ? "Claimed"
+        : hasReturned
+          ? "Returned"
+          : hasApproved
+            ? "Approved"
+            : `${pendingCount} to review`,
+      state:
+        hasClaimed || hasReturned
+          ? "done"
+          : hasApproved || (itemReceived && sortedPostClaims.length > 0)
+            ? "current"
+            : "upcoming",
+    },
+  ];
+
+  const postFacts = buildPostFacts(
+    selectedItemPost,
+    claim.item,
+    unlocked,
+    requestUnlock,
+  );
+  const reporterId = selectedItemPost
+    ? resolveIdNumber(
+        selectedItemPost.reporterSchoolId,
+        selectedItemPost.reporterEmail,
+      ) || "N/A"
+    : "N/A";
+  const reporterMeta = selectedItemPost
+    ? `${isLostItem ? "Owner" : "Finder"} · ID ${reporterId}`
+    : "Original post details unavailable";
+
+  const activeComparison = activeClaim
+    ? compareRequestWithPost(activeClaim, selectedItemPost)
+    : null;
+
+  const activeLedgerRows: ReviewLedgerRow[] = activeClaim
+    ? [
+        {
+          id: "color",
+          icon: Palette,
+          label: "Primary color",
+          value: activeClaim.color?.trim() || "None",
+          note: activeComparison?.color.note,
+        },
+        {
+          id: "date",
+          icon: CalendarDays,
+          label: isLostItem ? "Date found" : "Date lost",
+          value: activeClaim.dateLost || "None",
+          note: activeComparison?.date.note,
+        },
+        {
+          id: "time",
+          icon: Clock3,
+          label: isLostItem ? "Time found" : "Time lost",
+          value: activeClaim.timeLost || "None",
+          note: activeComparison?.time.note,
+        },
+        {
+          id: "location",
+          icon: MapPin,
+          label: isLostItem ? "Location found" : "Location lost",
+          value: activeClaim.location || "None",
+          note: activeComparison?.location.note,
+        },
+        {
+          id: "building",
+          icon: Building2,
+          label: "Building",
+          value: activeClaim.building?.trim() || "None",
+          note: activeComparison?.building.note,
+        },
+        {
+          id: "details",
+          icon: FileText,
+          label: "Details",
+          value: activeClaim.details?.trim() || "No additional details provided.",
+        },
+        {
+          id: "important-details",
+          icon: Lock,
+          label: "Important details",
+          value: (
+            <LockedValue
+              value={activeClaim.importantDetails}
+              unlocked={unlocked}
+              onUnlock={requestUnlock}
+            />
+          ),
+          note: unlocked
+            ? undefined
+            : "Protected detail. Enter your staff or admin password to reveal.",
+        },
+      ]
+    : [];
+
   return (
     <div className="overflow-x-clip">
       {pendingStatusChange && claimForStatusChange && (
@@ -594,7 +616,7 @@ export function ClaimDetailPanel({
             if (savingStatusChange) event.preventDefault();
           }}
           onClose={() => setPendingStatusChange(null)}
-          className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0 text-neutral-900 dark:text-neutral-100 shadow-xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+          className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-xl border border-neutral-200 bg-white p-0 text-neutral-900 shadow-xl backdrop:bg-black/60 backdrop:backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
         >
           <div className="p-5 sm:p-6">
             <h2
@@ -622,14 +644,14 @@ export function ClaimDetailPanel({
                     : `Confirm that ${claimForStatusChange.claimant} has received ${claimForStatusChange.item}.`}
             </p>
             {pendingStatusChange.status === "Approved" && (
-              <p className="mt-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 px-3 py-2 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
+              <p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-xs leading-relaxed text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
                 Once approved, the system will notify{" "}
-                {claimForStatusChange.claimant} to proceed to the OSA office
-                to claim the item.
+                {claimForStatusChange.claimant} to proceed to the OSA office to
+                claim the item.
               </p>
             )}
             {isAcceptDecision && claimsToAutoReject.length > 0 && (
-              <p className="mt-3 rounded-lg border border-amber-200 dark:border-amber-500/25 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
                 {claimsToAutoReject.length === 1
                   ? "1 other open request for this item will be automatically rejected."
                   : `${claimsToAutoReject.length} other open requests for this item will be automatically rejected.`}
@@ -640,7 +662,7 @@ export function ClaimDetailPanel({
                 type="button"
                 onClick={closeApprovalDialog}
                 disabled={savingStatusChange}
-                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60"
+                className="h-9 rounded-lg border border-neutral-200 px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
               >
                 Cancel
               </button>
@@ -664,232 +686,306 @@ export function ClaimDetailPanel({
           </div>
         </dialog>
       )}
-      <Panel
+
+      <ReviewHeader
+        eyebrow={`${isLostItem ? "Lost" : "Found"} item · Claim review`}
         title={claim.item}
-        titleSize="large"
-        borderless
-        plain={plainDetails}
-      >
-        <div
-          className={
-            plainDetails ? "space-y-4" : "space-y-4 p-4 sm:p-5"
+        itemType={selectedItemPost?.type}
+        stateLabel={
+          hasClaimed
+            ? "Claimed"
+            : hasReturned
+              ? "Returned"
+              : hasApproved
+                ? "Approved"
+                : "Open for claims"
+        }
+        stateTone={hasClaimed || hasReturned || hasApproved ? "ok" : "warn"}
+        subtitle={`One post, ${sortedPostClaims.length} ${
+          sortedPostClaims.length === 1 ? "claim request" : "claim requests"
+        } to review.`}
+        steps={steps}
+      />
+
+      <div className="grid gap-8 lg:grid-cols-[380px_minmax(0,1fr)] xl:gap-12">
+        <OriginalPostCard
+          postedDateLabel={
+            selectedItemPost?.date
+              ? `Posted ${selectedItemPost.date}`
+              : "Original post"
           }
-        >
-          <section aria-labelledby="claim-item-post-heading">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h2
-                id="claim-item-post-heading"
-                className="text-sm font-bold text-neutral-900 dark:text-neutral-100"
-              >
-                {selectedItemPost?.type === "Found"
-                  ? "Found item"
-                  : "Lost item"}
-              </h2>
-              {selectedItemPost && (
-                <StatusBadge status={selectedItemPost.type} />
-              )}
+          image={selectedItemPost?.image}
+          imageAlt={`${claim.item} item`}
+          reporterName={selectedItemPost?.reportedBy || "Unavailable"}
+          reporterMeta={reporterMeta}
+          facts={postFacts}
+          notes={selectedItemPost?.description}
+          footer={
+            selectedItemPost?.type === "Found" ? (
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <div>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    Physical item
+                  </p>
+                  <div className="mt-0.5">
+                    <OsaReceiptStatus received={selectedItemPost.receivedByOsa} />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={isUpdatingOsaReceipt}
+                  onClick={() =>
+                    onOsaReceiptChange(
+                      selectedItemPost.id,
+                      !selectedItemPost.receivedByOsa,
+                    )
+                  }
+                  className="inline-flex h-9 shrink-0 items-center justify-center rounded-[10px] border border-neutral-200 bg-white px-3.5 text-xs font-medium text-neutral-800 transition-colors hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-500"
+                >
+                  {isUpdatingOsaReceipt
+                    ? "Updating…"
+                    : selectedItemPost.receivedByOsa
+                      ? "Mark not yet received"
+                      : "Mark received"}
+                </button>
+              </div>
+            ) : undefined
+          }
+        />
+
+        <section aria-labelledby="claim-requests-list-heading" className="min-w-0">
+          <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
+            <h2
+              id="claim-requests-list-heading"
+              className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100"
+            >
+              Claim requests{" "}
+              <span className="font-mono font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
+                {sortedPostClaims.length}
+              </span>
+            </h2>
+          </div>
+
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
+            {selectedItemPost
+              ? "Sorted by match with the post"
+              : "Submitted claim requests"}
+          </p>
+
+          {sortedPostClaims.length === 0 ? (
+            <div className="mt-3.5 mb-6 rounded-[14px] border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+              No claim requests submitted for this post yet.
             </div>
-            <div className="grid items-stretch gap-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-              <div className="min-w-0">
-                {selectedItemImage ? (
-                  <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800">
-                    <img
-                      src={selectedItemImage}
-                      alt={`${claim.item} item`}
-                      className="h-full max-w-full object-contain"
+          ) : (
+            <>
+              <div className="mt-3.5 mb-4 grid gap-2.5">
+                {visibleClaims.map((item) => {
+                  const comparison = compareRequestWithPost(
+                    item,
+                    selectedItemPost,
+                  );
+                  const tones = selectedItemPost
+                    ? [
+                        comparison.color.status,
+                        comparison.date.status,
+                        comparison.location.status,
+                        comparison.building.status,
+                      ]
+                    : undefined;
+                  const idNum =
+                    resolveIdNumber(item.schoolId, getClaimantEmail(item)) ||
+                    "N/A";
+                  return (
+                    <RequestSelectorCard
+                      key={item.id}
+                      name={item.claimant}
+                      subtitle={`ID ${idNum} · ${item.submitted}`}
+                      status={item.status}
+                      selected={activeClaim?.id === item.id}
+                      matchTones={tones}
+                      onClick={() => setSelectedRequestId(item.id)}
                     />
+                  );
+                })}
+              </div>
+
+              <div className="mb-7">
+                <ReviewPager
+                  page={safePage}
+                  totalPages={totalPages}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  totalItems={sortedPostClaims.length}
+                  onPageChange={(nextPage) => {
+                    setPage(nextPage);
+                    const nextVisible = sortedPostClaims.slice(
+                      (nextPage - 1) * DETAIL_PAGE_SIZE,
+                      nextPage * DETAIL_PAGE_SIZE,
+                    );
+                    if (nextVisible[0]) {
+                      setSelectedRequestId(nextVisible[0].id);
+                    }
+                  }}
+                />
+              </div>
+            </>
+          )}
+
+          {activeClaim && (
+            <div className="rounded-[20px] border border-neutral-200 bg-white p-5 shadow-[0_20px_40px_-20px_rgba(24,24,27,0.10)] sm:p-6 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none">
+              <div className="mb-6">
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
+                  Claimant evidence
+                </p>
+                {activeClaim.evidence && activeClaim.evidence.length > 0 ? (
+                  <div
+                    className={`grid gap-3 ${
+                      activeClaim.evidence.length > 1
+                        ? "sm:grid-cols-2"
+                        : "max-w-[340px]"
+                    }`}
+                  >
+                    {activeClaim.evidence.map((image, index) => (
+                      <div
+                        key={`${activeClaim.id}-evidence-${index}`}
+                        className="aspect-[4/3] overflow-hidden rounded-[14px] border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800"
+                      >
+                        <img
+                          src={image}
+                          alt={`Photo evidence ${index + 1} submitted by ${activeClaim.claimant}`}
+                          loading="lazy"
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <NoItemImage
-                    title="No item photo provided"
-                    subtitle="This report did not include any photos of the item."
-                    className="h-72 w-full"
-                  />
+                  <div className="max-w-[340px]">
+                    <NoItemImage
+                      title="No photo evidence provided"
+                      subtitle="The claimant did not attach any photos to this request."
+                      className="aspect-[4/3] rounded-[14px]"
+                    />
+                  </div>
                 )}
               </div>
-              <div className="min-w-0">
-                {selectedItemPost ? (
-                  <>
-                    <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      {selectedItemPost.reportedBy}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                      Id number: {resolveIdNumber(selectedItemPost.reporterSchoolId, selectedItemPost.reporterEmail) || "N/A"}
-                    </p>
-                    <p className="mt-3 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
-                      {selectedItemPost.description}
-                    </p>
-                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-neutral-100 dark:border-neutral-800 py-3 text-xs">
-                      <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          <Tag className="h-3 w-3" aria-hidden="true" />
-                          Item name
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          {selectedItemPost.title || claim.item || "None"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          <Tag className="h-3 w-3" aria-hidden="true" />
-                          Category
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          {selectedItemPost.category || "None"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          <CalendarDays className="h-3 w-3" aria-hidden="true" />
-                          Post date
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          {selectedItemPost.date || "None"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          <CalendarClock
-                            className="h-3 w-3"
-                            aria-hidden="true"
-                          />
-                          {selectedItemPost.type === "Found"
-                            ? "Date found"
-                            : "Date lost"}
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          {formatEventDate(selectedItemPost.eventDateTime)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          <Clock3 className="h-3 w-3" aria-hidden="true" />
-                          {selectedItemPost.type === "Found" ? "Time found" : "Time lost"}
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          {formatEventTime(selectedItemPost.eventDateTime)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          <MapPin className="h-3 w-3" aria-hidden="true" />
-                          {selectedItemPost.type === "Lost"
-                            ? "Location lost"
-                            : "Location found"}
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          {selectedItemPost.specificLocation || "None"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          <Building2 className="h-3 w-3" aria-hidden="true" />
-                          Building
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          {selectedItemPost.buildingName?.trim() || "None"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          <Palette className="h-3 w-3" aria-hidden="true" />
-                          Color
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          {selectedItemPost.color?.trim() || "None"}
-                        </dd>
-                      </div>
-                      {selectedItemPost.type === "Found" && (
-                        <div>
-                          <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                            <Package className="h-3 w-3" aria-hidden="true" />
-                            Physical Item
-                          </dt>
-                          <dd className="mt-1">
-                            <OsaReceiptStatus received={selectedItemPost.receivedByOsa} />
-                            <button
-                              type="button"
-                              disabled={isUpdatingOsaReceipt}
-                              onClick={() =>
-                                onOsaReceiptChange(
-                                  selectedItemPost.id,
-                                  !selectedItemPost.receivedByOsa,
-                                )
-                              }
-                              className="mt-2 inline-flex h-8 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 px-2.5 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60"
-                            >
-                              {isUpdatingOsaReceipt
-                                ? "Updating…"
-                                : selectedItemPost.receivedByOsa
-                                  ? "Mark not yet received"
-                                  : "Mark received"}
-                            </button>
-                          </dd>
-                        </div>
-                      )}
-                      <div className="col-span-2">
-                        <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          <Lock className="h-3 w-3" aria-hidden="true" />
-                          Important details
-                        </dt>
-                        <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                          <LockedValue
-                            value={selectedItemPost.confidentialInfo}
-                            unlocked={unlocked}
-                            onUnlock={requestUnlock}
-                          />
-                        </dd>
-                      </div>
-                    </dl>
-                  </>
-                ) : (
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    The original item post could not be found.
+
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-[17px] font-semibold tracking-[-0.01em] text-neutral-900 dark:text-neutral-100">
+                    {activeClaim.claimant}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    ID{" "}
+                    {resolveIdNumber(
+                      activeClaim.schoolId,
+                      getClaimantEmail(activeClaim),
+                    ) || "N/A"}{" "}
+                    · Submitted {activeClaim.submitted}
                   </p>
+                  {selectedItemPost && (
+                    <OriginalPostButton onClick={() => setPostModalOpen(true)} />
+                  )}
+                </div>
+                <StatusBadge status={activeClaim.status} />
+              </div>
+
+              {!isLostItem &&
+                activeClaim.status === "Pending" &&
+                !itemReceived && (
+                  <div className="mb-4 rounded-[12px] border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+                    Approval is unavailable until the physical item is received
+                    by OSA.
+                  </div>
                 )}
-              </div>
-            </div>
-          </section>
-          <ClaimRequestSection
-            claim={claim}
-            headingId="claim-request-heading"
-            title={
-              siblingClaims.length > 0
-                ? `Claim request (${siblingClaims.length + 1})`
-                : "Claim request"
-            }
-            itemType={selectedItemPost?.type}
-            itemClaimed={selectedItemPost?.status === "Claimed"}
-            itemReceived={selectedItemPost?.receivedByOsa ?? false}
-            onRequestStatus={(claimId, status) =>
-              setPendingStatusChange({ claimId, status })
-            }
-            unlocked={unlocked}
-            onRequestUnlock={requestUnlock}
-          />
-          {siblingClaims.length > 0 && (
-            <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
-              <div className="space-y-2">
-                {siblingClaims.map((sibling) => (
-                  <ClaimRequestSection
-                    key={sibling.id}
-                    claim={sibling}
-                    headingId={`claim-request-${sibling.id}`}
-                    itemType={selectedItemPost?.type}
-                    itemClaimed={selectedItemPost?.status === "Claimed"}
-                    itemReceived={selectedItemPost?.receivedByOsa ?? false}
-                    onRequestStatus={(claimId, status) =>
-                      setPendingStatusChange({ claimId, status })
-                    }
-                    unlocked={unlocked}
-                    onRequestUnlock={requestUnlock}
-                  />
-                ))}
-              </div>
+
+              <SubmittedAnswersLedger
+                submittedByLabel="Submitted by claimant"
+                rows={activeLedgerRows}
+              />
+
+              {activeClaim.status !== "Claimed" &&
+                activeClaim.status !== "Rejected" && (
+                  <div className="mt-7 flex flex-wrap justify-end gap-2.5 border-t border-neutral-200 pt-5 dark:border-neutral-800">
+                    <button
+                      type="button"
+                      disabled={
+                        activeClaim.status !== "Pending" &&
+                        activeClaim.status !== "Approved"
+                      }
+                      onClick={() =>
+                        setPendingStatusChange({
+                          claimId: activeClaim.id,
+                          status: "Rejected",
+                        })
+                      }
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                    >
+                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                      Reject
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        activeClaim.status === "Returned" ||
+                        (!isLostItem &&
+                          activeClaim.status !== "Approved" &&
+                          !itemReceived) ||
+                        (!isLostItem &&
+                          itemClaimed &&
+                          activeClaim.status !== "Approved")
+                      }
+                      title={
+                        !isLostItem &&
+                        activeClaim.status === "Pending" &&
+                        !itemReceived
+                          ? "Item must be received by OSA before approving"
+                          : undefined
+                      }
+                      onClick={() =>
+                        setPendingStatusChange({
+                          claimId: activeClaim.id,
+                          status:
+                            !isLostItem && activeClaim.status === "Approved"
+                              ? "ItemClaimed"
+                              : isLostItem
+                                ? "Returned"
+                                : "Approved",
+                        })
+                      }
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                      {activeClaim.status === "Returned"
+                        ? "Returned"
+                        : activeClaim.status === "Approved" && !isLostItem
+                          ? "Mark as claimed"
+                          : isLostItem
+                            ? "Mark as returned"
+                            : "Approve request"}
+                    </button>
+                  </div>
+                )}
             </div>
           )}
-        </div>
-      </Panel>
+        </section>
+      </div>
+
+      {selectedItemPost && (
+        <OriginalPostDialog
+          open={postModalOpen}
+          onClose={() => setPostModalOpen(false)}
+          image={selectedItemPost.image}
+          imageAlt={`${claim.item} item`}
+          reporterName={selectedItemPost.reportedBy}
+          reporterMeta={`${reporterMeta}${
+            selectedItemPost.date ? ` · Posted ${selectedItemPost.date}` : ""
+          }`}
+          facts={postFacts}
+          notes={selectedItemPost.description}
+        />
+      )}
+
       <AdminPasswordModal
         open={promptOpen}
         onClose={() => setPromptOpen(false)}
