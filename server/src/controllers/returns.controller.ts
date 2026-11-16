@@ -238,6 +238,10 @@ export async function updateMyReturn(req: Request, res: Response): Promise<void>
     zodError(res, parsed.error);
     return;
   }
+  if (!parsed.data.evidence || parsed.data.evidence.length === 0) {
+    res.status(400).json({ message: "Please attach at least 1 photo for your found report." });
+    return;
+  }
 
   const requestId = requestIdParam(req);
   if (!requestId) {

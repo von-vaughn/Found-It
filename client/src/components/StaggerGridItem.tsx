@@ -42,8 +42,7 @@ export const StaggerGrid: React.FC<StaggerGridProps> = ({
       className={className}
       variants={gridVariants}
       initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, amount: 0.05 }}
+      animate="show"
     >
       {children}
     </motion.div>
@@ -64,7 +63,12 @@ export const StaggerItem: React.FC<StaggerItemProps> = ({
     return <div className={className}>{children}</div>;
   }
   return (
-    <motion.div className={className} variants={itemVariants}>
+    <motion.div
+      className={className}
+      variants={itemVariants}
+      initial="hidden"
+      animate="show"
+    >
       {children}
     </motion.div>
   );

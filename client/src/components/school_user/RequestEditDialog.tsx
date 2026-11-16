@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Camera, CameraOff, ImagePlus, X } from "lucide-react";
 import { SelectDropdown } from "@/components/SelectDropdown";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
@@ -117,6 +118,17 @@ function LiveFoundCameraCapture({
     };
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   const captureFrame = () => {
     const video = videoRef.current;
     if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
@@ -145,57 +157,95 @@ function LiveFoundCameraCapture({
     );
   };
 
-  return (
-    <div className="mt-3 space-y-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-neutral-950">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          aria-label="Live camera preview"
-          className={`h-full w-full object-cover ${status === "error" ? "hidden" : ""}`}
-        />
-        {status === "starting" && (
-          <div
-            role="status"
-            className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-950 text-xs font-medium text-white"
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-neutral-950/70 p-4"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-found-camera-title"
+        className="w-full max-w-xl overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <header className="flex items-center justify-between gap-4 border-b border-neutral-200 px-5 py-4 dark:border-neutral-800 sm:px-6">
+          <div className="min-w-0">
+            <h3
+              id="edit-found-camera-title"
+              className="text-base font-bold text-neutral-900 dark:text-neutral-100"
+            >
+              Photograph the found item
+            </h3>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+              Take a photo of the item.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close camera modal"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300 cursor-pointer"
           >
-            <Camera className="h-5 w-5" aria-hidden="true" />
-            Starting camera…
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="space-y-4 p-5 sm:p-6">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-neutral-950">
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              aria-label="Live camera preview"
+              className={`h-full w-full object-cover ${status === "error" ? "hidden" : ""}`}
+            />
+            {status === "starting" && (
+              <div
+                role="status"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-neutral-950 text-sm font-medium text-white"
+              >
+                <Camera className="h-6 w-6" aria-hidden="true" />
+                Starting camera…
+              </div>
+            )}
+            {status === "error" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-sm text-neutral-300">
+                <CameraOff className="h-6 w-6 text-neutral-400" aria-hidden="true" />
+                <p>{cameraError}</p>
+              </div>
+            )}
           </div>
-        )}
-        {status === "error" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-neutral-300">
-            <CameraOff className="h-5 w-5 text-neutral-400" aria-hidden="true" />
-            <p>{cameraError}</p>
+          {status !== "error" && cameraError && (
+            <p className="text-xs font-medium text-red-700 dark:text-red-400" role="alert">
+              {cameraError}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-10 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={status !== "ready"}
+              onClick={captureFrame}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            >
+              <Camera className="h-4 w-4" aria-hidden="true" />
+              Capture photo
+            </button>
           </div>
-        )}
-      </div>
-      {status !== "error" && cameraError && (
-        <p className="text-xs font-medium text-red-700 dark:text-red-400" role="alert">
-          {cameraError}
-        </p>
-      )}
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-9 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          disabled={status !== "ready"}
-          onClick={captureFrame}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-        >
-          <Camera className="h-3.5 w-3.5" aria-hidden="true" />
-          Capture photo
-        </button>
-      </div>
-    </div>
+        </div>
+      </section>
+    </div>,
+    document.body,
   );
 }
 
@@ -363,6 +413,10 @@ function RequestEditForm({
       setError("Complete each required field before saving.");
       return;
     }
+    if (isFoundReport && evidencePhotos.length === 0) {
+      setError("Please attach at least 1 photo for your found report.");
+      return;
+    }
     if (evidencePhotos.length > MAX_EVIDENCE_IMAGES) {
       setError(`Remove pictures until there are ${MAX_EVIDENCE_IMAGES} or fewer.`);
       return;
@@ -455,7 +509,12 @@ function RequestEditForm({
                 id="edit-request-evidence-label"
                 className={labelClass}
               >
-                Picture evidence
+                Picture evidence{" "}
+                {isFoundReport && (
+                  <span className="text-[#E5192D]" aria-hidden="true">
+                    *
+                  </span>
+                )}
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {isFoundReport
@@ -545,6 +604,11 @@ function RequestEditForm({
                 </label>
               ))}
           </div>
+          {isFoundReport && evidencePhotos.length === 0 && (
+            <p className="mt-2 text-xs font-medium text-[#E5192D]">
+              At least 1 photo is required to save this found report.
+            </p>
+          )}
           {isFoundReport &&
             !isMobileView &&
             cameraOpen &&
@@ -703,8 +767,8 @@ function RequestEditForm({
             Cancel
           </button>
           <button
-            className="h-11 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
-            disabled={isBusy}
+            className="h-11 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isBusy || (isFoundReport && evidencePhotos.length === 0)}
             type="submit"
           >
             {isUploading

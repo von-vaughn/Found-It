@@ -56,10 +56,12 @@ export function useItems(
 export function useMyItems(
   options?: Omit<UseQueryOptions<ServerItem[], Error>, "queryKey" | "queryFn">,
 ) {
+  const { user } = useAuth();
   const viewerKey = useViewerKey();
   return useQuery<ServerItem[], Error>({
     queryKey: [...itemKeys.mine(), viewerKey],
     queryFn: listMyItems,
+    enabled: Boolean(user),
     ...options,
   });
 }
