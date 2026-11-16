@@ -23,6 +23,7 @@ import {
   FilterChips,
   OriginalPostCard,
   ReviewPager,
+  SubmittedRequestCard,
   type ReviewFactRow,
 } from "./ReviewLayout";
 import { AdminPasswordModal, LockedValue } from "./SensitiveDetails";
@@ -547,12 +548,6 @@ export function ReturnDetailPanel({
           value: activeRequest.timeLost || "None",
         },
         {
-          id: "item-name",
-          icon: Tag,
-          label: "Item name",
-          value: activeRequest.item || "None",
-        },
-        {
           id: "physical-item",
           icon: Package,
           label: "Physical item",
@@ -622,63 +617,37 @@ export function ReturnDetailPanel({
         notes={selectedLostReport?.description}
       />
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Return request{" "}
+            <span className="font-mono text-sm font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
+              {activeRequest ? 1 : 0}
+            </span>
+          </h2>
+        </div>
         {activeRequest && (
-          <div className="rounded-[20px] border border-neutral-200 bg-white p-5 shadow-[0_20px_40px_-20px_rgba(24,24,27,0.10)] sm:p-6 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none">
-            <div className="grid gap-8 md:grid-cols-[280px_minmax(0,1fr)] md:items-start lg:grid-cols-[340px_minmax(0,1fr)]">
-              <div className="min-w-0">
-                {activeRequest.evidence?.length ? (
-                  <div
-                    className={`grid gap-3 ${
-                      activeRequest.evidence.length > 1
-                        ? "sm:grid-cols-2 md:grid-cols-1"
-                        : ""
-                    }`}
-                  >
-                    {activeRequest.evidence.map((image, index) => (
-                      <div
-                        key={`${activeRequest.id}-evidence-${index}`}
-                        className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800"
-                      >
-                        <img
-                          src={image}
-                          alt={`Evidence ${index + 1} from ${activeRequest.claimant}`}
-                          loading="lazy"
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <NoItemImage
-                    title="No photo evidence provided"
-                    subtitle="The finder did not attach any photos to this request."
-                    className="aspect-[4/3] w-full rounded-3xl"
-                  />
-                )}
-              </div>
-
-              <article className="min-w-0">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h2 className="truncate text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-                      {activeRequest.claimant}
-                    </h2>
-                    <p className="mt-0.5 truncate text-xs text-neutral-400 dark:text-neutral-500">
-                      ID{" "}
-                      {resolveIdNumber(
-                        activeRequest.schoolId,
-                        activeRequest.email,
-                      ) || "N/A"}{" "}
-                      · Submitted {activeRequest.submitted}
-                    </p>
-                  </div>
-                  <StatusBadge status={activeRequest.status} />
-                </div>
-
+          <SubmittedRequestCard
+            requestKey={activeRequest.id}
+            requestTypeLabel="Return Request"
+            submitted={activeRequest.submitted}
+            itemTitle={activeRequest.claimantTitle?.trim() || activeRequest.item}
+            applicantName={activeRequest.claimant}
+            applicantId={
+              resolveIdNumber(activeRequest.schoolId, activeRequest.email) ||
+              "N/A"
+            }
+            status={activeRequest.status}
+            photos={(activeRequest.evidence ?? []).map((image, index) => ({
+              src: image,
+              alt: `Evidence ${index + 1} from ${activeRequest.claimant}`,
+            }))}
+            emptyPhotoSubtitle="The finder did not attach any photos to this request."
+            notices={
+              <>
                 {activeRequest.status === "Pending" &&
                   !activeRequest.receivedByOsa && (
-                    <div className="mt-4 rounded-[12px] border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
                       Approval is unavailable until the physical item is
                       received by OSA.
                     </div>
@@ -686,133 +655,86 @@ export function ReturnDetailPanel({
 
                 {activeRequest.status === "Rejected" &&
                   activeRequest.publishedItemId && (
-                    <div className="mt-4 rounded-[12px] border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300">
+                    <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300">
                       This found-item post is already available in the public
                       listings.
                     </div>
                   )}
-
-                <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-                  Finder return report
-                </p>
-                <p className="mt-3 text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                  Description
-                </p>
-                <p className="mt-1 break-words text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                  {activeRequest.details?.trim() ||
-                    "No additional details provided."}
-                </p>
-
-                <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 text-xs sm:grid-cols-2 dark:border-neutral-800">
-                  {activeFactRows.map((fact) => {
-                    const Icon = fact.icon;
-                    return (
-                      <div
-                        key={fact.id}
-                        className="flex items-start gap-2.5 py-3"
-                      >
-                        {Icon && (
-                          <Icon
-                            className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                            aria-hidden="true"
-                          />
-                        )}
-                        <div className="min-w-0">
-                          <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                            {fact.label}
-                          </dt>
-                          <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                            {fact.value}
-                          </dd>
-                          {fact.note && (
-                            <span className="mt-0.5 block text-xs font-normal text-neutral-400 dark:text-neutral-500">
-                              {fact.note}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </dl>
-
-                {activeRequest.status === "Pending" && (
-                  <div className="mt-6 flex flex-wrap justify-end gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        requestStatusChange(activeRequest.id, "Rejected")
-                      }
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
-                    >
-                      <X className="h-3.5 w-3.5" aria-hidden="true" />
-                      Reject
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!activeRequest.receivedByOsa}
-                      title={
-                        !activeRequest.receivedByOsa
-                          ? "Item must be received by OSA before approving"
-                          : undefined
-                      }
-                      onClick={() =>
-                        requestStatusChange(activeRequest.id, "Approved")
-                      }
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                      Approve
-                    </button>
-                  </div>
-                )}
-
-                {activeRequest.status === "Approved" && (
-                  <div className="mt-6 flex flex-wrap justify-end gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        requestStatusChange(activeRequest.id, "Pending")
-                      }
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        requestStatusChange(activeRequest.id, "Returned")
-                      }
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
-                    >
-                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                      Mark as returned
-                    </button>
-                  </div>
-                )}
-
-                {activeRequest.status === "Rejected" && (
-                  <div className="mt-6 flex flex-wrap justify-end gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setConfirmPublishRequest(activeRequest)}
-                      disabled={
-                        Boolean(activeRequest.publishedItemId) ||
-                        publishingActive
-                      }
-                      className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55"
-                    >
-                      <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                      {activeRequest.publishedItemId
-                        ? "Posted as found item"
-                        : publishingActive
-                          ? "Posting item…"
-                          : "Post as found item"}
-                    </button>
-                  </div>
-                )}
-              </article>
-            </div>
-          </div>
+              </>
+            }
+            description={activeRequest.details}
+            facts={activeFactRows}
+            actions={
+              activeRequest.status === "Pending" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      requestStatusChange(activeRequest.id, "Rejected")
+                    }
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    Reject
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!activeRequest.receivedByOsa}
+                    title={
+                      !activeRequest.receivedByOsa
+                        ? "Item must be received by OSA before approving"
+                        : undefined
+                    }
+                    onClick={() =>
+                      requestStatusChange(activeRequest.id, "Approved")
+                    }
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    Approve
+                  </button>
+                </>
+              ) : activeRequest.status === "Approved" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      requestStatusChange(activeRequest.id, "Pending")
+                    }
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      requestStatusChange(activeRequest.id, "Returned")
+                    }
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
+                  >
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    Mark as returned
+                  </button>
+                </>
+              ) : activeRequest.status === "Rejected" ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmPublishRequest(activeRequest)}
+                  disabled={
+                    Boolean(activeRequest.publishedItemId) || publishingActive
+                  }
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                  {activeRequest.publishedItemId
+                    ? "Posted as found item"
+                    : publishingActive
+                      ? "Posting item…"
+                      : "Post as found item"}
+                </button>
+              ) : undefined
+            }
+          />
         )}
       </div>
 

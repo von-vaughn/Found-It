@@ -1,6 +1,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Tag, X, type LucideIcon } from "lucide-react";
 import { NoItemImage } from "@/components/NoItemImage";
+import { PhotoCarousel, type CarouselPhoto } from "@/components/PhotoCarousel";
+import {
+  simplifiedClaimStatusStyles,
+  simplifyClaimStatus,
+} from "@/components/school_user/claimStatus";
+import type { ClaimRequest } from "@/types/claim";
 import { StatusBadge } from "./StatusBadge";
 import type { MatchTone } from "./requestComparison";
 
@@ -239,79 +245,46 @@ export function OriginalPostCard({
 }) {
   if (layout === "horizontal") {
     const heroFacts = facts.filter((fact) => fact.id !== "item-name");
+    const normalizedType = reportTypeLabel.toLowerCase();
+    const typeBadge = normalizedType.includes("lost")
+      ? {
+          label: "Lost",
+          style:
+            "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-300 border border-orange-200/70 dark:border-orange-500/25",
+        }
+      : normalizedType.includes("found")
+        ? {
+            label: "Found",
+            style:
+              "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/70 dark:border-sky-500/25",
+          }
+        : null;
+
     return (
-      <section aria-label="Original post" className="px-5 sm:px-6">
-        <div className="grid gap-8 md:grid-cols-[280px_minmax(0,1fr)] md:items-start lg:grid-cols-[340px_minmax(0,1fr)]">
-          <div className="min-w-0">
-          {image ? (
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
-              <img
-                src={image}
-                alt={imageAlt}
-                className="h-full w-full object-contain"
-              />
-            </div>
-          ) : (
-            <NoItemImage
-              title="No image attached to this report."
-              className="aspect-[4/3] w-full rounded-3xl"
-            />
-          )}
+      <div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+            Original post
+          </h2>
         </div>
-
-        <article className="min-w-0">
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-              {itemTitle || imageAlt}
-            </h1>
-            <p className="mt-0.5 truncate text-xs text-neutral-400 dark:text-neutral-500">
-              {reporterName} · {reporterMeta} · {postedDateLabel}
-            </p>
-          </div>
-
-          <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-            {reportTypeLabel}
-          </p>
-          <p className="mt-3 text-xs font-bold text-neutral-900 dark:text-neutral-100">
-            Description
-          </p>
-          <p className="mt-1 break-words text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-            {notes?.trim() || "No additional description provided."}
-          </p>
-
-          <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 text-xs sm:grid-cols-2 dark:border-neutral-800">
-            {heroFacts.map((fact) => {
-              const Icon = fact.icon;
-              return (
-                <div key={fact.id} className="flex items-start gap-2.5 py-3">
-                  {Icon && (
-                    <Icon
-                      className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                      {fact.label}
-                    </dt>
-                    <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                      {fact.value}
-                    </dd>
-                    {fact.note && (
-                      <span className="mt-0.5 block text-xs font-normal text-amber-700 dark:text-amber-300">
-                        {fact.note}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </dl>
-
-          {footer && <div className="mt-4">{footer}</div>}
-        </article>
-        </div>
-      </section>
+        <ReviewDetailCard
+          ariaLabel="Original post"
+          photoKey={image || itemTitle || imageAlt}
+          eyebrow={reportTypeLabel}
+          title={itemTitle || imageAlt}
+          subtitle={`${reporterName} · ${reporterMeta}`}
+          badgeLabel={typeBadge?.label}
+          badgeStyle={typeBadge?.style}
+          timestampLabel={postedDateLabel}
+          photos={image ? [{ src: image, alt: imageAlt }] : []}
+          emptyPhotoTitle="No image attached to this report."
+          emptyPhotoSubtitle="The reporter did not attach any photos to this post."
+          description={notes}
+          emptyDescription="No additional description provided."
+          facts={heroFacts}
+          actions={footer}
+        />
+      </div>
     );
   }
 
@@ -653,5 +626,231 @@ export function OriginalPostDialog({
         />
       </div>
     </dialog>
+  );
+}
+
+/** Shared horizontal detail card matching the school_user Claims & Returned card design. */
+function ReviewDetailCard({
+  ariaLabel,
+  photoKey,
+  eyebrow,
+  title,
+  subtitle,
+  badgeLabel,
+  badgeStyle,
+  timestampLabel,
+  photos,
+  emptyPhotoTitle,
+  emptyPhotoSubtitle,
+  notices,
+  description,
+  emptyDescription = "No additional details provided.",
+  facts,
+  actions,
+}: {
+  ariaLabel: string;
+  photoKey: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  badgeLabel?: string;
+  badgeStyle?: string;
+  timestampLabel: string;
+  photos: ReadonlyArray<CarouselPhoto>;
+  emptyPhotoTitle: string;
+  emptyPhotoSubtitle: string;
+  notices?: ReactNode;
+  description?: string;
+  emptyDescription?: string;
+  facts: ReviewFactRow[];
+  actions?: ReactNode;
+}) {
+  const importantFact = facts.find((fact) => fact.id === "important-details");
+  const physicalFact = facts.find((fact) => fact.id === "physical-item");
+  const gridFacts = facts.filter(
+    (fact) => fact.id !== "important-details" && fact.id !== "physical-item",
+  );
+  const smFillerCount = (3 - (gridFacts.length % 3)) % 3;
+  const baseFillerNeeded = gridFacts.length % 2 === 1;
+
+  return (
+    <section
+      aria-label={ariaLabel}
+      className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <div className="p-4 sm:p-5">
+        <div className="grid gap-5 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]">
+          <PhotoCarousel
+            key={photoKey}
+            photos={photos}
+            emptyTitle={emptyPhotoTitle}
+            emptySubtitle={emptyPhotoSubtitle}
+          />
+          <article className="flex min-w-0 flex-col">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                  {eyebrow}
+                </p>
+                <h2 className="mt-1 truncate text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                  {title}
+                </h2>
+                <p className="mt-0.5 truncate text-xs text-neutral-400 dark:text-neutral-500">
+                  {subtitle}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                {badgeLabel && badgeStyle && (
+                  <span
+                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold ${badgeStyle}`}
+                  >
+                    {badgeLabel}
+                  </span>
+                )}
+                <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+                  {timestampLabel}
+                </span>
+              </div>
+            </div>
+
+            {notices}
+
+            <div className="mt-4">
+              <h4 className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+                Description
+              </h4>
+              <p className="mt-1 break-words text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
+                {description?.trim() || emptyDescription}
+              </p>
+            </div>
+
+            <dl className="mt-4 grid grid-cols-2 gap-px border-y border-neutral-200/80 bg-neutral-200/80 text-xs sm:grid-cols-3 dark:border-neutral-800 dark:bg-neutral-800">
+              {gridFacts.map((fact) => {
+                const Icon = fact.icon;
+                return (
+                  <div
+                    key={fact.id}
+                    className="bg-white px-3 py-3 dark:bg-neutral-900"
+                  >
+                    <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
+                      {Icon && (
+                        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      )}
+                      {fact.label}
+                    </dt>
+                    <dd className="mt-1 break-words font-semibold text-neutral-900 dark:text-neutral-100">
+                      {fact.value}
+                    </dd>
+                  </div>
+                );
+              })}
+              {baseFillerNeeded && (
+                <div
+                  aria-hidden="true"
+                  className="bg-white sm:hidden dark:bg-neutral-900"
+                />
+              )}
+              {Array.from({ length: smFillerCount }, (_, index) => (
+                <div
+                  key={`filler-${index}`}
+                  aria-hidden="true"
+                  className="hidden bg-white sm:block dark:bg-neutral-900"
+                />
+              ))}
+              {physicalFact && (
+                <div className="col-span-full bg-white px-3 py-3 dark:bg-neutral-900">
+                  <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
+                    {physicalFact.icon && (
+                      <physicalFact.icon
+                        className="h-3.5 w-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                    )}
+                    {physicalFact.label}
+                  </dt>
+                  <dd className="mt-1.5 font-semibold text-neutral-900 dark:text-neutral-100">
+                    {physicalFact.value}
+                  </dd>
+                </div>
+              )}
+            </dl>
+
+            {importantFact && (
+              <div className="mt-4 rounded-xl border border-neutral-200/80 bg-neutral-50/80 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
+                <h4 className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+                  {importantFact.label}
+                </h4>
+                <div className="mt-1 break-words text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
+                  {importantFact.value}
+                </div>
+                {importantFact.note && (
+                  <span className="mt-1 block text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                    {importantFact.note}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {actions && (
+              <div className="mt-auto flex flex-wrap items-center justify-end gap-2 pt-5">
+                {actions}
+              </div>
+            )}
+          </article>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Shared review card styled identically to the school_user Claims & Returned cards. */
+export function SubmittedRequestCard({
+  requestKey,
+  requestTypeLabel,
+  submitted,
+  itemTitle,
+  applicantName,
+  applicantId,
+  status,
+  photos,
+  emptyPhotoSubtitle,
+  notices,
+  description,
+  facts,
+  actions,
+}: {
+  requestKey: string;
+  requestTypeLabel: string;
+  submitted: string;
+  itemTitle: string;
+  applicantName: string;
+  applicantId: string;
+  status: ClaimRequest["status"];
+  photos: ReadonlyArray<CarouselPhoto>;
+  emptyPhotoSubtitle: string;
+  notices?: ReactNode;
+  description?: string;
+  facts: ReviewFactRow[];
+  actions?: ReactNode;
+}) {
+  const statusLabel = simplifyClaimStatus(status);
+  return (
+    <ReviewDetailCard
+      ariaLabel={`${requestTypeLabel} from ${applicantName}`}
+      photoKey={requestKey}
+      eyebrow={requestTypeLabel}
+      title={itemTitle}
+      subtitle={`${applicantName} · ID ${applicantId}`}
+      badgeLabel={statusLabel}
+      badgeStyle={simplifiedClaimStatusStyles[statusLabel]}
+      timestampLabel={`Submitted ${submitted}`}
+      photos={photos}
+      emptyPhotoTitle="No photo evidence provided"
+      emptyPhotoSubtitle={emptyPhotoSubtitle}
+      notices={notices}
+      description={description}
+      facts={facts}
+      actions={actions}
+    />
   );
 }

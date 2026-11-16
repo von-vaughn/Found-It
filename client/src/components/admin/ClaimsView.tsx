@@ -24,6 +24,7 @@ import {
   OriginalPostCard,
   RequestSelectorCard,
   ReviewPager,
+  SubmittedRequestCard,
   type ReviewFactRow,
 } from "./ReviewLayout";
 import { AdminPasswordModal, LockedValue } from "./SensitiveDetails";
@@ -537,7 +538,7 @@ export function ClaimDetailPanel({
       ) || "N/A"
     : "N/A";
   const reporterMeta = selectedItemPost
-    ? `${isLostItem ? "Owner" : "Finder"} · ID ${reporterId}`
+    ? `${isLostItem ? "Owner · " : ""}ID ${reporterId}`
     : "Original post details unavailable";
 
   const activeFactRows: ReviewFactRow[] = activeClaim
@@ -727,77 +728,83 @@ export function ClaimDetailPanel({
         notes={selectedItemPost?.description}
       />
 
-      <div className="mt-8 space-y-6">
-        {sortedPostClaims.length > 1 && (
-          <section aria-labelledby="claim-requests-list-heading" className="min-w-0">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2
-                id="claim-requests-list-heading"
-                className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100"
-              >
-                Claim requests{" "}
-                <span className="font-mono font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
-                  {sortedPostClaims.length}
-                </span>
-              </h2>
+      <div className="mt-8 space-y-4">
+        <section aria-labelledby="claim-requests-list-heading" className="min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2
+              id="claim-requests-list-heading"
+              className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100"
+            >
+              {sortedPostClaims.length === 1
+                ? "Claim request"
+                : "Claim requests"}{" "}
+              <span className="font-mono text-sm font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
+                {sortedPostClaims.length}
+              </span>
+            </h2>
+            {sortedPostClaims.length > 1 && (
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
                 {selectedItemPost
                   ? "Sorted by match with the post"
                   : "Submitted claim requests"}
               </p>
-            </div>
+            )}
+          </div>
 
-            <div className="mb-4 grid gap-2.5 sm:grid-cols-2">
-              {visibleClaims.map((item) => {
-                const comparison = compareRequestWithPost(
-                  item,
-                  selectedItemPost,
-                );
-                const tones = selectedItemPost
-                  ? [
-                      comparison.color.status,
-                      comparison.date.status,
-                      comparison.location.status,
-                      comparison.building.status,
-                    ]
-                  : undefined;
-                const idNum =
-                  resolveIdNumber(item.schoolId, getClaimantEmail(item)) ||
-                  "N/A";
-                return (
-                  <RequestSelectorCard
-                    key={item.id}
-                    name={item.claimant}
-                    subtitle={`ID ${idNum} · ${item.submitted}`}
-                    status={item.status}
-                    selected={activeClaim?.id === item.id}
-                    matchTones={tones}
-                    onClick={() => setSelectedRequestId(item.id)}
-                  />
-                );
-              })}
-            </div>
+          {sortedPostClaims.length > 1 && (
+            <>
+              <div className="mt-3 mb-4 grid gap-2.5 sm:grid-cols-2">
+                {visibleClaims.map((item) => {
+                  const comparison = compareRequestWithPost(
+                    item,
+                    selectedItemPost,
+                  );
+                  const tones = selectedItemPost
+                    ? [
+                        comparison.color.status,
+                        comparison.date.status,
+                        comparison.location.status,
+                        comparison.building.status,
+                      ]
+                    : undefined;
+                  const idNum =
+                    resolveIdNumber(item.schoolId, getClaimantEmail(item)) ||
+                    "N/A";
+                  return (
+                    <RequestSelectorCard
+                      key={item.id}
+                      name={item.claimant}
+                      subtitle={`ID ${idNum} · ${item.submitted}`}
+                      status={item.status}
+                      selected={activeClaim?.id === item.id}
+                      matchTones={tones}
+                      onClick={() => setSelectedRequestId(item.id)}
+                    />
+                  );
+                })}
+              </div>
 
-            <ReviewPager
-              page={safePage}
-              totalPages={totalPages}
-              rangeStart={rangeStart}
-              rangeEnd={rangeEnd}
-              totalItems={sortedPostClaims.length}
-              showRange={false}
-              onPageChange={(nextPage) => {
-                setPage(nextPage);
-                const nextVisible = sortedPostClaims.slice(
-                  (nextPage - 1) * DETAIL_PAGE_SIZE,
-                  nextPage * DETAIL_PAGE_SIZE,
-                );
-                if (nextVisible[0]) {
-                  setSelectedRequestId(nextVisible[0].id);
-                }
-              }}
-            />
-          </section>
-        )}
+              <ReviewPager
+                page={safePage}
+                totalPages={totalPages}
+                rangeStart={rangeStart}
+                rangeEnd={rangeEnd}
+                totalItems={sortedPostClaims.length}
+                showRange={false}
+                onPageChange={(nextPage) => {
+                  setPage(nextPage);
+                  const nextVisible = sortedPostClaims.slice(
+                    (nextPage - 1) * DETAIL_PAGE_SIZE,
+                    nextPage * DETAIL_PAGE_SIZE,
+                  );
+                  if (nextVisible[0]) {
+                    setSelectedRequestId(nextVisible[0].id);
+                  }
+                }}
+              />
+            </>
+          )}
+        </section>
 
         {sortedPostClaims.length === 0 ? (
           <div className="rounded-[14px] border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
@@ -805,177 +812,103 @@ export function ClaimDetailPanel({
           </div>
         ) : (
           activeClaim && (
-            <div className="rounded-[20px] border border-neutral-200 bg-white p-5 shadow-[0_20px_40px_-20px_rgba(24,24,27,0.10)] sm:p-6 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none">
-              <div className="grid gap-8 md:grid-cols-[280px_minmax(0,1fr)] md:items-start lg:grid-cols-[340px_minmax(0,1fr)]">
-                <div className="min-w-0">
-                  {activeClaim.evidence && activeClaim.evidence.length > 0 ? (
-                    <div
-                      className={`grid gap-3 ${
-                        activeClaim.evidence.length > 1
-                          ? "sm:grid-cols-2 md:grid-cols-1"
-                          : ""
-                      }`}
-                    >
-                      {activeClaim.evidence.map((image, index) => (
-                        <div
-                          key={`${activeClaim.id}-evidence-${index}`}
-                          className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800"
-                        >
-                          <img
-                            src={image}
-                            alt={`Photo evidence ${index + 1} submitted by ${activeClaim.claimant}`}
-                            loading="lazy"
-                            className="h-full w-full object-contain"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <NoItemImage
-                      title="No photo evidence provided"
-                      subtitle="The claimant did not attach any photos to this request."
-                      className="aspect-[4/3] w-full rounded-3xl"
-                    />
-                  )}
-                </div>
-
-                <article className="min-w-0">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="truncate text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-                        {activeClaim.claimant}
-                      </h2>
-                      <p className="mt-0.5 truncate text-xs text-neutral-400 dark:text-neutral-500">
-                        ID{" "}
-                        {resolveIdNumber(
-                          activeClaim.schoolId,
-                          getClaimantEmail(activeClaim),
-                        ) || "N/A"}{" "}
-                        · Submitted {activeClaim.submitted}
-                      </p>
-                    </div>
-                    <StatusBadge status={activeClaim.status} />
+            <SubmittedRequestCard
+              requestKey={activeClaim.id}
+              requestTypeLabel="Claim Request"
+              submitted={activeClaim.submitted}
+              itemTitle={activeClaim.claimantTitle?.trim() || activeClaim.item}
+              applicantName={activeClaim.claimant}
+              applicantId={
+                resolveIdNumber(
+                  activeClaim.schoolId,
+                  getClaimantEmail(activeClaim),
+                ) || "N/A"
+              }
+              status={activeClaim.status}
+              photos={(activeClaim.evidence ?? []).map((image, index) => ({
+                src: image,
+                alt: `Photo evidence ${index + 1} submitted by ${activeClaim.claimant}`,
+              }))}
+              emptyPhotoSubtitle="The claimant did not attach any photos to this request."
+              notices={
+                !isLostItem &&
+                activeClaim.status === "Pending" &&
+                !itemReceived ? (
+                  <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+                    Approval is unavailable until the physical item is received
+                    by OSA.
                   </div>
-
-                  {!isLostItem &&
-                    activeClaim.status === "Pending" &&
-                    !itemReceived && (
-                      <div className="mt-4 rounded-[12px] border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
-                        Approval is unavailable until the physical item is
-                        received by OSA.
-                      </div>
-                    )}
-
-                  <p className="mt-6 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-                    Ownership claim report
-                  </p>
-                  <p className="mt-3 text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                    Description
-                  </p>
-                  <p className="mt-1 break-words text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                    {activeClaim.details?.trim() ||
-                      "No additional details provided."}
-                  </p>
-
-                  <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 text-xs sm:grid-cols-2 dark:border-neutral-800">
-                    {activeFactRows.map((fact) => {
-                      const Icon = fact.icon;
-                      return (
-                        <div
-                          key={fact.id}
-                          className="flex items-start gap-2.5 py-3"
-                        >
-                          {Icon && (
-                            <Icon
-                              className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                              aria-hidden="true"
-                            />
-                          )}
-                          <div className="min-w-0">
-                            <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                              {fact.label}
-                            </dt>
-                            <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                              {fact.value}
-                            </dd>
-                            {fact.note && (
-                              <span className="mt-0.5 block text-xs font-normal text-neutral-400 dark:text-neutral-500">
-                                {fact.note}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </dl>
-
-                  {activeClaim.status !== "Claimed" &&
-                    activeClaim.status !== "Rejected" && (
-                      <div className="mt-6 flex flex-wrap justify-end gap-2.5">
-                        <button
-                          type="button"
-                          disabled={
-                            activeClaim.status !== "Pending" &&
-                            activeClaim.status !== "Approved"
-                          }
-                          onClick={() => {
-                            setRejectReason("");
-                            setRejectError("");
-                            setPendingStatusChange({
-                              claimId: activeClaim.id,
-                              status: "Rejected",
-                            });
-                          }}
-                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
-                        >
-                          <X className="h-3.5 w-3.5" aria-hidden="true" />
-                          Reject
-                        </button>
-                        <button
-                          type="button"
-                          disabled={
-                            activeClaim.status === "Returned" ||
-                            (!isLostItem &&
-                              activeClaim.status !== "Approved" &&
-                              !itemReceived) ||
-                            (!isLostItem &&
-                              itemClaimed &&
-                              activeClaim.status !== "Approved")
-                          }
-                          title={
-                            !isLostItem &&
-                            activeClaim.status === "Pending" &&
-                            !itemReceived
-                              ? "Item must be received by OSA before approving"
-                              : undefined
-                          }
-                          onClick={() =>
-                            setPendingStatusChange({
-                              claimId: activeClaim.id,
-                              status:
-                                !isLostItem && activeClaim.status === "Approved"
-                                  ? "ItemClaimed"
-                                  : isLostItem
-                                    ? "Returned"
-                                    : "Approved",
-                            })
-                          }
-                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-                        >
-                          <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                          {activeClaim.status === "Returned"
-                            ? "Returned"
-                            : activeClaim.status === "Approved" && !isLostItem
-                              ? "Mark as claimed"
+                ) : undefined
+              }
+              description={activeClaim.details}
+              facts={activeFactRows}
+              actions={
+                activeClaim.status !== "Claimed" &&
+                activeClaim.status !== "Rejected" ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={
+                        activeClaim.status !== "Pending" &&
+                        activeClaim.status !== "Approved"
+                      }
+                      onClick={() => {
+                        setRejectReason("");
+                        setRejectError("");
+                        setPendingStatusChange({
+                          claimId: activeClaim.id,
+                          status: "Rejected",
+                        });
+                      }}
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                    >
+                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                      Reject
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        activeClaim.status === "Returned" ||
+                        (!isLostItem &&
+                          activeClaim.status !== "Approved" &&
+                          !itemReceived) ||
+                        (!isLostItem &&
+                          itemClaimed &&
+                          activeClaim.status !== "Approved")
+                      }
+                      title={
+                        !isLostItem &&
+                        activeClaim.status === "Pending" &&
+                        !itemReceived
+                          ? "Item must be received by OSA before approving"
+                          : undefined
+                      }
+                      onClick={() =>
+                        setPendingStatusChange({
+                          claimId: activeClaim.id,
+                          status:
+                            !isLostItem && activeClaim.status === "Approved"
+                              ? "ItemClaimed"
                               : isLostItem
-                                ? "Mark as returned"
-                                : "Approve request"}
-                        </button>
-                      </div>
-                    )}
-                </article>
-              </div>
-            </div>
+                                ? "Returned"
+                                : "Approved",
+                        })
+                      }
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                      {activeClaim.status === "Returned"
+                        ? "Returned"
+                        : activeClaim.status === "Approved" && !isLostItem
+                          ? "Mark as claimed"
+                          : isLostItem
+                            ? "Mark as returned"
+                            : "Approve request"}
+                    </button>
+                  </>
+                ) : undefined
+              }
+            />
           )
         )}
       </div>
