@@ -7,6 +7,7 @@ export interface Item {
   type: 'lost' | 'found';
   isClaimed?: boolean;
   isReturned?: boolean;
+  hasReported?: boolean;
   category: ItemCategory;
   building?: string;
   location: string;

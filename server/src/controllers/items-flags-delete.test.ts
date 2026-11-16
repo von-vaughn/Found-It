@@ -167,8 +167,10 @@ describe('Item Flagging & Admin Deletion Reason Workflow', () => {
     });
     assert.equal(dupFlagRes.status, 409);
 
-    // School user cannot see flag metadata
-    const userItemRes = await api<{ item: { flagCount?: number; flags?: unknown[] } }>(
+    // School user cannot see flag metadata, but sees their own hasReported flag
+    const userItemRes = await api<{
+      item: { flagCount?: number; flags?: unknown[]; hasReported?: boolean };
+    }>(
       'GET',
       `/api/items/${item.id}`,
       { token: flaggerToken },
@@ -176,6 +178,7 @@ describe('Item Flagging & Admin Deletion Reason Workflow', () => {
     assert.equal(userItemRes.status, 200);
     assert.equal(userItemRes.data.item.flagCount, undefined);
     assert.equal(userItemRes.data.item.flags, undefined);
+    assert.equal(userItemRes.data.item.hasReported, true);
 
     // Admin sees flagCount and flag details + received notification
     const adminItemRes = await api<{
@@ -210,6 +213,13 @@ describe('Item Flagging & Admin Deletion Reason Workflow', () => {
     assert.equal(adminDismissRes.data.dismissedCount, 1);
     assert.equal(adminDismissRes.data.item.flagCount, 0);
     assert.deepEqual(adminDismissRes.data.item.flags, []);
+
+    // Same user cannot report the same post again even after dismissal
+    const reFlagRes = await api('POST', `/api/items/${item.id}/flag`, {
+      token: flaggerToken,
+      body: { reason: 'Trying to report a second time' },
+    });
+    assert.equal(reFlagRes.status, 409);
 
     // Admin deleting someone else's item without reason returns 400
     const deleteNoReason = await api('DELETE', `/api/items/${item.id}`, {

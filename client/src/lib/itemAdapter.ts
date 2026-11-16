@@ -36,6 +36,7 @@ export function toClientItem(server: ServerItem): Item {
     type: server.reportType,
     isClaimed: server.isClaimed,
     isReturned: server.isReturned,
+    hasReported: server.hasReported,
     category: server.category as Item["category"],
     building: server.building ?? undefined,
     location: server.location ?? "",

@@ -154,6 +154,19 @@ export function useFlagItem() {
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       flagItem(id, reason),
     onSuccess: (_, { id }) => {
+      queryClient.setQueriesData<ServerItem>(
+        { queryKey: itemKeys.detail(id) },
+        (prev) => (prev ? { ...prev, hasReported: true } : prev),
+      );
+      queryClient.setQueriesData<ServerItem[]>(
+        { queryKey: itemKeys.lists() },
+        (prev) =>
+          Array.isArray(prev)
+            ? prev.map((entry) =>
+                entry.id === id ? { ...entry, hasReported: true } : entry,
+              )
+            : prev,
+      );
       queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
       queryClient.invalidateQueries({ queryKey: itemKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });

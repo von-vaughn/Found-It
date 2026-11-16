@@ -20,7 +20,6 @@ import type { ItemFlag } from "@/services/itemService";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import { formatAdminEventDate, formatAdminEventTime } from "./requestComparison";
 import { FilterChips, type ReviewFactRow } from "./ReviewLayout";
-import { StatusBadge } from "./StatusBadge";
 import type { AdminReport } from "./types";
 
 const DELETE_REASON_PRESETS = [
@@ -245,7 +244,6 @@ function ReportedItemDossier({
               ? "user report"
               : "user reports"}
           </span>
-          <StatusBadge status={activeReport.status} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -488,11 +486,6 @@ export function ReportedItemsView({
   const activeReport =
     reports.find((entry) => entry.id === selectedId) ?? reports[0] ?? null;
 
-  const totalOpenFlags = reports.reduce(
-    (sum, item) => sum + (item.flags?.length ?? item.flagCount ?? 0),
-    0,
-  );
-
   const filterChips = [
     { key: "All" as const, label: "All reported", count: typeCounts.All },
     { key: "Lost" as const, label: "Lost", count: typeCounts.Lost },
@@ -501,30 +494,11 @@ export function ReportedItemsView({
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-5 border-b border-neutral-200/80 pb-5 dark:border-neutral-800 lg:flex-row lg:items-end lg:justify-between">
+      <header className="border-b border-neutral-200/80 pb-5 dark:border-neutral-800">
         <div className="min-w-0">
           <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
             Reported items
           </h1>
-        </div>
-
-        <div className="flex shrink-0 items-center divide-x divide-neutral-200 border-y border-neutral-200/80 py-2 dark:divide-neutral-800 dark:border-neutral-800">
-          <div className="pr-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-              Flagged posts
-            </p>
-            <p className="mt-0.5 font-mono text-lg font-bold text-neutral-900 tabular-nums dark:text-neutral-100">
-              {reports.length}
-            </p>
-          </div>
-          <div className="pl-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-              Open flags
-            </p>
-            <p className="mt-0.5 font-mono text-lg font-bold text-[#E5192D] tabular-nums">
-              {totalOpenFlags}
-            </p>
-          </div>
         </div>
       </header>
 

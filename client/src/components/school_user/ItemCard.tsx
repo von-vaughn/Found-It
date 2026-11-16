@@ -6,7 +6,8 @@ import { formatCategoryLabel } from "@/hooks/useCategories";
 import type { Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
-import { useDeleteItem, useFlagItem } from "@/hooks/useItems";
+import { useDeleteItem } from "@/hooks/useItems";
+import { ReportPostDialog } from "@/components/school_user/ReportPostDialog";
 import toast from "react-hot-toast";
 
 interface ItemCardProps {
@@ -23,10 +24,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
-  const [flagReason, setFlagReason] = useState("");
   const { user } = useAuth();
   const deleteMutation = useDeleteItem();
-  const flagMutation = useFlagItem();
   const isOwnPost = Boolean(item.reporterId && item.reporterId === user?.id);
 
   const handleOpenFlagDialog = () => {
@@ -35,41 +34,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       toast.error("Please sign in to report a post.");
       return;
     }
-    setFlagReason("");
-    setFlagDialogOpen(true);
-  };
-
-  const confirmFlag = (event: React.FormEvent) => {
-    event.preventDefault();
-    const trimmed = flagReason.trim();
-    if (trimmed.length < 5) {
-      toast.error("Please enter at least 5 characters explaining the issue.");
+    if (item.hasReported) {
+      toast.error("You have already reported this post.");
       return;
     }
-    flagMutation.mutate(
-      { id: item.id, reason: trimmed },
-      {
-        onSuccess: () => {
-          setFlagDialogOpen(false);
-          setFlagReason("");
-          toast.success("Post reported to staff");
-        },
-        onError: (err) => {
-          const data = (
-            err as {
-              response?: {
-                data?: {
-                  message?: string;
-                  errors?: Array<{ message?: string }>;
-                };
-              };
-            }
-          )?.response?.data;
-          const message = data?.errors?.[0]?.message ?? data?.message;
-          toast.error(message ?? "Could not report this post.");
-        },
-      },
-    );
+    setFlagDialogOpen(true);
   };
 
   const handleDelete = () => {
@@ -127,6 +96,14 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           className="w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
         >
           Delete Post
+        </button>
+      ) : item.hasReported ? (
+        <button
+          type="button"
+          disabled
+          className="w-full px-3 py-1.5 text-left text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+        >
+          Post Reported
         </button>
       ) : (
         <button
@@ -274,74 +251,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           </div>,
           document.body,
         )}
-      {flagDialogOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/40"
-            onClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => {
-              event.stopPropagation();
-              if (event.target === event.currentTarget && !flagMutation.isPending) {
-                setFlagDialogOpen(false);
-              }
-            }}
-          >
-            <section
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="flag-post-title"
-              className="relative w-full max-w-sm bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-100 dark:border-neutral-800 p-6"
-            >
-              <h2
-                id="flag-post-title"
-                className="text-base font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
-              >
-                Report this post
-              </h2>
-              <p className="mt-1.5 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400 break-words">
-                Tell OSA staff what is wrong with &ldquo;{item.title}&rdquo;.
-              </p>
-              <form onSubmit={confirmFlag} className="mt-4 space-y-4">
-                <div>
-                  <label
-                    htmlFor={`flag-reason-${item.id}`}
-                    className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
-                  >
-                    Reason
-                  </label>
-                  <textarea
-                    id={`flag-reason-${item.id}`}
-                    rows={3}
-                    maxLength={500}
-                    required
-                    value={flagReason}
-                    onChange={(event) => setFlagReason(event.target.value)}
-                    placeholder="e.g., Duplicate post, inappropriate photo, or false report"
-                    className="mt-1.5 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:border-[#E5192D] focus:outline-none focus:ring-2 focus:ring-[#E5192D]/20"
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    disabled={flagMutation.isPending}
-                    onClick={() => setFlagDialogOpen(false)}
-                    className="h-10 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 text-xs font-bold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={flagMutation.isPending || flagReason.trim().length < 5}
-                    className="h-10 px-4 rounded-xl bg-[#E5192D] text-white text-xs font-bold transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {flagMutation.isPending ? "Submitting…" : "Submit report"}
-                  </button>
-                </div>
-              </form>
-            </section>
-          </div>,
-          document.body,
-        )}
+      <ReportPostDialog
+        itemId={item.id}
+        itemTitle={item.title}
+        open={flagDialogOpen}
+        onClose={() => setFlagDialogOpen(false)}
+      />
     </div>
   );
 };

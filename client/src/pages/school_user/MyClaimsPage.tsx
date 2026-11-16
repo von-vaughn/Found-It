@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowRight,
   Building2,
@@ -22,11 +21,9 @@ import {
   type EditableRequestPayload,
 } from "@/components/school_user/RequestEditDialog";
 import {
-  claimBelongsToSection,
-  SECTION_STATUS_TABS,
+  CLAIM_STATUS_TABS,
   simplifiedClaimStatusStyles,
   submissionStatusLabel,
-  type ClaimSection,
   type StatusFilter,
 } from "@/components/school_user/claimStatus";
 import { NoItemImage } from "@/components/NoItemImage";
@@ -136,16 +133,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
         : EMPTY_ITEMS,
     [serverItems, serverMyItems],
   );
-  const reduceMotion = useReducedMotion();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSection, setActiveSection] = useState<ClaimSection>("claims");
-  const [statusBySection, setStatusBySection] = useState<
-    Record<ClaimSection, StatusFilter>
-  >({
-    claims: "Pending",
-    returned: "Pending",
-  });
-  const statusFilter = statusBySection[activeSection];
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending");
   const [editingRequest, setEditingRequest] = useState<ClaimRequest | null>(
     null,
   );
@@ -166,25 +155,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
     [submittedClaims, foundReports, serverMyItems],
   );
 
-  const sectionCounts = useMemo(() => {
-    let claims = 0;
-    let returned = 0;
-    for (const claim of myClaims) {
-      if (claimBelongsToSection(claim, "returned")) {
-        returned += 1;
-      } else {
-        claims += 1;
-      }
-    }
-    return { claims, returned };
-  }, [myClaims]);
-
-  const sectionClaims = useMemo(
-    () =>
-      myClaims.filter((claim) => claimBelongsToSection(claim, activeSection)),
-    [myClaims, activeSection],
-  );
-
   const counts = useMemo(() => {
     const byStatus: Record<StatusFilter, number> = {
       Pending: 0,
@@ -193,15 +163,15 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
       Returned: 0,
       Rejected: 0,
     };
-    for (const claim of sectionClaims) {
+    for (const claim of myClaims) {
       byStatus[submissionStatusLabel(claim)] += 1;
     }
     return byStatus;
-  }, [sectionClaims]);
+  }, [myClaims]);
 
   const filteredClaims = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return sectionClaims.filter((claim) => {
+    return myClaims.filter((claim) => {
       if (submissionStatusLabel(claim) !== statusFilter) {
         return false;
       }
@@ -220,7 +190,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
         .toLowerCase()
         .includes(query);
     });
-  }, [sectionClaims, statusFilter, searchQuery, items]);
+  }, [myClaims, statusFilter, searchQuery, items]);
 
   const groupedByPost = useMemo(() => {
     const groups = new Map<string, ClaimRequest[]>();
@@ -309,104 +279,23 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
 
         <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white dark:bg-neutral-950 px-4 py-8 sm:px-8 lg:px-12">
           <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
-            <header>
-              <h1 className="sr-only">Claims &amp; Returned</h1>
+            <h1 className="sr-only">Claims &amp; Returned</h1>
 
-              <div
-                role="tablist"
-                aria-label="Claims and returned sections"
-                onKeyDown={(event) => {
-                  if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-                    event.preventDefault();
-                    setActiveSection((prev) =>
-                      prev === "claims" ? "returned" : "claims",
-                    );
-                  }
-                }}
-                className="flex items-start gap-8 sm:gap-12"
-              >
-                {(
-                  [
-                    { id: "claims", label: "Claims", count: sectionCounts.claims },
-                    {
-                      id: "returned",
-                      label: "Returned",
-                      count: sectionCounts.returned,
-                    },
-                  ] as const
-                ).map((section) => {
-                  const isActive = activeSection === section.id;
-                  return (
-                    <button
-                      key={section.id}
-                      id={`section-tab-${section.id}`}
-                      type="button"
-                      role="tab"
-                      aria-selected={isActive}
-                      aria-controls={`section-panel-${section.id}`}
-                      onClick={() => setActiveSection(section.id)}
-                      className="group relative inline-flex items-start pb-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-4 dark:focus-visible:ring-offset-neutral-950"
-                    >
-                      <span
-                        className={`text-3xl font-bold leading-none tracking-tight transition-colors duration-200 sm:text-[42px] ${
-                          isActive
-                            ? "text-neutral-900 dark:text-neutral-100"
-                            : "text-neutral-300 group-hover:text-neutral-500 dark:text-neutral-600 dark:group-hover:text-neutral-400"
-                        }`}
-                      >
-                        {section.label}
-                      </span>
-                      <sup
-                        className={`ml-1.5 -mt-0.5 text-xs font-medium leading-none tabular-nums transition-colors duration-200 sm:text-sm ${
-                          isActive
-                            ? "text-neutral-600 dark:text-neutral-300"
-                            : "text-neutral-300 group-hover:text-neutral-500 dark:text-neutral-600 dark:group-hover:text-neutral-400"
-                        }`}
-                      >
-                        {section.count}
-                      </sup>
-                      {isActive && (
-                        <motion.span
-                          layoutId="claims-returned-active-bar"
-                          transition={
-                            reduceMotion
-                              ? { duration: 0 }
-                              : { type: "spring", stiffness: 500, damping: 38 }
-                          }
-                          aria-hidden="true"
-                          className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#E5192D]"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </header>
-
-            <div
-              role="tabpanel"
-              id={`section-panel-${activeSection}`}
-              aria-labelledby={`section-tab-${activeSection}`}
-            >
+            <div>
             <nav
               aria-label="Filter requests by status"
-              className="mt-5 flex flex-wrap items-center gap-1.5"
+              className="flex flex-wrap items-center gap-2"
             >
-              {SECTION_STATUS_TABS[activeSection].map((tab) => {
+              {CLAIM_STATUS_TABS.map((tab) => {
                 const count = counts[tab.id];
                 const isActive = statusFilter === tab.id;
                 return (
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() =>
-                      setStatusBySection((prev) => ({
-                        ...prev,
-                        [activeSection]: tab.id,
-                      }))
-                    }
+                    onClick={() => setStatusFilter(tab.id)}
                     aria-pressed={isActive}
-                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                    className={`inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                       isActive
                         ? "border-[#E5192D] bg-[#E5192D] text-white"
                         : "border-neutral-200 bg-transparent text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
@@ -423,7 +312,8 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
 
             {groupedByPost.length > 0 ? (
               <>
-                {statusFilter === "Approved" && (
+                {statusFilter === "Approved" &&
+                  filteredClaims.some((claim) => claim.kind !== "return") && (
                   <div
                     role="status"
                     className="mt-6 flex items-start gap-2.5 rounded-xl bg-emerald-50 px-3.5 py-3 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200"
@@ -438,7 +328,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                   </div>
                 )}
                 <StaggerGrid
-                  key={`${activeSection}-${statusFilter}`}
+                  key={statusFilter}
                   className="mt-6 space-y-6"
                 >
                   {groupedByPost.map(([itemId, claims]) => {
@@ -645,7 +535,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
             ) : (
               <div className="flex min-h-[60dvh] flex-col items-center justify-center px-4 py-16 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500">
-                  {searchQuery || sectionClaims.length > 0 ? (
+                  {searchQuery || myClaims.length > 0 ? (
                     <SearchX
                       className="h-8 w-8 stroke-[1.5]"
                       aria-hidden="true"
@@ -660,21 +550,17 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                 <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   {searchQuery.trim()
                     ? "No matching requests"
-                    : sectionClaims.length === 0
-                      ? activeSection === "returned"
-                        ? "No returned item reports yet"
-                        : "No claim requests yet"
+                    : myClaims.length === 0
+                      ? "No claims or returned items yet"
                       : `No ${statusFilter.toLowerCase()} requests`}
                 </h2>
-                {!searchQuery.trim() && sectionClaims.length === 0 && (
+                {!searchQuery.trim() && myClaims.length === 0 && (
                   <button
                     type="button"
                     onClick={() => navigate("/dashboard")}
                     className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#E5192D] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                   >
-                    {activeSection === "returned"
-                      ? "Browse lost items"
-                      : "Browse found items"}
+                    Browse items
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 )}

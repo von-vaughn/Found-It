@@ -1,7 +1,5 @@
 import type { ClaimRequest } from "@/types/claim";
 
-export type ClaimSection = "claims" | "returned";
-
 export type SimplifiedClaimStatus =
   | "Pending"
   | "Approved"
@@ -11,31 +9,13 @@ export type SimplifiedClaimStatus =
 
 export type StatusFilter = SimplifiedClaimStatus;
 
-export const SECTION_STATUS_TABS: Record<
-  ClaimSection,
-  readonly { id: StatusFilter; label: string }[]
-> = {
-  claims: [
-    { id: "Pending", label: "Pending" },
-    { id: "Approved", label: "Approved" },
-    { id: "Claimed", label: "Claimed" },
-    { id: "Rejected", label: "Rejected" },
-  ],
-  returned: [
-    { id: "Pending", label: "Pending" },
-    { id: "Approved", label: "Approved" },
-    { id: "Returned", label: "Returned" },
-    { id: "Rejected", label: "Rejected" },
-  ],
-};
-
-export function claimBelongsToSection(
-  claim: Pick<ClaimRequest, "kind">,
-  section: ClaimSection,
-): boolean {
-  const isReturn = claim.kind === "return";
-  return section === "returned" ? isReturn : !isReturn;
-}
+export const CLAIM_STATUS_TABS: readonly { id: StatusFilter; label: string }[] = [
+  { id: "Pending", label: "Pending" },
+  { id: "Approved", label: "Approved" },
+  { id: "Claimed", label: "Claimed" },
+  { id: "Returned", label: "Returned" },
+  { id: "Rejected", label: "Rejected" },
+];
 
 export function simplifyClaimStatus(
   status: ClaimRequest["status"],

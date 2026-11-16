@@ -24,6 +24,7 @@ interface ItemRow {
   reporter_school_id: string | null;
   images: Array<{ url: string; blurred_url: string | null }> | null;
   flags: ItemFlag[] | null;
+  flag_reporter_ids: string[] | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -86,6 +87,12 @@ const ITEM_COLUMNS = `
     WHERE f.item_id = i.id AND f.dismissed_at IS NULL),
     '[]'::json
   ) AS flags,
+  COALESCE(
+    (SELECT array_agg(DISTINCT f_all.reporter_id::text)
+     FROM item_flag f_all
+     WHERE f_all.item_id = i.id),
+    ARRAY[]::text[]
+  ) AS flag_reporter_ids,
   i.created_at, i.updated_at
 `;
 const ITEM_JOIN = `
@@ -160,6 +167,13 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
       ? {
           flagCount: Array.isArray(row.flags) ? row.flags.length : 0,
           flags: Array.isArray(row.flags) ? row.flags : [],
+        }
+      : {}),
+    ...(viewerId
+      ? {
+          hasReported:
+            Array.isArray(row.flag_reporter_ids) &&
+            row.flag_reporter_ids.includes(viewerId),
         }
       : {}),
     createdAt: new Date(row.created_at).toISOString(),
@@ -595,12 +609,19 @@ export class DuplicateItemFlagError extends Error {
   }
 }
 
-/** Creates an open moderation flag on an item; throws DuplicateItemFlagError if already open. */
+/** Creates a moderation flag on an item; throws DuplicateItemFlagError if this user already reported it. */
 export async function createItemFlag(
   itemId: string,
   reporterId: string,
   reason: string,
 ): Promise<{ id: string }> {
+  const existing = await pool.query(
+    `SELECT 1 FROM item_flag WHERE item_id = $1 AND reporter_id = $2 LIMIT 1`,
+    [itemId, reporterId],
+  );
+  if ((existing.rowCount ?? 0) > 0) {
+    throw new DuplicateItemFlagError();
+  }
   try {
     const { rows } = await pool.query<{ id: string }>(
       `INSERT INTO item_flag (item_id, reporter_id, reason)

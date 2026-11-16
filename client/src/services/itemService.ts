@@ -32,6 +32,7 @@ export interface ServerItem {
   user: { id: string; name: string; email?: string; schoolId?: string };
   flagCount?: number;
   flags?: ItemFlag[];
+  hasReported?: boolean;
   createdAt: string;
   updatedAt: string;
 }

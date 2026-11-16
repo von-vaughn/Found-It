@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Clock3,
   FileText,
+  Flag,
   Lock,
   MapPin,
   Package,
@@ -20,6 +21,7 @@ import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
+import { ReportPostDialog } from "@/components/school_user/ReportPostDialog";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { formatCategoryLabel } from "@/hooks/useCategories";
 import { EMPTY_ITEMS } from "@/data/mockItems";
@@ -135,6 +137,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const [foundItemCameraOpen, setFoundItemCameraOpen] = useState(false);
   const [ownershipClaimOpen, setOwnershipClaimOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -161,6 +164,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   if (id !== prevId) {
     setPrevId(id);
     setSelectedImageIndex(0);
+    setReportDialogOpen(false);
   }
 
   const handleSearchChange = (query: string) => {
@@ -490,7 +494,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             Go back
           </button>
           <div className="flex items-center gap-2">
-            {isOwnItem && (
+            {isOwnItem ? (
               <>
                 <button
                   type="button"
@@ -509,6 +513,31 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
               </>
+            ) : item.hasReported ? (
+              <button
+                type="button"
+                disabled
+                title="You have already reported this post."
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 px-3 text-xs font-bold text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+              >
+                <Flag className="h-3.5 w-3.5" aria-hidden="true" />
+                Post reported
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user) {
+                    toast.error("Please sign in to report a post.");
+                    return;
+                  }
+                  setReportDialogOpen(true);
+                }}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 dark:text-neutral-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-[#E5192D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
+              >
+                <Flag className="h-3.5 w-3.5" aria-hidden="true" />
+                Report post
+              </button>
             )}
           </div>
         </div>
@@ -984,6 +1013,12 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           </section>
         </div>
       )}
+      <ReportPostDialog
+        itemId={item.id}
+        itemTitle={item.title}
+        open={reportDialogOpen}
+        onClose={() => setReportDialogOpen(false)}
+      />
     </div>
   );
 };

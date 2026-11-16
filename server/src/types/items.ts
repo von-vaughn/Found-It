@@ -40,6 +40,8 @@ export interface Item {
   /** Open flag count and details (present for admin/super_admin only). */
   flagCount?: number;
   flags?: ItemFlag[];
+  /** Whether the authenticated viewer has already flagged this post. */
+  hasReported?: boolean;
   createdAt: string;
   updatedAt: string;
 }

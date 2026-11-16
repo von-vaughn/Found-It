@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  claimBelongsToSection,
-  SECTION_STATUS_TABS,
+  CLAIM_STATUS_TABS,
   submissionStatusLabel,
 } from "./claimStatus.ts";
 
@@ -27,21 +26,9 @@ test("shows a pending found report as pending", () => {
   );
 });
 
-test("partitions ownership claims and return reports into their sections", () => {
-  assert.equal(claimBelongsToSection({}, "claims"), true);
-  assert.equal(claimBelongsToSection({ kind: "claim" }, "claims"), true);
-  assert.equal(claimBelongsToSection({ kind: "return" }, "claims"), false);
-  assert.equal(claimBelongsToSection({ kind: "return" }, "returned"), true);
-  assert.equal(claimBelongsToSection({ kind: "claim" }, "returned"), false);
-});
-
-test("exposes section-specific status filter tabs", () => {
+test("exposes merged status filter tabs", () => {
   assert.deepEqual(
-    SECTION_STATUS_TABS.claims.map((tab) => tab.id),
-    ["Pending", "Approved", "Claimed", "Rejected"],
-  );
-  assert.deepEqual(
-    SECTION_STATUS_TABS.returned.map((tab) => tab.id),
-    ["Pending", "Approved", "Returned", "Rejected"],
+    CLAIM_STATUS_TABS.map((tab) => tab.id),
+    ["Pending", "Approved", "Claimed", "Returned", "Rejected"],
   );
 });
