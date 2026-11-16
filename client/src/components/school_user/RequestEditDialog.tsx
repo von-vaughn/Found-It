@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ImagePlus, X } from "lucide-react";
+import { Camera, CameraOff, ImagePlus, X } from "lucide-react";
+import { SelectDropdown } from "@/components/SelectDropdown";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
 import { uploadImages } from "@/services/itemService";
@@ -44,7 +45,158 @@ const MAX_EVIDENCE_IMAGES = 4;
 interface EvidencePhoto {
   preview: string;
   url?: string;
-  file?: File;
+  file?: File | Blob;
+}
+
+function cameraErrorMessage(error: unknown): string {
+  if (error instanceof DOMException) {
+    if (error.name === "NotAllowedError" || error.name === "SecurityError") {
+      return "Camera access was denied. Allow camera access in your browser settings, then try again.";
+    }
+    if (error.name === "NotFoundError" || error.name === "OverconstrainedError") {
+      return "No camera was found on this device.";
+    }
+    if (error.name === "NotReadableError") {
+      return "The camera is already in use by another app. Close it and try again.";
+    }
+  }
+  return "The camera could not be started. Check your camera connection and try again.";
+}
+
+function LiveFoundCameraCapture({
+  onCapture,
+  onClose,
+}: {
+  onCapture: (blob: Blob) => void;
+  onClose: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [status, setStatus] = useState<"starting" | "ready" | "error">("starting");
+  const [cameraError, setCameraError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    let stream: MediaStream | null = null;
+    const videoEl = videoRef.current;
+
+    const start = async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError(
+          "Camera access is unavailable. Use a secure connection and a browser that supports camera access.",
+        );
+        setStatus("error");
+        return;
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: "environment" } },
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        if (videoEl) {
+          videoEl.srcObject = stream;
+          await videoEl.play().catch(() => {});
+        }
+        setStatus("ready");
+      } catch (err) {
+        if (!cancelled) {
+          setCameraError(cameraErrorMessage(err));
+          setStatus("error");
+        }
+      }
+    };
+
+    void start();
+    return () => {
+      cancelled = true;
+      stream?.getTracks().forEach((track) => track.stop());
+      if (videoEl) videoEl.srcObject = null;
+    };
+  }, []);
+
+  const captureFrame = () => {
+    const video = videoRef.current;
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+      setCameraError("The camera preview is not ready. Try again in a moment.");
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      setCameraError("Could not capture the photo. Please try again.");
+      return;
+    }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setCameraError("Could not capture the photo. Please try again.");
+          return;
+        }
+        onCapture(blob);
+      },
+      "image/jpeg",
+      0.92,
+    );
+  };
+
+  return (
+    <div className="mt-3 space-y-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-neutral-950">
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          aria-label="Live camera preview"
+          className={`h-full w-full object-cover ${status === "error" ? "hidden" : ""}`}
+        />
+        {status === "starting" && (
+          <div
+            role="status"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-950 text-xs font-medium text-white"
+          >
+            <Camera className="h-5 w-5" aria-hidden="true" />
+            Starting camera…
+          </div>
+        )}
+        {status === "error" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-neutral-300">
+            <CameraOff className="h-5 w-5 text-neutral-400" aria-hidden="true" />
+            <p>{cameraError}</p>
+          </div>
+        )}
+      </div>
+      {status !== "error" && cameraError && (
+        <p className="text-xs font-medium text-red-700 dark:text-red-400" role="alert">
+          {cameraError}
+        </p>
+      )}
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-9 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          disabled={status !== "ready"}
+          onClick={captureFrame}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+        >
+          <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+          Capture photo
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function dateInputValue(value: string): string {
@@ -99,10 +251,22 @@ function RequestEditForm({
   );
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(() =>
+    window.matchMedia("(max-width: 767px)").matches,
+  );
   const evidencePreviewUrls = useRef<string[]>([]);
+  const mobileCameraInputRef = useRef<HTMLInputElement>(null);
 
   const isFoundReport = request.kind === "return";
   const isBusy = isSaving || isUploading;
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobileView(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   useEffect(
     () => () => {
@@ -144,6 +308,32 @@ function RequestEditForm({
     }
 
     event.target.value = "";
+  };
+
+  const handleCapturedBlob = (blob: Blob) => {
+    if (evidencePhotos.length >= MAX_EVIDENCE_IMAGES) {
+      setError(`You can add up to ${MAX_EVIDENCE_IMAGES} pictures.`);
+      setCameraOpen(false);
+      return;
+    }
+    const preview = URL.createObjectURL(blob);
+    evidencePreviewUrls.current.push(preview);
+    setEvidencePhotos((current) => [...current, { file: blob, preview }]);
+    setCameraOpen(false);
+    setError("");
+  };
+
+  const handleMobileCaptureChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Only image files can be used as picture evidence.");
+      return;
+    }
+    handleCapturedBlob(file);
   };
 
   const handleRemoveEvidence = (indexToRemove: number) => {
@@ -255,6 +445,117 @@ function RequestEditForm({
           </button>
         </div>
 
+        <section
+          aria-labelledby="edit-request-evidence-label"
+          className="mt-6"
+        >
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <h3
+                id="edit-request-evidence-label"
+                className={labelClass}
+              >
+                Picture evidence
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                {isFoundReport
+                  ? `Capture photos with your camera. Up to ${MAX_EVIDENCE_IMAGES} total.`
+                  : `Replace or add photos. Up to ${MAX_EVIDENCE_IMAGES} total.`}
+              </p>
+            </div>
+            <span className="shrink-0 text-xs font-semibold tabular-nums text-neutral-500 dark:text-neutral-400">
+              {evidencePhotos.length}/{MAX_EVIDENCE_IMAGES}
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-3">
+            {evidencePhotos.map((photo, index) => (
+              <div
+                key={`${photo.preview}-${index}`}
+                className="relative h-20 w-20 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700"
+              >
+                <img
+                  src={photo.preview}
+                  alt={`Picture evidence ${index + 1}`}
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  aria-label={`Remove picture evidence ${index + 1}`}
+                  disabled={isBusy}
+                  onClick={() => handleRemoveEvidence(index)}
+                  className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-950/75 text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
+                >
+                  <X aria-hidden="true" className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+
+            {evidencePhotos.length < MAX_EVIDENCE_IMAGES &&
+              (isFoundReport ? (
+                isMobileView ? (
+                  <>
+                    <input
+                      ref={mobileCameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="sr-only"
+                      disabled={isBusy}
+                      aria-label="Take a photo with your camera"
+                      onChange={handleMobileCaptureChange}
+                    />
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => mobileCameraInputRef.current?.click()}
+                      className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-neutral-300 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900"
+                    >
+                      <Camera aria-hidden="true" className="h-5 w-5" />
+                      <span className="text-[10px] font-bold">Take photo</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => setCameraOpen((open) => !open)}
+                    className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-neutral-300 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900"
+                  >
+                    <Camera aria-hidden="true" className="h-5 w-5" />
+                    <span className="text-[10px] font-bold">Take photo</span>
+                  </button>
+                )
+              ) : (
+                <label
+                  htmlFor="edit-request-evidence"
+                  className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-neutral-300 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-neutral-50 focus-within:outline-none focus-within:ring-2 focus-within:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900"
+                >
+                  <ImagePlus aria-hidden="true" className="h-5 w-5" />
+                  <span className="text-[10px] font-bold">Add photo</span>
+                  <input
+                    id="edit-request-evidence"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="sr-only"
+                    disabled={isBusy}
+                    onChange={handleEvidenceChange}
+                  />
+                </label>
+              ))}
+          </div>
+          {isFoundReport &&
+            !isMobileView &&
+            cameraOpen &&
+            evidencePhotos.length < MAX_EVIDENCE_IMAGES && (
+              <LiveFoundCameraCapture
+                onCapture={handleCapturedBlob}
+                onClose={() => setCameraOpen(false)}
+              />
+            )}
+        </section>
+
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="edit-request-title-field">
@@ -340,26 +641,19 @@ function RequestEditForm({
             <label className={labelClass} htmlFor="edit-request-building">
               Building
             </label>
-            <div className="relative">
-              <select
-                id="edit-request-building"
-                className={`${inputClass} appearance-none cursor-pointer pr-9`}
-                value={building}
-                onChange={(event) => setBuilding(event.target.value)}
-                disabled={isBusy}
-              >
-                <option value="">Select a building</option>
-                {buildingOptions.map((buildingOption) => (
-                  <option key={buildingOption} value={buildingOption}>
-                    {buildingOption}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                aria-hidden="true"
-                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
-              />
-            </div>
+            <SelectDropdown
+              id="edit-request-building"
+              className={inputClass}
+              value={building}
+              onChange={setBuilding}
+              options={buildingOptions.map((buildingOption) => ({
+                value: buildingOption,
+                label: buildingOption,
+              }))}
+              placeholder="Select a building"
+              allowEmpty
+              disabled={isBusy}
+            />
           </div>
         </div>
 
@@ -392,71 +686,6 @@ function RequestEditForm({
             disabled={isBusy}
           />
         </div>
-
-        <section
-          aria-labelledby="edit-request-evidence-label"
-          className="mt-5"
-        >
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <h3
-                id="edit-request-evidence-label"
-                className={labelClass}
-              >
-                Picture evidence
-              </h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                Replace or add photos. Up to {MAX_EVIDENCE_IMAGES} total.
-              </p>
-            </div>
-            <span className="shrink-0 text-xs font-semibold tabular-nums text-neutral-500 dark:text-neutral-400">
-              {evidencePhotos.length}/{MAX_EVIDENCE_IMAGES}
-            </span>
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-3">
-            {evidencePhotos.map((photo, index) => (
-              <div
-                key={`${photo.preview}-${index}`}
-                className="relative h-20 w-20 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700"
-              >
-                <img
-                  src={photo.preview}
-                  alt={`Picture evidence ${index + 1}`}
-                  className="h-full w-full object-cover"
-                />
-                <button
-                  type="button"
-                  aria-label={`Remove picture evidence ${index + 1}`}
-                  disabled={isBusy}
-                  onClick={() => handleRemoveEvidence(index)}
-                  className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-950/75 text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
-                >
-                  <X aria-hidden="true" className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-
-            {evidencePhotos.length < MAX_EVIDENCE_IMAGES && (
-              <label
-                htmlFor="edit-request-evidence"
-                className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-neutral-300 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-neutral-50 focus-within:outline-none focus-within:ring-2 focus-within:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900"
-              >
-                <ImagePlus aria-hidden="true" className="h-5 w-5" />
-                <span className="text-[10px] font-bold">Add photo</span>
-                <input
-                  id="edit-request-evidence"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="sr-only"
-                  disabled={isBusy}
-                  onChange={handleEvidenceChange}
-                />
-              </label>
-            )}
-          </div>
-        </section>
 
         {error && (
           <p className="mt-4 text-sm font-medium text-red-700 dark:text-red-400" role="alert">

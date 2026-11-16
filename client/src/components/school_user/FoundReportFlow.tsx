@@ -3,10 +3,11 @@ import {
   ArrowLeft,
   Camera,
   CameraOff,
-  CheckCircle2,
   RotateCcw,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { SelectDropdown } from "@/components/SelectDropdown";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useCreateReturnRequest } from "@/hooks/useReturns";
@@ -283,22 +284,36 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           : "w-full"
       }
     >
-      <header className="border-b border-neutral-200 dark:border-neutral-800 px-5 py-4 sm:px-6">
-        <div>
+      <header
+        className={`flex items-center justify-between gap-4 px-5 sm:px-6 ${
+          step === "confirmation"
+            ? "pt-5 pb-0"
+            : "border-b border-neutral-200 py-4 dark:border-neutral-800"
+        }`}
+      >
+        <div className="min-w-0">
           <h2
             id="found-report-title"
             className="text-base font-bold text-neutral-900 dark:text-neutral-100"
           >
             {title}
           </h2>
-          {step !== "confirmation" && (
+          {step === "camera" && (
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              {step === "camera"
-                ? "Take a photo of the item."
-                : "Private — never published."}
+              Take a photo of the item.
             </p>
           )}
         </div>
+        {framed && (
+          <button
+            type="button"
+            onClick={onExit}
+            aria-label="Close found item flow"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 dark:text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
       </header>
 
       {step === "camera" && (
@@ -467,16 +482,6 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
               {formError}
             </p>
           )}
-          <div className={capturedPhoto ? "grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]" : ""}>
-          {capturedPhoto && (
-            <div className="min-w-0">
-            <img
-              src={capturedPhoto}
-              alt="Captured found-item photo"
-              className="h-36 md:h-64 w-full rounded-xl bg-neutral-100 dark:bg-neutral-800 object-contain"
-            />
-            </div>
-          )}
           <div className="min-w-0 space-y-5">
           <div>
             <label htmlFor="found-item-title" className={labelClass}>
@@ -581,20 +586,18 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
             <label htmlFor="found-item-building" className={labelClass}>
               Building
             </label>
-            <select
+            <SelectDropdown
               id="found-item-building"
-              name="building"
               value={building}
-              onChange={(event) => setBuilding(event.target.value)}
+              onChange={setBuilding}
+              options={buildingOptions.map((buildingOption) => ({
+                value: buildingOption,
+                label: buildingOption,
+              }))}
+              placeholder="Select a building"
+              allowEmpty
               className={inputClass}
-            >
-              <option value="">Select a building</option>
-              {buildingOptions.map((buildingOption) => (
-                <option key={buildingOption} value={buildingOption}>
-                  {buildingOption}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div>
@@ -635,7 +638,6 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           </div>
 
           </div>
-          </div>
 
           <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
             <button
@@ -659,22 +661,16 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
       )}
 
       {step === "confirmation" && (
-        <div className="space-y-5 p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <CheckCircle2
-              className="mt-0.5 h-6 w-6 shrink-0 text-green-700"
-              aria-hidden="true"
-            />
-            <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-              Bring the item to OSA for verification and safekeeping.
-            </p>
-          </div>
+        <div className="space-y-6 px-5 pt-2 pb-5 sm:px-6 sm:pb-6">
+          <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+            Bring the item to OSA for verification and safekeeping.
+          </p>
 
-          <div className="flex justify-end gap-2 border-t border-neutral-200 dark:border-neutral-800 pt-4">
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={onExit}
-              className="inline-flex h-10 items-center rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+              className="inline-flex h-10 items-center rounded-xl bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
             >
               Done
             </button>

@@ -466,6 +466,53 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const foundItemId = foundItemRes.data.item.id;
     createdItemIds.push(foundItemId);
 
+    const firstClaimRes = await api<{ claim: { id: string; status: string } }>('POST', '/api/claims', {
+      token: claimantAuth.token,
+      body: {
+        itemId: foundItemId,
+        claimantTitle: 'My Laptop Charger',
+        dateLost: today,
+        timeLost: '09:00',
+        location: 'Room 201',
+        details: 'Left it after class',
+        importantDetails: 'Has a small scratch near the prong',
+      },
+    });
+    assert.equal(firstClaimRes.status, 201);
+    const firstClaimId = firstClaimRes.data.claim.id;
+
+    // Rejecting a claim requires a non-empty reason
+    const rejectNoReason = await api('PATCH', `/api/claims/admin/${firstClaimId}/status`, {
+      token: adminAuth.token,
+      body: { status: 'rejected', reason: '   ' },
+    });
+    assert.equal(rejectNoReason.status, 400);
+
+    const rejectWithReason = await api<{ claim: { status: string } }>(
+      'PATCH',
+      `/api/claims/admin/${firstClaimId}/status`,
+      {
+        token: adminAuth.token,
+        body: { status: 'rejected', reason: 'Proof photo did not match charger brand' },
+      },
+    );
+    assert.equal(rejectWithReason.status, 200);
+    assert.equal(rejectWithReason.data.claim.status, 'rejected');
+
+    const rejectedNotifs = await api<{ notifications: Array<{ requestId: string | null; message: string }> }>(
+      'GET',
+      '/api/notifications',
+      { token: claimantAuth.token },
+    );
+    assert.ok(
+      rejectedNotifs.data.notifications.some(
+        (n) =>
+          n.requestId === firstClaimId &&
+          n.message.includes('Proof photo did not match charger brand'),
+      ),
+      'Expected claimant rejection notification to include rejection reason',
+    );
+
     const claimRes = await api<{ claim: { id: string; status: string } }>('POST', '/api/claims', {
       token: claimantAuth.token,
       body: {

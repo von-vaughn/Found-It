@@ -30,7 +30,15 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
         onClick={onClose}
         className="fixed inset-0 cursor-default"
       />
-      <div className={`relative z-10 my-6 w-full transition-[max-width] duration-300 ${step === "camera" ? "max-w-xl" : "max-w-3xl"}`}>
+      <div
+        className={`relative z-10 my-6 w-full ${
+          step === "camera"
+            ? "max-w-xl"
+            : step === "confirmation"
+              ? "max-w-md"
+              : "max-w-3xl"
+        }`}
+      >
         <FoundReportFlow
           active
           onExit={onClose}

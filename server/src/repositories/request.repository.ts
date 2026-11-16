@@ -418,6 +418,7 @@ async function updateRequestStatusById(
   kind: "claim" | "return",
   id: string,
   status: ClaimStatus,
+  rejectionReason?: string,
 ): Promise<Claim | null> {
   const client = await pool.connect();
   try {
@@ -500,6 +501,7 @@ async function updateRequestStatusById(
         status,
         requesterId: current.user_id,
         itemOwnerId: current.item_owner_id,
+        reason: status === "rejected" ? rejectionReason : undefined,
       });
     }
 
@@ -543,8 +545,9 @@ async function updateRequestStatusById(
 export function updateClaimStatusById(
   id: string,
   status: Exclude<ClaimStatus, "pending">,
+  rejectionReason?: string,
 ): Promise<Claim | null> {
-  return updateRequestStatusById("claim", id, status);
+  return updateRequestStatusById("claim", id, status, rejectionReason);
 }
 
 export function updateReturnStatusById(

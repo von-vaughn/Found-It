@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Camera, CameraOff, ChevronDown, ImagePlus, Lock, RotateCcw, X } from "lucide-react";
+import { Camera, CameraOff, ImagePlus, Lock, RotateCcw, X } from "lucide-react";
+import { SelectDropdown } from "@/components/SelectDropdown";
 import {
   MAX_POST_IMAGES,
   selectAddableImageFiles,
@@ -1043,27 +1044,19 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 <label htmlFor="report-building" className={labelClass}>
                   Building
                 </label>
-                <div className="relative">
-                  <select
-                    id="report-building"
-                    name="building"
-                    value={building}
-                    onChange={(e) => setBuilding(e.target.value)}
-                    className={`${inputClass} appearance-none pr-9 cursor-pointer`}
-                    {...errorProps("report-building")}
-                  >
-                    <option value="">Select a building</option>
-                    {buildingOptions.map((buildingOption) => (
-                      <option key={buildingOption} value={buildingOption}>
-                        {buildingOption}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
-                  />
-                </div>
+                <SelectDropdown
+                  id="report-building"
+                  value={building}
+                  onChange={setBuilding}
+                  options={buildingOptions.map((buildingOption) => ({
+                    value: buildingOption,
+                    label: buildingOption,
+                  }))}
+                  placeholder="Select a building"
+                  allowEmpty
+                  className={inputClass}
+                  {...errorProps("report-building")}
+                />
                 <FieldError
                   fieldId="report-building"
                   message={fieldErrors["report-building"]}
@@ -1103,32 +1096,18 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               <label htmlFor="report-category" className={labelClass}>
                 Category <span className="text-[#E5192D]" aria-hidden="true">*</span>
               </label>
-              <div className="relative">
-                <select
-                  id="report-category"
-                  name="category"
-                  required
-                  value={category}
-                  onChange={(e) =>
-                    setCategory(e.target.value as Item["category"] | "")
-                  }
-                  className={`${inputClass} appearance-none pr-9 cursor-pointer`}
-                  {...errorProps("report-category")}
-                >
-                  <option value="" disabled>
-                    Select category
-                  </option>
-                  {categoryOptions.map((categoryOption) => (
-                    <option key={categoryOption.id} value={categoryOption.id}>
-                      {categoryOption.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  aria-hidden="true"
-                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
-                />
-              </div>
+              <SelectDropdown
+                id="report-category"
+                value={category}
+                onChange={(val) => setCategory(val as Item["category"] | "")}
+                options={categoryOptions.map((categoryOption) => ({
+                  value: categoryOption.id,
+                  label: categoryOption.label,
+                }))}
+                placeholder="Select category"
+                className={inputClass}
+                {...errorProps("report-category")}
+              />
               <FieldError
                 fieldId="report-category"
                 message={fieldErrors["report-category"]}

@@ -88,6 +88,7 @@ export async function createRequestStatusNotification(
     status: NotificationEvent;
     requesterId: string;
     itemOwnerId: string;
+    reason?: string;
   },
 ): Promise<void> {
   if (!["approved", "rejected", "returned"].includes(input.status)) {
@@ -113,8 +114,12 @@ export async function createRequestStatusNotification(
         : `Your claim for ${input.itemName} was approved.`
       : input.status === "rejected"
         ? input.kind === "return"
-          ? `Your return request for ${input.itemName} was rejected.`
-          : `Your claim for ${input.itemName} was rejected.`
+          ? input.reason
+            ? `Your return request for ${input.itemName} was rejected: ${input.reason}`
+            : `Your return request for ${input.itemName} was rejected.`
+          : input.reason
+            ? `Your claim for ${input.itemName} was rejected: ${input.reason}`
+            : `Your claim for ${input.itemName} was rejected.`
         : input.kind === "claim"
           ? `${input.itemName} has been returned to its owner.`
           : `Your return of ${input.itemName} to the OSA office has been recorded.`;

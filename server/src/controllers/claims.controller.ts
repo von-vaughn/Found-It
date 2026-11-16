@@ -32,9 +32,24 @@ function requestIdParam(req: Request): string | null {
     : null;
 }
 
-const adminClaimStatusSchema = z.object({
-  status: z.enum(["approved", "rejected", "claimed", "returned"]),
-});
+const adminClaimStatusSchema = z
+  .object({
+    status: z.enum(["approved", "rejected", "claimed", "returned"]),
+    reason: z
+      .string()
+      .trim()
+      .max(500, "Rejection reason must be at most 500 characters.")
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === "rejected" && (!data.reason || data.reason.length === 0)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["reason"],
+        message: "Please provide a reason for rejecting this claim request.",
+      });
+    }
+  });
 
 /** POST /api/claims — submit an ownership claim on a found item. */
 export async function submitClaim(req: Request, res: Response): Promise<void> {
@@ -108,7 +123,11 @@ export async function updateAdminClaimStatus(
   }
   let claim;
   try {
-    claim = await updateClaimStatusById(requestId, parsed.data.status);
+    claim = await updateClaimStatusById(
+      requestId,
+      parsed.data.status,
+      parsed.data.reason,
+    );
   } catch (error) {
     if (error instanceof PhysicalItemNotReceivedError) {
       res.status(409).json({ message: error.message });
@@ -129,7 +148,10 @@ export async function updateAdminClaimStatus(
     action: parsed.data.status,
     entityType: "claim",
     entityId: claim.id,
-    summary: `Marked claim for "${claim.item}" (${claim.claimant}) as ${parsed.data.status}`,
+    summary:
+      parsed.data.status === "rejected" && parsed.data.reason
+        ? `Marked claim for "${claim.item}" (${claim.claimant}) as rejected: ${parsed.data.reason}`
+        : `Marked claim for "${claim.item}" (${claim.claimant}) as ${parsed.data.status}`,
   });
   res.json({ message: "Claim status updated.", claim });
 }

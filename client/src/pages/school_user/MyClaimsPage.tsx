@@ -1,9 +1,12 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Building2,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   Clock3,
   MapPin,
@@ -11,6 +14,7 @@ import {
   Pencil,
   SearchX,
   Trash2,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Header } from "@/components/school_user/Header";
@@ -27,7 +31,6 @@ import {
 } from "@/components/school_user/claimStatus";
 import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
-import { StatusBadge } from "@/components/admin/StatusBadge";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
 import { useItems, useMyItems } from "@/hooks/useItems";
 import { useDeleteClaim, useUpdateClaim } from "@/hooks/useClaims";
@@ -63,46 +66,139 @@ function ClaimPhotosCarousel({
   postImage?: string;
   detailImages: string[];
 }) {
+  const [index, setIndex] = useState(0);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const photos = [
     ...(postImage ? [{ src: postImage, alt: itemTitle }] : []),
-    ...detailImages.map((src, index) => ({
+    ...detailImages.map((src, photoIdx) => ({
       src,
-      alt: `Evidence ${index + 1} for request ${claimId}`,
+      alt: `Evidence ${photoIdx + 1} for request ${claimId}`,
     })),
   ];
+
+  useEffect(() => {
+    if (!previewOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPreviewOpen(false);
+      } else if (event.key === "ArrowLeft" && photos.length > 1) {
+        setIndex((prev) => (prev - 1 + photos.length) % photos.length);
+      } else if (event.key === "ArrowRight" && photos.length > 1) {
+        setIndex((prev) => (prev + 1) % photos.length);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [previewOpen, photos.length]);
+
   if (photos.length === 0) {
     return (
       <NoItemImage
         title="No photo evidence provided"
         subtitle="The claimant did not attach any photos to this request."
-        className="h-48 sm:h-56"
+        className="h-80 sm:h-96"
       />
     );
   }
 
+  const safeIndex = index < photos.length ? index : 0;
+  const activePhoto = photos[safeIndex];
+  const hasMultiple = photos.length > 1;
+  const showPrev = () =>
+    setIndex((safeIndex - 1 + photos.length) % photos.length);
+  const showNext = () => setIndex((safeIndex + 1) % photos.length);
+
   return (
-    <div
-      className={`grid gap-2 ${
-        photos.length > 1 ? "grid-cols-2" : "grid-cols-1"
-      }`}
-    >
-      {photos.map((photo, photoIndex) => (
-        <div
-          key={`${claimId}-evidence-${photoIndex}`}
-          className={`flex ${
-            photos.length > 1 ? "h-48" : "h-72"
-          } w-full items-center justify-center overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800`}
+    <>
+      <div className="flex h-80 sm:h-96 w-full flex-col overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-800">
+        <button
+          type="button"
+          onClick={() => setPreviewOpen(true)}
+          aria-label={`View full image: ${activePhoto.alt}`}
+          className="min-h-0 flex-1 w-full cursor-zoom-in p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
         >
           <img
-            src={photo.src}
-            alt={photo.alt}
+            src={activePhoto.src}
+            alt={activePhoto.alt}
             loading="lazy"
             referrerPolicy="no-referrer"
-            className="h-full max-w-full object-contain"
+            className="h-full w-full object-contain"
           />
-        </div>
-      ))}
-    </div>
+        </button>
+        {hasMultiple && (
+          <div className="flex shrink-0 items-center justify-between px-3 py-2">
+            <button
+              type="button"
+              onClick={showPrev}
+              aria-label="Previous photo"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-800 shadow-xs ring-1 ring-neutral-200 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 dark:text-neutral-100 dark:ring-neutral-700 cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <span className="font-mono text-xs font-semibold text-neutral-600 tabular-nums dark:text-neutral-300">
+              {safeIndex + 1} / {photos.length}
+            </span>
+            <button
+              type="button"
+              onClick={showNext}
+              aria-label="Next photo"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-800 shadow-xs ring-1 ring-neutral-200 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 dark:text-neutral-100 dark:ring-neutral-700 cursor-pointer"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {previewOpen &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={activePhoto.alt}
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setPreviewOpen(false);
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs"
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(false)}
+              aria-label="Close image preview"
+              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
+            {hasMultiple && (
+              <>
+                <button
+                  type="button"
+                  onClick={showPrev}
+                  aria-label="Previous photo"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer"
+                >
+                  <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={showNext}
+                  aria-label="Next photo"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer"
+                >
+                  <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </>
+            )}
+            <img
+              src={activePhoto.src}
+              alt={activePhoto.alt}
+              referrerPolicy="no-referrer"
+              className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
+            />
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 
@@ -136,6 +232,9 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending");
   const [editingRequest, setEditingRequest] = useState<ClaimRequest | null>(
+    null,
+  );
+  const [deletingRequest, setDeletingRequest] = useState<ClaimRequest | null>(
     null,
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -227,18 +326,39 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
     setEditingRequest(null);
   };
 
-  const handleDeleteRequest = async (request: ClaimRequest) => {
-    if (request.status !== "Pending" || isSubmittingChange) return;
+  const isDeletingRequest =
+    deleteClaim.isPending || deleteReturnRequest.isPending;
 
-    const label = request.kind === "return" ? "found report" : "claim request";
-    if (!window.confirm(`Delete this ${label}? This cannot be undone.`)) return;
+  useEffect(() => {
+    if (!deletingRequest) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isDeletingRequest) {
+        setDeletingRequest(null);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [deletingRequest, isDeletingRequest]);
+
+  const handleConfirmDelete = async () => {
+    if (
+      !deletingRequest ||
+      deletingRequest.status !== "Pending" ||
+      isSubmittingChange
+    ) {
+      return;
+    }
+
+    const label =
+      deletingRequest.kind === "return" ? "found report" : "claim request";
 
     try {
-      if (request.kind === "return") {
-        await deleteReturnRequest.mutateAsync(request.id);
+      if (deletingRequest.kind === "return") {
+        await deleteReturnRequest.mutateAsync(deletingRequest.id);
       } else {
-        await deleteClaim.mutateAsync(request.id);
+        await deleteClaim.mutateAsync(deletingRequest.id);
       }
+      setDeletingRequest(null);
       toast.success(`${label[0].toUpperCase()}${label.slice(1)} deleted.`);
     } catch (error) {
       const message = (
@@ -333,12 +453,20 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                 >
                   {groupedByPost.map(([itemId, claims]) => {
                     const item = itemById.get(itemId);
-                    const itemTypeLabel =
-                      item?.type === "lost" || claims[0]?.kind === "return"
-                        ? "Lost"
-                        : "Found";
+                    const hasReturnedItem = claims.some(
+                      (claim) =>
+                        claim.kind === "return" && claim.status === "Returned",
+                    );
                     return (
                       <StaggerItem key={itemId}>
+                    {hasReturnedItem && (
+                      <p
+                        role="status"
+                        className="mb-2 rounded-xl bg-teal-50 px-3.5 py-3 text-sm font-semibold text-teal-800 dark:bg-teal-500/10 dark:text-teal-200"
+                      >
+                        This item has already been returned.
+                      </p>
+                    )}
                     <section
                       aria-label={`Requests for ${claims[0]?.item ?? "post"}`}
                       className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"
@@ -384,7 +512,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       </h2>
                                     </div>
                                     <div className="flex shrink-0 items-center gap-2">
-                                      <StatusBadge status={itemTypeLabel} />
                                       <span
                                         className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold ${claimStatusStyle}`}
                                       >
@@ -401,15 +528,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       {claim.details}
                                     </p>
                                   </div>
-
-                                  {isFoundReport && claim.status === "Returned" && (
-                                    <p
-                                      role="status"
-                                      className="mt-3 rounded-xl bg-teal-50 px-3.5 py-3 text-sm font-semibold text-teal-800 dark:bg-teal-500/10 dark:text-teal-200"
-                                    >
-                                      This item has already been returned.
-                                    </p>
-                                  )}
 
                                   <dl className="mt-4 grid grid-cols-2 gap-px border-y border-neutral-200/80 bg-neutral-200/80 text-xs sm:grid-cols-3 dark:border-neutral-800 dark:bg-neutral-800">
                                     <div className="bg-white px-3 py-3 dark:bg-neutral-900">
@@ -507,9 +625,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() =>
-                                            void handleDeleteRequest(claim)
-                                          }
+                                          onClick={() => setDeletingRequest(claim)}
                                           disabled={isSubmittingChange}
                                           aria-label="Delete request"
                                           title="Delete request"
@@ -595,6 +711,67 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
         onClose={() => setEditingRequest(null)}
         onSave={handleSaveRequest}
       />
+
+      {deletingRequest &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !isDeletingRequest) {
+                setDeletingRequest(null);
+              }
+            }}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-claim-title"
+              aria-describedby="delete-claim-description"
+              className="relative w-full max-w-sm rounded-2xl border border-neutral-100 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+            >
+              <h2
+                id="delete-claim-title"
+                className="text-base font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
+              >
+                Delete this{" "}
+                {deletingRequest.kind === "return"
+                  ? "found report"
+                  : "claim request"}
+                ?
+              </h2>
+              <p
+                id="delete-claim-description"
+                className="mt-2 break-words text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
+              >
+                Are you sure you want to delete your{" "}
+                {deletingRequest.kind === "return"
+                  ? "found report"
+                  : "claim request"}{" "}
+                for &ldquo;{deletingRequest.item}&rdquo;? This action cannot be
+                undone.
+              </p>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={isDeletingRequest}
+                  onClick={() => setDeletingRequest(null)}
+                  className="h-10 cursor-pointer rounded-xl border border-neutral-200 px-4 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingRequest}
+                  onClick={() => void handleConfirmDelete()}
+                  className="h-10 cursor-pointer rounded-xl bg-[#E5192D] px-4 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isDeletingRequest ? "Deleting…" : "Confirm"}
+                </button>
+              </div>
+            </section>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

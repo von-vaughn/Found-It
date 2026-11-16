@@ -83,10 +83,11 @@ export async function listAllClaims(): Promise<ServerClaim[]> {
 export async function updateClaimStatus(
   id: string,
   status: Exclude<ServerClaimStatus, "pending">,
+  reason?: string,
 ): Promise<ServerClaim> {
   const { data } = await api.patch<UpdateClaimResponse>(
     `/claims/admin/${id}/status`,
-    { status },
+    { status, ...(reason ? { reason } : {}) },
   );
   return data.claim;
 }

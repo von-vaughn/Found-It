@@ -60,10 +60,12 @@ export function useUpdateAdminClaimStatus() {
     mutationFn: ({
       id,
       status,
+      reason,
     }: {
       id: string;
       status: Exclude<ServerClaimStatus, "pending">;
-    }) => updateClaimStatus(id, status),
+      reason?: string;
+    }) => updateClaimStatus(id, status, reason),
     onSuccess: (updated) => {
       queryClient.setQueryData<ServerClaim[]>(claimKeys.admin(), (current) =>
         current?.map((claim) =>

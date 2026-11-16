@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 import toast from "react-hot-toast";
+import { SelectDropdown } from "@/components/SelectDropdown";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
 import { uploadImages } from "@/services/itemService";
@@ -323,20 +324,18 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
           <label htmlFor="claim-building" className={labelClass}>
             Building
           </label>
-          <select
+          <SelectDropdown
             id="claim-building"
-            name="building"
             value={building}
-            onChange={(event) => setBuilding(event.target.value)}
-            className={`${inputClass} appearance-none pr-9 cursor-pointer`}
-          >
-            <option value="">Select a building</option>
-            {buildingOptions.map((buildingOption) => (
-              <option key={buildingOption} value={buildingOption}>
-                {buildingOption}
-              </option>
-            ))}
-          </select>
+            onChange={setBuilding}
+            options={buildingOptions.map((buildingOption) => ({
+              value: buildingOption,
+              label: buildingOption,
+            }))}
+            placeholder="Select a building"
+            allowEmpty
+            className={inputClass}
+          />
         </div>
 
         <div>

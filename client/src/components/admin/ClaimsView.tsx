@@ -326,6 +326,7 @@ export function ClaimDetailPanel({
   onClaimStatusChange: (
     id: string,
     status: ClaimRequest["status"],
+    reason?: string,
   ) => Promise<void>;
   onOsaReceiptChange: (id: string, receivedByOsa: boolean) => void;
   isUpdatingOsaReceipt?: boolean;
@@ -337,6 +338,8 @@ export function ClaimDetailPanel({
     claimId: string;
     status: StatusDecision;
   } | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectError, setRejectError] = useState("");
   const [savingStatusChange, setSavingStatusChange] = useState(false);
   const approvalDialogRef = useRef<HTMLDialogElement>(null);
 
@@ -408,6 +411,8 @@ export function ClaimDetailPanel({
 
   const closeApprovalDialog = () => {
     setPendingStatusChange(null);
+    setRejectReason("");
+    setRejectError("");
     if (approvalDialogRef.current?.open) approvalDialogRef.current.close();
   };
 
@@ -415,6 +420,11 @@ export function ClaimDetailPanel({
 
   const confirmStatusChange = async () => {
     if (!pendingStatusChange || !claimForStatusChange || savingStatusChange) {
+      return;
+    }
+    const trimmedReason = rejectReason.trim();
+    if (pendingStatusChange.status === "Rejected" && !trimmedReason) {
+      setRejectError("Please enter a reason for rejecting this claim request.");
       return;
     }
     setSavingStatusChange(true);
@@ -426,6 +436,7 @@ export function ClaimDetailPanel({
       await onClaimStatusChange(
         pendingStatusChange.claimId,
         confirmedStatus,
+        pendingStatusChange.status === "Rejected" ? trimmedReason : undefined,
       );
 
       if (pendingStatusChange.status === "ItemClaimed") {
@@ -585,7 +596,11 @@ export function ClaimDetailPanel({
         <dialog
           ref={approvalDialogRef}
           aria-labelledby="claim-status-title"
-          aria-describedby="claim-status-description"
+          aria-describedby={
+            pendingStatusChange.status === "Rejected"
+              ? undefined
+              : "claim-status-description"
+          }
           onCancel={(event) => {
             if (savingStatusChange) event.preventDefault();
           }}
@@ -605,18 +620,18 @@ export function ClaimDetailPanel({
                     ? "Reject this request?"
                     : "Mark this item as returned?"}
             </h2>
-            <p
-              id="claim-status-description"
-              className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
-            >
-              {pendingStatusChange.status === "Approved"
-                ? `Are you sure you want to approve ${claimForStatusChange.claimant}'s claim for ${claimForStatusChange.item}?`
-                : pendingStatusChange.status === "ItemClaimed"
-                  ? `Has ${claimForStatusChange.claimant} already claimed the ${claimForStatusChange.item}?`
-                  : pendingStatusChange.status === "Rejected"
-                    ? `Are you sure you want to reject ${claimForStatusChange.claimant}'s claim for ${claimForStatusChange.item}?`
+            {pendingStatusChange.status !== "Rejected" && (
+              <p
+                id="claim-status-description"
+                className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
+              >
+                {pendingStatusChange.status === "Approved"
+                  ? `Are you sure you want to approve ${claimForStatusChange.claimant}'s claim for ${claimForStatusChange.item}?`
+                  : pendingStatusChange.status === "ItemClaimed"
+                    ? `Has ${claimForStatusChange.claimant} already claimed the ${claimForStatusChange.item}?`
                     : `Confirm that ${claimForStatusChange.claimant} has received ${claimForStatusChange.item}.`}
-            </p>
+              </p>
+            )}
             {pendingStatusChange.status === "Approved" && (
               <p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-xs leading-relaxed text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
                 Once approved, the system will notify{" "}
@@ -631,6 +646,34 @@ export function ClaimDetailPanel({
                   : `${claimsToAutoReject.length} other open requests for this item will be automatically rejected.`}
               </p>
             )}
+            {pendingStatusChange.status === "Rejected" && (
+              <div className="mt-4">
+                <label
+                  htmlFor="claim-reject-reason"
+                  className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
+                >
+                  Rejection reason <span className="text-[#E5192D]">*</span>
+                </label>
+                <textarea
+                  id="claim-reject-reason"
+                  rows={3}
+                  maxLength={500}
+                  required
+                  value={rejectReason}
+                  onChange={(event) => {
+                    setRejectReason(event.target.value);
+                    if (rejectError) setRejectError("");
+                  }}
+                  placeholder="Explain why this claim request is being rejected…"
+                  className="mt-1.5 w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                />
+                {rejectError && (
+                  <p className="mt-1.5 text-xs font-medium text-[#E5192D]" role="alert">
+                    {rejectError}
+                  </p>
+                )}
+              </div>
+            )}
             <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
@@ -643,8 +686,12 @@ export function ClaimDetailPanel({
               <button
                 type="button"
                 onClick={confirmStatusChange}
-                disabled={savingStatusChange}
-                className="h-9 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+                disabled={
+                  savingStatusChange ||
+                  (pendingStatusChange.status === "Rejected" &&
+                    !rejectReason.trim())
+                }
+                className="h-9 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {savingStatusChange
                   ? "Saving…"
@@ -871,12 +918,14 @@ export function ClaimDetailPanel({
                             activeClaim.status !== "Pending" &&
                             activeClaim.status !== "Approved"
                           }
-                          onClick={() =>
+                          onClick={() => {
+                            setRejectReason("");
+                            setRejectError("");
                             setPendingStatusChange({
                               claimId: activeClaim.id,
                               status: "Rejected",
-                            })
-                          }
+                            });
+                          }}
                           className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
                         >
                           <X className="h-3.5 w-3.5" aria-hidden="true" />

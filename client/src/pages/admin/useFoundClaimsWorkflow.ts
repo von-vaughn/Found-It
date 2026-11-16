@@ -71,11 +71,12 @@ export function useFoundClaimsWorkflow() {
   const handleClaimStatusChange = async (
     id: string,
     status: ClaimRequest["status"],
+    reason?: string,
   ): Promise<void> => {
     const serverStatus = ADMIN_STATUS[status];
     if (!serverStatus) return;
 
-    await updateClaimStatus.mutateAsync({ id, status: serverStatus });
+    await updateClaimStatus.mutateAsync({ id, status: serverStatus, reason });
   };
 
   const handleOsaReceiptChange = (id: string, receivedByOsa: boolean) => {
