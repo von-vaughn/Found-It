@@ -276,23 +276,16 @@ function RequestEditForm({
             <label className={labelClass} htmlFor="edit-request-color">
               Primary color
             </label>
-            <div className="relative">
-              <input
-                id="edit-request-color"
-                className={`${inputClass} pr-9`}
-                value={color}
-                onChange={(event) => setColor(event.target.value)}
-                placeholder="Black…"
-                autoComplete="off"
-                spellCheck={false}
-                disabled={isBusy}
-              />
-              <span
-                aria-hidden="true"
-                style={{ backgroundColor: color.trim() || "transparent" }}
-                className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-neutral-200 dark:border-neutral-800"
-              />
-            </div>
+            <input
+              id="edit-request-color"
+              className={inputClass}
+              value={color}
+              onChange={(event) => setColor(event.target.value)}
+              placeholder="Black…"
+              autoComplete="off"
+              spellCheck={false}
+              disabled={isBusy}
+            />
           </div>
           <div>
             <label className={labelClass} htmlFor="edit-request-date">

@@ -10,7 +10,6 @@ import {
   Palette,
   Pencil,
   SearchX,
-  Tag,
   Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -76,14 +75,14 @@ function ClaimPhotosCarousel({
       <NoItemImage
         title="No photo evidence provided"
         subtitle="The claimant did not attach any photos to this request."
-        className="mt-2 h-72"
+        className="h-48 sm:h-56"
       />
     );
   }
 
   return (
     <div
-      className={`mt-2 grid gap-2 ${
+      className={`grid gap-2 ${
         photos.length > 1 ? "grid-cols-2" : "grid-cols-1"
       }`}
     >
@@ -98,6 +97,7 @@ function ClaimPhotosCarousel({
             src={photo.src}
             alt={photo.alt}
             loading="lazy"
+            referrerPolicy="no-referrer"
             className="h-full max-w-full object-contain"
           />
         </div>
@@ -277,7 +277,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
           />
         </div>
 
-        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white dark:bg-neutral-950 px-4 py-8 sm:px-8 lg:px-12">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white dark:bg-neutral-950 px-4 pt-2 pb-8 sm:px-8 lg:px-12">
           <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
             <h1 className="sr-only">Claims &amp; Returned</h1>
 
@@ -295,7 +295,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     type="button"
                     onClick={() => setStatusFilter(tab.id)}
                     aria-pressed={isActive}
-                    className={`inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                    className={`inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 py-2 text-xs font-semibold cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                       isActive
                         ? "border-[#E5192D] bg-[#E5192D] text-white"
                         : "border-neutral-200 bg-transparent text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
@@ -333,8 +333,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                 >
                   {groupedByPost.map(([itemId, claims]) => {
                     const item = itemById.get(itemId);
-                    const statusLabel = submissionStatusLabel(claims[0]);
-                    const statusStyle = simplifiedClaimStatusStyles[statusLabel];
                     const itemTypeLabel =
                       item?.type === "lost" || claims[0]?.kind === "return"
                         ? "Lost"
@@ -343,34 +341,21 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                       <StaggerItem key={itemId}>
                     <section
                       aria-label={`Requests for ${claims[0]?.item ?? "post"}`}
-                      className="overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800"
+                      className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"
                     >
-                      <div className="flex items-center gap-3 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900 p-4 sm:px-5">
-                        <div className="min-w-0 flex-1">
-                          <h2 className="truncate text-sm font-extrabold text-neutral-900 dark:text-neutral-100">
-                            {item?.title ?? claims[0]?.item ?? "Post"}
-                          </h2>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <StatusBadge status={itemTypeLabel} />
-                          <span
-                            className={`inline-flex shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-bold ${statusStyle}`}
-                          >
-                            {statusLabel}
-                          </span>
-                        </div>
-                      </div>
-
                       <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
                         {claims.map((claim) => {
                           const isFoundReport = claim.kind === "return";
                           const isPending = claim.status === "Pending";
+                          const claimStatusLabel = submissionStatusLabel(claim);
+                          const claimStatusStyle =
+                            simplifiedClaimStatusStyles[claimStatusLabel];
                           const detailImages = (claim.evidence ?? []).filter(
                             (src) => src !== item?.image,
                           );
                           return (
                             <li key={claim.id} className="p-4 sm:p-5">
-                              <div className="grid gap-5 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+                              <div className="grid gap-5 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]">
                                 <ClaimPhotosCarousel
                                   claimId={claim.id}
                                   itemTitle={item?.title ?? claim.item}
@@ -378,17 +363,45 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   detailImages={detailImages}
                                 />
                                 <div className="flex min-w-0 flex-col">
-                                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
-                                    Submitted {claim.submitted}
-                                  </p>
-                                  <div className="mt-1.5">
-                                    <h4 className="text-[10px] font-bold capitalize text-neutral-400 dark:text-neutral-500">
+                                  <div className="flex flex-wrap items-start justify-between gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="flex flex-wrap items-center gap-x-2 text-[11px] text-neutral-400 dark:text-neutral-500">
+                                        <span className="font-semibold uppercase tracking-wider">
+                                          {isFoundReport
+                                            ? "Return Request"
+                                            : "Claim Request"}
+                                        </span>
+                                        <span aria-hidden="true">·</span>
+                                        <span className="font-medium text-neutral-500 dark:text-neutral-400">
+                                          Submitted{" "}
+                                          <span className="font-mono tabular-nums">
+                                            {claim.submitted}
+                                          </span>
+                                        </span>
+                                      </p>
+                                      <h2 className="mt-1 truncate text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                                        {item?.title ?? claim.item ?? "Post"}
+                                      </h2>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-2">
+                                      <StatusBadge status={itemTypeLabel} />
+                                      <span
+                                        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold ${claimStatusStyle}`}
+                                      >
+                                        {claimStatusLabel}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-4">
+                                    <h4 className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
                                       Description
                                     </h4>
-                                    <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+                                    <p className="mt-1 text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
                                       {claim.details}
                                     </p>
                                   </div>
+
                                   {isFoundReport && claim.status === "Returned" && (
                                     <p
                                       role="status"
@@ -397,129 +410,134 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       This item has already been returned.
                                     </p>
                                   )}
-                                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:grid-cols-3">
-                                <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
-                                    <Palette
-                                      className="h-3 w-3"
+
+                                  <dl className="mt-4 grid grid-cols-2 gap-px border-y border-neutral-200/80 bg-neutral-200/80 text-xs sm:grid-cols-3 dark:border-neutral-800 dark:bg-neutral-800">
+                                    <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
+                                        <Palette
+                                          className="h-3.5 w-3.5"
+                                          aria-hidden="true"
+                                        />
+                                        Primary color
+                                      </dt>
+                                      <dd className="mt-1 font-semibold capitalize text-neutral-900 dark:text-neutral-100">
+                                        {claim.color?.trim() || "Not provided"}
+                                      </dd>
+                                    </div>
+                                    <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
+                                        <MapPin
+                                          className="h-3.5 w-3.5"
+                                          aria-hidden="true"
+                                        />
+                                        Location {isFoundReport ? "found" : "lost"}
+                                      </dt>
+                                      <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
+                                        {claim.location}
+                                      </dd>
+                                    </div>
+                                    <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
+                                        <Building2
+                                          className="h-3.5 w-3.5"
+                                          aria-hidden="true"
+                                        />
+                                        Building
+                                      </dt>
+                                      <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
+                                        {claim.building?.trim() || "Not provided"}
+                                      </dd>
+                                    </div>
+                                    <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
+                                        <CalendarDays
+                                          className="h-3.5 w-3.5"
+                                          aria-hidden="true"
+                                        />
+                                        Date {isFoundReport ? "found" : "lost"}
+                                      </dt>
+                                      <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
+                                        {claim.dateLost}
+                                      </dd>
+                                    </div>
+                                    <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
+                                        <Clock3
+                                          className="h-3.5 w-3.5"
+                                          aria-hidden="true"
+                                        />
+                                        Time {isFoundReport ? "found" : "lost"}
+                                      </dt>
+                                      <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
+                                        {claim.timeLost}
+                                      </dd>
+                                    </div>
+                                    <div
                                       aria-hidden="true"
+                                      className="bg-white dark:bg-neutral-900"
                                     />
-                                    Primary color
-                                  </dt>
-                                  <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
-                                    {claim.color?.trim() || "Not provided"}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
-                                    <MapPin
-                                      className="h-3 w-3"
-                                      aria-hidden="true"
-                                    />
-                                    Location {isFoundReport ? "found" : "lost"}
-                                  </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                    {claim.location}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
-                                    <Building2
-                                      className="h-3 w-3"
-                                      aria-hidden="true"
-                                    />
-                                    Building
-                                  </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                    {claim.building?.trim() || "Not provided"}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
-                                    <CalendarDays
-                                      className="h-3 w-3"
-                                      aria-hidden="true"
-                                    />
-                                    Date {isFoundReport ? "found" : "lost"}
-                                  </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                    {claim.dateLost}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
-                                    <Clock3
-                                      className="h-3 w-3"
-                                      aria-hidden="true"
-                                    />
-                                    Time {isFoundReport ? "found" : "lost"}
-                                  </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                    {claim.timeLost}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-500">
-                                    <Tag
-                                      className="h-3 w-3"
-                                      aria-hidden="true"
-                                    />
-                                    What is it?
-                                  </dt>
-                                  <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                    {claim.claimantTitle?.trim() || claim.item}
-                                  </dd>
-                                </div>
-                              </dl>
-                              {claim.importantDetails?.trim() && (
-                                <div className="mt-3">
-                                  <h4 className="text-[10px] font-bold capitalize text-neutral-400 dark:text-neutral-500">
-                                    Important Details
-                                  </h4>
-                                  <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
-                                    {claim.importantDetails}
-                                  </p>
-                                </div>
-                              )}
-                              <div className="mt-auto flex flex-wrap justify-end gap-2 pt-3">
-                                {isPending && (
-                                  <>
+                                  </dl>
+
+                                  {claim.importantDetails?.trim() && (
+                                    <div className="mt-4 rounded-xl border border-neutral-200/80 bg-neutral-50/80 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
+                                      <h4 className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+                                        Important Details
+                                      </h4>
+                                      <p className="mt-1 text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
+                                        {claim.importantDetails}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  <div className="mt-auto flex flex-wrap items-center justify-end gap-2 pt-5">
+                                    {isPending && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingRequest(claim)}
+                                          disabled={isSubmittingChange}
+                                          aria-label="Edit request"
+                                          title="Edit request"
+                                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                        >
+                                          <Pencil
+                                            className="h-3.5 w-3.5"
+                                            aria-hidden="true"
+                                          />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            void handleDeleteRequest(claim)
+                                          }
+                                          disabled={isSubmittingChange}
+                                          aria-label="Delete request"
+                                          title="Delete request"
+                                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-red-200 bg-white text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:border-red-900/60 dark:bg-neutral-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                                        >
+                                          <Trash2
+                                            className="h-3.5 w-3.5"
+                                            aria-hidden="true"
+                                          />
+                                        </button>
+                                      </>
+                                    )}
                                     <button
                                       type="button"
-                                      onClick={() => setEditingRequest(claim)}
-                                      disabled={isSubmittingChange}
-                                      className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                      onClick={() =>
+                                        navigate(`/dashboard/items/${itemId}`, {
+                                          state: { from: "/dashboard/claims" },
+                                        })
+                                      }
+                                      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[#E5192D] px-4 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
                                     >
-                                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                                      Edit
+                                      View post
+                                      <ArrowRight
+                                        className="h-3.5 w-3.5"
+                                        aria-hidden="true"
+                                      />
                                     </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => void handleDeleteRequest(claim)}
-                                      disabled={isSubmittingChange}
-                                      className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 dark:border-red-950 dark:bg-neutral-900 dark:text-red-400 dark:hover:bg-red-950/30"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                                      Delete
-                                    </button>
-                                  </>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    navigate(`/dashboard/items/${itemId}`, {
-                                      state: { from: "/dashboard/claims" },
-                                    })
-                                  }
-                                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
-                                >
-                                  View post
-                                  <ArrowRight
-                                    className="h-3.5 w-3.5"
-                                    aria-hidden="true"
-                                  />
-                                </button>
-                              </div>
+                                  </div>
                                 </div>
                               </div>
                             </li>

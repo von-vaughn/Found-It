@@ -257,26 +257,17 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             <label htmlFor="claim-color" className={labelClass}>
               Primary color
             </label>
-            <div className="relative">
-              <input
-                id="claim-color"
-                name="color"
-                type="text"
-                value={color}
-                onChange={(event) => setColor(event.target.value)}
-                placeholder="Black…"
-                autoComplete="off"
-                spellCheck={false}
-                className={`${inputClass} pr-9`}
-              />
-              <span
-                aria-hidden="true"
-                style={{
-                  backgroundColor: color.trim() || "transparent",
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-neutral-200 dark:border-neutral-800"
-              />
-            </div>
+            <input
+              id="claim-color"
+              name="color"
+              type="text"
+              value={color}
+              onChange={(event) => setColor(event.target.value)}
+              placeholder="Black…"
+              autoComplete="off"
+              spellCheck={false}
+              className={inputClass}
+            />
           </div>
           <div className="min-w-0">
             <label htmlFor="claim-date-lost" className={labelClass}>

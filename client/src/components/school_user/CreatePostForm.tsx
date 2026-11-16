@@ -978,27 +978,18 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               <label htmlFor="report-color" className={labelClass}>
                 Primary color
               </label>
-              <div className="relative">
-                <input
-                  id="report-color"
-                  name="color"
-                  type="text"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  placeholder="Black…"
-                  autoComplete="off"
-                  spellCheck={false}
-                  className={`${inputClass} pr-9`}
-                  {...errorProps("report-color")}
-                />
-                <span
-                  aria-hidden="true"
-                  style={{
-                    backgroundColor: color.trim() || "transparent",
-                  }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-neutral-200 dark:border-neutral-800"
-                />
-              </div>
+              <input
+                id="report-color"
+                name="color"
+                type="text"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                placeholder="Black…"
+                autoComplete="off"
+                spellCheck={false}
+                className={inputClass}
+                {...errorProps("report-color")}
+              />
               <FieldError
                 fieldId="report-color"
                 message={fieldErrors["report-color"]}

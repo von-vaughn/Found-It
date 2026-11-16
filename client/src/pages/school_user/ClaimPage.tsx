@@ -165,7 +165,7 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
             ) : existingClaim ? (
               <div className="py-10 text-center">
                 <span
-                  className={`inline-flex rounded-full px-3 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simplifyClaimStatus(existingClaim.status)]}`}
+                  className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold ${simplifiedClaimStatusStyles[simplifyClaimStatus(existingClaim.status)]}`}
                 >
                   {simplifyClaimStatus(existingClaim.status)}
                 </span>

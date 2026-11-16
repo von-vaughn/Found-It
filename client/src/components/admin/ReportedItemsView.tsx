@@ -494,7 +494,7 @@ export function ReportedItemsView({
 
   return (
     <div className="space-y-6">
-      <header className="border-b border-neutral-200/80 pb-5 dark:border-neutral-800">
+      <header className="pb-5">
         <div className="min-w-0">
           <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
             Reported items
