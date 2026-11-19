@@ -16,6 +16,7 @@ export interface User {
   role: Role;
   isActive: boolean;
   isVerified: boolean;
+  hasSeenTutorial?: boolean;
   schoolId?: string;
   studentId?: string;
   avatar?: string;
@@ -49,6 +50,7 @@ export interface AuthContextType {
   ) => Promise<{ available: boolean; message?: string }>;
   verifyOtp: (code: string) => Promise<{ success: boolean; message?: string; role?: Role }>;
   resendOtp: (email?: string) => Promise<{ success: boolean; message?: string }>;
+  markTutorialSeen: () => Promise<void>;
   logout: () => Promise<void>;
 }
 

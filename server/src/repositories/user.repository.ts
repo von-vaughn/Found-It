@@ -10,6 +10,7 @@ interface SafeUserRow {
   role: Role;
   is_active: boolean;
   is_verified: boolean;
+  has_seen_tutorial: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -28,7 +29,7 @@ export interface UserWithHash extends SafeUser {
 
 const SAFE_USER_COLUMNS = `
   id, first_name, last_name, email, school_id, role, is_active, is_verified,
-  created_at, updated_at
+  has_seen_tutorial, created_at, updated_at
 `;
 
 function toSafeUser(row: SafeUserRow): SafeUser {
@@ -40,6 +41,7 @@ function toSafeUser(row: SafeUserRow): SafeUser {
     role: row.role,
     isActive: row.is_active,
     isVerified: row.is_verified,
+    hasSeenTutorial: row.has_seen_tutorial,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
   };
@@ -174,6 +176,15 @@ export async function setUserVerified(id: string): Promise<SafeUser | null> {
     [id],
   );
   return rows[0] ? toSafeUser(rows[0]) : null;
+}
+
+export async function markUserTutorialSeen(id: string): Promise<void> {
+  await pool.query(
+    `UPDATE "user"
+     SET has_seen_tutorial = TRUE, updated_at = NOW()
+     WHERE id = $1`,
+    [id],
+  );
 }
 
 export async function deleteUser(id: string): Promise<boolean> {

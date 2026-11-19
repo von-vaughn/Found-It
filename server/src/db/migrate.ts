@@ -26,6 +26,7 @@ export async function migrate(): Promise<void> {
       is_verified BOOLEAN NOT NULL DEFAULT FALSE,
       is_student BOOLEAN NOT NULL DEFAULT TRUE,
       is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+      has_seen_tutorial BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       CONSTRAINT user_flags_check CHECK (NOT (is_student AND is_admin))
@@ -250,6 +251,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS last_resend_at TIMESTAMPTZ;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS resend_count_window INT NOT NULL DEFAULT 0;
     ALTER TABLE "user" ADD COLUMN IF NOT EXISTS school_id VARCHAR(30);
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS has_seen_tutorial BOOLEAN NOT NULL DEFAULT FALSE;
 
     ALTER TABLE email_otp ADD COLUMN IF NOT EXISTS purpose VARCHAR(20) NOT NULL DEFAULT 'verify_email';
 

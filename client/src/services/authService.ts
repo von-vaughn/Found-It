@@ -134,6 +134,10 @@ export const authService = {
     );
     return data.verified;
   },
+
+  async markTutorialSeen(): Promise<void> {
+    await api.patch<{ hasSeenTutorial: boolean }>("/auth/tutorial-seen");
+  },
 };
 
 export default authService;

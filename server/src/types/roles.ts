@@ -16,6 +16,7 @@ export interface SafeUser {
   role: Role;
   isActive: boolean;
   isVerified: boolean;
+  hasSeenTutorial: boolean;
   createdAt: string;
   updatedAt: string;
 }

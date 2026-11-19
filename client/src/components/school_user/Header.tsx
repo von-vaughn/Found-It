@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, LogOut, Moon, Sun, User as UserIcon, Search, SlidersHorizontal } from "lucide-react";
+import {
+  ChevronDown,
+  Compass,
+  LogOut,
+  Moon,
+  Sun,
+  User as UserIcon,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useAuth } from "@/context/useAuth";
 import { useTheme } from "@/context/useTheme";
 import { useNavigate } from "react-router-dom";
@@ -82,6 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
             }
           >
             <div
+              data-tour="school-search"
               className={`relative flex items-center gap-2 transition-[margin] duration-200 ease-out ${
                 notificationPanelOpen ? "md:ml-80" : ""
               }`}
@@ -138,6 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
+            data-tour="school-profile-menu"
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
             aria-label="Open profile menu"
             aria-expanded={profileDropdownOpen}
@@ -180,6 +191,18 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <UserIcon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                 Profile
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  navigate("/dashboard", { state: { startTour: Date.now() } });
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-colors text-left"
+              >
+                <Compass className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+                Tutorial tour
               </button>
 
               <button

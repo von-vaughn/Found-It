@@ -7,6 +7,7 @@ import {
   findUserByEmail,
   findUserById,
   findUserWithHashByEmail,
+  markUserTutorialSeen,
   setUserVerified,
   updateUserPassword,
 } from '../repositories/user.repository';
@@ -539,6 +540,16 @@ export async function me(req: Request, res: Response): Promise<void> {
     return;
   }
   res.json({ user });
+}
+
+/** PATCH /api/auth/tutorial-seen — marks the guided tour as completed for the user */
+export async function markTutorialSeen(req: Request, res: Response): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: 'Not authenticated.' });
+    return;
+  }
+  await markUserTutorialSeen(req.user.sub);
+  res.json({ hasSeenTutorial: true });
 }
 
 const verifyPasswordSchema = z.object({

@@ -8,15 +8,18 @@ import React, {
   useMemo,
   useLayoutEffect,
 } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import type { Driver } from "driver.js";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import {
   discardSchoolSidebarExpanded,
 } from "@/components/school_user/sidebarExpandedState";
 import { Header } from "@/components/school_user/Header";
+import { startSchoolUserTour } from "@/components/school_user/schoolUserTour";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { FadeIn } from "@/components/FadeIn";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
+import { useAuth } from "@/context/useAuth";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -62,6 +65,66 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, markTutorialSeen } = useAuth();
+  const activeTourRef = useRef<Driver | null>(null);
+  const autoTourStartedRef = useRef(false);
+  const lastHandledTourIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      activeTourRef.current?.destroy();
+      activeTourRef.current = null;
+    };
+  }, []);
+
+  // Manual launch triggered from "Tutorial tour" in the profile dropdown.
+  useEffect(() => {
+    const startTour = (location.state as { startTour?: number } | null)
+      ?.startTour;
+    if (!startTour || lastHandledTourIdRef.current === startTour) return;
+
+    const timer = window.setTimeout(() => {
+      lastHandledTourIdRef.current = startTour;
+      activeTourRef.current?.destroy();
+      activeTourRef.current = startSchoolUserTour({
+        onComplete: () => {
+          activeTourRef.current = null;
+        },
+      });
+      // Clear router state after starting so clearing state never cancels this timer.
+      navigate(`${location.pathname}${location.search}`, {
+        replace: true,
+        state: null,
+      });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [location.state, location.pathname, location.search, navigate]);
+
+  // Auto-launch once on a school user's first login after items finish loading.
+  useEffect(() => {
+    if (
+      autoTourStartedRef.current ||
+      isItemsLoading ||
+      user?.role !== "school_user" ||
+      user.hasSeenTutorial !== false
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      if (autoTourStartedRef.current) return;
+      autoTourStartedRef.current = true;
+      void markTutorialSeen();
+      activeTourRef.current?.destroy();
+      activeTourRef.current = startSchoolUserTour({
+        onComplete: () => {
+          activeTourRef.current = null;
+        },
+      });
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [isItemsLoading, markTutorialSeen, user?.hasSeenTutorial, user?.role]);
 
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
@@ -237,6 +300,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <FadeIn delay={0.05} className="w-full min-w-0">
           <div
             ref={categoryRowRef}
+            data-tour="school-categories"
             aria-label="Filter items by category"
             className="relative flex w-full max-w-full min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
@@ -315,6 +379,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </FadeIn>
 
           {/* Masonry Items Grid */}
+          <div data-tour="school-feed">
           {isItemsLoading ? (
             <DashboardGridSkeleton />
           ) : filteredItems.length > 0 ? (
@@ -362,6 +427,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </button>
             </div>
           )}
+          </div>
           </div>
         </main>
       </div>

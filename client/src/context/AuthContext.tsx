@@ -231,6 +231,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const markTutorialSeen = useCallback(async () => {
+    const current = queryClient.getQueryData<SafeAuthUser | null>(
+      AUTH_USER_QUERY_KEY,
+    );
+    if (current) {
+      setAuthUser({ ...current, hasSeenTutorial: true });
+    }
+    try {
+      await authService.markTutorialSeen();
+    } catch {
+      // Cache stays marked for the session even if network fails momentarily.
+    }
+  }, [queryClient, setAuthUser]);
+
   const logout = async () => {
     try {
       await logoutMutation.mutateAsync();
@@ -257,6 +271,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         checkEmailAvailability,
         verifyOtp,
         resendOtp,
+        markTutorialSeen,
         logout,
       }}
     >

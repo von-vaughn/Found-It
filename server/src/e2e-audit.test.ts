@@ -252,6 +252,24 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.ok(rotated.data.accessToken);
     const schoolAuth = await loginAs(OWNER_EMAIL);
 
+    const beforeTutorialRes = await api<{ user: { hasSeenTutorial: boolean } }>('GET', '/api/auth/me', {
+      token: schoolAuth.token,
+    });
+    assert.equal(beforeTutorialRes.status, 200);
+    assert.equal(typeof beforeTutorialRes.data.user.hasSeenTutorial, 'boolean');
+
+    const markSeenRes = await api<{ hasSeenTutorial: boolean }>('PATCH', '/api/auth/tutorial-seen', {
+      token: schoolAuth.token,
+    });
+    assert.equal(markSeenRes.status, 200);
+    assert.equal(markSeenRes.data.hasSeenTutorial, true);
+
+    const afterTutorialRes = await api<{ user: { hasSeenTutorial: boolean } }>('GET', '/api/auth/me', {
+      token: schoolAuth.token,
+    });
+    assert.equal(afterTutorialRes.status, 200);
+    assert.equal(afterTutorialRes.data.user.hasSeenTutorial, true);
+
     const goodPw = await api('POST', '/api/auth/verify-password', {
       token: adminAuth.token,
       body: { password: TEST_PASSWORD },
@@ -276,6 +294,24 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const adminAuth = await loginAs(ADMIN_EMAIL);
     const superAuth = await loginAs(SUPER_EMAIL);
     const schoolAuth = await loginAs(OWNER_EMAIL);
+
+    const beforeTutorialRes = await api<{ user: { hasSeenTutorial: boolean } }>('GET', '/api/auth/me', {
+      token: schoolAuth.token,
+    });
+    assert.equal(beforeTutorialRes.status, 200);
+    assert.equal(typeof beforeTutorialRes.data.user.hasSeenTutorial, 'boolean');
+
+    const markSeenRes = await api<{ hasSeenTutorial: boolean }>('PATCH', '/api/auth/tutorial-seen', {
+      token: schoolAuth.token,
+    });
+    assert.equal(markSeenRes.status, 200);
+    assert.equal(markSeenRes.data.hasSeenTutorial, true);
+
+    const afterTutorialRes = await api<{ user: { hasSeenTutorial: boolean } }>('GET', '/api/auth/me', {
+      token: schoolAuth.token,
+    });
+    assert.equal(afterTutorialRes.status, 200);
+    assert.equal(afterTutorialRes.data.user.hasSeenTutorial, true);
 
     // Admin creates a category -> should persist, NOT create audit_log row
     const catRes = await api<{ category: { id: string; name: string } }>('POST', '/api/categories', {

@@ -4,6 +4,7 @@ import {
   forgotPassword,
   login,
   logout,
+  markTutorialSeen,
   me,
   refresh,
   register,
@@ -33,6 +34,7 @@ router.post('/logout', csrfProtection, logout);
 
 // Authenticated
 router.get('/me', authenticate, me);
+router.patch('/tutorial-seen', authenticate, markTutorialSeen);
 router.post('/verify-password', authenticate, requireAdmin, verifyAdminPassword);
 
 export default router;

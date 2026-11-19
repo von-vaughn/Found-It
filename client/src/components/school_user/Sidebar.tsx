@@ -269,6 +269,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Button
                 variant="ghost"
+                data-tour={`nav-${item.id}`}
                 ref={
                   item.id === "notifications"
                     ? notificationsButtonRef
@@ -343,6 +344,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Button
               variant="ghost"
               key={item.id}
+              data-tour={`mobile-nav-${item.id}`}
               ref={
                 item.id === "notifications"
                   ? mobileNotificationsButtonRef
@@ -390,6 +392,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
         <button
           onClick={() => navigate("/dashboard/profile")}
+          data-tour="mobile-nav-profile"
           aria-label="Profile"
           className={`relative flex flex-col items-center gap-1 py-2.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
             activeTab === "profile"
