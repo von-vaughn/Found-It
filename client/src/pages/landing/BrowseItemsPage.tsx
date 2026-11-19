@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Item } from "@/data/mockItems";
 import { EMPTY_ITEMS } from "@/data/mockItems";
 import { ItemCard } from "@/components/school_user/ItemCard";
+import { FadeIn } from "@/components/FadeIn";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { ItemModal } from "@/components/ItemModal";
 import { SearchPaletteModal } from "@/components/SearchPaletteModal";
@@ -205,52 +206,55 @@ export const BrowseItemsPage: React.FC = () => {
     <div className="min-h-screen bg-white pt-5 pb-10 sm:pt-7 sm:pb-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-4 mb-8 w-full">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <form onSubmit={handleSearchSubmit} className="min-w-0 flex-1">
-              <div className="relative flex min-w-0 flex-1 items-center">
-                <Search
-                  className="pointer-events-none absolute left-3.5 h-4 w-4 text-neutral-400"
-                  aria-hidden="true"
-                />
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) =>
-                    handleSearchQueryChange(event.target.value)
-                  }
-                  placeholder={`Search ${activeTab} items by name…`}
-                  aria-label={`Search ${activeTab} items by name`}
-                  autoComplete="off"
-                  className="h-12 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-12 text-sm text-neutral-800 shadow-xs placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                />
-                <button
-                  type="button"
-                  onClick={openFilters}
-                  title="Filters"
-                  aria-label="Open filters"
-                  aria-expanded={filterModalOpen}
-                  className={`absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 cursor-pointer ${
-                    filterModalOpen || activeFilterCount > 0
-                      ? "text-neutral-900 hover:bg-neutral-200/70"
-                      : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/70"
-                  }`}
-                >
-                  <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-                  {activeFilterCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#E5192D] px-1 text-[10px] font-bold text-white tabular-nums">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+          <FadeIn>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <form onSubmit={handleSearchSubmit} className="min-w-0 flex-1">
+                <div className="relative flex min-w-0 flex-1 items-center">
+                  <Search
+                    className="pointer-events-none absolute left-3.5 h-4 w-4 text-neutral-400"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(event) =>
+                      handleSearchQueryChange(event.target.value)
+                    }
+                    placeholder={`Search ${activeTab} items by name…`}
+                    aria-label={`Search ${activeTab} items by name`}
+                    autoComplete="off"
+                    className="h-12 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-12 text-sm text-neutral-800 shadow-xs placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  />
+                  <button
+                    type="button"
+                    onClick={openFilters}
+                    title="Filters"
+                    aria-label="Open filters"
+                    aria-expanded={filterModalOpen}
+                    className={`absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 cursor-pointer ${
+                      filterModalOpen || activeFilterCount > 0
+                        ? "text-neutral-900 hover:bg-neutral-200/70"
+                        : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/70"
+                    }`}
+                  >
+                    <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+                    {activeFilterCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#E5192D] px-1 text-[10px] font-bold text-white tabular-nums">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </FadeIn>
 
-          <div
-            ref={categoryRowRef}
-            aria-label="Filter items by category"
-            className="relative flex w-full max-w-full min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
+          <FadeIn delay={0.05} className="w-full min-w-0">
+            <div
+              ref={categoryRowRef}
+              aria-label="Filter items by category"
+              className="relative flex w-full max-w-full min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
             {visibleCategories.map((cat) => {
               const Icon = "icon" in cat ? cat.icon : null;
               const isActive = activeCategoryId === cat.id;
@@ -322,7 +326,8 @@ export const BrowseItemsPage: React.FC = () => {
                 <span>More</span>
               </button>
             </div>
-          </div>
+            </div>
+          </FadeIn>
         </div>
 
         {isLoading ? (
@@ -332,7 +337,7 @@ export const BrowseItemsPage: React.FC = () => {
           </div>
         ) : filteredItems.length > 0 ? (
           <StaggerGrid
-            key={`${activeTab}-${selectedCategory}-${JSON.stringify(filters)}`}
+            key={`${activeTab}-${selectedCategory}-${JSON.stringify(filters)}-${filteredItems.length}-${filteredItems[0]?.id ?? ""}`}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
             {filteredItems.map((item) => (

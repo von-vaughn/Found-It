@@ -63,12 +63,7 @@ export const StaggerItem: React.FC<StaggerItemProps> = ({
     return <div className={className}>{children}</div>;
   }
   return (
-    <motion.div
-      className={className}
-      variants={itemVariants}
-      initial="hidden"
-      animate="show"
-    >
+    <motion.div className={className} variants={itemVariants}>
       {children}
     </motion.div>
   );

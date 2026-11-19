@@ -15,6 +15,7 @@ import {
 } from "@/components/school_user/sidebarExpandedState";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
+import { FadeIn } from "@/components/FadeIn";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import {
   applyAdvancedFilters,
@@ -238,6 +239,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="@container notifications-shift min-w-0 w-full space-y-5 transition-[margin,width] duration-300 ease-in-out">
            {/* Filter Pills and Tabs Bar */}
 
+          <FadeIn delay={0.05} className="w-full min-w-0">
           <div
             ref={categoryRowRef}
             aria-label="Filter items by category"
@@ -315,6 +317,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </button>
             </div>
           </div>
+          </FadeIn>
 
           {/* Masonry Items Grid */}
           {isItemsLoading ? (
