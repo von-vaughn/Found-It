@@ -35,7 +35,6 @@ export function getDashboardRoutes({
       path: paths.dashboard,
       element: (
         <DashboardPage
-          submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -54,7 +53,6 @@ export function getDashboardRoutes({
       path: paths.dashboardCreate,
       element: (
         <CreatePostPage
-          submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -64,7 +62,6 @@ export function getDashboardRoutes({
       path: paths.dashboardNotifications,
       element: (
         <NotificationsPage
-          submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -86,7 +83,6 @@ export function getDashboardRoutes({
       path: paths.dashboardItemEdit,
       element: (
         <CreatePostPage
-          submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -96,7 +92,6 @@ export function getDashboardRoutes({
       path: paths.dashboardFoundReport,
       element: (
         <FoundReportPage
-          submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />
@@ -117,7 +112,6 @@ export function getDashboardRoutes({
       path: paths.dashboardProfile,
       element: (
         <ProfilePage
-          submittedClaims={submittedClaims}
           filters={filters}
           onFiltersChange={onFiltersChange}
         />

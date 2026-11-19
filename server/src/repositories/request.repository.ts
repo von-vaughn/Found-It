@@ -31,6 +31,7 @@ interface ClaimRow {
   building: string | null;
   received_by_osa: boolean;
   published_item_id: string | null;
+  rejection_reason: string | null;
   status: ClaimStatus;
   created_at: Date | string;
 }
@@ -41,7 +42,7 @@ const CLAIM_COLUMNS = `
   rq.date_lost, rq.time_lost, rq.location_lost, rq.details,
   rq.important_details, rq.evidence, rq.claimant_title,
   rq.primary_color, rq.building, rq.received_by_osa, rq.published_item_id,
-  rq.status, rq.created_at
+  rq.rejection_reason, rq.status, rq.created_at
 `;
 const CLAIM_JOIN = `
   FROM request rq
@@ -89,19 +90,25 @@ function toClaim(row: ClaimRow, includeOsaReceipt = false): Claim {
     building: row.building,
     ...(includeOsaReceipt ? { receivedByOsa: row.received_by_osa } : {}),
     publishedItemId: row.published_item_id,
+    rejectionReason: row.rejection_reason,
     status: row.status,
     submitted: new Date(row.created_at).toISOString(),
   };
 }
 
-export async function findClaimableItem(
-  itemId: string,
-): Promise<{ reporterId: string; reportType: "lost" | "found" } | null> {
+export async function findClaimableItem(itemId: string): Promise<{
+  reporterId: string;
+  reportType: "lost" | "found";
+  itemDate: string;
+  itemTime: string | null;
+} | null> {
   const { rows } = await pool.query<{
     reporter_id: string;
     report_type: "lost" | "found";
+    item_date: Date | string;
+    item_time: string | null;
   }>(
-    `SELECT r.user_id AS reporter_id, r.report_type
+    `SELECT r.user_id AS reporter_id, r.report_type, r.date AS item_date, r.time AS item_time
      FROM item i
      JOIN report r ON r.id = i.report_id
      WHERE i.id = $1
@@ -114,9 +121,47 @@ export async function findClaimableItem(
      LIMIT 1`,
     [itemId],
   );
-  return rows[0]
-    ? { reporterId: rows[0].reporter_id, reportType: rows[0].report_type }
-    : null;
+  if (!rows[0]) return null;
+  return {
+    reporterId: rows[0].reporter_id,
+    reportType: rows[0].report_type,
+    itemDate: toDateOnly(rows[0].item_date) ?? "",
+    itemTime: rows[0].item_time ? rows[0].item_time.slice(0, 5) : null,
+  };
+}
+
+export async function findItemEventTiming(
+  itemId: string,
+): Promise<{ itemDate: string; itemTime: string | null } | null> {
+  const { rows } = await pool.query<{
+    item_date: Date | string;
+    item_time: string | null;
+  }>(
+    `SELECT r.date AS item_date, r.time AS item_time
+     FROM item i
+     JOIN report r ON r.id = i.report_id
+     WHERE i.id = $1
+     LIMIT 1`,
+    [itemId],
+  );
+  if (!rows[0]) return null;
+  return {
+    itemDate: toDateOnly(rows[0].item_date) ?? "",
+    itemTime: rows[0].item_time ? rows[0].item_time.slice(0, 5) : null,
+  };
+}
+
+export async function countRejectedClaimsForUserAndItem(
+  userId: string,
+  itemId: string,
+): Promise<number> {
+  const { rows } = await pool.query<{ count: number }>(
+    `SELECT COUNT(*)::int AS count
+     FROM request
+     WHERE user_id = $1 AND item_id = $2 AND kind = 'claim' AND status = 'rejected'`,
+    [userId, itemId],
+  );
+  return rows[0]?.count ?? 0;
 }
 
 export async function findClaimById(
@@ -469,10 +514,18 @@ async function updateRequestStatusById(
       throw new PhysicalItemNotReceivedError();
     }
 
+    const trimmedReason = rejectionReason?.trim() || null;
     const { rowCount } = await client.query(
-      `UPDATE request SET status = $2
-       WHERE id = $1 AND kind = $3 AND status = $4`,
-      [id, status, kind, current.status],
+      status === "rejected"
+        ? `UPDATE request
+           SET status = $2, rejection_reason = $5
+           WHERE id = $1 AND kind = $3 AND status = $4`
+        : `UPDATE request
+           SET status = $2
+           WHERE id = $1 AND kind = $3 AND status = $4`,
+      status === "rejected"
+        ? [id, status, kind, current.status, trimmedReason]
+        : [id, status, kind, current.status],
     );
     if (rowCount !== 1) {
       await client.query("ROLLBACK");
@@ -501,23 +554,28 @@ async function updateRequestStatusById(
         status,
         requesterId: current.user_id,
         itemOwnerId: current.item_owner_id,
-        reason: status === "rejected" ? rejectionReason : undefined,
+        reason: status === "rejected" ? (trimmedReason ?? undefined) : undefined,
       });
     }
 
     if (status === "approved") {
+      const autoRejectReason =
+        kind === "claim"
+          ? "Another claim for this item was approved."
+          : "Another return report for this item was approved.";
       const { rows: rejectedRequests } = await client.query<{
         id: string;
         user_id: string;
       }>(
         `UPDATE request
-         SET status = 'rejected'
+         SET status = 'rejected',
+             rejection_reason = $4
          WHERE item_id = $1
            AND kind = $2
            AND status = 'pending'
            AND id <> $3
          RETURNING id, user_id`,
-        [current.item_id, kind, id],
+        [current.item_id, kind, id, autoRejectReason],
       );
       for (const rejected of rejectedRequests) {
         await createRequestStatusNotification(client, {
@@ -528,6 +586,7 @@ async function updateRequestStatusById(
           status: "rejected",
           requesterId: rejected.user_id,
           itemOwnerId: current.item_owner_id,
+          reason: autoRejectReason,
         });
       }
     }

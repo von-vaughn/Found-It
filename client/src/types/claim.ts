@@ -20,6 +20,7 @@ export interface ClaimRequest {
   building?: string;
   receivedByOsa?: boolean;
   publishedItemId?: string | null;
+  rejectionReason?: string | null;
 }
 
 export type NewClaimRequest = Omit<

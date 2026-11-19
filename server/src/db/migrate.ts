@@ -141,6 +141,7 @@ export async function migrate(): Promise<void> {
       important_details TEXT,
       received_by_osa BOOLEAN NOT NULL DEFAULT FALSE,
       published_item_id UUID REFERENCES item(id) ON DELETE SET NULL,
+      rejection_reason TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
@@ -275,6 +276,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE request ADD COLUMN IF NOT EXISTS important_details TEXT;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS received_by_osa BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS published_item_id UUID REFERENCES item(id) ON DELETE SET NULL;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
   `);
 
   // Backfill blurred_image_url for found items that don't have one yet

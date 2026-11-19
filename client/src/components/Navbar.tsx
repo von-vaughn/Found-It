@@ -1,23 +1,19 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import { AuthModal } from "@/components/auth/AuthModal";
 
-interface NavbarProps {
-  onReportClick?: (type: "lost" | "found") => void;
-}
-
-export const Navbar: React.FC<NavbarProps> = () => {
+export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<"signin" | "signup" | null>(
     null,
   );
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const openAuthModal = (mode: "signin" | "signup") => {
     setMobileMenuOpen(false);
@@ -251,27 +247,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
-          {isAuthenticated && user ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 border border-neutral-200/80">
-                <span className="w-7 h-7 rounded-full bg-[#E5192D] text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
-                  {user.name.charAt(0)}
-                </span>
-                <span className="text-xs font-bold text-neutral-800 max-w-[120px] truncate">
-                  {user.name}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={logout}
-                className="h-10 px-4 rounded-full border-neutral-200 text-neutral-700 hover:text-[#E5192D] hover:border-neutral-300 hover:bg-neutral-50 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                Sign out
-              </Button>
-            </div>
-          ) : (
+          {!isAuthenticated && (
             <>
               <button
                 type="button"
@@ -292,16 +268,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
         </div>
 
         <div className="flex md:hidden items-center gap-2">
-          {isAuthenticated ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={logout}
-              className="h-9 px-3 rounded-full text-xs font-semibold cursor-pointer"
-            >
-              Sign out
-            </Button>
-          ) : (
+          {!isAuthenticated && (
             <Button
               size="sm"
               onClick={() => openAuthModal("signup")}
@@ -350,39 +317,22 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 );
               })}
 
-              <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2">
-                {isAuthenticated && user ? (
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-sm font-bold text-neutral-800">
-                      {user.name}
-                    </span>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        logout();
-                      }}
-                      className="text-xs text-red-600 font-bold"
-                    >
-                      Sign out
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => openAuthModal("signin")}
-                      className="text-left py-2 text-sm font-semibold text-neutral-700 hover:text-neutral-900"
-                    >
-                      Sign in
-                    </button>
-                    <button
-                      onClick={() => openAuthModal("signup")}
-                      className="text-left py-2 text-sm font-semibold text-[#E5192D]"
-                    >
-                      Create an account (Sign up)
-                    </button>
-                  </>
-                )}
-              </div>
+              {!isAuthenticated && (
+                <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2">
+                  <button
+                    onClick={() => openAuthModal("signin")}
+                    className="text-left py-2 text-sm font-semibold text-neutral-700 hover:text-neutral-900"
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => openAuthModal("signup")}
+                    className="text-left py-2 text-sm font-semibold text-[#E5192D]"
+                  >
+                    Create an account (Sign up)
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

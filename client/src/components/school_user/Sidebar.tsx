@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "@/context/useAuth";
-import { type Item } from "@/data/mockItems";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
   rememberSchoolSidebarExpanded,
@@ -34,15 +33,12 @@ import {
   formatNotificationTime,
   notificationStatusLabel,
 } from "@/services/notificationService";
-import type { ClaimRequest } from "@/types/claim";
 
 interface SidebarProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   onOpenCreateModal?: () => void;
   hideMobileNav?: boolean;
-  items?: Item[];
-  submittedClaims?: ClaimRequest[];
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({

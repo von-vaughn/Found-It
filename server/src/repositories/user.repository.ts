@@ -108,21 +108,6 @@ export async function createUser(input: {
   return toSafeUser(rows[0]);
 }
 
-/** Overwrites stored name and password hash for existing unverified accounts to prevent pre-registration lockouts */
-export async function updateUserRegistration(
-  id: string,
-  input: { firstName: string; lastName: string; passwordHash: string },
-): Promise<SafeUser | null> {
-  const { rows } = await pool.query<SafeUserRow>(
-    `UPDATE "user"
-     SET first_name = $2, last_name = $3, password_hash = $4, updated_at = NOW()
-     WHERE id = $1
-     RETURNING ${SAFE_USER_COLUMNS}`,
-    [id, input.firstName.trim(), input.lastName.trim(), input.passwordHash],
-  );
-  return rows[0] ? toSafeUser(rows[0]) : null;
-}
-
 export async function listUsers(
   filter?: { role?: Role; search?: string },
 ): Promise<Array<SafeUser & { reportCount: number }>> {
@@ -194,13 +179,6 @@ export async function setUserVerified(id: string): Promise<SafeUser | null> {
 export async function deleteUser(id: string): Promise<boolean> {
   const { rowCount } = await pool.query(`DELETE FROM "user" WHERE id = $1`, [id]);
   return (rowCount ?? 0) > 0;
-}
-
-export async function countSuperAdmins(): Promise<number> {
-  const { rows } = await pool.query<{ count: string }>(
-    `SELECT COUNT(*)::text AS count FROM "user" WHERE role = 'super_admin' AND is_active = TRUE`,
-  );
-  return Number(rows[0]?.count ?? 0);
 }
 
 /**

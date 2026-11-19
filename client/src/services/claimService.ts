@@ -25,6 +25,7 @@ export interface ServerClaim {
   building: string | null;
   receivedByOsa?: boolean;
   publishedItemId?: string | null;
+  rejectionReason?: string | null;
   status: ServerClaimStatus;
   submitted: string;
 }

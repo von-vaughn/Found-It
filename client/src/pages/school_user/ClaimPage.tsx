@@ -75,8 +75,6 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
       <Sidebar
         activeTab="home"
         hideMobileNav
-        items={items}
-        submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
           if (tab === "claims") navigate("/dashboard/claims");
@@ -192,6 +190,30 @@ export const ClaimPage: React.FC<ClaimPageProps> = ({
                     Home
                   </button>
                 </div>
+              </div>
+            ) : item.isClaimed ||
+              item.isReturned ||
+              item.type !== "found" ||
+              (user?.id && item.reporterId === user.id) ? (
+              <div className="py-10 text-center">
+                <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                  {item.isClaimed || item.isReturned
+                    ? "Item already claimed"
+                    : "Claim unavailable"}
+                </h1>
+                <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  {item.isClaimed || item.isReturned
+                    ? "This item has already been claimed or resolved."
+                    : "Claims can only be submitted on another user's found item report."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/dashboard")}
+                  className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 text-xs font-bold text-white transition-colors hover:bg-neutral-700"
+                >
+                  Back to dashboard
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
               </div>
             ) : (
               <>

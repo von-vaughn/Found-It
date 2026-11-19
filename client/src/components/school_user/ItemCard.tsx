@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreHorizontal, Award, Package } from "lucide-react";
+import { MoreHorizontal, Package } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { formatCategoryLabel } from "@/hooks/useCategories";
 import type { Item } from "@/data/mockItems";
@@ -152,16 +152,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           <NoItemImage
             className="h-full w-full rounded-none border-0 bg-neutral-200/70 dark:bg-neutral-800"
           />
-        )}
-
-        {/* Reward badge top-left */}
-        {item.reward && (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5">
-            <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
-              <Award className="w-3 h-3" />
-              {item.reward}
-            </span>
-          </div>
         )}
 
       </div>

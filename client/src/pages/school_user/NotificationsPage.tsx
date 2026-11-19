@@ -22,16 +22,13 @@ import {
   defaultFilters,
   type ItemFilters,
 } from "@/components/school_user/itemFilters";
-import type { ClaimRequest } from "@/types/claim";
 
 interface NotificationsPageProps {
-  submittedClaims?: ClaimRequest[];
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export const NotificationsPage: React.FC<NotificationsPageProps> = ({
-  submittedClaims = [],
   filters,
   onFiltersChange,
 }) => {
@@ -81,8 +78,6 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
     <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="notifications"
-        items={items}
-        submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
           if (tab === "claims") navigate("/dashboard/claims");

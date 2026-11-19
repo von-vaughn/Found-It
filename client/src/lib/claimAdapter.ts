@@ -50,6 +50,7 @@ export function toClaimRequest(claim: ServerClaim): ClaimRequest {
     building: claim.building ?? undefined,
     receivedByOsa: claim.receivedByOsa ?? false,
     publishedItemId: claim.publishedItemId ?? null,
+    rejectionReason: claim.rejectionReason ?? null,
     status: statusMap[claim.status],
     submitted: formatSubmitted(claim.submitted),
   };

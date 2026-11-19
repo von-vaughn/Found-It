@@ -110,9 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         predicate: (q) => q.queryKey[0] !== "auth",
       });
       setPendingEmailState(null);
-      toast.success(`Welcome back, ${data.user.name}!`, {
-        icon: "🎉",
-      });
+      toast.success(`Welcome back, ${data.user.name}!`);
       return {
         success: true,
         role: data.user.role,
@@ -200,9 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         predicate: (q) => q.queryKey[0] !== "auth",
       });
       setPendingEmailState(null);
-      toast.success(`Welcome, ${data.user.name}! Your email is verified.`, {
-        icon: "🎉",
-      });
+      toast.success(`Welcome, ${data.user.name}! Your email is verified.`);
       return {
         success: true,
         role: data.user.role,
@@ -244,9 +240,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         predicate: (q) => q.queryKey[0] !== "auth",
       });
       setPendingEmailState(null);
-      toast.success("Successfully signed out.", {
-        icon: "👋",
-      });
+      toast.success("Successfully signed out.");
     }
   };
 

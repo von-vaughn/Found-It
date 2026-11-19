@@ -3,15 +3,6 @@ import { ZodError } from 'zod';
 import { env } from '../config/env';
 import { AppError } from '../utils/errors';
 
-/** Wraps async route/middleware handlers so rejections reach the global handler. */
-export function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>,
-) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-}
-
 /** 404 for unknown /api routes (and anything else). */
 export function notFound(_req: Request, res: Response): void {
   res.status(404).json({ message: 'Route not found.' });

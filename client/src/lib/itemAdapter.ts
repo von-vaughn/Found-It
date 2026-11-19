@@ -51,9 +51,6 @@ export function toClientItem(server: ServerItem): Item {
     confidentialInfo: server.importantDetails,
     contactName: server.user.name,
     username: server.user.name.toLowerCase().replace(/\s+/g, "_"),
-    likes: 0,
-    commentsCount: 0,
-    saved: false,
   };
 }
 

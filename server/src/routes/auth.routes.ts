@@ -4,7 +4,6 @@ import {
   forgotPassword,
   login,
   logout,
-  logoutAll,
   me,
   refresh,
   register,
@@ -34,7 +33,6 @@ router.post('/logout', csrfProtection, logout);
 
 // Authenticated
 router.get('/me', authenticate, me);
-router.post('/logout-all', authenticate, logoutAll);
 router.post('/verify-password', authenticate, requireAdmin, verifyAdminPassword);
 
 export default router;

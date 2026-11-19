@@ -5,7 +5,6 @@ import {
   MapPin,
   Clock3,
   CalendarDays,
-  Award,
   Palette,
   Building2,
   Package,
@@ -90,15 +89,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
                     alt={item.title}
                     className="absolute inset-0 h-full w-full object-cover"
                   />
-
-                  {item.reward && (
-                    <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
-                      <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
-                        <Award className="w-3.5 h-3.5" />
-                        {item.reward}
-                      </span>
-                    </div>
-                  )}
                 </div>
                 {gallery.length > 1 && (
                   <div className="flex gap-2 overflow-x-auto border-t border-neutral-200/80 bg-white p-3">
@@ -130,14 +120,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
                   title="No image attached to this report."
                   className="absolute inset-0 h-full w-full"
                 />
-                {item.reward && (
-                  <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
-                    <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
-                      <Award className="w-3.5 h-3.5" />
-                      {item.reward}
-                    </span>
-                  </div>
-                )}
               </div>
             )}
 

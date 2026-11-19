@@ -126,26 +126,6 @@ export async function uploadFileToDrive(options: UploadFileOptions): Promise<Dri
 }
 
 /**
- * Deletes a file from Google Drive by its file ID.
- */
-export async function deleteFileFromDrive(fileId: string): Promise<void> {
-  const drive = getDriveClient();
-  await drive.files.delete({ fileId });
-}
-
-/**
- * Retrieves file metadata from Google Drive.
- */
-export async function getDriveFileMetadata(fileId: string): Promise<drive_v3.Schema$File> {
-  const drive = getDriveClient();
-  const response = await drive.files.get({
-    fileId,
-    fields: 'id, name, mimeType, size, webViewLink, webContentLink, createdTime, thumbnailLink',
-  });
-  return response.data;
-}
-
-/**
  * Diagnostic helper to test the Google Drive connection on server startup or health checks.
  */
 export async function testDriveConnection(): Promise<boolean> {

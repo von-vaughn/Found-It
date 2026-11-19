@@ -527,17 +527,6 @@ export async function logout(req: Request, res: Response): Promise<void> {
   res.json({ message: 'Logged out.' });
 }
 
-/** POST /api/auth/logout-all — authenticated, revokes all user sessions */
-export async function logoutAll(req: Request, res: Response): Promise<void> {
-  if (!req.user) {
-    res.status(401).json({ message: 'Not authenticated.' });
-    return;
-  }
-  await revokeAllUserTokens(req.user.sub);
-  clearRefreshTokenCookie(res);
-  res.json({ message: 'Logged out from all devices.' });
-}
-
 /** GET /api/auth/me — authenticated */
 export async function me(req: Request, res: Response): Promise<void> {
   if (!req.user) {

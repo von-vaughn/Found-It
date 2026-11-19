@@ -9,6 +9,7 @@ import {
   listItems,
   listMyItems,
   getItemById,
+  fetchSuggestedMatches,
   updateItem,
   updateOsaReceipt,
   flagItem,
@@ -35,6 +36,7 @@ export const itemKeys = {
   mine: () => [...itemKeys.all, "mine"] as const,
   details: () => [...itemKeys.all, "detail"] as const,
   detail: (id: string) => [...itemKeys.details(), id] as const,
+  matches: (id: string) => [...itemKeys.detail(id), "matches"] as const,
 };
 
 // ─── GET /api/items (all items, with optional filters) ──────────────────────
@@ -79,6 +81,19 @@ export function useItemDetail(
     queryFn: () => getItemById(id),
     enabled: isUuid,
     ...options,
+  });
+}
+
+// ─── GET /api/items/:id/matches (suggested found matches for a lost item) ──
+
+export function useSuggestedMatches(id: string | undefined, enabled = true) {
+  const viewerKey = useViewerKey();
+  const isUuid = Boolean(id && UUID_RE.test(id));
+  return useQuery<ServerItem[], Error>({
+    queryKey: [...itemKeys.matches(id ?? ""), viewerKey],
+    queryFn: () => fetchSuggestedMatches(id!),
+    enabled: isUuid && enabled,
+    staleTime: 30_000,
   });
 }
 

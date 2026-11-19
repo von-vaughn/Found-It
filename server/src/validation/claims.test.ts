@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClaimSchema } from "./claims";
 import { campusTodayDate, pastOrTodayDateSchema } from "./dates";
+import { isLostAfterFound } from "../controllers/claims.controller";
 
 const validClaim = {
   itemId: "3f8c1a9e-6b2d-4f5a-9c7e-1d2b3a4c5d6e",
@@ -68,4 +69,12 @@ test("uses Asia/Manila date after midnight UTC+8 while UTC is still previous day
 test("rejects impossible calendar dates such as Feb 29 on non-leap years", () => {
   const result = pastOrTodayDateSchema.safeParse("2026-02-29");
   assert.equal(result.success, false);
+});
+
+test("isLostAfterFound rejects lost date/time after found date/time", () => {
+  assert.equal(isLostAfterFound("2026-10-10", "15:00", "2026-10-10", "14:00"), true);
+  assert.equal(isLostAfterFound("2026-10-11", "09:00", "2026-10-10", "14:00"), true);
+  assert.equal(isLostAfterFound("2026-10-10", "13:30", "2026-10-10", "14:00"), false);
+  assert.equal(isLostAfterFound("2026-10-10", "14:00", "2026-10-10", "14:00"), false);
+  assert.equal(isLostAfterFound("2026-10-10", "15:00", "2026-10-10", null), false);
 });

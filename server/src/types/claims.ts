@@ -26,6 +26,7 @@ export interface Claim {
   building: string | null;
   receivedByOsa?: boolean;
   publishedItemId?: string | null;
+  rejectionReason?: string | null;
   status: ClaimStatus;
   submitted: string;
 }

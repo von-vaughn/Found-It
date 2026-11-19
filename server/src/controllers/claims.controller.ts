@@ -1,11 +1,13 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import {
+  countRejectedClaimsForUserAndItem,
   createClaim,
   deleteClaim,
   findClaimForUserById,
   findClaimableItem,
   findClaimForUserAndItem,
+  findItemEventTiming,
   listAllClaims,
   listClaimsByUser,
   PhysicalItemNotReceivedError,
@@ -13,8 +15,23 @@ import {
   updateClaimStatusById,
 } from "../repositories/request.repository";
 import { recordAuditLog } from "../repositories/audit-log.repository";
+import { minutesApart, reportMoment } from "../utils/item-matching";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
 import { UUID_RE } from "../validation/dates";
+
+export const MAX_REJECTED_CLAIMS_PER_ITEM = 2;
+
+export function isLostAfterFound(
+  lostDate: string,
+  lostTime: string | null | undefined,
+  foundDate: string,
+  foundTime: string | null | undefined,
+): boolean {
+  const lostMoment = reportMoment(lostDate, lostTime);
+  const foundMoment = reportMoment(foundDate, foundTime);
+  if (!lostMoment || !foundMoment) return false;
+  return minutesApart(lostMoment, foundMoment) < 0;
+}
 
 function zodError(res: Response, error: z.ZodError): Response {
   return res.status(400).json({
@@ -72,6 +89,19 @@ export async function submitClaim(req: Request, res: Response): Promise<void> {
     res.status(400).json({ message: "You cannot claim your own report." });
     return;
   }
+  if (
+    isLostAfterFound(
+      parsed.data.dateLost,
+      parsed.data.timeLost,
+      item.itemDate,
+      item.itemTime,
+    )
+  ) {
+    res.status(400).json({
+      message: "Date and time lost cannot be after when the item was found.",
+    });
+    return;
+  }
 
   const existingClaim = await findClaimForUserAndItem(
     req.user!.sub,
@@ -81,6 +111,18 @@ export async function submitClaim(req: Request, res: Response): Promise<void> {
     res
       .status(409)
       .json({ message: "You already submitted a claim for this item." });
+    return;
+  }
+
+  const rejectedAttempts = await countRejectedClaimsForUserAndItem(
+    req.user!.sub,
+    parsed.data.itemId,
+  );
+  if (rejectedAttempts >= MAX_REJECTED_CLAIMS_PER_ITEM) {
+    res.status(409).json({
+      message:
+        "You have reached the maximum number of claim attempts for this item.",
+    });
     return;
   }
 
@@ -176,6 +218,21 @@ export async function updateMyClaim(req: Request, res: Response): Promise<void> 
   }
   if (existing.status !== "pending") {
     res.status(409).json({ message: "Only pending claim requests can be edited." });
+    return;
+  }
+  const itemTiming = await findItemEventTiming(existing.itemId);
+  if (
+    itemTiming &&
+    isLostAfterFound(
+      parsed.data.dateLost,
+      parsed.data.timeLost,
+      itemTiming.itemDate,
+      itemTiming.itemTime,
+    )
+  ) {
+    res.status(400).json({
+      message: "Date and time lost cannot be after when the item was found.",
+    });
     return;
   }
 

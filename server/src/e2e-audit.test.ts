@@ -488,7 +488,9 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     });
     assert.equal(rejectNoReason.status, 400);
 
-    const rejectWithReason = await api<{ claim: { status: string } }>(
+    const rejectWithReason = await api<{
+      claim: { status: string; rejectionReason?: string | null };
+    }>(
       'PATCH',
       `/api/claims/admin/${firstClaimId}/status`,
       {
@@ -498,6 +500,10 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     );
     assert.equal(rejectWithReason.status, 200);
     assert.equal(rejectWithReason.data.claim.status, 'rejected');
+    assert.equal(
+      rejectWithReason.data.claim.rejectionReason,
+      'Proof photo did not match charger brand',
+    );
 
     const rejectedNotifs = await api<{ notifications: Array<{ requestId: string | null; message: string }> }>(
       'GET',
@@ -608,6 +614,81 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     );
     assert.ok(claimantNotifs.data.notifications.some((n) => n.itemId === foundItemId));
     assert.ok(ownerNotifs.data.notifications.some((n) => n.itemId === foundItemId));
+  });
+
+  it('enforces claim chronological guard and caps rejected claim retries', async () => {
+    const ownerAuth = await loginAs(OWNER_EMAIL);
+    const claimantAuth = await loginAs(CLAIMANT_EMAIL);
+    const adminAuth = await loginAs(ADMIN_EMAIL);
+    const today = new Date().toISOString().slice(0, 10);
+
+    const foundItemRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'Audit Guard Earbuds',
+        description: 'White wireless earbuds found on library desk',
+        itemDate: today,
+        itemTime: '10:00',
+        categoryId: baselineCategoryId,
+        building: TEST_BUILDING,
+        location: 'Room 202',
+      },
+    });
+    assert.equal(foundItemRes.status, 201);
+    const itemId = foundItemRes.data.item.id;
+    createdItemIds.push(itemId);
+
+    // Lost time after found time must be rejected (400)
+    const afterFoundRes = await api('POST', '/api/claims', {
+      token: claimantAuth.token,
+      body: {
+        itemId,
+        claimantTitle: 'My Earbuds',
+        dateLost: today,
+        timeLost: '11:30',
+        location: 'Room 202',
+        details: 'Lost after class',
+        importantDetails: 'Initials inside case',
+      },
+    });
+    assert.equal(afterFoundRes.status, 400);
+
+    // Submit and reject twice -> 3rd attempt must be blocked (409)
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const claimRes = await api<{ claim: { id: string } }>('POST', '/api/claims', {
+        token: claimantAuth.token,
+        body: {
+          itemId,
+          claimantTitle: `My Earbuds Attempt ${attempt}`,
+          dateLost: today,
+          timeLost: '09:30',
+          location: 'Room 202',
+          details: 'Lost before class',
+          importantDetails: 'Initials inside case',
+        },
+      });
+      assert.equal(claimRes.status, 201);
+      const rejectRes = await api('PATCH', `/api/claims/admin/${claimRes.data.claim.id}/status`, {
+        token: adminAuth.token,
+        body: { status: 'rejected', reason: `Mismatch on attempt ${attempt}` },
+      });
+      assert.equal(rejectRes.status, 200);
+    }
+
+    const thirdAttemptRes = await api('POST', '/api/claims', {
+      token: claimantAuth.token,
+      body: {
+        itemId,
+        claimantTitle: 'My Earbuds Attempt 3',
+        dateLost: today,
+        timeLost: '09:30',
+        location: 'Room 202',
+        details: 'Trying again',
+        importantDetails: 'Initials inside case',
+      },
+    });
+    assert.equal(thirdAttemptRes.status, 409);
   });
 
   it('enforces Return lifecycle: reject+resubmit, OSA guard, and publishRejectedReturn', async () => {

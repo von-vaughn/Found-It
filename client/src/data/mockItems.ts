@@ -18,15 +18,11 @@ export interface Item {
   images?: string[];
   description: string;
   status: 'active' | 'reunited' | 'pending';
-  reward?: string;
   color?: string;
   confidentialInfo?: string;
   contactName: string;
   username?: string;
   userAvatar?: string;
-  likes?: number;
-  commentsCount?: number;
-  saved?: boolean;
 }
 
 /**

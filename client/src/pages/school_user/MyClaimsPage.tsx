@@ -223,8 +223,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
     <div className="flex min-h-screen bg-white dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <Sidebar
         activeTab="claims"
-        items={items}
-        submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
           if (tab === "claims") navigate("/dashboard/claims");
@@ -473,6 +471,18 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       </p>
                                     </div>
                                   )}
+
+                                  {claim.status === "Rejected" &&
+                                    claim.rejectionReason?.trim() && (
+                                      <div className="mt-3 rounded-xl border border-rose-200/80 bg-rose-50/80 px-4 py-3 dark:border-rose-900/60 dark:bg-rose-950/30">
+                                        <h4 className="text-[11px] font-semibold text-rose-700 dark:text-rose-300">
+                                          Rejection Reason
+                                        </h4>
+                                        <p className="mt-1 break-words text-sm leading-relaxed text-rose-900 dark:text-rose-200">
+                                          {claim.rejectionReason}
+                                        </p>
+                                      </div>
+                                    )}
 
                                   <div className="mt-auto flex flex-wrap items-center justify-end gap-2 pt-5">
                                     {isPending && (

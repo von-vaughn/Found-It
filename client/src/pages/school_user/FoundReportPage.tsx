@@ -12,16 +12,13 @@ import {
 } from "@/components/school_user/itemFilters";
 import { EMPTY_ITEMS } from "@/data/mockItems";
 import { useItemDetail } from "@/hooks/useItems";
-import type { ClaimRequest } from "@/types/claim";
 
 interface FoundReportPageProps {
-  submittedClaims?: ClaimRequest[];
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export const FoundReportPage: React.FC<FoundReportPageProps> = ({
-  submittedClaims = [],
   filters,
   onFiltersChange,
 }) => {
@@ -54,8 +51,6 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
       <Sidebar
         activeTab="home"
         hideMobileNav
-        items={items}
-        submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
           if (tab === "claims") navigate("/dashboard/claims");

@@ -26,16 +26,13 @@ import {
 import { SearchX } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { EMPTY_ITEMS } from "@/data/mockItems";
-import type { ClaimRequest } from "@/types/claim";
 
 interface DashboardPageProps {
-  submittedClaims?: ClaimRequest[];
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
-  submittedClaims = [],
   filters,
   onFiltersChange: setFilters,
 }) => {
@@ -197,8 +194,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Left Sidebar */}
       <Sidebar
         activeTab={activeNavTab}
-        items={items}
-        submittedClaims={submittedClaims}
         onTabChange={(tab) => {
           if (tab === "claims") {
             navigate("/dashboard/claims");

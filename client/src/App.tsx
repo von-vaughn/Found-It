@@ -70,15 +70,7 @@ function AppContent() {
         }}
       />
 
-      {!isDashboard && (
-        <Navbar
-          onReportClick={(type) => {
-            navigate(
-              type === "lost" ? "/browse?type=lost" : "/browse?type=found",
-            );
-          }}
-        />
-      )}
+      {!isDashboard && (!isHome || shouldShowHomeChrome) && <Navbar />}
 
       <div className="flex-1">
         <AppRoutes

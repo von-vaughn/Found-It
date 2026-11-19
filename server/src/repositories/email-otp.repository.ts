@@ -235,10 +235,3 @@ export async function checkOtp(
     return { ok: true, otpId: row.id };
   });
 }
-
-export async function purgeOtps(): Promise<number> {
-  const { rowCount } = await pool.query(
-    `DELETE FROM email_otp WHERE consumed = TRUE OR expires_at <= NOW()`,
-  );
-  return rowCount ?? 0;
-}

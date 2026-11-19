@@ -19,6 +19,8 @@ import toast from "react-hot-toast";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
+import { FadeIn } from "@/components/FadeIn";
+import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
 import { ReportPostDialog } from "@/components/school_user/ReportPostDialog";
@@ -27,12 +29,16 @@ import { formatCategoryLabel } from "@/hooks/useCategories";
 import { EMPTY_ITEMS } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
 import { useAuth } from "@/context/useAuth";
-import { useItemDetail, useDeleteItem, useItems } from "@/hooks/useItems";
+import {
+  useItemDetail,
+  useDeleteItem,
+  useItems,
+  useSuggestedMatches,
+} from "@/hooks/useItems";
 import { useItemReturns } from "@/hooks/useReturns";
 import { toClientItem, toClientItems } from "@/lib/itemAdapter";
 import { toFoundReportClaims } from "@/lib/claimAdapter";
 import { parseItemEventDate } from "@/lib/date";
-import { minutesApart, reportMoment, timePoints } from "@/lib/itemMatchTime";
 import { UUID_RE } from "@/services/itemService";
 import type {
   ClaimRequest,
@@ -55,10 +61,6 @@ interface ItemDetailPageProps {
   submittedClaims?: ClaimRequest[];
   foundReports?: ClaimRequest[];
   onSubmitClaim?: (claim: NewClaimRequest) => void;
-  onUpdateClaimStatus?: (
-    claimId: string,
-    status: ClaimRequest["status"],
-  ) => void;
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
@@ -73,25 +75,6 @@ const finderStatusStyles: Record<string, string> = {
   Returned: "bg-teal-50 dark:bg-teal-950 text-teal-800 dark:text-teal-200",
   Rejected: "bg-rose-50 dark:bg-rose-950 text-rose-800 dark:text-rose-200",
 };
-
-function keywordSet(value: string): Set<string> {
-  const stopwords = new Set([
-    "with",
-    "from",
-    "that",
-    "this",
-    "have",
-    "your",
-    "near",
-    "around",
-  ]);
-  return new Set(
-    value
-      .toLowerCase()
-      .split(/[^a-z0-9]+/g)
-      .filter((word) => word.length >= 4 && !stopwords.has(word)),
-  );
-}
 
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   submittedClaims = [],
@@ -217,75 +200,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
       )
       .slice(0, 4);
   }, [apiItems, item]);
-  // Found reports that may match your own lost item. Category is a hard gate;
-  // color, place, timing, and title only rank reports that already pass it.
-  // shortcut: apiItems holds the latest 200 reports from useItems; move this
-  // scoring to a server query if the report history outgrows that window.
-  const suggestedMatches = useMemo(() => {
-    if (!item || item.type !== "lost" || !item.reporterId) return [];
-    const lostMoment = reportMoment(item);
-    const lostKeywords = keywordSet(`${item.title} ${item.description}`);
-    const scored = apiItems
-      .filter((entry) => {
-        if (entry.id === item.id) return false;
-        if (entry.type !== "found") return false;
-        if (entry.category !== item.category) return false;
-        if (entry.reporterId === item.reporterId) return false;
-        if (entry.status === "reunited" || entry.isClaimed || entry.isReturned) {
-          return false;
-        }
-        const foundMoment = reportMoment(entry);
-        return (
-          !lostMoment ||
-          !foundMoment ||
-          minutesApart(lostMoment, foundMoment) >= 0
-        );
-      })
-      .map((entry) => {
-        // Every candidate here already passed the category gate.
-        let score = 40;
-        if (
-          item.color?.trim() &&
-          entry.color?.trim() &&
-          entry.color.trim().toLowerCase() === item.color.trim().toLowerCase()
-        ) {
-          score += 25;
-        }
-        const place = `${entry.location} ${entry.building ?? ""}`.trim().toLowerCase();
-        const lostPlace =
-          `${item.location} ${item.building ?? ""}`.trim().toLowerCase();
-        const sameBuilding = Boolean(
-          entry.building?.trim() &&
-            item.building?.trim() &&
-            entry.building.trim().toLowerCase() ===
-              item.building.trim().toLowerCase(),
-        );
-        if (
-          sameBuilding ||
-          (place &&
-            lostPlace &&
-            (place.includes(lostPlace) || lostPlace.includes(place)))
-        ) {
-          score += 20;
-        }
-        const foundMoment = reportMoment(entry);
-        if (lostMoment && foundMoment) {
-          score += timePoints(minutesApart(lostMoment, foundMoment));
-        }
-        const foundKeywords = keywordSet(`${entry.title} ${entry.description}`);
-        let overlap = 0;
-        for (const word of lostKeywords) {
-          if (foundKeywords.has(word)) overlap += 1;
-        }
-        score += Math.min(overlap * 5, 20);
-        return { entry, score };
-      })
-      .filter(({ score }) => score >= 45)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 4)
-      .map(({ entry }) => entry);
-    return scored;
-  }, [apiItems, item]);
 
   const isOwnItem = Boolean(
     serverItem && user?.id && serverItem.reporterId === user.id,
@@ -294,6 +208,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const isOwnLostItem = Boolean(
     isOwnItem &&
     (item?.type === "lost" || serverItem?.reportType === "lost"),
+  );
+  const { data: serverSuggestedMatches = [] } = useSuggestedMatches(
+    item?.id,
+    isOwnLostItem,
+  );
+  const suggestedMatches = useMemo(
+    () => toClientItems(serverSuggestedMatches),
+    [serverSuggestedMatches],
   );
   const { data: serverItemReturns = [] } = useItemReturns(
     isOwnLostItem ? item?.id : undefined,
@@ -351,8 +273,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             else navigate("/dashboard");
           }}
           onOpenCreateModal={() => navigate("/dashboard/create")}
-          items={items}
-          submittedClaims={submittedClaims}
         />
         <div className="sidebar-shift flex-1 min-w-0 ml-0 md:ml-20 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300">
           <Header
@@ -383,8 +303,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             else navigate("/dashboard");
           }}
           onOpenCreateModal={() => navigate("/dashboard/create")}
-          items={items}
-          submittedClaims={submittedClaims}
         />
         <div className="sidebar-shift flex-1 min-w-0 ml-0 md:ml-20 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300">
           <Header
@@ -401,23 +319,25 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
           >
             <div className="flex h-full items-center justify-center px-8 py-16">
-              <main className="max-w-sm text-center">
-                <h1 className="text-lg font-extrabold text-neutral-900 dark:text-neutral-100 text-balance">
-                  Item not found
-                </h1>
-                <p className="mt-2 break-words text-sm text-neutral-500 dark:text-neutral-400">
-                  The item you are looking for may have been removed or the link
-                  is incorrect.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleGoBack}
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                  Go back
-                </button>
-              </main>
+              <FadeIn>
+                <main className="max-w-sm text-center">
+                  <h1 className="text-lg font-extrabold text-neutral-900 dark:text-neutral-100 text-balance">
+                    Item not found
+                  </h1>
+                  <p className="mt-2 break-words text-sm text-neutral-500 dark:text-neutral-400">
+                    The item you are looking for may have been removed or the link
+                    is incorrect.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleGoBack}
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                    Go back
+                  </button>
+                </main>
+              </FadeIn>
             </div>
           </div>
         </div>
@@ -464,8 +384,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             else navigate("/dashboard");
           }}
         onOpenCreateModal={() => navigate("/dashboard/create")}
-        items={items}
-        submittedClaims={submittedClaims}
       />
 
       <div className="sidebar-shift flex-1 min-w-0 ml-0 md:ml-20 flex flex-col min-h-screen pb-20 md:pb-0 transition-[margin] duration-300">
@@ -484,6 +402,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         <div className="flex-1 min-w-0 w-full max-w-[1440px] mx-auto bg-white dark:bg-neutral-950 px-4 sm:px-8 lg:px-12">
           <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
         {/* Detail actions row */}
+        <FadeIn key={`actions-${item.id}`}>
         <div className="pt-4 flex items-center justify-between w-full">
           <button
             type="button"
@@ -541,6 +460,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             )}
           </div>
         </div>
+        </FadeIn>
         <main
           id="item-detail-main"
           className="min-w-0 w-full py-6 space-y-6"
@@ -548,7 +468,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           {/* Hero: picture left, details right (no enclosing card) */}
           <div className="grid gap-8 md:grid-cols-2 md:items-start">
           {/* Hero image — fixed frame so every item measures the same */}
-          <div className="min-w-0 space-y-3">
+          <FadeIn key={`hero-${item.id}`} delay={0.04} className="min-w-0 space-y-3">
             {activeHeroImage ? (
               <div className="relative aspect-[4/3] max-h-[560px] w-full overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-800">
                 <img
@@ -589,9 +509,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 ))}
               </div>
             )}
-          </div>
+          </FadeIn>
 
           {/* Details (not in a card) */}
+          <FadeIn key={`details-${item.id}`} delay={0.08} className="min-w-0">
           <article className="min-w-0">
             {/* Reporter profile on top */}
             <div className="flex items-center gap-3 min-w-0">
@@ -622,6 +543,10 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   >
                     {simplifyClaimStatus(existingClaim.status)} claim request
                   </button>
+                ) : item.isClaimed || item.isReturned ? (
+                  <span className="shrink-0 inline-flex h-10 items-center justify-center rounded-full border border-neutral-200 bg-neutral-100 px-4 text-xs font-bold text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+                    {isLost ? "Already returned" : "Already claimed"}
+                  </span>
                 ) : (
                   <button
                     type="button"
@@ -751,66 +676,74 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                 </div>
               )}
             </dl>
-            {item.reward && (
-              <p className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-500/25">
-                <Award className="h-3.5 w-3.5" aria-hidden="true" />
-                Reward: {item.reward}
-              </p>
-            )}
 
           </article>
+          </FadeIn>
           </div>
 
           {/* Possible matches: found reports the system suggests for your lost item */}
           {serverItem && isOwnItem && isLost && suggestedMatches.length > 0 && (
-            <section aria-labelledby="suggested-matches-heading">
-              <h2
-                id="suggested-matches-heading"
-                className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
-              >
-                Possible matches
-              </h2>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {suggestedMatches.map((suggested) => (
-                  <ItemCard
-                    key={suggested.id}
-                    item={suggested}
-                    onItemClick={(selected) =>
-                      navigate(`/dashboard/items/${selected.id}`)
-                    }
-                  />
-                ))}
-              </div>
-            </section>
+            <FadeIn key={`matches-${item.id}`} delay={0.1}>
+              <section aria-labelledby="suggested-matches-heading">
+                <h2
+                  id="suggested-matches-heading"
+                  className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
+                >
+                  Possible matches
+                </h2>
+                <StaggerGrid
+                  key={`matches-grid-${item.id}`}
+                  className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+                >
+                  {suggestedMatches.map((suggested) => (
+                    <StaggerItem key={suggested.id}>
+                      <ItemCard
+                        item={suggested}
+                        onItemClick={(selected) =>
+                          navigate(`/dashboard/items/${selected.id}`)
+                        }
+                      />
+                    </StaggerItem>
+                  ))}
+                </StaggerGrid>
+              </section>
+            </FadeIn>
           )}
 
           {/* Related posts: same category and same lost/found type */}
           {relatedItems.length > 0 && (
-            <section aria-labelledby="related-heading">
-              <h2
-                id="related-heading"
-                className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
-              >
-                Related {isLost ? "lost" : "found"}{" "}
-                {formatCategoryLabel(item.category).toLowerCase()} reports
-              </h2>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {relatedItems.map((related) => (
-                  <ItemCard
-                    key={related.id}
-                    item={related}
-                    onItemClick={(selected) =>
-                      navigate(`/dashboard/items/${selected.id}`)
-                    }
-                  />
-                ))}
-              </div>
-            </section>
+            <FadeIn key={`related-${item.id}`} delay={0.12}>
+              <section aria-labelledby="related-heading">
+                <h2
+                  id="related-heading"
+                  className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
+                >
+                  Related {isLost ? "lost" : "found"}{" "}
+                  {formatCategoryLabel(item.category).toLowerCase()} reports
+                </h2>
+                <StaggerGrid
+                  key={`related-grid-${item.id}`}
+                  className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+                >
+                  {relatedItems.map((related) => (
+                    <StaggerItem key={related.id}>
+                      <ItemCard
+                        item={related}
+                        onItemClick={(selected) =>
+                          navigate(`/dashboard/items/${selected.id}`)
+                        }
+                      />
+                    </StaggerItem>
+                  ))}
+                </StaggerGrid>
+              </section>
+            </FadeIn>
           )}
 
           {/* People holding this item (own lost reports only) */}
           {isOwnItem && isLost && finderReports.length > 0 && (
-            <section aria-labelledby="finder-reports-heading">
+            <FadeIn key={`responses-${item.id}`} delay={0.14}>
+              <section aria-labelledby="finder-reports-heading">
               <h2
                 id="finder-reports-heading"
                 className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
@@ -942,7 +875,8 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                     );
                   })}
                 </ul>
-            </section>
+              </section>
+            </FadeIn>
           )}
 
         </main>

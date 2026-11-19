@@ -49,7 +49,6 @@ export const FiltersPage: React.FC<FiltersPageProps> = ({
     <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="home"
-        items={items}
         onTabChange={(tab) => {
           if (tab === "home") navigate("/dashboard");
           if (tab === "claims") navigate("/dashboard/claims");

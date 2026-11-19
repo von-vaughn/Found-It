@@ -10,8 +10,7 @@ import { ROLE_LEVEL, type Role } from '../types/roles';
  *   authorize('school_user', 'admin', ...) -> any of the listed roles (hierarchy-aware via minimum level)
  *
  * The check is hierarchy-aware: passing 'admin' allows 'admin' and 'super_admin'.
- * Passing multiple roles allows any role at/above the lowest listed level...
- * for exact-match semantics use `authorizeExact`.
+ * Passing multiple roles allows any role at/above the lowest listed level.
  */
 export function authorize(...allowed: Role[]) {
   const minLevel = Math.min(...allowed.map((r) => ROLE_LEVEL[r]));
@@ -24,21 +23,6 @@ export function authorize(...allowed: Role[]) {
       res.status(403).json({
         message: `Forbidden. Requires one of: ${allowed.join(', ')}.`,
       });
-      return;
-    }
-    next();
-  };
-}
-
-/** Strict exact-role match (no hierarchy). */
-export function authorizeExact(...allowed: Role[]) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({ message: 'Not authenticated.' });
-      return;
-    }
-    if (!allowed.includes(req.user.role)) {
-      res.status(403).json({ message: `Forbidden. Requires one of: ${allowed.join(', ')}.` });
       return;
     }
     next();

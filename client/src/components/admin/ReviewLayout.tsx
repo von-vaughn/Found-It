@@ -1,5 +1,5 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Tag, X, type LucideIcon } from "lucide-react";
+import { type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { NoItemImage } from "@/components/NoItemImage";
 import { PhotoCarousel, type CarouselPhoto } from "@/components/PhotoCarousel";
 import {
@@ -10,23 +10,9 @@ import type { ClaimRequest } from "@/types/claim";
 import { StatusBadge } from "./StatusBadge";
 import type { MatchTone } from "./requestComparison";
 
-export interface ReviewStep {
-  label: string;
-  detail: string;
-  state: "done" | "current" | "upcoming";
-}
-
 export interface ReviewFactRow {
   id: string;
   icon?: LucideIcon;
-  label: string;
-  value: ReactNode;
-  note?: string;
-}
-
-export interface ReviewLedgerRow {
-  id: string;
-  icon: LucideIcon;
   label: string;
   value: ReactNode;
   note?: string;
@@ -38,98 +24,7 @@ export interface FilterChipOption<T extends string = string> {
   count: number;
 }
 
-export function ReviewHeader({
-  eyebrow,
-  title,
-  itemType,
-  stateLabel,
-  stateTone = "warn",
-  subtitle,
-  steps,
-}: {
-  eyebrow: string;
-  title: string;
-  itemType?: "Lost" | "Found";
-  stateLabel: string;
-  stateTone?: "ok" | "warn" | "bad" | "neutral";
-  subtitle: string;
-  steps: ReviewStep[];
-}) {
-  const stateBadgeClasses: Record<
-    NonNullable<typeof stateTone>,
-    string
-  > = {
-    ok: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-    warn: "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
-    bad: "bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-200",
-    neutral:
-      "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
-  };
-
-  return (
-    <header className="mb-8">
-      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
-        {eyebrow}
-      </p>
-      <h1 className="mt-1 flex flex-wrap items-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100">
-        <span>{title}</span>
-        {itemType && <StatusBadge status={itemType} />}
-        <span
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${stateBadgeClasses[stateTone]}`}
-        >
-          {stateLabel}
-        </span>
-      </h1>
-      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        {subtitle}
-      </p>
-
-      <ol className="mt-6 grid grid-cols-2 gap-y-4 sm:grid-cols-4">
-        {steps.map((step) => {
-          const isDone = step.state === "done";
-          const isCurrent = step.state === "current";
-          return (
-            <li
-              key={step.label}
-              className={`relative pt-5 pr-3 text-xs ${
-                isDone || isCurrent
-                  ? "text-neutral-900 dark:text-neutral-100"
-                  : "text-neutral-500 dark:text-neutral-400"
-              }`}
-            >
-              <span
-                aria-hidden="true"
-                className={`absolute top-[5px] right-0 left-0 h-[2px] ${
-                  isDone || isCurrent
-                    ? "bg-emerald-600 dark:bg-emerald-500"
-                    : "bg-neutral-200 dark:bg-neutral-800"
-                }`}
-              />
-              <span
-                aria-hidden="true"
-                className={`absolute top-0 left-0 h-3 w-3 rounded-full border-2 ${
-                  isDone
-                    ? "border-emerald-600 bg-emerald-600 dark:border-emerald-500 dark:bg-emerald-500"
-                    : isCurrent
-                      ? "animate-pulse border-emerald-600 bg-white dark:border-emerald-400 dark:bg-neutral-950"
-                      : "border-neutral-300 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900"
-                }`}
-              />
-              <strong className="block text-[13px] font-medium">
-                {step.label}
-              </strong>
-              <span className="mt-0.5 block text-neutral-500 dark:text-neutral-400">
-                {step.detail}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </header>
-  );
-}
-
-export function OriginalPostFacts({
+function OriginalPostFacts({
   image,
   imageAlt,
   emptyImageTitle = "No item photo provided",
@@ -492,140 +387,6 @@ export function ReviewPager({
         </div>
       )}
     </nav>
-  );
-}
-
-export function SubmittedAnswersLedger({
-  submittedByLabel,
-  rows,
-}: {
-  submittedByLabel: string;
-  rows: ReviewLedgerRow[];
-}) {
-  return (
-    <div>
-      <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
-        Submitted details
-      </p>
-      <div className="overflow-x-auto border-t border-neutral-200 dark:border-neutral-800">
-        <div className="grid grid-cols-[135px_minmax(0,1fr)] gap-4 border-b border-neutral-200 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-          <span>Field</span>
-          <span>{submittedByLabel}</span>
-        </div>
-        {rows.map((row) => {
-          const Icon = row.icon;
-          return (
-            <div
-              key={row.id}
-              className="grid grid-cols-[135px_minmax(0,1fr)] items-start gap-4 border-b border-neutral-200 py-3 text-sm dark:border-neutral-800"
-            >
-              <span className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 pt-0.5">
-                <Icon
-                  className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <span>{row.label}</span>
-              </span>
-              <div className="min-w-0 font-medium text-neutral-900 dark:text-neutral-100">
-                <div className="break-words">{row.value}</div>
-                {row.note && (
-                  <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
-                    {row.note}
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-export function OriginalPostButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="mt-1.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#E5192D] hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-    >
-      <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-      View original post
-    </button>
-  );
-}
-
-export function OriginalPostDialog({
-  open,
-  onClose,
-  image,
-  imageAlt,
-  reporterName,
-  reporterMeta,
-  facts,
-  notes,
-}: {
-  open: boolean;
-  onClose: () => void;
-  image?: string;
-  imageAlt: string;
-  reporterName: string;
-  reporterMeta: string;
-  facts: ReviewFactRow[];
-  notes?: string;
-}) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-    } else if (!open && dialog.open) {
-      dialog.close();
-    }
-  }, [open]);
-
-  if (!open) return null;
-
-  return (
-    <dialog
-      ref={dialogRef}
-      aria-labelledby="original-post-modal-title"
-      onClose={onClose}
-      onClick={(event) => {
-        if (event.target === dialogRef.current) onClose();
-      }}
-      className="m-auto w-[min(520px,calc(100vw-2rem))] max-h-[calc(100dvh-3rem)] rounded-[24px] border border-neutral-200 bg-white p-0 text-neutral-900 shadow-[0_30px_60px_-20px_rgba(24,24,27,0.25)] backdrop:bg-zinc-900/40 backdrop:backdrop-blur-xs dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
-    >
-      <div className="max-h-[calc(100dvh-3rem)] overflow-y-auto p-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2
-            id="original-post-modal-title"
-            className="text-[17px] font-semibold tracking-[-0.01em]"
-          >
-            Original post
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close original post"
-            className="inline-grid h-8 w-8 place-items-center rounded-lg border border-neutral-200 text-neutral-500 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-100"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-
-        <OriginalPostFacts
-          image={image}
-          imageAlt={imageAlt}
-          reporterName={reporterName}
-          reporterMeta={reporterMeta}
-          facts={facts}
-          notes={notes}
-        />
-      </div>
-    </dialog>
   );
 }
 
