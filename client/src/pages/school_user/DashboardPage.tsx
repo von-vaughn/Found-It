@@ -379,7 +379,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </FadeIn>
 
           {/* Masonry Items Grid */}
-          <div data-tour="school-feed">
+          <div data-tour="school-feed" className="relative">
+          <div
+            data-tour="school-feed-highlight"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0"
+          />
           {isItemsLoading ? (
             <DashboardGridSkeleton />
           ) : filteredItems.length > 0 ? (

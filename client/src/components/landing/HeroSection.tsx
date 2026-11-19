@@ -120,20 +120,20 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
           <img
             src="/WMSU_LOGO.JPG"
             alt="Western Mindanao State University logo"
-            className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-9 sm:w-9"
+            className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-10 sm:w-10"
           />
-          <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-700 sm:text-sm sm:tracking-[0.18em]">
+          <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-700 sm:text-base sm:tracking-[0.18em]">
             Western Mindanao State University
           </span>
         </div>
         <h1
           ref={titleRef}
-          className="w-full text-center font-black tracking-tight text-neutral-900 leading-[1.0] mb-6 md:mb-8 text-[clamp(2.375rem,11vw,3rem)] sm:text-[clamp(2.25rem,9vw,8rem)]"
+          className="w-full text-center font-black tracking-tight text-neutral-900 leading-[1.0] mb-6 md:mb-8 text-[clamp(2.625rem,11.5vw,3.5rem)] sm:text-[clamp(3.25rem,10.5vw,9.5rem)]"
         >
           <span className="whitespace-nowrap">Lost Something?</span>
           <br className="sm:hidden" /> We’ll Help You{" "}
           <br className="sm:hidden" />
-          <span className="relative inline-block bg-gradient-to-r from-[#B51224] via-[#E5192D] to-[#FF5A67] bg-clip-text text-transparent">
+          <span className="relative inline-block pr-1 sm:pr-2 font-normal italic bg-gradient-to-r from-[#B51224] via-[#E5192D] to-[#FF5A67] bg-clip-text text-transparent">
             FOUND IT.
             <svg
               className="absolute -bottom-2 sm:-bottom-3 left-0 w-full h-3.5 sm:h-5 text-[#E5192D]/40"

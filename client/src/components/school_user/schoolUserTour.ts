@@ -1,4 +1,10 @@
-import { driver, type DriveStep, type Driver, type Side, type Alignment } from "driver.js";
+import {
+  driver,
+  type Alignment,
+  type DriveStep,
+  type Driver,
+  type Side,
+} from "driver.js";
 import "driver.js/dist/driver.css";
 
 interface TourStepConfig {
@@ -7,46 +13,45 @@ interface TourStepConfig {
   description: string;
   side?: Side;
   align?: Alignment;
+  popoverClass?: string;
 }
 
 const TOUR_STEPS: TourStepConfig[] = [
   {
     selectors: ['[data-tour="school-search"]'],
-    title: "Search & filter items",
+    title: "Search & filters",
     description:
-      "Search lost or found reports by name (Ctrl/Cmd + K) or open filters to narrow by report type, category, building, color, and date.",
+      "Search by name (Ctrl/Cmd + K) or filter by building, color, and date.",
     side: "bottom",
     align: "start",
   },
   {
     selectors: ['[data-tour="school-categories"]'],
-    title: "Quick categories",
-    description:
-      "Filter the feed by item category in one click, or open More for the full category list.",
+    title: "Categories",
+    description: "Filter items by category in one click.",
     side: "bottom",
     align: "start",
   },
   {
-    selectors: ['[data-tour="school-feed"]'],
-    title: "Browse campus reports",
+    selectors: ['[data-tour="school-feed-highlight"]', '[data-tour="school-feed"]'],
+    title: "Campus feed",
     description:
-      "Click any post to view full details, check Possible matches for your lost items, or submit a claim / found report. Found photos stay blurred until OSA verification.",
-    side: "top",
+      "Open any post to view details, possible matches, or submit a claim.",
+    side: "left",
     align: "center",
+    popoverClass: "foundit-tour-popover foundit-tour-popover-compact-left",
   },
   {
     selectors: ['[data-tour="nav-create"]', '[data-tour="mobile-nav-create"]'],
-    title: "Post an item",
-    description:
-      "Lost something or found an unattended item on campus? Publish a report here with photos, building, and identifying details.",
+    title: "Post item",
+    description: "Report a lost or found item on campus.",
     side: "right",
     align: "center",
   },
   {
     selectors: ['[data-tour="nav-claims"]', '[data-tour="mobile-nav-claims"]'],
     title: "Claims & Returned",
-    description:
-      "Track the status of your ownership claims and found reports, edit or delete pending requests, and review completed returns.",
+    description: "Track, edit, or cancel your claims and found reports.",
     side: "right",
     align: "center",
   },
@@ -55,9 +60,8 @@ const TOUR_STEPS: TourStepConfig[] = [
       '[data-tour="nav-notifications"]',
       '[data-tour="mobile-nav-notifications"]',
     ],
-    title: "Live notifications",
-    description:
-      "Receive updates whenever OSA approves or rejects a claim, marks an item as ready for pickup, or confirms a return.",
+    title: "Notifications",
+    description: "Get updates on approvals, rejections, and OSA pickups.",
     side: "right",
     align: "center",
   },
@@ -66,13 +70,41 @@ const TOUR_STEPS: TourStepConfig[] = [
       '[data-tour="school-profile-menu"]',
       '[data-tour="mobile-nav-profile"]',
     ],
-    title: "Profile & tutorial replay",
-    description:
-      "View your reports on Profile, toggle Dark mode, sign out, or replay this Tutorial tour anytime from your account menu.",
+    title: "Account menu",
+    description: "Open Profile, toggle Dark mode, or replay this tour anytime.",
     side: "bottom",
     align: "end",
   },
 ];
+
+function syncFeedHighlightRows(maxRows = 2): void {
+  const feed = document.querySelector<HTMLElement>('[data-tour="school-feed"]');
+  const highlight = document.querySelector<HTMLElement>(
+    '[data-tour="school-feed-highlight"]',
+  );
+  if (!feed || !highlight) return;
+
+  highlight.style.left = "0px";
+  highlight.style.width = "100%";
+
+  const cards = Array.from(feed.querySelectorAll<HTMLElement>(".grid > *"));
+  if (cards.length === 0) {
+    highlight.style.height = `${feed.clientHeight}px`;
+    return;
+  }
+
+  const rowKeys = new Set<number>();
+  let maxBottom = 0;
+  for (const card of cards) {
+    const rowKey = Math.round(card.offsetTop / 16);
+    if (!rowKeys.has(rowKey)) {
+      if (rowKeys.size >= maxRows) break;
+      rowKeys.add(rowKey);
+    }
+    maxBottom = Math.max(maxBottom, card.offsetTop + card.offsetHeight);
+  }
+  highlight.style.height = `${maxBottom}px`;
+}
 
 function findVisibleElement(selectors: string[]): Element | undefined {
   for (const selector of selectors) {
@@ -91,6 +123,7 @@ export interface StartTourOptions {
 }
 
 export function startSchoolUserTour(options?: StartTourOptions): Driver | null {
+  syncFeedHighlightRows(2);
   const isMobile = window.matchMedia("(max-width: 767px)").matches;
   const steps: DriveStep[] = [];
 
@@ -104,6 +137,7 @@ export function startSchoolUserTour(options?: StartTourOptions): Driver | null {
         description: step.description,
         side: isMobile ? undefined : step.side,
         align: isMobile ? "center" : step.align,
+        popoverClass: !isMobile ? step.popoverClass : undefined,
       },
     });
   }
