@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { FadeIn } from "@/components/FadeIn";
 import { ReturnDetailPanel } from "@/components/admin/ReturnsView";
 import { paths } from "@/routes/paths";
 import { AdminLayout } from "./AdminLayout";
@@ -35,6 +36,7 @@ export function ReturnItemDetailPage() {
     : [];
 
   const backButton = (
+    <FadeIn y={4}>
     <button
       type="button"
       onClick={() => navigate(paths.adminReturns)}
@@ -43,6 +45,7 @@ export function ReturnItemDetailPage() {
       <ArrowLeft className="h-4 w-4" aria-hidden="true" />
       Back to return items
     </button>
+    </FadeIn>
   );
 
   if (isLoading) {

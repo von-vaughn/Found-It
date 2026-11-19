@@ -26,6 +26,7 @@ import {
   submissionStatusLabel,
   type StatusFilter,
 } from "@/components/school_user/claimStatus";
+import { FadeIn } from "@/components/FadeIn";
 import { PhotoCarousel } from "@/components/PhotoCarousel";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { EMPTY_ITEMS, type Item } from "@/data/mockItems";
@@ -252,6 +253,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
             <h1 className="sr-only">Claims &amp; Returned</h1>
 
             <div>
+            <FadeIn>
             <nav
               aria-label="Filter requests by status"
               className="flex flex-wrap items-center gap-2"
@@ -279,11 +281,13 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                 );
               })}
             </nav>
+            </FadeIn>
 
             {groupedByPost.length > 0 ? (
               <>
                 {statusFilter === "Approved" &&
                   filteredClaims.some((claim) => claim.kind !== "return") && (
+                  <FadeIn delay={0.05}>
                   <div
                     role="status"
                     className="mt-6 flex items-start gap-2.5 rounded-xl bg-emerald-50 px-3.5 py-3 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200"
@@ -296,9 +300,10 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                       Claim approved — visit OSA to pick up your item.
                     </p>
                   </div>
+                  </FadeIn>
                 )}
                 <StaggerGrid
-                  key={statusFilter}
+                  key={`${statusFilter}-${groupedByPost.length}-${groupedByPost[0]?.[0] ?? ""}`}
                   className="mt-6 space-y-6"
                 >
                   {groupedByPost.map(([itemId, claims]) => {
@@ -529,6 +534,10 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                 </StaggerGrid>
               </>
             ) : (
+              <FadeIn
+                key={`${statusFilter}-${searchQuery.trim() ? "search" : "empty"}`}
+                delay={0.05}
+              >
               <div className="flex min-h-[60dvh] flex-col items-center justify-center px-4 py-16 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500">
                   {searchQuery || myClaims.length > 0 ? (
@@ -561,6 +570,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                   </button>
                 )}
               </div>
+              </FadeIn>
             )}
             </div>
           </div>

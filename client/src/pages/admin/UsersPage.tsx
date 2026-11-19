@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Check, ChevronLeft, ChevronRight, Power, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FadeIn } from "@/components/FadeIn";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { AdminUser, AdminUserRole } from "@/components/admin/types";
@@ -198,6 +199,7 @@ export function UsersPage() {
       }
     >
       {isSuperAdmin && (
+        <FadeIn>
         <div className="mb-4 flex flex-wrap items-center gap-2" role="tablist" aria-label="User groups">
           <button
             type="button"
@@ -222,6 +224,7 @@ export function UsersPage() {
             Staff &amp; Admin accounts ({staffUsers.length})
           </button>
         </div>
+        </FadeIn>
       )}
 
       {usersQuery.isPending ? (
@@ -245,6 +248,7 @@ export function UsersPage() {
           </div>
         </Panel>
       ) : usersQuery.isError ? (
+        <FadeIn delay={0.05}>
         <Panel title="Unable to load accounts">
           <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-5 py-10 text-center">
             <p className="text-sm text-red-700 dark:text-red-400" role="alert">
@@ -259,7 +263,9 @@ export function UsersPage() {
             </button>
           </div>
         </Panel>
+        </FadeIn>
       ) : tab === "school" ? (
+        <FadeIn key="school" delay={0.05}>
         <Panel
           title="User Management"
           action={<span className="text-xs text-neutral-500 dark:text-neutral-400">{filteredSchoolUsers.length} users</span>}
@@ -403,6 +409,7 @@ export function UsersPage() {
             )}
           </div>
         </Panel>
+        </FadeIn>
       ) : (
         <AdminAccountsManager
           staff={staffUsers}

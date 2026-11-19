@@ -4,6 +4,7 @@ import {
   PackageSearch,
   RotateCcw,
 } from "lucide-react";
+import { FadeIn } from "@/components/FadeIn";
 import { AnalyticsSection } from "./AnalyticsSection";
 import type { AdminReport, AdminSection } from "./types";
 import type { ClaimRequest } from "@/types/claim";
@@ -55,6 +56,7 @@ export function Overview({
   ];
   return (
     <>
+      <FadeIn delay={0.04}>
       <section
         aria-label="Report totals"
         className="grid grid-cols-2 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 xl:grid-cols-4"
@@ -85,6 +87,7 @@ export function Overview({
           </button>
         ))}
       </section>
+      </FadeIn>
 
       <AnalyticsSection
         claims={claims}

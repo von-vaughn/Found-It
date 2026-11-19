@@ -15,7 +15,9 @@ import {
   Tag,
   X,
 } from "lucide-react";
+import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
+import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { resolveIdNumber } from "@/lib/idNumber";
 import { getClaimantEmail, type ClaimRequest } from "@/types/claim";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
@@ -211,6 +213,7 @@ export function ClaimsListPanel({
 
   return (
     <section aria-labelledby="claims-list-heading" className="space-y-5">
+      <FadeIn>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1
@@ -230,14 +233,20 @@ export function ClaimsListPanel({
           ariaLabel="Filter claims by status"
         />
       </div>
+      </FadeIn>
 
       {claimGroups.length === 0 ? (
+        <FadeIn delay={0.05}>
         <div className="rounded-[14px] border border-dashed border-neutral-300 bg-white px-5 py-12 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
           No claim requests match this filter.
         </div>
+        </FadeIn>
       ) : (
         <>
-          <div className="grid gap-2.5">
+          <StaggerGrid
+            key={`${statusFilter}-${safePage}-${claimGroups.length}-${pagedClaims[0]?.representative.itemId ?? ""}`}
+            className="grid gap-2.5"
+          >
             {pagedClaims.map((group) => {
               const claim = group.representative;
               const itemImage =
@@ -248,8 +257,8 @@ export function ClaimsListPanel({
                 .filter((name, index, names) => names.indexOf(name) === index);
 
               return (
+                <StaggerItem key={claim.itemId}>
                 <button
-                  key={claim.itemId}
                   type="button"
                   onClick={() => onSelectClaim(claim.id)}
                   className="flex w-full items-center gap-3.5 rounded-[14px] border border-neutral-200 bg-white px-4 py-3.5 text-left transition-colors hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600"
@@ -290,10 +299,12 @@ export function ClaimsListPanel({
                     />
                   </span>
                 </button>
+                </StaggerItem>
               );
             })}
-          </div>
+          </StaggerGrid>
 
+          <FadeIn delay={0.08}>
           <ReviewPager
             page={safePage}
             totalPages={totalPages}
@@ -304,6 +315,7 @@ export function ClaimsListPanel({
             showRange={false}
             onPageChange={setPage}
           />
+          </FadeIn>
         </>
       )}
     </section>
@@ -709,6 +721,7 @@ export function ClaimDetailPanel({
         </dialog>
       )}
 
+      <FadeIn>
       <OriginalPostCard
         layout="horizontal"
         itemTitle={selectedItemPost?.title || claim.item}
@@ -727,7 +740,9 @@ export function ClaimDetailPanel({
         facts={postFacts}
         notes={selectedItemPost?.description}
       />
+      </FadeIn>
 
+      <FadeIn delay={0.06}>
       <div className="mt-8 space-y-4">
         <section aria-labelledby="claim-requests-list-heading" className="min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -912,6 +927,7 @@ export function ClaimDetailPanel({
           )
         )}
       </div>
+      </FadeIn>
 
       <AdminPasswordModal
         open={promptOpen}

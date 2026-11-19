@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CreatePostForm } from "@/components/school_user/CreatePostForm";
+import { FadeIn } from "@/components/FadeIn";
 import { Header } from "@/components/school_user/Header";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import {
@@ -104,48 +105,56 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
                 Loading report…
               </p>
             ) : isEditingRoute && (!initialItem || !isOwnReport) ? (
-              <div className="mt-8 space-y-2">
-                <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-                  {initialItem ? "Cannot edit this report" : "Report not found"}
-                </h1>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  {initialItem
-                    ? "Only the author can edit this report."
-                    : "This report may have been removed."}
-                </p>
-              </div>
+              <FadeIn>
+                <div className="mt-8 space-y-2">
+                  <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                    {initialItem ? "Cannot edit this report" : "Report not found"}
+                  </h1>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {initialItem
+                      ? "Only the author can edit this report."
+                      : "This report may have been removed."}
+                  </p>
+                </div>
+              </FadeIn>
             ) : (
               <>
                 {isEditingRoute && (
-                  <header className="mb-6">
-                    <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-                      Edit your report
-                    </h1>
-                  </header>
+                  <FadeIn>
+                    <header className="mb-6">
+                      <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                        Edit your report
+                      </h1>
+                    </header>
+                  </FadeIn>
                 )}
 
                 {!isEditingRoute && (
-                  <header>
-                    <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-                      Post an item lost or found
-                    </h1>
-                    <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                      Create a lost or found report so campus users can search
-                      for the item, claim it, or return it to its owner.
-                    </p>
-                  </header>
+                  <FadeIn>
+                    <header>
+                      <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                        Post an item lost or found
+                      </h1>
+                      <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                        Create a lost or found report so campus users can search
+                        for the item, claim it, or return it to its owner.
+                      </p>
+                    </header>
+                  </FadeIn>
                 )}
 
-                <CreatePostForm
-                  active
-                  onAddItem={handleAddItem}
-                  onUpdateItem={handleUpdateItem}
-                  onSubmitted={() =>
-                    navigate(id ? `/dashboard/items/${id}` : "/dashboard")
-                  }
-                  initialType={initialType}
-                  initialItem={initialItem}
-                />
+                <FadeIn delay={0.05}>
+                  <CreatePostForm
+                    active
+                    onAddItem={handleAddItem}
+                    onUpdateItem={handleUpdateItem}
+                    onSubmitted={() =>
+                      navigate(id ? `/dashboard/items/${id}` : "/dashboard")
+                    }
+                    initialType={initialType}
+                    initialItem={initialItem}
+                  />
+                </FadeIn>
               </>
             )}
           </div>

@@ -4,9 +4,12 @@ import { resolveIdNumber } from "@/lib/idNumber";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut, Plus } from "lucide-react";
+import { animate, motion, useReducedMotion } from "motion/react";
+import { FadeIn } from "@/components/FadeIn";
 import { Header } from "@/components/school_user/Header";
 import { ItemCard } from "@/components/school_user/ItemCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
+import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { useAuth } from "@/context/useAuth";
 import { EMPTY_ITEMS } from "@/data/mockItems";
 import {
@@ -33,6 +36,25 @@ function getInitials(name: string): string {
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function AnimatedCount({ value }: { value: number }) {
+  const reduceMotion = useReducedMotion();
+  const [display, setDisplay] = useState(() => (reduceMotion ? value : 0));
+  const prevValueRef = useRef(reduceMotion ? value : 0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const controls = animate(prevValueRef.current, value, {
+      duration: 0.45,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (latest) => setDisplay(Math.round(latest)),
+    });
+    prevValueRef.current = value;
+    return () => controls.stop();
+  }, [value, reduceMotion]);
+
+  return <>{reduceMotion ? value : display}</>;
 }
 
 function EmptySearchIllustration() {
@@ -110,6 +132,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     };
   }, [profileMenuOpen]);
 
+  const reduceMotion = useReducedMotion();
   const name = user?.name || DEFAULT_PROFILE.name;
   const email = user?.email || DEFAULT_PROFILE.email;
   const idNumber = resolveIdNumber(user?.schoolId ?? user?.studentId, email);
@@ -174,8 +197,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-[290px_minmax(0,1fr)] lg:gap-14">
               {/* Left Profile Rail */}
               <section aria-labelledby="profile-identity-heading">
-                <div className="relative inline-block">
-                  <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[22px] bg-neutral-900 text-2xl font-bold tracking-tight text-white dark:bg-neutral-100 dark:text-neutral-900">
+                <motion.div
+                  className="relative inline-block"
+                  initial={reduceMotion ? false : { opacity: 0, scale: 0.92, y: 6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div
+                    className={`flex h-20 w-20 items-center justify-center overflow-hidden rounded-[22px] text-2xl font-bold tracking-tight ${
+                      customAvatar
+                        ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+                        : "bg-[#E5192D] text-white"
+                    }`}
+                  >
                     {customAvatar ? (
                       <img
                         src={customAvatar}
@@ -187,97 +221,110 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                       <span aria-hidden="true">{initials}</span>
                     )}
                   </div>
-                  <span
+                  <motion.span
                     aria-hidden="true"
+                    initial={reduceMotion ? false : { scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      delay: 0.18,
+                      duration: 0.28,
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
                     className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-neutral-950"
                   />
-                </div>
+                </motion.div>
 
-                <div className="relative mt-5" ref={profileMenuRef}>
-                  <div className="flex items-center justify-between gap-2">
-                    <h1
-                      id="profile-identity-heading"
-                      className="break-words text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
-                    >
-                      {name}
-                    </h1>
-                    <button
-                      type="button"
-                      onClick={() => setProfileMenuOpen((open) => !open)}
-                      aria-label="Open account menu"
-                      aria-expanded={profileMenuOpen}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 md:hidden dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
-                    >
-                      <ChevronDown
-                        className={`h-4 w-4 transition-transform duration-150 ${profileMenuOpen ? "rotate-180" : ""}`}
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </div>
-
-                  {profileMenuOpen && (
-                    <div className="absolute right-0 top-full z-30 mt-2 w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden dark:border-neutral-800 dark:bg-neutral-900">
+                <FadeIn delay={0.05}>
+                  <div className="relative mt-5" ref={profileMenuRef}>
+                    <div className="flex items-center justify-between gap-2">
+                      <h1
+                        id="profile-identity-heading"
+                        className="break-words text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
+                      >
+                        {name}
+                      </h1>
                       <button
                         type="button"
-                        onClick={async () => {
-                          setProfileMenuOpen(false);
-                          await logout();
-                          navigate("/");
-                        }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-red-400 dark:hover:bg-red-500/10"
+                        onClick={() => setProfileMenuOpen((open) => !open)}
+                        aria-label="Open account menu"
+                        aria-expanded={profileMenuOpen}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 md:hidden dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
                       >
-                        <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-                        Sign out
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform duration-150 ${profileMenuOpen ? "rotate-180" : ""}`}
+                          aria-hidden="true"
+                        />
                       </button>
                     </div>
-                  )}
-                </div>
 
-                <dl className="mt-6 divide-y divide-neutral-200/80 border-y border-neutral-200/80 text-sm dark:divide-neutral-800 dark:border-neutral-800">
-                  <div className="flex items-center justify-between gap-4 py-3.5">
-                    <dt className="shrink-0 text-neutral-500 dark:text-neutral-400">
-                      ID number
-                    </dt>
-                    <dd className="break-all text-right font-mono text-xs font-medium text-neutral-900 dark:text-neutral-100">
-                      {idNumber || "N/A"}
-                    </dd>
+                    {profileMenuOpen && (
+                      <div className="absolute right-0 top-full z-30 mt-2 w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden dark:border-neutral-800 dark:bg-neutral-900">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setProfileMenuOpen(false);
+                            await logout();
+                            navigate("/");
+                          }}
+                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-red-400 dark:hover:bg-red-500/10"
+                        >
+                          <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                          Sign out
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between gap-4 py-3.5">
-                    <dt className="shrink-0 text-neutral-500 dark:text-neutral-400">
-                      Email
-                    </dt>
-                    <dd className="break-all text-right font-mono text-xs font-medium text-neutral-900 dark:text-neutral-100">
-                      {email}
-                    </dd>
-                  </div>
-                </dl>
+                </FadeIn>
 
-                <dl className="grid grid-cols-3 divide-x divide-neutral-200/80 pt-5 dark:divide-neutral-800">
-                  <div className="pr-4">
-                    <dd className="font-mono text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
-                      {userItems.length}
-                    </dd>
-                    <dt className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
-                      Total
-                    </dt>
-                  </div>
-                  <div className="px-4">
-                    <dd className="font-mono text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
-                      {lostItems}
-                    </dd>
-                    <dt className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
-                      Lost
-                    </dt>
-                  </div>
-                  <div className="pl-4">
-                    <dd className="font-mono text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
-                      {foundItems}
-                    </dd>
-                    <dt className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
-                      Found
-                    </dt>
-                  </div>
-                </dl>
+                <FadeIn delay={0.1}>
+                  <dl className="mt-6 divide-y divide-neutral-200/80 border-y border-neutral-200/80 text-sm dark:divide-neutral-800 dark:border-neutral-800">
+                    <div className="flex items-center justify-between gap-4 py-3.5">
+                      <dt className="shrink-0 text-neutral-500 dark:text-neutral-400">
+                        ID number
+                      </dt>
+                      <dd className="break-all text-right font-mono text-xs font-medium text-neutral-900 dark:text-neutral-100">
+                        {idNumber || "N/A"}
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 py-3.5">
+                      <dt className="shrink-0 text-neutral-500 dark:text-neutral-400">
+                        Email
+                      </dt>
+                      <dd className="break-all text-right font-mono text-xs font-medium text-neutral-900 dark:text-neutral-100">
+                        {email}
+                      </dd>
+                    </div>
+                  </dl>
+                </FadeIn>
+
+                <FadeIn delay={0.15}>
+                  <dl className="grid grid-cols-3 divide-x divide-neutral-200/80 pt-5 dark:divide-neutral-800">
+                    <div className="pr-4">
+                      <dd className="font-mono text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+                        <AnimatedCount value={userItems.length} />
+                      </dd>
+                      <dt className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+                        Total
+                      </dt>
+                    </div>
+                    <div className="px-4">
+                      <dd className="font-mono text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+                        <AnimatedCount value={lostItems} />
+                      </dd>
+                      <dt className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+                        Lost
+                      </dt>
+                    </div>
+                    <div className="pl-4">
+                      <dd className="font-mono text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+                        <AnimatedCount value={foundItems} />
+                      </dd>
+                      <dt className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+                        Found
+                      </dt>
+                    </div>
+                  </dl>
+                </FadeIn>
               </section>
 
               {/* Right Reports Column */}
@@ -285,26 +332,27 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 aria-labelledby="profile-reports-heading"
                 className="min-w-0 pb-10"
               >
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
-                      My reports
-                    </p>
+                <FadeIn delay={0.05}>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
+                    My reports
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
                     <h2
                       id="profile-reports-heading"
-                      className="mt-1 text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
+                      className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
                     >
                       Your item reports
                     </h2>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/dashboard/create")}
+                      className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                    >
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                      Post an item
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/dashboard/create")}
-                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-                  >
-                    <Plus className="h-4 w-4" aria-hidden="true" />
-                    Post an item
-                  </button>
                 </div>
 
                 <nav
@@ -339,8 +387,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     );
                   })}
                 </nav>
+                </FadeIn>
 
                 {userItems.length === 0 ? (
+                  <FadeIn delay={0.08}>
                   <div className="mt-7 flex flex-col-reverse gap-8 pt-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="max-w-md">
                       <h3 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -372,21 +422,30 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
                     <EmptySearchIllustration />
                   </div>
+                  </FadeIn>
                 ) : filteredUserItems.length > 0 ? (
-                  <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <StaggerGrid
+                    key={`${reportFilter}-${filteredUserItems.length}-${filteredUserItems[0]?.id ?? ""}`}
+                    className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                  >
                     {filteredUserItems.map((item) => (
-                      <ItemCard
+                      <StaggerItem
                         key={item.id}
-                        item={item}
-                        onItemClick={(selected) =>
-                          navigate(`/dashboard/items/${selected.id}`, {
-                            state: { from: "/dashboard/profile" },
-                          })
-                        }
-                      />
+                        className="w-full min-w-0 [&>div]:h-full"
+                      >
+                        <ItemCard
+                          item={item}
+                          onItemClick={(selected) =>
+                            navigate(`/dashboard/items/${selected.id}`, {
+                              state: { from: "/dashboard/profile" },
+                            })
+                          }
+                        />
+                      </StaggerItem>
                     ))}
-                  </div>
+                  </StaggerGrid>
                 ) : (
+                  <FadeIn key={reportFilter} delay={0.05}>
                   <div className="mt-7 py-10 text-center">
                     <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                       No {reportFilter === "lost" ? "lost" : "found"} reports
@@ -400,6 +459,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                       Show all reports
                     </button>
                   </div>
+                  </FadeIn>
                 )}
               </section>
             </div>

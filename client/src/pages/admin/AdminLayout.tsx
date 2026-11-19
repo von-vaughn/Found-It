@@ -3,6 +3,7 @@ import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import toast from "react-hot-toast";
+import { FadeIn } from "@/components/FadeIn";
 import { useAuth } from "@/context/useAuth";
 import {
   AdminSidebar,
@@ -138,7 +139,14 @@ export function AdminLayout({
         <header
           className="notifications-shift sticky top-0 z-20 flex h-16 w-full items-center justify-between gap-3 bg-white/95 dark:bg-neutral-950/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8"
         >
-          <div className="relative hidden min-w-0 flex-1 sm:block">
+          <FadeIn
+            onceKey={
+              user?.id
+                ? `admin-header-search-${user.id}`
+                : "admin-header-search"
+            }
+            className="relative hidden min-w-0 flex-1 sm:block"
+          >
             <Search
               className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
               aria-hidden="true"
@@ -153,7 +161,7 @@ export function AdminLayout({
               autoComplete="off"
               className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 pl-9 pr-3 text-xs text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
             />
-          </div>
+          </FadeIn>
         </header>
       )}
 
@@ -177,6 +185,7 @@ export function AdminLayout({
             activeSection !== "users" &&
             activeSection !== "claims" &&
             activeSection !== "returns" && (
+            <FadeIn key={activeSection} y={6}>
             <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div className="min-w-0">
                 <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-2xl">
@@ -189,6 +198,7 @@ export function AdminLayout({
                 )}
               </div>
             </div>
+            </FadeIn>
           )}
 
           {showSearch && onQueryChange && (

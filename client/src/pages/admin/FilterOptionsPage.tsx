@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { Panel } from "@/components/admin/Panel";
 import { AdminLayout } from "./AdminLayout";
 import {
@@ -255,7 +256,8 @@ export function FilterOptionsPage() {
 
   return (
     <AdminLayout activeSection="options">
-      <div className="grid min-w-0 gap-5 lg:grid-cols-2">
+      <StaggerGrid className="grid min-w-0 gap-5 lg:grid-cols-2">
+        <StaggerItem className="min-w-0">
         <Panel
           title="Categories"
           action={
@@ -295,7 +297,9 @@ export function FilterOptionsPage() {
             />
           )}
         </Panel>
+        </StaggerItem>
 
+        <StaggerItem className="min-w-0">
         <Panel
           title="Buildings"
           action={
@@ -335,7 +339,8 @@ export function FilterOptionsPage() {
             />
           )}
         </Panel>
-      </div>
+        </StaggerItem>
+      </StaggerGrid>
     </AdminLayout>
   );
 }

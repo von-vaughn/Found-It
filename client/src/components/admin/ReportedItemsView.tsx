@@ -14,6 +14,7 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
+import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
 import { resolveIdNumber } from "@/lib/idNumber";
 import type { ItemFlag } from "@/services/itemService";
@@ -494,24 +495,27 @@ export function ReportedItemsView({
 
   return (
     <div className="space-y-6">
-      <header className="pb-5">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-            Reported items
-          </h1>
-        </div>
-      </header>
+      <FadeIn>
+        <header className="pb-5">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
+              Reported items
+            </h1>
+          </div>
+        </header>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <FilterChips
-          options={filterChips}
-          value={typeFilter}
-          onChange={onTypeFilterChange}
-          ariaLabel="Filter reported items by post type"
-        />
-      </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <FilterChips
+            options={filterChips}
+            value={typeFilter}
+            onChange={onTypeFilterChange}
+            ariaLabel="Filter reported items by post type"
+          />
+        </div>
+      </FadeIn>
 
       {reports.length === 0 ? (
+        <FadeIn delay={0.05}>
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/50 px-6 py-14 text-center dark:border-neutral-800 dark:bg-neutral-900/30">
           <div className="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
             <ShieldCheck className="h-5 w-5" aria-hidden="true" />
@@ -534,8 +538,10 @@ export function ReportedItemsView({
             {allFlaggedCount === 0 ? "View all item reports" : "Reset filters"}
           </button>
         </div>
+        </FadeIn>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)] lg:items-start">
+          <FadeIn delay={0.05} className="min-w-0">
           <section aria-label="Flagged items queue" className="min-w-0">
             <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white divide-y divide-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:divide-neutral-800">
               {reports.map((report) => {
@@ -593,6 +599,7 @@ export function ReportedItemsView({
               })}
             </div>
           </section>
+          </FadeIn>
 
           {activeReport && (
             <section aria-label="Selected reported item details" className="min-w-0">

@@ -474,13 +474,13 @@ export function AdminSidebar<TSection extends string>({
                     }}
                     className="min-w-0 flex-1 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
                   >
-                    <span className="flex min-w-0 items-center justify-between gap-2">
-                      <span className="min-w-0 truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                    <span className="flex min-w-0 items-start justify-between gap-2">
+                      <span className="min-w-0 break-words text-xs font-bold text-neutral-900 dark:text-neutral-100">
                         {notification.title}
                       </span>
                       <StatusBadge status={notification.status} />
                     </span>
-                    <span className="mt-1 line-clamp-2 block text-xs text-neutral-500 dark:text-neutral-400">
+                    <span className="mt-1 block whitespace-pre-line break-words text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
                       {notification.description}
                     </span>
                     <span className="mt-1.5 block text-[10px] text-neutral-400 dark:text-neutral-500">

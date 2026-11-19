@@ -1,4 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
+import { FadeIn } from "@/components/FadeIn";
+import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { Panel } from "./Panel";
 import { StatusBadge } from "./StatusBadge";
 import type { AdminSection } from "./types";
@@ -15,6 +17,7 @@ export function AnalyticsSection({
 }) {
   return (
     <section aria-labelledby="analytics-heading" className="mt-5">
+      <FadeIn delay={0.08}>
       <div className="mb-3">
         <h2
           id="analytics-heading"
@@ -23,9 +26,10 @@ export function AnalyticsSection({
           Recent activity
         </h2>
       </div>
+      </FadeIn>
 
-      <div className="mt-3 grid min-w-0 items-stretch gap-3 lg:grid-cols-2">
-
+      <StaggerGrid className="mt-3 grid min-w-0 items-stretch gap-3 lg:grid-cols-2">
+        <StaggerItem className="flex h-full flex-col">
         <Panel
           title="Recent submitted claims"
           className="flex h-full flex-col"
@@ -64,7 +68,9 @@ export function AnalyticsSection({
             )}
           </ul>
         </Panel>
+        </StaggerItem>
 
+        <StaggerItem className="flex h-full flex-col">
         <Panel
           title="Recent return items"
           className="flex h-full flex-col"
@@ -108,7 +114,8 @@ export function AnalyticsSection({
             )}
           </ul>
         </Panel>
-      </div>
+        </StaggerItem>
+      </StaggerGrid>
     </section>
   );
 }

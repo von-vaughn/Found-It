@@ -4,6 +4,7 @@ import { Check, ChevronLeft, ChevronRight, Plus, Power, Trash2 } from "lucide-re
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { FadeIn } from "@/components/FadeIn";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { AdminUser, AdminUserRole } from "@/components/admin/types";
@@ -187,6 +188,7 @@ export function AdminAccountsManager({
 
   return (
     <>
+      <FadeIn delay={0.05}>
       <Panel
         title="Staff & Admin accounts"
         action={
@@ -383,6 +385,7 @@ export function AdminAccountsManager({
           )}
         </div>
       </Panel>
+      </FadeIn>
 
       {createOpen && (
         <div

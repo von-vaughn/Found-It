@@ -14,7 +14,9 @@ import {
   Tag,
   X,
 } from "lucide-react";
+import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
+import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { resolveIdNumber } from "@/lib/idNumber";
 import type { ServerClaimStatus } from "@/services/claimService";
 import type { ClaimRequest } from "@/types/claim";
@@ -224,6 +226,7 @@ export function ReturnsListPanel({
 
   return (
     <section aria-labelledby="returns-list-heading" className="space-y-5">
+      <FadeIn>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1
@@ -243,22 +246,28 @@ export function ReturnsListPanel({
           ariaLabel="Filter return requests by status"
         />
       </div>
+      </FadeIn>
 
       {filteredRequests.length === 0 ? (
+        <FadeIn delay={0.05}>
         <div className="rounded-[14px] border border-dashed border-neutral-300 bg-white px-5 py-12 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
           No return requests match this filter.
         </div>
+        </FadeIn>
       ) : (
         <>
-          <div className="grid gap-2.5">
+          <StaggerGrid
+            key={`${statusFilter}-${safePage}-${filteredRequests.length}-${pageRequests[0]?.id ?? ""}`}
+            className="grid gap-2.5"
+          >
             {pageRequests.map((request) => {
               const lostReport = reports.find(
                 (report) => report.id === request.itemId,
               );
               const preview = lostReport?.image || request.evidence?.[0] || "";
               return (
+                <StaggerItem key={request.id}>
                 <button
-                  key={request.id}
                   type="button"
                   onClick={() => onSelectReturn(request.id)}
                   className="flex w-full items-center gap-3.5 rounded-[14px] border border-neutral-200 bg-white px-4 py-3.5 text-left transition-colors hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600"
@@ -299,10 +308,12 @@ export function ReturnsListPanel({
                     />
                   </span>
                 </button>
+                </StaggerItem>
               );
             })}
-          </div>
+          </StaggerGrid>
 
+          <FadeIn delay={0.08}>
           <ReviewPager
             page={safePage}
             totalPages={totalPages}
@@ -312,6 +323,7 @@ export function ReturnsListPanel({
             showRange={false}
             onPageChange={setPage}
           />
+          </FadeIn>
         </>
       )}
     </section>
@@ -600,6 +612,7 @@ export function ReturnDetailPanel({
 
   return (
     <>
+      <FadeIn>
       <OriginalPostCard
         layout="horizontal"
         itemTitle={selectedLostReport?.title || selectedRequest.item}
@@ -616,7 +629,9 @@ export function ReturnDetailPanel({
         facts={postFacts}
         notes={selectedLostReport?.description}
       />
+      </FadeIn>
 
+      <FadeIn delay={0.06}>
       <div className="mt-8 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -737,6 +752,7 @@ export function ReturnDetailPanel({
           />
         )}
       </div>
+      </FadeIn>
 
       {confirmAction && confirmTargetRequest && (
         <div

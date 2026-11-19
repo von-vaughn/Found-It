@@ -432,9 +432,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? { left: collapsedWidth, willChange: "transform, opacity" }
               : undefined
           }
-          className="fixed z-40 bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 max-md:shadow-xl md:shadow-none max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:overflow-y-auto max-md:rounded-t-2xl max-md:border max-md:border-b-0 md:top-0 md:bottom-0 md:w-80 md:border-r"
+          className="fixed z-40 flex flex-col bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 max-md:shadow-xl md:shadow-none max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:rounded-t-2xl max-md:border max-md:border-b-0 md:top-0 md:bottom-0 md:w-80 md:border-r"
         >
-          <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100 dark:border-neutral-800">
+          <div className="flex shrink-0 items-center justify-between px-5 py-5 border-b border-neutral-100 dark:border-neutral-800">
             <div>
               <h2 className="font-bold text-base text-neutral-900 dark:text-neutral-100">
                 Notifications
@@ -449,7 +449,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="flex items-center justify-between gap-3 px-5 py-2.5">
+          <div className="flex shrink-0 items-center justify-between gap-3 px-5 py-2.5">
             <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
               {unreadCount} unread
             </p>
@@ -487,8 +487,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             )}
           </div>
-          <div className="space-y-1 p-3">
-            {notifications.slice(0, 4).map((notification) => (
+          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
+            {notifications.map((notification) => (
               <div
                 key={notification.id}
                 className={`flex w-full items-start gap-2 rounded-xl p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
@@ -500,15 +500,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => selectNotification(notification)}
                   className="min-w-0 flex-1 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D]"
                 >
-                  <span className="flex min-w-0 items-center justify-between gap-2">
-                    <span className="min-w-0 truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                  <span className="flex min-w-0 items-start justify-between gap-2">
+                    <span className="min-w-0 break-words text-xs font-bold text-neutral-900 dark:text-neutral-100">
                       {notification.title}
                     </span>
                     <StatusBadge
                       status={notificationStatusLabel(notification.event)}
                     />
                   </span>
-                  <p className="mt-1 line-clamp-2 text-xs text-neutral-500 dark:text-neutral-400">
+                  <p className="mt-1 whitespace-pre-line break-words text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
                     {notification.message}
                   </p>
                   <span className="mt-1.5 block text-[10px] text-neutral-400 dark:text-neutral-500">
