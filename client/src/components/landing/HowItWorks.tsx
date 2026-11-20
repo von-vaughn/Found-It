@@ -26,7 +26,7 @@ const stepsData: StepData[] = [
     ctaAction: "signup",
     mockupImage: "/mockups/step1-signup.png",
     fallbackImage: "/1.Sign-up.png",
-    bgTint: "bg-[#F7F5F0]",
+    bgTint: "bg-[#F7F5F0] dark:bg-neutral-900/95",
   },
   {
     id: "step-2",
@@ -37,7 +37,7 @@ const stepsData: StepData[] = [
     ctaAction: "browse",
     mockupImage: "/mockups/step2-browse.png",
     fallbackImage: "/2.Browse.png",
-    bgTint: "bg-[#EFF4EE]",
+    bgTint: "bg-[#EFF4EE] dark:bg-emerald-950/35",
   },
   {
     id: "step-3",
@@ -46,7 +46,7 @@ const stepsData: StepData[] = [
     subtitle: "Report a lost or found item with photos.",
     mockupImage: "/mockups/step3-post.png",
     fallbackImage: "/3.post-item.png",
-    bgTint: "bg-[#FDF2EC]",
+    bgTint: "bg-[#FDF2EC] dark:bg-orange-950/30",
   },
   {
     id: "step-4",
@@ -55,7 +55,7 @@ const stepsData: StepData[] = [
     subtitle: "Prove ownership with details and photos.",
     mockupImage: "/mockups/step4-claim.png",
     fallbackImage: "/4.Claim.png",
-    bgTint: "bg-[#EFF3F7]",
+    bgTint: "bg-[#EFF3F7] dark:bg-slate-900/80",
   },
   {
     id: "step-5",
@@ -64,7 +64,7 @@ const stepsData: StepData[] = [
     subtitle: "Pick up approved claims at OSA.",
     mockupImage: "/mockups/step5-track.png",
     fallbackImage: "/5.Track.png",
-    bgTint: "bg-[#F9F4EB]",
+    bgTint: "bg-[#F9F4EB] dark:bg-amber-950/30",
   },
 ];
 
@@ -88,7 +88,7 @@ export const HowItWorks: React.FC = () => {
   return (
     <section
       id="how-it-works"
-      className="py-20 sm:py-28 bg-white border-t border-neutral-200/80 relative overflow-hidden"
+      className="py-20 sm:py-28 bg-white dark:bg-neutral-950 border-t border-neutral-200/80 dark:border-neutral-800/80 relative overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* ═══════════════════════ HEADER ═══════════════════════ */}
@@ -99,7 +99,7 @@ export const HowItWorks: React.FC = () => {
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-black text-neutral-950 tracking-tight leading-[1.08]">
+            <h2 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-black text-neutral-950 dark:text-neutral-50 tracking-tight leading-[1.08]">
               How It Works
             </h2>
           </motion.div>
@@ -130,10 +130,10 @@ export const HowItWorks: React.FC = () => {
                     }`}
                   >
                     <div
-                      className={`${step.bgTint} rounded-[2.5rem] sm:rounded-[3rem] pt-10 sm:pt-14 lg:pt-16 px-6 sm:px-10 pb-0 relative overflow-hidden flex items-end justify-center min-h-[440px] sm:min-h-[520px]`}
+                      className={`${step.bgTint} rounded-[2.5rem] sm:rounded-[3rem] pt-10 sm:pt-14 lg:pt-16 px-6 sm:px-10 pb-0 relative overflow-hidden flex items-end justify-center min-h-[440px] sm:min-h-[520px] dark:border dark:border-white/5`}
                     >
                       {/* Subtle radial light */}
-                      <div className="absolute inset-0 bg-radial from-white/40 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute inset-0 bg-radial from-white/40 dark:from-white/5 via-transparent to-transparent pointer-events-none" />
 
                       {/* Phone mockup positioned lower */}
                       <div className="relative z-10 w-full max-w-[280px] sm:max-w-[320px] translate-y-6 sm:translate-y-10 transition-transform duration-500 hover:scale-[1.02]">
@@ -159,11 +159,11 @@ export const HowItWorks: React.FC = () => {
                     }`}
                   >
                     {/* Bold Heading */}
-                    <h3 className="text-4xl sm:text-5xl lg:text-6xl font-black text-neutral-950 tracking-tight leading-[1.08] mb-4">
+                    <h3 className="text-4xl sm:text-5xl lg:text-6xl font-black text-neutral-950 dark:text-neutral-50 tracking-tight leading-[1.08] mb-4">
                       {step.title}
                     </h3>
 
-                    <p className="text-xl sm:text-2xl font-bold text-neutral-900 leading-snug">
+                    <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-300 leading-snug">
                       {step.subtitle}
                     </p>
 

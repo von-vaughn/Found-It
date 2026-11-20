@@ -76,23 +76,23 @@ export const BrowseFiltersPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
-      <main className="mx-auto w-full max-w-[720px] bg-white px-4 py-6 pb-20 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
+      <main className="mx-auto w-full max-w-[720px] bg-white dark:bg-neutral-950 px-4 py-6 pb-20 sm:px-6 lg:px-8">
         <button
           type="button"
           onClick={() => navigate(backTo)}
-          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 dark:text-neutral-300 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Go back
         </button>
 
         <header className="mt-2 mb-4">
-          <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">
+          <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-50">
             Filters
           </h1>
           {activeFilterCount > 0 && (
-            <p className="mt-1 text-sm text-neutral-600">
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
               {activeFilterCount} active · {resultCount} matching{" "}
               {resultCount === 1 ? "item" : "items"}
             </p>

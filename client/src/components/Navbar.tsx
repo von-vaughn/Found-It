@@ -1,10 +1,29 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, Moon, Sun, X } from "lucide-react";
+import { useTheme } from "@/context/useTheme";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import { AuthModal } from "@/components/auth/AuthModal";
+
+const ThemeToggleButton: React.FC<{
+  theme: "light" | "dark";
+  onToggle: () => void;
+}> = ({ theme, onToggle }) => {
+  const isDark = theme === "dark";
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className="p-2 rounded-full text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100/80 dark:hover:bg-neutral-800/80 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+    >
+      {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+    </button>
+  );
+};
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,6 +33,7 @@ export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const openAuthModal = (mode: "signin" | "signup") => {
     setMobileMenuOpen(false);
@@ -179,9 +199,9 @@ export const Navbar: React.FC = () => {
         isLanding ? "fixed" : "sticky"
       } ${
         mobileMenuOpen
-          ? "bg-white"
+          ? "bg-white dark:bg-neutral-950"
           : scrolled
-            ? "border-b border-white/50 bg-white/70 shadow-sm backdrop-blur-xl"
+            ? "border-b border-white/50 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-950/75 shadow-sm backdrop-blur-xl"
             : "border-b border-transparent bg-transparent"
       }`}
     >
@@ -203,7 +223,7 @@ export const Navbar: React.FC = () => {
             alt="FoundIt logo"
             className="w-9 h-9 object-cover rounded-none shadow-none ring-0"
           />
-          <span className="text-2xl font-extrabold tracking-tight text-neutral-900">
+          <span className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
             Found<span className="text-[#E5192D]">It</span>
           </span>
         </button>
@@ -224,8 +244,8 @@ export const Navbar: React.FC = () => {
                 }}
                 className={`relative py-2 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
                   isActive
-                    ? "text-neutral-900 font-bold"
-                    : "text-neutral-600 hover:text-neutral-900"
+                    ? "text-neutral-900 dark:text-white font-bold"
+                    : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
                 }`}
               >
                 {link.name}
@@ -246,13 +266,14 @@ export const Navbar: React.FC = () => {
           )}
         </nav>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
+          <ThemeToggleButton theme={theme} onToggle={toggleTheme} />
           {!isAuthenticated && (
             <>
               <button
                 type="button"
                 onClick={() => openAuthModal("signin")}
-                className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 px-3 py-2 transition-colors cursor-pointer"
+                className="text-sm font-semibold text-neutral-700 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-white px-3 py-2 transition-colors cursor-pointer"
               >
                 Sign in
               </button>
@@ -268,6 +289,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         <div className="flex md:hidden items-center gap-2">
+          <ThemeToggleButton theme={theme} onToggle={toggleTheme} />
           {!isAuthenticated && (
             <Button
               size="sm"
@@ -279,7 +301,7 @@ export const Navbar: React.FC = () => {
           )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
+            className="p-2 rounded-lg text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? (
@@ -297,7 +319,7 @@ export const Navbar: React.FC = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-b border-neutral-200 bg-white px-4 pt-2 pb-6 shadow-xl"
+            className="md:hidden border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 pt-2 pb-6 shadow-xl"
           >
             <div className="flex flex-col space-y-3">
               {navLinks.map((link) => {
@@ -308,8 +330,8 @@ export const Navbar: React.FC = () => {
                     onClick={() => handleNavClick(link)}
                     className={`text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
                       isActive
-                        ? "bg-red-50 text-[#E5192D] font-bold"
-                        : "text-neutral-700 hover:bg-neutral-50"
+                        ? "bg-red-50 dark:bg-red-950/50 text-[#E5192D] font-bold"
+                        : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-900"
                     }`}
                   >
                     {link.name}
@@ -318,10 +340,10 @@ export const Navbar: React.FC = () => {
               })}
 
               {!isAuthenticated && (
-                <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2">
+                <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 flex flex-col gap-2">
                   <button
                     onClick={() => openAuthModal("signin")}
-                    className="text-left py-2 text-sm font-semibold text-neutral-700 hover:text-neutral-900"
+                    className="text-left py-2 text-sm font-semibold text-neutral-700 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-white"
                   >
                     Sign in
                   </button>

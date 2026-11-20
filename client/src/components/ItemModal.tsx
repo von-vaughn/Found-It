@@ -70,7 +70,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
-          className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden z-10 border border-neutral-100 my-8"
+          className="relative w-full max-w-4xl bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl overflow-hidden z-10 border border-neutral-100 dark:border-neutral-800 my-8"
         >
           <button
             onClick={onClose}
@@ -82,7 +82,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
 
           <div className="grid md:grid-cols-2">
             {activeImage ? (
-              <div className="relative flex flex-col bg-neutral-100">
+              <div className="relative flex flex-col bg-neutral-100 dark:bg-neutral-800">
                 <div className="relative aspect-[16/10] w-full flex-1 overflow-hidden md:aspect-auto md:min-h-[320px]">
                   <img
                     src={activeImage}
@@ -91,7 +91,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
                   />
                 </div>
                 {gallery.length > 1 && (
-                  <div className="flex gap-2 overflow-x-auto border-t border-neutral-200/80 bg-white p-3">
+                  <div className="flex gap-2 overflow-x-auto border-t border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3">
                     {gallery.map((imgUrl, index) => (
                       <button
                         key={`${imgUrl}-${index}`}
@@ -125,30 +125,30 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
 
             <div className="min-w-0 p-6 sm:p-7 space-y-4">
               <div>
-                <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-900">
+                <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-50">
                   {item.title}
                 </h2>
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                   {isLost ? "Lost" : "Found"} • {item.timeAgo}
                 </p>
               </div>
 
               <div>
-                <p className="text-neutral-700 text-sm sm:text-base leading-relaxed">
+                <p className="text-neutral-700 dark:text-neutral-300 text-sm sm:text-base leading-relaxed">
                   {item.description}
                 </p>
               </div>
 
-            <dl className="grid grid-cols-1 gap-x-6 border-t border-neutral-200/80 text-xs sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-x-6 border-t border-neutral-200/80 dark:border-neutral-800 text-xs sm:grid-cols-2">
               {item.color && (
                 <div className="flex items-start gap-2.5 py-3">
                   <Palette
-                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                     aria-hidden="true"
                   />
                   <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900">Primary color</dt>
-                    <dd className="mt-1 capitalize text-neutral-500">
+                    <dt className="font-bold text-neutral-900 dark:text-neutral-100">Primary color</dt>
+                    <dd className="mt-1 capitalize text-neutral-500 dark:text-neutral-400">
                       {item.color}
                     </dd>
                   </div>
@@ -157,14 +157,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
 
               <div className="flex items-start gap-2.5 py-3">
                 <MapPin
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
                     Specific location
                   </dt>
-                  <dd className="mt-1 break-words text-neutral-500">
+                  <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
                     {item.location}
                   </dd>
                 </div>
@@ -172,12 +172,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
 
               <div className="flex items-start gap-2.5 py-3">
                 <Building2
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">Building</dt>
-                  <dd className="mt-1 break-words text-neutral-500">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Building</dt>
+                  <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
                     {item.building?.trim() || "Not provided"}
                   </dd>
                 </div>
@@ -185,14 +185,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
 
               <div className="flex items-start gap-2.5 py-3">
                 <CalendarDays
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
                     {isLost ? "Date lost" : "Date found"}
                   </dt>
-                  <dd className="mt-1 text-neutral-500">
+                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
                     {itemDate ?? "Not provided"}
                   </dd>
                 </div>
@@ -200,14 +200,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
 
               <div className="flex items-start gap-2.5 py-3">
                 <Clock3
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
                     {isLost ? "Time lost" : "Time found"}
                   </dt>
-                  <dd className="mt-1 text-neutral-500">
+                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
                     {itemTime ?? "Not provided"}
                   </dd>
                 </div>
@@ -215,12 +215,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
 
               <div className="flex items-start gap-2.5 py-3">
                 <CategoryIcon
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
                   aria-hidden="true"
                 />
                 <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900">Category</dt>
-                  <dd className="mt-1 text-neutral-500">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Category</dt>
+                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
                     {formatCategoryLabel(item.category)}
                   </dd>
                 </div>

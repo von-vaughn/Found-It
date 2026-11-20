@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Search, SearchX, SlidersHorizontal, Loader2 } from "lucide-react";
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { formatCategoryLabel, useCategories } from "@/hooks/useCategories";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import type { Item } from "@/data/mockItems";
 import { EMPTY_ITEMS } from "@/data/mockItems";
 import { ItemCard } from "@/components/school_user/ItemCard";
@@ -27,6 +27,11 @@ export const BrowseItemsPage: React.FC = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialBrowseState = location.state as {
+    category?: string;
+    openFilters?: boolean;
+  } | null;
 
   useEffect(() => {
     if (user?.role === "school_user") {
@@ -36,13 +41,17 @@ export const BrowseItemsPage: React.FC = () => {
 
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [visibleCategoryCount, setVisibleCategoryCount] = useState(0);
-  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [filterModalOpen, setFilterModalOpen] = useState(() =>
+    Boolean(initialBrowseState?.openFilters),
+  );
   const {
     filters,
     setFilters,
     selectedCategory,
     setSelectedCategory,
-  } = useBrowseFilters();
+  } = useBrowseFilters(
+    searchParams.get("category") ?? initialBrowseState?.category,
+  );
   const categoryRowRef = useRef<HTMLDivElement>(null);
   const categoryMeasureRef = useRef<HTMLDivElement>(null);
   const moreCategoryMeasureRef = useRef<HTMLButtonElement>(null);
@@ -203,7 +212,7 @@ export const BrowseItemsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pt-5 pb-10 sm:pt-7 sm:pb-14">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 pt-5 pb-10 sm:pt-7 sm:pb-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-4 mb-8 w-full">
           <FadeIn>
@@ -223,7 +232,7 @@ export const BrowseItemsPage: React.FC = () => {
                     placeholder={`Search ${activeTab} items by name…`}
                     aria-label={`Search ${activeTab} items by name`}
                     autoComplete="off"
-                    className="h-12 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-12 text-sm text-neutral-800 shadow-xs placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="h-12 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 pl-10 pr-12 text-sm text-neutral-800 dark:text-neutral-100 shadow-xs placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   />
                   <button
                     type="button"
@@ -233,13 +242,13 @@ export const BrowseItemsPage: React.FC = () => {
                     aria-expanded={filterModalOpen}
                     className={`absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 cursor-pointer ${
                       filterModalOpen || activeFilterCount > 0
-                        ? "text-neutral-900 hover:bg-neutral-200/70"
-                        : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/70"
+                        ? "text-neutral-900 dark:text-white hover:bg-neutral-200/70 dark:hover:bg-neutral-800"
+                        : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/70 dark:hover:bg-neutral-800"
                     }`}
                   >
                     <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
                     {activeFilterCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-[#E5192D] px-1 text-[10px] font-bold text-white tabular-nums">
+                      <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white dark:border-neutral-900 bg-[#E5192D] px-1 text-[10px] font-bold text-white tabular-nums">
                         {activeFilterCount}
                       </span>
                     )}
@@ -274,10 +283,10 @@ export const BrowseItemsPage: React.FC = () => {
                     }
                   }}
                   aria-pressed={isActive}
-                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
+                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${
                     isActive
                       ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
-                      : "bg-white text-neutral-600 border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50"
+                      : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   }`}
                 >
                   {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
@@ -291,10 +300,10 @@ export const BrowseItemsPage: React.FC = () => {
                 onClick={openFilters}
                 aria-label="More category filters"
                 aria-pressed={activeCategoryId === "more"}
-                className={`ml-auto shrink-0 sticky right-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
+                className={`ml-auto shrink-0 sticky right-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 inline-flex items-center gap-2 ${
                   activeCategoryId === "more"
                     ? "bg-[#E5192D] text-white border-[#E5192D]"
-                    : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
+                    : "border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
                 }`}
               >
                 <span>More</span>
@@ -333,7 +342,7 @@ export const BrowseItemsPage: React.FC = () => {
         {isLoading ? (
           <div className="min-h-[60dvh] flex flex-col items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-neutral-400 mb-3" />
-            <p className="text-sm text-neutral-500">Loading items…</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading items…</p>
           </div>
         ) : filteredItems.length > 0 ? (
           <StaggerGrid
@@ -355,13 +364,13 @@ export const BrowseItemsPage: React.FC = () => {
           </StaggerGrid>
         ) : (
           <div className="min-h-[60dvh] text-center flex flex-col items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
+            <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-neutral-400 mb-4">
               <SearchX className="w-8 h-8 stroke-[1.5]" />
             </div>
-            <h3 className="text-base font-bold text-neutral-900 mb-1">
+            <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100 mb-1">
               No matching {activeTabLabel} items found
             </h3>
-            <p className="text-xs text-neutral-500 max-w-sm mb-4">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mb-4">
               Try another search or reset filters.
             </p>
             <button

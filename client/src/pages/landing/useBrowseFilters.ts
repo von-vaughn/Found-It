@@ -37,10 +37,14 @@ function loadCategory(): string {
  * Mirrors the dashboard pattern where filter state lives outside the
  * page so the mobile full-page filters edit the same values as the modal.
  */
-export function useBrowseFilters() {
-  const [filters, setFilters] = useState<ItemFilters>(loadFilters);
-  const [selectedCategory, setSelectedCategory] =
-    useState<string>(loadCategory);
+export function useBrowseFilters(initialCategory?: string | null) {
+  const [filters, setFilters] = useState<ItemFilters>(() => {
+    const loaded = loadFilters();
+    return initialCategory ? { ...loaded, categories: [] } : loaded;
+  });
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    () => initialCategory || loadCategory(),
+  );
 
   useEffect(() => {
     try {

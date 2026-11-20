@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { ThemeContext, type Theme } from "@/context/theme-context";
 
 const LOCAL_STORAGE_THEME_KEY = "foundit_theme";
@@ -18,7 +17,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
-  const location = useLocation();
 
   const toggleTheme = useCallback(() => {
     setTheme((current) => {
@@ -32,16 +30,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, []);
 
-  // Dark mode is shared by school_user and admin workspaces: the `.dark`
-  // class only applies inside /dashboard and /admin so landing and browse
-  // stay light.
+  // Apply `.dark` across all routes (landing, browse, dashboard, admin).
   useEffect(() => {
-    const dark =
-      theme === "dark" &&
-      (location.pathname.startsWith("/dashboard") ||
-        location.pathname.startsWith("/admin"));
-    document.documentElement.classList.toggle("dark", dark);
-  }, [theme, location.pathname]);
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

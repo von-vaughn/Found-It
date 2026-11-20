@@ -13,7 +13,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   onBrowseFound,
 }) => {
   return (
-    <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <main>
         <HeroSection
           onBrowseLost={onBrowseLost}
