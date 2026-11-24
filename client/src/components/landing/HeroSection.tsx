@@ -99,7 +99,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
       style={{
         backgroundImage: theme === "dark" ? DARK_HERO_GRADIENT : LIGHT_HERO_GRADIENT,
       }}
-      className="relative pt-20 pb-4 md:pt-22 md:pb-6 overflow-hidden flex flex-col items-center justify-center min-h-[calc(100svh-5rem)] sm:min-h-[calc(100svh-6.25rem)] bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 select-none"
+      className="relative pt-20 pb-4 md:pt-22 md:pb-6 overflow-hidden flex flex-col items-center justify-center min-h-[calc(100svh-5rem)] sm:min-h-[calc(100svh-6.25rem)] bg-[#f7f7f8] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 select-none"
     >
       <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
         <div
@@ -158,10 +158,10 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
                       state: { category: category.id },
                     });
                   }}
-                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${
+                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${
                     isAll
-                      ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20 hover:bg-[#c81424]"
-                      : "bg-white dark:bg-neutral-900/90 text-neutral-600 dark:text-neutral-300 border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
+                      ? "bg-[#E5192D] text-white hover:bg-[#c81424]"
+                      : "bg-white dark:bg-neutral-900/90 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
                   }`}
                 >
                   {Icon ? <Icon className="w-3.5 h-3.5 shrink-0" /> : null}
@@ -185,7 +185,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
                   });
                 }}
                 aria-label="More category filters"
-                className="ml-auto shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900/90 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 inline-flex items-center gap-2"
+                className="ml-auto shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors bg-white dark:bg-neutral-900/90 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 inline-flex items-center gap-2"
               >
                 <span>More</span>
               </button>
@@ -202,7 +202,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
                     key={category.id}
                     type="button"
                     tabIndex={-1}
-                    className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold border flex items-center gap-2"
+                    className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2"
                   >
                     {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
                     <span>{category.label}</span>
@@ -213,7 +213,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
                 ref={moreCategoryMeasureRef}
                 type="button"
                 tabIndex={-1}
-                className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold border inline-flex items-center gap-2"
+                className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-2"
               >
                 <span>More</span>
               </button>

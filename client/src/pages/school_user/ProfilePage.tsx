@@ -163,7 +163,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
+    <div className="flex min-h-screen bg-[#f7f7f8] font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="profile"
         onTabChange={(tab) => {
@@ -187,7 +187,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           />
         </div>
 
-        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white px-4 py-8 sm:px-8 lg:px-12 dark:bg-neutral-950">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-[#f7f7f8] px-4 py-8 sm:px-8 lg:px-12 dark:bg-neutral-950">
           <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-[290px_minmax(0,1fr)] lg:gap-14">
               {/* Left Profile Rail */}
@@ -381,10 +381,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         type="button"
                         onClick={() => setReportFilter(tab.id)}
                         aria-pressed={isActive}
-                        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                           isActive
-                            ? "border-[#E5192D] bg-[#E5192D] text-white"
-                            : "border-neutral-200 bg-transparent text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
+                            ? "bg-[#E5192D] text-white"
+                            : "bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                         }`}
                       >
                         <span>{tab.label}</span>

@@ -134,7 +134,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   return (
     <div
       onClick={() => onItemClick && onItemClick(item)}
-      className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800 overflow-hidden shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 flex flex-col group cursor-pointer relative"
+      className="bg-white dark:bg-neutral-900 rounded-lg overflow-hidden transition-colors duration-200 flex flex-col group cursor-pointer relative"
     >
       {/* Media block on top — full-bleed for both photos and the placeholder */}
       <div className="relative aspect-[4/3] bg-neutral-100 dark:bg-neutral-800 overflow-hidden">

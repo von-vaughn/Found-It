@@ -96,7 +96,7 @@ export function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
+    <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <AdminSidebar
         activeSection={activeSection}
         navigation={navigationFor(isSuperAdmin)}
@@ -137,7 +137,7 @@ export function AdminLayout({
       )}
       {showSearch && onQueryChange && (
         <header
-          className="notifications-shift sticky top-0 z-20 flex h-16 w-full items-center justify-between gap-3 bg-white/95 dark:bg-neutral-950/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8"
+          className="notifications-shift sticky top-0 z-20 flex h-16 w-full items-center justify-between gap-3 bg-[#f7f7f8]/95 dark:bg-neutral-950/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8"
         >
           <FadeIn
             onceKey={

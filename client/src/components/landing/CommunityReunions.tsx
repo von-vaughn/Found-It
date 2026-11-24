@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 export const CommunityReunions: React.FC = () => {
 
   return (
-    <section className="relative w-full bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 overflow-hidden py-24 sm:py-32 lg:py-40 flex flex-col justify-center items-center select-none">
+    <section className="relative w-full bg-[#f7f7f8] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 overflow-hidden py-24 sm:py-32 lg:py-40 flex flex-col justify-center items-center select-none">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-red-100/70 dark:bg-red-950/35 rounded-full blur-[120px] pointer-events-none -z-0" />
       <div className="absolute -top-10 left-10 w-72 h-72 bg-red-100/60 dark:bg-red-950/30 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-10 right-10 w-80 h-80 bg-rose-100/60 dark:bg-rose-950/30 rounded-full blur-3xl pointer-events-none" />

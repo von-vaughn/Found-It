@@ -47,7 +47,7 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
+    <div className="flex min-h-screen bg-[#f7f7f8] font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="home"
         hideMobileNav
@@ -77,7 +77,7 @@ export const FoundReportPage: React.FC<FoundReportPageProps> = ({
         <div
           className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
         >
-          <main className="mx-auto w-full max-w-[640px] bg-white px-4 py-6 sm:px-6 lg:px-8 dark:bg-neutral-950">
+          <main className="mx-auto w-full max-w-[640px] bg-[#f7f7f8] px-4 py-6 sm:px-6 lg:px-8 dark:bg-neutral-950">
             {flowStep !== "confirmation" && (
               <button
                 type="button"

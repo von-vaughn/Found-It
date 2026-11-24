@@ -292,7 +292,7 @@ export function AdminSidebar<TSection extends string>({
           width: expanded && !notificationsOpen ? 240 : collapsedWidth,
         }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 py-5 selection:bg-[#E5192D] selection:text-white"
+        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center bg-white dark:bg-neutral-950 py-5 selection:bg-[#E5192D] selection:text-white"
       >
         <Link
           to="/admin"
@@ -386,7 +386,7 @@ export function AdminSidebar<TSection extends string>({
               <Badge
                 variant="notification"
                 aria-hidden="true"
-                className="absolute top-1 right-1 min-w-4 h-4 rounded-md px-0.5 text-[9px] leading-none border-2 border-white dark:border-neutral-900"
+                className="absolute top-1 right-1 min-w-4 h-4 rounded-md px-0.5 text-[9px] leading-none"
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>
@@ -418,9 +418,9 @@ export function AdminSidebar<TSection extends string>({
             exit={{ opacity: 0, x: -16 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             style={{ left: collapsedWidth, willChange: "transform, opacity" }}
-            className="fixed bottom-0 top-0 z-40 flex w-[min(20rem,calc(100vw-4rem))] flex-col border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 max-md:shadow-xl md:shadow-none"
+            className="fixed bottom-0 top-0 z-40 flex w-[min(20rem,calc(100vw-4rem))] flex-col bg-white dark:bg-neutral-950 max-md:shadow-xl md:shadow-none"
           >
-            <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 px-5 py-5">
+            <div className="flex items-center justify-between px-5 py-5">
               <div>
                 <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                   Notifications

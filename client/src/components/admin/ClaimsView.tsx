@@ -258,7 +258,7 @@ export function ClaimsListPanel({
                 <button
                   type="button"
                   onClick={() => onSelectClaim(claim.id)}
-                  className="flex w-full items-center gap-3.5 rounded-[14px] border border-neutral-200 bg-white px-4 py-3.5 text-left transition-colors hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600"
+                  className="flex w-full items-center gap-3.5 rounded-[14px] bg-white px-4 py-3.5 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 dark:hover:bg-neutral-800/70"
                 >
                   {itemImage ? (
                     <img
@@ -765,12 +765,12 @@ export function ClaimDetailPanel({
                     src: image,
                     alt: `Photo evidence ${index + 1} submitted by ${requestItem.claimant}`,
                   }))}
-                  emptyPhotoSubtitle="The claimant did not attach any photos to this request."
+                  emptyPhotoSubtitle=""
                   notices={
                     !isLostItem &&
                     requestItem.status === "Pending" &&
                     !itemReceived ? (
-                      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+                      <div className="mt-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
                         Approval is unavailable until the physical item is
                         received by OSA.
                       </div>

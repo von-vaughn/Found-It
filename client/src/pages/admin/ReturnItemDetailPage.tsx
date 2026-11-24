@@ -28,7 +28,7 @@ export function ReturnItemDetailPage() {
     null;
 
   const siblingRequests = selectedRequest
-    ? visibleRequests.filter(
+    ? requests.filter(
         (request) =>
           request.itemId === selectedRequest.itemId &&
           request.id !== selectedRequest.id,

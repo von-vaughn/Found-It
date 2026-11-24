@@ -75,7 +75,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
+    <div className="flex min-h-screen bg-[#f7f7f8] font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="notifications"
         onTabChange={(tab) => {
@@ -104,7 +104,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
         <div
           className="notifications-shift min-w-0 w-full flex-1 transition-[margin,width] duration-300 ease-in-out"
         >
-          <main className="mx-auto w-full max-w-[720px] bg-white px-4 py-6 sm:px-6 lg:px-8 dark:bg-neutral-950">
+          <main className="mx-auto w-full max-w-[720px] bg-[#f7f7f8] px-4 py-6 sm:px-6 lg:px-8 dark:bg-neutral-950">
             <header className="mt-2 mb-4">
               <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 Notifications
@@ -165,9 +165,9 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
                 {notifications.map((notification) => (
                   <li
                     key={notification.id}
-                    className={`flex items-start gap-2 rounded-2xl border border-neutral-200/80 pr-2 dark:border-neutral-800 max-md:rounded-none max-md:border-x-0 max-md:border-t-0 max-md:last:border-b-0 ${
+                    className={`flex items-start gap-2 rounded-2xl pr-2 ${
                       notification.isRead
-                        ? ""
+                        ? "bg-white dark:bg-neutral-900"
                         : "bg-red-50/60 dark:bg-red-500/10"
                     }`}
                   >

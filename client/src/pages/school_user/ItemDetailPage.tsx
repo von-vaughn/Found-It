@@ -265,7 +265,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
   if (isItemLoading && !item) {
     return (
-      <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
+      <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
         <Sidebar
           activeTab={sidebarActiveTab}
           onTabChange={(tab) => {
@@ -295,7 +295,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
+      <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100">
         <Sidebar
           activeTab={sidebarActiveTab}
           onTabChange={(tab) => {
@@ -370,7 +370,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   const CategoryIcon = category?.icon ?? Package;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
+    <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <a
         href="#item-detail-main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-20 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-neutral-900 focus:px-3 focus:py-2 focus:text-xs focus:font-bold focus:text-white"
@@ -399,7 +399,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           filterResultCount={applyAdvancedFilters(items, filters).length}
         />
 
-        <div className="flex-1 min-w-0 w-full max-w-[1440px] mx-auto bg-white dark:bg-neutral-950 px-4 sm:px-8 lg:px-12">
+        <div className="flex-1 min-w-0 w-full max-w-[1440px] mx-auto bg-[#f7f7f8] dark:bg-neutral-950 px-4 sm:px-8 lg:px-12">
           <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
         {/* Detail actions row */}
         <FadeIn key={`actions-${item.id}`}>
@@ -544,7 +544,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                     {simplifyClaimStatus(existingClaim.status)} claim request
                   </button>
                 ) : item.isClaimed || item.isReturned ? (
-                  <span className="shrink-0 inline-flex h-10 items-center justify-center rounded-full border border-neutral-200 bg-neutral-100 px-4 text-xs font-bold text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+                  <span className="shrink-0 inline-flex h-10 items-center justify-center rounded-full bg-neutral-100 px-4 text-xs font-bold text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400">
                     {isLost ? "Already returned" : "Already claimed"}
                   </span>
                 ) : (
@@ -757,7 +757,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                     return (
                       <li
                         key={claim.id}
-                        className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5"
+                        className="rounded-2xl bg-white dark:bg-neutral-900 p-4 sm:p-5"
                       >
                       <div className="grid items-stretch gap-8 md:grid-cols-2">
                         <div className="min-w-0">
@@ -854,7 +854,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                             </div>
                           </dl>
                           {claimStatus === "Approved" && (
-                            <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50/70 dark:border-cyan-800/60 dark:bg-cyan-950/30 p-3 text-xs text-cyan-900 dark:text-cyan-300">
+                            <div className="mt-4 rounded-xl bg-cyan-50/70 dark:bg-cyan-950/30 p-3 text-xs text-cyan-900 dark:text-cyan-300">
                               <p className="font-bold flex items-center gap-1.5">
                                 <Award className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
                                 Returned to OSA office
@@ -865,7 +865,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                             </div>
                           )}
                           {claimStatus === "Returned" && (
-                            <div className="mt-4 rounded-xl border border-teal-200 bg-teal-50/70 dark:border-teal-800/60 dark:bg-teal-950/30 p-3 text-xs text-teal-900 dark:text-teal-300">
+                            <div className="mt-4 rounded-xl bg-teal-50/70 dark:bg-teal-950/30 p-3 text-xs text-teal-900 dark:text-teal-300">
                               <p className="font-bold">Item returned</p>
                             </div>
                           )}

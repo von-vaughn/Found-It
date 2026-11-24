@@ -253,7 +253,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const activeFilterCount = countActiveFilters(filters);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 flex selection:bg-[#E5192D] selection:text-white font-open-sans text-neutral-900 dark:text-neutral-100">
+    <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 flex selection:bg-[#E5192D] selection:text-white font-open-sans text-neutral-900 dark:text-neutral-100">
       {/* Left Sidebar */}
       <Sidebar
         activeTab={activeNavTab}
@@ -293,7 +293,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
 
         {/* Dashboard Main Container */}
-        <main className="flex-1 min-w-0 w-full max-w-[1440px] mx-auto bg-white dark:bg-neutral-950 px-4 sm:px-8 lg:px-12 pt-2 pb-5 space-y-5">
+        <main className="flex-1 min-w-0 w-full max-w-[1440px] mx-auto bg-[#f7f7f8] dark:bg-neutral-950 px-4 sm:px-8 lg:px-12 pt-2 pb-5 space-y-5">
           <div className="@container notifications-shift min-w-0 w-full space-y-5 transition-[margin,width] duration-300 ease-in-out">
            {/* Filter Pills and Tabs Bar */}
 
@@ -323,10 +323,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     }
                   }}
                   aria-pressed={isActive}
-                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
+                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
                     isActive
-                      ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
-                      : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      ? "bg-[#E5192D] text-white"
+                      : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   }`}
                 >
                   {Icon ? <Icon className="w-3.5 h-3.5 shrink-0" /> : null}
@@ -340,10 +340,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 onClick={() => setFilterModalOpen(true)}
                 aria-label="More category filters"
                 aria-pressed={activeCategoryId === "more"}
-                className={`ml-auto shrink-0 sticky right-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
+                className={`ml-auto shrink-0 sticky right-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 inline-flex items-center gap-2 ${
                   activeCategoryId === "more"
-                    ? "bg-[#E5192D] text-white border-[#E5192D]"
-                    : "border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+                    ? "bg-[#E5192D] text-white"
+                    : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
                 }`}
               >
                 <span>More</span>
@@ -360,7 +360,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   <button
                     key={category.id}
                     tabIndex={-1}
-                    className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold border flex items-center gap-2"
+                    className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2"
                   >
                     {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
                     <span>{category.label}</span>
@@ -370,7 +370,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 ref={moreCategoryMeasureRef}
                 tabIndex={-1}
-                className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold border inline-flex items-center gap-2"
+                className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-2"
               >
                 <span>More</span>
               </button>
@@ -450,7 +450,7 @@ const DashboardGridSkeleton: React.FC = () => (
       <div
         key={index}
         aria-hidden="true"
-        className="overflow-hidden rounded-lg border border-neutral-200/80 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+        className="overflow-hidden rounded-lg bg-white dark:bg-neutral-900"
       >
         <div className="aspect-[4/3] animate-pulse bg-neutral-100 dark:bg-neutral-800" />
         <div className="space-y-2 p-4">

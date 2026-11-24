@@ -234,11 +234,11 @@ function ReportedItemDossier({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
       transition={{ type: "spring", stiffness: 260, damping: 24 }}
-      className="rounded-[20px] border border-neutral-200 bg-white p-5 shadow-[0_20px_40px_-20px_rgba(24,24,27,0.10)] sm:p-6 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none"
+      className="rounded-[20px] bg-white p-5 sm:p-6 dark:bg-neutral-900"
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/80 pb-4 dark:border-neutral-800">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-[#E5192D] tabular-nums dark:border-red-500/30 dark:bg-red-950/40">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-[#E5192D] tabular-nums dark:bg-red-950/40">
             <Flag className="h-3.5 w-3.5" aria-hidden="true" />
             {(activeReport.flags?.length ?? activeReport.flagCount ?? 0)}{" "}
             {(activeReport.flags?.length ?? activeReport.flagCount ?? 0) === 1
@@ -543,7 +543,7 @@ export function ReportedItemsView({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)] lg:items-start">
           <FadeIn delay={0.05} className="min-w-0">
           <section aria-label="Flagged items queue" className="min-w-0">
-            <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white divide-y divide-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:divide-neutral-800">
+            <div className="overflow-hidden rounded-2xl bg-white divide-y divide-neutral-100 dark:bg-neutral-900 dark:divide-neutral-800">
               {reports.map((report) => {
                 const isSelected = activeReport?.id === report.id;
                 const flagCount = report.flags?.length ?? report.flagCount ?? 0;
@@ -580,7 +580,7 @@ export function ReportedItemsView({
                         <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
                           {report.title}
                         </p>
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 font-mono text-[10px] font-bold text-[#E5192D] tabular-nums dark:border-red-500/30 dark:bg-red-950/40">
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 font-mono text-[10px] font-bold text-[#E5192D] tabular-nums dark:bg-red-950/40">
                           <Flag className="h-2.5 w-2.5" aria-hidden="true" />
                           {flagCount}
                         </span>

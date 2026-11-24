@@ -145,13 +145,13 @@ export function OriginalPostCard({
       ? {
           label: "Lost",
           style:
-            "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-300 border border-orange-200/70 dark:border-orange-500/25",
+            "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-300",
         }
       : normalizedType.includes("found")
         ? {
             label: "Found",
             style:
-              "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/70 dark:border-sky-500/25",
+              "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300",
           }
         : null;
 
@@ -184,7 +184,7 @@ export function OriginalPostCard({
   }
 
   return (
-    <aside className="rounded-[18px] border border-neutral-200 bg-white p-4 shadow-[0_16px_32px_-20px_rgba(24,24,27,0.12)] lg:sticky lg:top-6 lg:self-start dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none">
+    <aside className="rounded-[18px] bg-white p-4 lg:sticky lg:top-6 lg:self-start dark:bg-neutral-900">
       <div className="mb-3.5 flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">
           Original post
@@ -221,7 +221,7 @@ export function FilterChips<T extends string>({
 }) {
   return (
     <div
-      className="flex flex-wrap gap-1.5"
+      className="flex flex-wrap items-center gap-2"
       role="group"
       aria-label={ariaLabel}
     >
@@ -233,10 +233,10 @@ export function FilterChips<T extends string>({
             type="button"
             aria-pressed={pressed}
             onClick={() => onChange(option.key)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+            className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${
               pressed
-                ? "border-[#E5192D] bg-[#E5192D] text-white"
-                : "border-neutral-200 bg-transparent text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
+                ? "bg-[#E5192D] text-white hover:bg-[#c81424]"
+                : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
             }`}
           >
             <span>{option.label}</span>
@@ -277,10 +277,10 @@ export function RequestSelectorCard({
       type="button"
       aria-current={selected ? "true" : undefined}
       onClick={onClick}
-      className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] border bg-white px-3.5 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 ${
+      className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] bg-white px-3.5 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 ${
         selected
-          ? "border-[#E5192D] ring-1 ring-[#E5192D]"
-          : "border-neutral-200 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+          ? "ring-1 ring-[#E5192D]"
+          : "hover:bg-neutral-50 dark:hover:bg-neutral-800"
       }`}
     >
       <div className="min-w-0">
@@ -437,7 +437,7 @@ function ReviewDetailCard({
   return (
     <section
       aria-label={ariaLabel}
-      className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+      className="overflow-hidden rounded-2xl bg-white dark:bg-neutral-900"
     >
       <div className="p-4 sm:p-5">
         <div className="grid gap-5 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]">

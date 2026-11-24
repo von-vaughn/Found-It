@@ -2,14 +2,14 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center rounded-full border font-bold whitespace-nowrap tabular-nums select-none",
+  "inline-flex items-center justify-center rounded-full font-bold whitespace-nowrap tabular-nums select-none",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground",
-        secondary: "border-transparent bg-secondary text-secondary-foreground",
-        destructive: "border-transparent bg-destructive text-white",
-        notification: "border-transparent bg-[#E5192D] text-white",
+        default: "bg-primary text-primary-foreground",
+        secondary: "bg-secondary text-secondary-foreground",
+        destructive: "bg-destructive text-white",
+        notification: "bg-[#E5192D] text-white",
       },
     },
     defaultVariants: {

@@ -34,6 +34,7 @@ import type { AdminReport } from "./types";
 import {
   formatAdminEventDate,
   formatAdminEventTime,
+  sortRequestsByPostMatch,
 } from "./requestComparison";
 import { useSensitiveUnlock } from "./useSensitiveUnlock";
 
@@ -164,38 +165,44 @@ export function ReturnsListPanel({
     );
   }, [query, visibleRequests]);
 
+  const groupRequests = (items: ClaimRequest[]) => {
+    const groups = new Map<string, ClaimRequest[]>();
+    for (const request of items) {
+      const group = groups.get(request.itemId) ?? [];
+      group.push(request);
+      groups.set(request.itemId, group);
+    }
+    return Array.from(groups.values()).map((requests) => ({
+      representative: requests[0],
+      requests,
+    }));
+  };
+
   const chipOptions = useMemo(
     () =>
       DEFAULT_RETURN_FILTERS.map((option) => ({
         key: option,
         label: option,
-        count:
+        count: groupRequests(
           option === "All"
-            ? queryMatchedRequests.length
+            ? queryMatchedRequests
             : queryMatchedRequests.filter(
                 (request) => request.status === option,
-              ).length,
+              ),
+        ).length,
       })),
     [queryMatchedRequests],
   );
 
-  const filteredRequests = useMemo(
-    () =>
+  const requestGroups = useMemo(() => {
+    const filtered =
       statusFilter === "All"
         ? queryMatchedRequests
         : queryMatchedRequests.filter(
             (request) => request.status === statusFilter,
-          ),
-    [queryMatchedRequests, statusFilter],
-  );
-
-  const requestCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const request of visibleRequests) {
-      counts.set(request.itemId, (counts.get(request.itemId) ?? 0) + 1);
-    }
-    return counts;
-  }, [visibleRequests]);
+          );
+    return groupRequests(filtered);
+  }, [queryMatchedRequests, statusFilter]);
 
   const [prevListKey, setPrevListKey] = useState({
     query: "",
@@ -213,16 +220,16 @@ export function ReturnsListPanel({
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredRequests.length / LIST_PAGE_SIZE),
+    Math.ceil(requestGroups.length / LIST_PAGE_SIZE),
   );
   const safePage = Math.min(page, totalPages);
-  const pageRequests = filteredRequests.slice(
+  const pageGroups = requestGroups.slice(
     (safePage - 1) * LIST_PAGE_SIZE,
     safePage * LIST_PAGE_SIZE,
   );
   const rangeStart =
-    filteredRequests.length === 0 ? 0 : (safePage - 1) * LIST_PAGE_SIZE + 1;
-  const rangeEnd = Math.min(safePage * LIST_PAGE_SIZE, filteredRequests.length);
+    requestGroups.length === 0 ? 0 : (safePage - 1) * LIST_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * LIST_PAGE_SIZE, requestGroups.length);
 
   return (
     <section aria-labelledby="returns-list-heading" className="space-y-5">
@@ -235,7 +242,7 @@ export function ReturnsListPanel({
           >
             <span>Return Item</span>
             <span className="font-mono text-base font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
-              {filteredRequests.length}
+              {requestGroups.length}
             </span>
           </h1>
         </div>
@@ -248,7 +255,7 @@ export function ReturnsListPanel({
       </div>
       </FadeIn>
 
-      {filteredRequests.length === 0 ? (
+      {requestGroups.length === 0 ? (
         <FadeIn delay={0.05}>
         <div className="rounded-[14px] border border-dashed border-neutral-300 bg-white px-5 py-12 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
           No return requests match this filter.
@@ -257,20 +264,24 @@ export function ReturnsListPanel({
       ) : (
         <>
           <StaggerGrid
-            key={`${statusFilter}-${safePage}-${filteredRequests.length}-${pageRequests[0]?.id ?? ""}`}
+            key={`${statusFilter}-${safePage}-${requestGroups.length}-${pageGroups[0]?.representative.itemId ?? ""}`}
             className="grid gap-2.5"
           >
-            {pageRequests.map((request) => {
+            {pageGroups.map((group) => {
+              const request = group.representative;
               const lostReport = reports.find(
                 (report) => report.id === request.itemId,
               );
               const preview = lostReport?.image || request.evidence?.[0] || "";
+              const finderNames = group.requests
+                .map((entry) => entry.claimant)
+                .filter((name, index, names) => names.indexOf(name) === index);
               return (
-                <StaggerItem key={request.id}>
+                <StaggerItem key={request.itemId}>
                 <button
                   type="button"
                   onClick={() => onSelectReturn(request.id)}
-                  className="flex w-full items-center gap-3.5 rounded-[14px] border border-neutral-200 bg-white px-4 py-3.5 text-left transition-colors hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600"
+                  className="flex w-full items-center gap-3.5 rounded-[14px] bg-white px-4 py-3.5 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 dark:hover:bg-neutral-800/70"
                 >
                   {preview ? (
                     <img
@@ -287,10 +298,10 @@ export function ReturnsListPanel({
                       {request.item}
                     </span>
                     <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                      <span className="truncate">{request.claimant}</span>
-                      {(requestCounts.get(request.itemId) ?? 1) > 1 && (
+                      <span className="truncate">{finderNames.join(", ")}</span>
+                      {group.requests.length > 1 && (
                         <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
-                          {requestCounts.get(request.itemId)} requests
+                          {group.requests.length} requests
                         </span>
                       )}
                     </span>
@@ -319,7 +330,8 @@ export function ReturnsListPanel({
             totalPages={totalPages}
             rangeStart={rangeStart}
             rangeEnd={rangeEnd}
-            totalItems={filteredRequests.length}
+            totalItems={requestGroups.length}
+            itemUnitLabel="posts"
             showRange={false}
             onPageChange={setPage}
           />
@@ -330,9 +342,10 @@ export function ReturnsListPanel({
   );
 }
 
-/** Detail and review panel for a single return request and its lost item post. */
+/** Detail and review panel for all return requests submitted on a lost item post. */
 export function ReturnDetailPanel({
   request: selectedRequest,
+  siblingRequests = [],
   allRequests,
   reports,
   physicalItemReceived,
@@ -380,8 +393,16 @@ export function ReturnDetailPanel({
     (report) => report.id === selectedRequest.itemId,
   );
 
-  const activeRequest = selectedRequest;
-  const activeReceived = physicalItemReceived(activeRequest);
+  const postRequests = useMemo(() => {
+    const seen = new Set<string>();
+    const combined: ClaimRequest[] = [];
+    for (const entry of [selectedRequest, ...siblingRequests]) {
+      if (seen.has(entry.id)) continue;
+      seen.add(entry.id);
+      combined.push(entry);
+    }
+    return sortRequestsByPostMatch(combined, selectedLostReport);
+  }, [selectedRequest, siblingRequests, selectedLostReport]);
 
   const confirmTargetRequest = confirmAction
     ? (allRequests.find((item) => item.id === confirmAction.requestId) ?? null)
@@ -518,97 +539,92 @@ export function ReturnDetailPanel({
     ? `Owner · ID ${ownerId}`
     : "Original post details unavailable";
 
-  const updatingActiveOsa = Boolean(
-    activeRequest &&
-      isUpdatingOsaReceipt &&
-      updatingOsaId === activeRequest.id,
-  );
-  const publishingActive = Boolean(
-    activeRequest && isPublishing && publishingId === activeRequest.id,
-  );
-
-  const activeFactRows: ReviewFactRow[] = activeRequest
-    ? [
-        {
-          id: "color",
-          icon: Palette,
-          label: "Primary color",
-          value: activeRequest.color?.trim() || "None",
-        },
-        {
-          id: "location-found",
-          icon: MapPin,
-          label: "Location found",
-          value: activeRequest.location || "None",
-        },
-        {
-          id: "building",
-          icon: Building2,
-          label: "Building",
-          value: activeRequest.building?.trim() || "None",
-        },
-        {
-          id: "date-found",
-          icon: CalendarDays,
-          label: "Date found",
-          value: formatDate(activeRequest.dateLost),
-        },
-        {
-          id: "time-found",
-          icon: Clock3,
-          label: "Time found",
-          value: activeRequest.timeLost || "None",
-        },
-        {
-          id: "physical-item",
-          icon: Package,
-          label: "Physical item",
-          value: (
-            <div className="flex flex-wrap items-center gap-3">
-              <OsaReceiptStatus received={activeReceived} />
-              {activeRequest.status === "Pending" && (
-                <button
-                  type="button"
-                  disabled={updatingActiveOsa}
-                  onClick={() =>
-                    handleOsaReceiptChange(
-                      activeRequest.id,
-                      !(activeRequest.receivedByOsa ?? false),
-                    )
-                  }
-                  className={`inline-flex h-8 items-center justify-center rounded-[10px] border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 ${
-                    activeRequest.receivedByOsa
-                      ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
-                      : "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
-                  }`}
-                >
-                  {updatingActiveOsa
-                    ? "Updating…"
-                    : activeRequest.receivedByOsa
-                      ? "Mark not yet received"
-                      : "Mark received"}
-                </button>
-              )}
-            </div>
-          ),
-        },
-        {
-          id: "important-details",
-          icon: Lock,
-          label: "Important details",
-          value: (
-            <LockedValue
-              value={activeRequest.importantDetails}
-              unlocked={unlocked}
-              onUnlock={requestUnlock}
-            />
-          ),
-          note: unlocked
-            ? undefined
-            : "Protected detail. Enter your staff or admin password to reveal.",
-        },
-      ]
-    : [];
+  const buildReturnFactRows = (entry: ClaimRequest): ReviewFactRow[] => {
+    const entryReceived = physicalItemReceived(entry);
+    const updatingEntryOsa = Boolean(
+      isUpdatingOsaReceipt && updatingOsaId === entry.id,
+    );
+    return [
+      {
+        id: "color",
+        icon: Palette,
+        label: "Primary color",
+        value: entry.color?.trim() || "None",
+      },
+      {
+        id: "location-found",
+        icon: MapPin,
+        label: "Location found",
+        value: entry.location || "None",
+      },
+      {
+        id: "building",
+        icon: Building2,
+        label: "Building",
+        value: entry.building?.trim() || "None",
+      },
+      {
+        id: "date-found",
+        icon: CalendarDays,
+        label: "Date found",
+        value: formatDate(entry.dateLost),
+      },
+      {
+        id: "time-found",
+        icon: Clock3,
+        label: "Time found",
+        value: entry.timeLost || "None",
+      },
+      {
+        id: "physical-item",
+        icon: Package,
+        label: "Physical item",
+        value: (
+          <div className="flex flex-wrap items-center gap-3">
+            <OsaReceiptStatus received={entryReceived} />
+            {entry.status === "Pending" && (
+              <button
+                type="button"
+                disabled={updatingEntryOsa}
+                onClick={() =>
+                  handleOsaReceiptChange(
+                    entry.id,
+                    !(entry.receivedByOsa ?? false),
+                  )
+                }
+                className={`inline-flex h-8 items-center justify-center rounded-[10px] border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 ${
+                  entry.receivedByOsa
+                    ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                    : "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                }`}
+              >
+                {updatingEntryOsa
+                  ? "Updating…"
+                  : entry.receivedByOsa
+                    ? "Mark not yet received"
+                    : "Mark received"}
+              </button>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: "important-details",
+        icon: Lock,
+        label: "Important details",
+        value: (
+          <LockedValue
+            value={entry.importantDetails}
+            unlocked={unlocked}
+            onUnlock={requestUnlock}
+          />
+        ),
+        note: unlocked
+          ? undefined
+          : "Protected detail. Enter your staff or admin password to reveal.",
+      },
+    ];
+  };
 
   return (
     <>
@@ -635,122 +651,134 @@ export function ReturnDetailPanel({
       <div className="mt-8 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Return request{" "}
+            {postRequests.length === 1 ? "Return request" : "Return requests"}{" "}
             <span className="font-mono text-sm font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
-              {activeRequest ? 1 : 0}
+              {postRequests.length}
             </span>
           </h2>
+          {postRequests.length > 1 && (
+            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
+              {selectedLostReport
+                ? "Sorted by match with the post"
+                : "Submitted return requests"}
+            </p>
+          )}
         </div>
-        {activeRequest && (
-          <SubmittedRequestCard
-            requestKey={activeRequest.id}
-            requestTypeLabel="Return Request"
-            submitted={activeRequest.submitted}
-            itemTitle={activeRequest.claimantTitle?.trim() || activeRequest.item}
-            applicantName={activeRequest.claimant}
-            applicantId={
-              resolveIdNumber(activeRequest.schoolId, activeRequest.email) ||
-              "N/A"
-            }
-            status={activeRequest.status}
-            photos={(activeRequest.evidence ?? []).map((image, index) => ({
-              src: image,
-              alt: `Evidence ${index + 1} from ${activeRequest.claimant}`,
-            }))}
-            emptyPhotoSubtitle="The finder did not attach any photos to this request."
-            notices={
-              <>
-                {activeRequest.status === "Pending" &&
-                  !activeRequest.receivedByOsa && (
-                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
-                      Approval is unavailable until the physical item is
-                      received by OSA.
-                    </div>
-                  )}
+        <div className="space-y-4">
+          {postRequests.map((entry) => {
+            const publishingEntry = Boolean(
+              isPublishing && publishingId === entry.id,
+            );
+            return (
+              <SubmittedRequestCard
+                key={entry.id}
+                requestKey={entry.id}
+                requestTypeLabel="Return Request"
+                submitted={entry.submitted}
+                itemTitle={entry.claimantTitle?.trim() || entry.item}
+                applicantName={entry.claimant}
+                applicantId={
+                  resolveIdNumber(entry.schoolId, entry.email) || "N/A"
+                }
+                status={entry.status}
+                photos={(entry.evidence ?? []).map((image, index) => ({
+                  src: image,
+                  alt: `Evidence ${index + 1} from ${entry.claimant}`,
+                }))}
+                emptyPhotoSubtitle="The finder did not attach any photos to this request."
+                notices={
+                  <>
+                    {entry.status === "Pending" && !entry.receivedByOsa && (
+                      <div className="mt-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                        Approval is unavailable until the physical item is
+                        received by OSA.
+                      </div>
+                    )}
 
-                {activeRequest.status === "Rejected" &&
-                  activeRequest.publishedItemId && (
-                    <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300">
-                      This found-item post is already available in the public
-                      listings.
-                    </div>
-                  )}
-              </>
-            }
-            description={activeRequest.details}
-            facts={activeFactRows}
-            actions={
-              activeRequest.status === "Pending" ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      requestStatusChange(activeRequest.id, "Rejected")
-                    }
-                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
-                  >
-                    <X className="h-3.5 w-3.5" aria-hidden="true" />
-                    Reject
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!activeRequest.receivedByOsa}
-                    title={
-                      !activeRequest.receivedByOsa
-                        ? "Item must be received by OSA before approving"
-                        : undefined
-                    }
-                    onClick={() =>
-                      requestStatusChange(activeRequest.id, "Approved")
-                    }
-                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-                  >
-                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                    Approve
-                  </button>
-                </>
-              ) : activeRequest.status === "Approved" ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      requestStatusChange(activeRequest.id, "Pending")
-                    }
-                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      requestStatusChange(activeRequest.id, "Returned")
-                    }
-                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
-                  >
-                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                    Mark as returned
-                  </button>
-                </>
-              ) : activeRequest.status === "Rejected" ? (
-                <button
-                  type="button"
-                  onClick={() => setConfirmPublishRequest(activeRequest)}
-                  disabled={
-                    Boolean(activeRequest.publishedItemId) || publishingActive
-                  }
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55"
-                >
-                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                  {activeRequest.publishedItemId
-                    ? "Posted as found item"
-                    : publishingActive
-                      ? "Posting item…"
-                      : "Post as found item"}
-                </button>
-              ) : undefined
-            }
-          />
-        )}
+                    {entry.status === "Rejected" && entry.publishedItemId && (
+                      <div className="mt-4 rounded-xl bg-neutral-50 px-3.5 py-2.5 text-xs text-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-300">
+                        This found-item post is already available in the public
+                        listings.
+                      </div>
+                    )}
+                  </>
+                }
+                description={entry.details}
+                facts={buildReturnFactRows(entry)}
+                actions={
+                  entry.status === "Pending" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          requestStatusChange(entry.id, "Rejected")
+                        }
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                        Reject
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!entry.receivedByOsa}
+                        title={
+                          !entry.receivedByOsa
+                            ? "Item must be received by OSA before approving"
+                            : undefined
+                        }
+                        onClick={() =>
+                          requestStatusChange(entry.id, "Approved")
+                        }
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                        Approve
+                      </button>
+                    </>
+                  ) : entry.status === "Approved" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          requestStatusChange(entry.id, "Pending")
+                        }
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          requestStatusChange(entry.id, "Returned")
+                        }
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
+                      >
+                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                        Mark as returned
+                      </button>
+                    </>
+                  ) : entry.status === "Rejected" ? (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmPublishRequest(entry)}
+                      disabled={
+                        Boolean(entry.publishedItemId) || publishingEntry
+                      }
+                      className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55"
+                    >
+                      <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                      {entry.publishedItemId
+                        ? "Posted as found item"
+                        : publishingEntry
+                          ? "Posting item…"
+                          : "Post as found item"}
+                    </button>
+                  ) : undefined
+                }
+              />
+            );
+          })}
+        </div>
       </div>
       </FadeIn>
 

@@ -2,11 +2,17 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { pool } from "../config/db";
 import { migrate } from "../db/migrate";
-import { createItem, updateOsaReceipt } from "./item.repository";
+import {
+  createItem,
+  findItemById,
+  listItems,
+  updateOsaReceipt,
+} from "./item.repository";
 import { listNotificationsForUser } from "./notification.repository";
 import {
   AnotherClaimAlreadyApprovedError,
   createClaim,
+  findClaimableItem,
   findClaimById,
   updateClaimStatusById,
 } from "./request.repository";
@@ -215,9 +221,25 @@ describe("Claim Finder Alert & Deferred Competing-Claim Rejection Workflow", () 
     });
     assert.ok(claimA && claimB);
 
-    // 1. Approve Claim A -> Claim B must remain Pending
+    // 1. Approve Claim A -> Claim B must remain Pending, and the Found post must stay visible & claimable
     const approvedA = await updateClaimStatusById(claimA.id, "approved");
     assert.equal(approvedA?.status, "approved");
+
+    const publicFeedWhileApproved = await listItems({}, false, claimantBId);
+    const visibleItemWhileApproved = publicFeedWhileApproved.find(
+      (entry) => entry.id === item.id,
+    );
+    assert.ok(
+      visibleItemWhileApproved,
+      "Found item must remain visible in public/user feed while a claim is only approved",
+    );
+    assert.equal(visibleItemWhileApproved.isClaimed, false);
+
+    const claimableWhileApproved = await findClaimableItem(item.id);
+    assert.ok(
+      claimableWhileApproved,
+      "Other users must still be able to submit a claim while an approved claim is pending pickup",
+    );
 
     const claimBAfterApproveA = await findClaimById(claimB.id);
     assert.equal(
@@ -257,9 +279,20 @@ describe("Claim Finder Alert & Deferred Competing-Claim Rejection Workflow", () 
     });
     assert.ok(claimC);
 
-    // 4. Mark Claim B as Claimed -> remaining Pending Claim C is auto-rejected & notified
+    // 4. Mark Claim B as Claimed -> remaining Pending Claim C is auto-rejected & notified,
+    // and the Found post is now hidden from public/user feeds with isClaimed = true
     const claimedB = await updateClaimStatusById(claimB.id, "claimed");
     assert.equal(claimedB?.status, "claimed");
+
+    const publicFeedAfterClaimed = await listItems({}, false, claimantAId);
+    assert.equal(
+      publicFeedAfterClaimed.some((entry) => entry.id === item.id),
+      false,
+      "Found item must be hidden from public/user feed once marked claimed",
+    );
+    const claimedItemDetail = await findItemById(item.id, false, claimantAId);
+    assert.equal(claimedItemDetail?.isClaimed, true);
+    assert.equal(await findClaimableItem(item.id), null);
 
     const claimCAfterClaimed = await findClaimById(claimC.id);
     assert.equal(claimCAfterClaimed?.status, "rejected");

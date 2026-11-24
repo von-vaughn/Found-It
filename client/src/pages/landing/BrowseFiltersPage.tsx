@@ -76,8 +76,8 @@ export const BrowseFiltersPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
-      <main className="mx-auto w-full max-w-[720px] bg-white dark:bg-neutral-950 px-4 py-6 pb-20 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
+      <main className="mx-auto w-full max-w-[720px] bg-[#f7f7f8] dark:bg-neutral-950 px-4 py-6 pb-20 sm:px-6 lg:px-8">
         <button
           type="button"
           onClick={() => navigate(backTo)}

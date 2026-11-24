@@ -83,7 +83,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-white font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
+    <div className="flex min-h-screen bg-[#f7f7f8] font-open-sans text-neutral-900 selection:bg-[#E5192D] selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
       <Sidebar
         activeTab="create"
         onTabChange={(tab) => {
@@ -109,7 +109,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
           />
         </div>
 
-        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white px-4 py-6 sm:px-8 sm:py-8 lg:px-12 dark:bg-neutral-950">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-[#f7f7f8] px-4 py-6 sm:px-8 sm:py-8 lg:px-12 dark:bg-neutral-950">
           <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
             {isEditingRoute && isItemLoading && !initialItem ? (
               <p className="mt-8 text-sm text-neutral-500 dark:text-neutral-400">

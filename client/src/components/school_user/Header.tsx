@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-    <header className="h-20 bg-white dark:bg-neutral-950 sticky top-0 z-30">
+    <header className="h-20 bg-[#f7f7f8] dark:bg-neutral-950 sticky top-0 z-30">
       <div className="h-full w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12">
       <div className="notifications-shift h-full flex items-center justify-between w-full transition-[margin,width] duration-300 ease-in-out">
       {/* Search Input Bar */}

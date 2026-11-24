@@ -212,7 +212,7 @@ export const BrowseItemsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 pt-5 pb-10 sm:pt-7 sm:pb-14">
+    <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 pt-5 pb-10 sm:pt-7 sm:pb-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-4 mb-8 w-full">
           <FadeIn>
@@ -283,10 +283,10 @@ export const BrowseItemsPage: React.FC = () => {
                     }
                   }}
                   aria-pressed={isActive}
-                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${
+                  className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${
                     isActive
-                      ? "bg-[#E5192D] text-white border-[#E5192D] shadow-sm shadow-red-500/20"
-                      : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      ? "bg-[#E5192D] text-white"
+                      : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   }`}
                 >
                   {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
@@ -300,10 +300,10 @@ export const BrowseItemsPage: React.FC = () => {
                 onClick={openFilters}
                 aria-label="More category filters"
                 aria-pressed={activeCategoryId === "more"}
-                className={`ml-auto shrink-0 sticky right-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 inline-flex items-center gap-2 ${
+                className={`ml-auto shrink-0 sticky right-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 inline-flex items-center gap-2 ${
                   activeCategoryId === "more"
-                    ? "bg-[#E5192D] text-white border-[#E5192D]"
-                    : "border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
+                    ? "bg-[#E5192D] text-white"
+                    : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
                 }`}
               >
                 <span>More</span>
@@ -320,7 +320,7 @@ export const BrowseItemsPage: React.FC = () => {
                   <button
                     key={cat.id}
                     tabIndex={-1}
-                    className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold border flex items-center gap-2"
+                    className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2"
                   >
                     {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
                     <span>{cat.label}</span>
@@ -330,7 +330,7 @@ export const BrowseItemsPage: React.FC = () => {
               <button
                 ref={moreCategoryMeasureRef}
                 tabIndex={-1}
-                className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold border inline-flex items-center gap-2"
+                className="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-2"
               >
                 <span>More</span>
               </button>

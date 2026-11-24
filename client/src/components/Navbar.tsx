@@ -199,9 +199,9 @@ export const Navbar: React.FC = () => {
         isLanding ? "fixed" : "sticky"
       } ${
         mobileMenuOpen
-          ? "bg-white dark:bg-neutral-950"
+          ? "bg-[#f7f7f8] dark:bg-neutral-950"
           : scrolled
-            ? "border-b border-white/50 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-950/75 shadow-sm backdrop-blur-xl"
+            ? "border-b border-white/50 dark:border-neutral-800/80 bg-[#f7f7f8]/80 dark:bg-neutral-950/75 shadow-sm backdrop-blur-xl"
             : "border-b border-transparent bg-transparent"
       }`}
     >
@@ -319,7 +319,7 @@ export const Navbar: React.FC = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 pt-2 pb-6 shadow-xl"
+            className="md:hidden border-b border-neutral-200 dark:border-neutral-800 bg-[#f7f7f8] dark:bg-neutral-950 px-4 pt-2 pb-6 shadow-xl"
           >
             <div className="flex flex-col space-y-3">
               {navLinks.map((link) => {

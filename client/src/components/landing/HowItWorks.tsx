@@ -88,7 +88,7 @@ export const HowItWorks: React.FC = () => {
   return (
     <section
       id="how-it-works"
-      className="py-20 sm:py-28 bg-white dark:bg-neutral-950 border-t border-neutral-200/80 dark:border-neutral-800/80 relative overflow-hidden"
+      className="py-20 sm:py-28 bg-[#f7f7f8] dark:bg-neutral-950 border-t border-neutral-200/80 dark:border-neutral-800/80 relative overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* ═══════════════════════ HEADER ═══════════════════════ */}

@@ -231,7 +231,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
+    <div className="flex min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <Sidebar
         activeTab="claims"
         onTabChange={(tab) => {
@@ -257,7 +257,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
           />
         </div>
 
-        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white dark:bg-neutral-950 px-4 pt-2 pb-8 sm:px-8 lg:px-12">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-[#f7f7f8] dark:bg-neutral-950 px-4 pt-2 pb-8 sm:px-8 lg:px-12">
           <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
             <h1 className="sr-only">Claims &amp; Returned</h1>
 
@@ -276,10 +276,10 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     type="button"
                     onClick={() => setStatusFilter(tab.id)}
                     aria-pressed={isActive}
-                    className={`inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 py-2 text-xs font-semibold cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                    className={`inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${
                       isActive
-                        ? "border-[#E5192D] bg-[#E5192D] text-white"
-                        : "border-neutral-200 bg-transparent text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
+                        ? "bg-[#E5192D] text-white hover:bg-[#c81424]"
+                        : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
                     }`}
                   >
                     <span>{tab.label}</span>
@@ -333,7 +333,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                     )}
                     <section
                       aria-label={`Requests for ${claims[0]?.item ?? "post"}`}
-                      className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+                      className="overflow-hidden rounded-2xl bg-white dark:bg-neutral-900"
                     >
                       <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
                         {claims.map((claim) => {
@@ -485,7 +485,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
 
                                   {claim.status === "Rejected" &&
                                     claim.rejectionReason?.trim() && (
-                                      <div className="mt-3 rounded-xl border border-rose-200/80 bg-rose-50/80 px-4 py-3 dark:border-rose-900/60 dark:bg-rose-950/30">
+                                      <div className="mt-3 rounded-xl bg-rose-50/80 px-4 py-3 dark:bg-rose-950/30">
                                         <h4 className="text-[11px] font-semibold text-rose-700 dark:text-rose-300">
                                           Rejection Reason
                                         </h4>

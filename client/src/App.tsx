@@ -54,7 +54,7 @@ function AppContent() {
   const shouldShowHomeChrome = !isAuthenticated && !isAuthLoading;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 font-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white flex flex-col justify-between">
       <ScrollToTop />
 
       <Toaster
