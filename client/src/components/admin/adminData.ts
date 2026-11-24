@@ -3,10 +3,8 @@ import {
   Flag,
   History,
   LayoutDashboard,
-  ListFilter,
   PackageSearch,
   PlusCircle,
-  RotateCcw,
   Users,
 } from "lucide-react";
 import { formatCategoryLabel } from "@/hooks/useCategories";
@@ -66,12 +64,11 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
     compactLabel: "Post",
     icon: PlusCircle,
   },
-  { id: "claims", label: "Claims", compactLabel: "Claims", icon: BadgeCheck },
   {
-    id: "returns",
-    label: "Return Items",
-    compactLabel: "Returns",
-    icon: RotateCcw,
+    id: "claims",
+    label: "Claims & Returns",
+    compactLabel: "Requests",
+    icon: BadgeCheck,
   },
   {
     id: "reported",
@@ -86,12 +83,6 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
     icon: Users,
   },
   {
-    id: "options",
-    label: "Filter Options",
-    compactLabel: "Options",
-    icon: ListFilter,
-  },
-  {
     id: "audit",
     label: "Audit Logs",
     compactLabel: "Audit",
@@ -102,7 +93,6 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
 /** Sections only a super admin may reach; hidden from the sidebar and route-guarded. */
 export const superAdminOnlySections: AdminSection[] = [
   "users",
-  "options",
   "audit",
 ];
 
@@ -128,11 +118,7 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
     description: "",
   },
   claims: {
-    title: "Submitted Claims Request",
-    description: "",
-  },
-  returns: {
-    title: "Return Item",
+    title: "Claims & Return Requests",
     description: "",
   },
   reported: {
@@ -141,10 +127,6 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
   },
   users: {
     title: "User management",
-    description: "",
-  },
-  options: {
-    title: "Filter options",
     description: "",
   },
   audit: {
@@ -162,11 +144,7 @@ export const superAdminPageCopy: Partial<
     description: "",
   },
   claims: {
-    title: "Submitted Claims Request",
-    description: "",
-  },
-  returns: {
-    title: "Return Item",
+    title: "Claims & Return Requests",
     description: "",
   },
   reported: {

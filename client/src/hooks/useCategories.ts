@@ -3,6 +3,15 @@ import api from "@/lib/api";
 
 export { formatCategoryLabel, isOtherCategory } from "@/lib/categoryLabel";
 
+export interface Category {
+  id: string;
+  name: string;
+}
+
+interface CategoriesResponse {
+  categories: Category[];
+}
+
 /** Fetches all categories from the server. */
 export async function fetchCategories(): Promise<Category[]> {
   const { data } = await api.get<CategoriesResponse>("/categories");

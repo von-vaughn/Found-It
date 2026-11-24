@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListFilter, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { FadeIn } from "@/components/FadeIn";
+import { FilterOptionsModal } from "@/components/admin/FilterOptionsModal";
 import { ItemTable } from "@/components/admin/ItemTable";
 import { Panel } from "@/components/admin/Panel";
 import { ItemDetailsDialog } from "@/components/admin/ItemDetailsDialog";
@@ -30,6 +31,7 @@ export function ReportsPage() {
   const [buildingFilter, setBuildingFilter] = useState("All buildings");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
+  const [filterOptionsOpen, setFilterOptionsOpen] = useState(false);
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
   const { data: items = [], isLoading, isError, refetch } = useItems();
@@ -219,6 +221,14 @@ export function ReportsPage() {
             </span>
             <button
               type="button"
+              onClick={() => setFilterOptionsOpen(true)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
+            >
+              <ListFilter className="h-3.5 w-3.5" aria-hidden="true" />
+              Filter options
+            </button>
+            <button
+              type="button"
               onClick={() => navigate(paths.adminItemsNew)}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
             >
@@ -389,6 +399,11 @@ export function ReportsPage() {
           isUpdatingOsaReceipt={updateOsaReceipt.isPending}
         />
       )}
+
+      <FilterOptionsModal
+        open={filterOptionsOpen}
+        onClose={() => setFilterOptionsOpen(false)}
+      />
     </AdminLayout>
   );
 }

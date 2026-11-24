@@ -8,6 +8,7 @@ import { useItems } from "@/hooks/useItems";
 import { useAdminClaims } from "@/hooks/useClaims";
 import { useAdminReturns } from "@/hooks/useReturns";
 import { toClaimRequests, toFoundReportClaims } from "@/lib/claimAdapter";
+import { paths } from "@/routes/paths";
 import { AdminLayout } from "./AdminLayout";
 import { adminSectionPaths } from "./sectionPaths";
 import { useSelectedReport } from "@/components/admin/useSelectedReport";
@@ -33,7 +34,11 @@ export function OverviewPage() {
     [serverReturns],
   );
 
-  const handleNavigate = (section: AdminSection) => {
+  const handleNavigate = (section: AdminSection | "returns") => {
+    if (section === "returns") {
+      navigate(`${paths.adminClaims}?tab=returns`);
+      return;
+    }
     navigate(adminSectionPaths[section]);
   };
 

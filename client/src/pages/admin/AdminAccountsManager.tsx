@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- shared manager + helpers live together */
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Check, ChevronLeft, ChevronRight, Plus, Power, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
@@ -53,7 +53,10 @@ export function roleLabel(role: AdminUserRole): string {
 
 interface AdminAccountsManagerProps {
   staff: AdminUser[];
+  allEmails?: string[];
+  roleView: "staff" | "admin";
   query: string;
+  accountGroupSwitcher?: ReactNode;
   onCreateStaff: (values: CreateAdminUserPayload) => Promise<void>;
   onStatusChange: (user: AdminUser) => void;
   onDelete: (user: AdminUser) => void;
@@ -71,7 +74,10 @@ interface AdminAccountsManagerProps {
 
 export function AdminAccountsManager({
   staff,
+  allEmails,
+  roleView,
   query,
+  accountGroupSwitcher,
   onCreateStaff,
   pendingUser,
   deleteTarget,
@@ -87,9 +93,11 @@ export function AdminAccountsManager({
   isSavingDelete,
 }: AdminAccountsManagerProps) {
   const [statusFilter, setStatusFilter] = useState("All statuses");
-  const [roleFilter, setRoleFilter] = useState("All roles");
   const [currentPage, setCurrentPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
+
+  const defaultCreateRole: "admin" | "super_admin" =
+    roleView === "admin" ? "super_admin" : "admin";
 
   const {
     register,
@@ -98,7 +106,7 @@ export function AdminAccountsManager({
     setError,
     formState: { errors, isSubmitting },
   } = useForm<CreateAdminValues>({
-    defaultValues: { name: "", email: "", password: "", role: "admin" },
+    defaultValues: { name: "", email: "", password: "", role: defaultCreateRole },
   });
 
   const filteredStaff = useMemo(() => {
@@ -110,13 +118,10 @@ export function AdminAccountsManager({
       ) {
         return false;
       }
-      if (roleFilter !== "All roles" && roleLabel(user.role) !== roleFilter) {
-        return false;
-      }
       if (!q) return true;
       return [user.name, user.email, user.id].join(" ").toLowerCase().includes(q);
     });
-  }, [query, roleFilter, statusFilter, staff]);
+  }, [query, statusFilter, staff]);
 
   const pageCount = Math.max(1, Math.ceil(filteredStaff.length / PAGE_SIZE));
   const page = Math.min(currentPage, pageCount);
@@ -134,7 +139,8 @@ export function AdminAccountsManager({
       return;
     }
     const values = parsed.data;
-    if (staff.some((u) => u.email.toLowerCase() === values.email.toLowerCase())) {
+    const existingEmails = allEmails ?? staff.map((u) => u.email);
+    if (existingEmails.some((email) => email.toLowerCase() === values.email.toLowerCase())) {
       setError("email", { message: "An account with this email already exists." });
       return;
     }
@@ -186,17 +192,30 @@ export function AdminAccountsManager({
     }
   };
 
+  const panelTitle = roleView === "admin" ? "Admins" : "Staff";
+  const countUnit = roleView === "admin" ? "admins" : "staff";
+
   return (
     <>
       <FadeIn delay={0.05}>
       <Panel
-        title="Staff & Admin accounts"
+        title={panelTitle}
         action={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">{filteredStaff.length} staff</span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              {filteredStaff.length} {countUnit}
+            </span>
             <button
               type="button"
-              onClick={() => setCreateOpen(true)}
+              onClick={() => {
+                reset({
+                  name: "",
+                  email: "",
+                  password: "",
+                  role: defaultCreateRole,
+                });
+                setCreateOpen(true);
+              }}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -207,6 +226,7 @@ export function AdminAccountsManager({
       >
         <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
           <div className="flex flex-wrap gap-2">
+            {accountGroupSwitcher}
             <label className="sr-only" htmlFor="staff-status-filter">
               Filter by status
             </label>
@@ -223,29 +243,15 @@ export function AdminAccountsManager({
               <option>Active</option>
               <option>Inactive</option>
             </select>
-            <label className="sr-only" htmlFor="staff-role-filter">
-              Filter by role
-            </label>
-            <select
-              id="staff-role-filter"
-              value={roleFilter}
-              onChange={(event) => {
-                setRoleFilter(event.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-            >
-              <option>All roles</option>
-              <option>Staff</option>
-              <option>Admin</option>
-            </select>
           </div>
         </div>
 
         {pageStaff.length === 0 ? (
           <div className="flex min-h-[400px] items-center justify-center px-5 py-10">
             <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
-              No staff or admin accounts match these filters.
+              {roleView === "admin"
+                ? "No admin accounts match these filters."
+                : "No staff accounts match these filters."}
             </p>
           </div>
         ) : (

@@ -18,7 +18,7 @@ export function Overview({
   reports: AdminReport[];
   claims: ClaimRequest[];
   returnRequests: ClaimRequest[];
-  onNavigate: (section: AdminSection) => void;
+  onNavigate: (section: AdminSection | "returns") => void;
 }) {
   const lostCount = reports.filter((item) => item.type === "Lost").length;
   const foundCount = reports.filter((item) => item.type === "Found").length;

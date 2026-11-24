@@ -24,7 +24,7 @@ import { AdminAccountsManager, roleLabel } from "./AdminAccountsManager";
 const PAGE_SIZE = 10;
 const ADMIN_USERS_QUERY_KEY = ["admin-users"] as const;
 
-type UsersTab = "school" | "admins";
+type UsersTab = "school_user" | "staff" | "admin";
 
 function errorMessage(error: unknown, fallback: string): string {
   const responseMessage = (
@@ -72,10 +72,16 @@ export function UsersPage() {
     onSuccess: invalidateDeletedOrDeactivatedDependents,
   });
   const [searchParams, setSearchParams] = useSearchParams();
-  // Tab is derived from the URL so deep links (e.g. /admin/admins redirect) work.
-  // Only a super admin can open the staff tab; anyone else is pinned to campus users.
-  const tab: UsersTab =
-    isSuperAdmin && searchParams.get("tab") === "admins" ? "admins" : "school";
+  // Role view is derived from the URL so deep links (e.g. /superadmin/admins redirect) work.
+  // Only a super admin can open staff/admin views; anyone else is pinned to school users.
+  const rawTab = searchParams.get("tab");
+  const tab: UsersTab = isSuperAdmin
+    ? rawTab === "staff"
+      ? "staff"
+      : rawTab === "admin" || rawTab === "admins"
+        ? "admin"
+        : "school_user"
+    : "school_user";
   const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
@@ -87,11 +93,22 @@ export function UsersPage() {
     setCurrentPage(1);
     setPendingUser(null);
     setDeleteTarget(null);
-    setSearchParams(next === "admins" ? { tab: "admins" } : {}, { replace: true });
+    setSearchParams(next === "school_user" ? {} : { tab: next }, { replace: true });
   };
 
-  const schoolUsers = useMemo(() => allUsers.filter((u) => u.role === "school_user"), [allUsers]);
-  const staffUsers = useMemo(() => allUsers.filter((u) => u.role !== "school_user"), [allUsers]);
+  const schoolUsers = useMemo(
+    () => allUsers.filter((u) => u.role === "school_user"),
+    [allUsers],
+  );
+  const staffUsers = useMemo(
+    () => allUsers.filter((u) => u.role === "admin"),
+    [allUsers],
+  );
+  const adminUsers = useMemo(
+    () => allUsers.filter((u) => u.role === "super_admin"),
+    [allUsers],
+  );
+  const allUserEmails = useMemo(() => allUsers.map((u) => u.email), [allUsers]);
 
   const filteredSchoolUsers = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -181,10 +198,37 @@ export function UsersPage() {
     await createUserMutation.mutateAsync(values);
   };
 
-  // Staff dialogs are rendered inside AdminAccountsManager; school-user dialog lives here.
-  const showSchoolDialog = pendingUser !== null && !isStaffTarget(pendingUser) && tab === "school";
+  // Staff/admin dialogs are rendered inside AdminAccountsManager; school-user dialog lives here.
+  const showSchoolDialog =
+    pendingUser !== null && !isStaffTarget(pendingUser) && tab === "school_user";
   const showSchoolDeleteDialog =
-    deleteTarget !== null && !isStaffTarget(deleteTarget) && tab === "school";
+    deleteTarget !== null && !isStaffTarget(deleteTarget) && tab === "school_user";
+
+  const accountGroupSwitcher = isSuperAdmin ? (
+    <>
+      <label className="sr-only" htmlFor="user-group-select">
+        Filter by role
+      </label>
+      <select
+        id="user-group-select"
+        name="user-group"
+        value={tab}
+        onChange={(event) => switchTab(event.target.value as UsersTab)}
+        className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+      >
+        <option value="school_user">School Users ({schoolUsers.length})</option>
+        <option value="staff">Staff ({staffUsers.length})</option>
+        <option value="admin">Admins ({adminUsers.length})</option>
+      </select>
+    </>
+  ) : null;
+
+  const loadingPanelTitle =
+    tab === "school_user"
+      ? "School Users"
+      : tab === "staff"
+        ? "Staff"
+        : "Admins";
 
   return (
     <AdminLayout
@@ -193,42 +237,15 @@ export function UsersPage() {
       query={query}
       onQueryChange={updateQuery}
       searchPlaceholder={
-        tab === "admins"
-          ? "Search staff & admins by name or email…"
-          : "Search users by name or email…"
+        tab === "staff"
+          ? "Search staff by name or email…"
+          : tab === "admin"
+            ? "Search admins by name or email…"
+            : "Search school users by name or email…"
       }
     >
-      {isSuperAdmin && (
-        <FadeIn>
-        <div className="mb-4 flex flex-wrap items-center gap-2" role="tablist" aria-label="User groups">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "school"}
-            onClick={() => switchTab("school")}
-            className={`h-9 rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
-              tab === "school" ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900" : "border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-            }`}
-          >
-            User Management ({schoolUsers.length})
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "admins"}
-            onClick={() => switchTab("admins")}
-            className={`h-9 rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
-              tab === "admins" ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900" : "border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-            }`}
-          >
-            Staff &amp; Admin accounts ({staffUsers.length})
-          </button>
-        </div>
-        </FadeIn>
-      )}
-
       {usersQuery.isPending ? (
-        <Panel title={tab === "school" ? "User Management" : "Staff & Admin accounts"}>
+        <Panel title={loadingPanelTitle}>
           <div
             className="flex min-h-[400px] items-center justify-center px-5 py-10"
             role="status"
@@ -264,14 +281,15 @@ export function UsersPage() {
           </div>
         </Panel>
         </FadeIn>
-      ) : tab === "school" ? (
-        <FadeIn key="school" delay={0.05}>
+      ) : tab === "school_user" ? (
+        <FadeIn key="school_user" delay={0.05}>
         <Panel
-          title="User Management"
+          title="School Users"
           action={<span className="text-xs text-neutral-500 dark:text-neutral-400">{filteredSchoolUsers.length} users</span>}
         >
           <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
             <div className="flex flex-wrap gap-2">
+              {accountGroupSwitcher}
               <label className="sr-only" htmlFor="user-status-filter">
                 Filter by status
               </label>
@@ -412,8 +430,12 @@ export function UsersPage() {
         </FadeIn>
       ) : (
         <AdminAccountsManager
-          staff={staffUsers}
+          key={tab}
+          staff={tab === "staff" ? staffUsers : adminUsers}
+          allEmails={allUserEmails}
+          roleView={tab}
           query={query}
+          accountGroupSwitcher={accountGroupSwitcher}
           onCreateStaff={handleCreateStaff}
           onStatusChange={handleStatusClick}
           onDelete={(user) => setDeleteTarget(user)}

@@ -3,6 +3,8 @@ import { assertMailConfigured } from "../utils/mailer";
 import { isDriveConfigured, uploadFileToDrive } from "../utils/google-drive";
 import { fetchRemoteImageBuffer, generateBlurredImage } from "../utils/image-blur";
 
+const MIGRATE_LOCK_KEY = 4207719;
+
 /**
  * Code-first schema for PostgreSQL (singular table names) — fresh install.
  * Creates every table/index if missing. No upgrade/alter steps: pre-production,
@@ -10,7 +12,10 @@ import { fetchRemoteImageBuffer, generateBlurredImage } from "../utils/image-blu
  */
 export async function migrate(): Promise<void> {
   assertMailConfigured();
-  await pool.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
+  const lockClient = await pool.connect();
+  await lockClient.query('SELECT pg_advisory_lock($1)', [MIGRATE_LOCK_KEY]);
+  try {
+    await pool.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS "user" (
@@ -319,7 +324,13 @@ export async function migrate(): Promise<void> {
         }
       }
     }
-  } catch (err) {
-    console.warn('[Migration] Error during blurred image backfill:', err);
+    } catch (err) {
+      console.warn('[Migration] Error during blurred image backfill:', err);
+    }
+  } finally {
+    await lockClient
+      .query('SELECT pg_advisory_unlock($1)', [MIGRATE_LOCK_KEY])
+      .catch(() => {});
+    lockClient.release();
   }
 }

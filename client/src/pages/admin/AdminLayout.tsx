@@ -25,6 +25,7 @@ import {
   formatNotificationTime,
   notificationStatusLabel,
 } from "@/services/notificationService";
+import { paths } from "@/routes/paths";
 import { adminSectionPaths } from "./sectionPaths";
 
 interface AdminLayoutProps {
@@ -85,14 +86,19 @@ export function AdminLayout({
       navigate(adminSectionPaths.items);
       return;
     }
-    const section = notification.kind === "claim" ? "claims" : "returns";
-    if (notification.requestId) {
+    if (notification.kind === "claim") {
       navigate(
-        `${adminSectionPaths[section]}/${encodeURIComponent(notification.requestId)}`,
+        notification.requestId
+          ? `${paths.adminClaims}/${encodeURIComponent(notification.requestId)}`
+          : paths.adminClaims,
       );
       return;
     }
-    navigate(adminSectionPaths[section]);
+    navigate(
+      notification.requestId
+        ? `${paths.adminReturns}/${encodeURIComponent(notification.requestId)}`
+        : `${paths.adminClaims}?tab=returns`,
+    );
   };
 
   return (
@@ -183,8 +189,7 @@ export function AdminLayout({
             activeSection !== "post" &&
             activeSection !== "reported" &&
             activeSection !== "users" &&
-            activeSection !== "claims" &&
-            activeSection !== "returns" && (
+            activeSection !== "claims" && (
             <FadeIn key={activeSection} y={6}>
             <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div className="min-w-0">

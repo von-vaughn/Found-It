@@ -13,7 +13,7 @@ export function AnalyticsSection({
 }: {
   claims: ClaimRequest[];
   returnRequests: ClaimRequest[];
-  onNavigate: (section: AdminSection) => void;
+  onNavigate: (section: AdminSection | "returns") => void;
 }) {
   return (
     <section aria-labelledby="analytics-heading" className="mt-5">

@@ -39,7 +39,7 @@ export function ReturnItemDetailPage() {
     <FadeIn y={4}>
     <button
       type="button"
-      onClick={() => navigate(paths.adminReturns)}
+      onClick={() => navigate(`${paths.adminClaims}?tab=returns`)}
       className="-ml-3 mb-4 inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
     >
       <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -50,7 +50,7 @@ export function ReturnItemDetailPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout activeSection="returns">
+      <AdminLayout activeSection="claims">
         {backButton}
         <p className="px-5 py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
           Loading return request…
@@ -61,7 +61,7 @@ export function ReturnItemDetailPage() {
 
   if (isError) {
     return (
-      <AdminLayout activeSection="returns">
+      <AdminLayout activeSection="claims">
         {backButton}
         <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-5 py-10">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -81,7 +81,7 @@ export function ReturnItemDetailPage() {
 
   if (!selectedRequest) {
     return (
-      <AdminLayout activeSection="returns">
+      <AdminLayout activeSection="claims">
         {backButton}
         <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-5 py-10 text-center">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -93,7 +93,7 @@ export function ReturnItemDetailPage() {
   }
 
   return (
-    <AdminLayout activeSection="returns">
+    <AdminLayout activeSection="claims">
       {backButton}
       <ReturnDetailPanel
         request={selectedRequest}
