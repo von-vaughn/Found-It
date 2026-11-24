@@ -174,7 +174,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
               <div className="min-w-0 py-3">
                 <dt className="font-bold text-neutral-900 dark:text-neutral-100">Category</dt>
                 <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
-                  {formatCategoryLabel(item.category)}
+                  {formatCategoryLabel(item.category, item.customCategory)}
                 </dd>
               </div>
             </dl>

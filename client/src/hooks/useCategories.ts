@@ -1,23 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 
-import { ITEM_CATEGORIES } from "@/data/itemCategories";
-
-export interface Category {
-  id: string;   // UUID
-  name: string; // slug like "electronics", "bags", etc.
-}
-
-interface CategoriesResponse {
-  categories: Category[];
-}
-
-export function formatCategoryLabel(name: string): string {
-  return (
-    ITEM_CATEGORIES.find((category) => category.id === name)?.label ??
-    name.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
-  );
-}
+export { formatCategoryLabel, isOtherCategory } from "@/lib/categoryLabel";
 
 /** Fetches all categories from the server. */
 export async function fetchCategories(): Promise<Category[]> {

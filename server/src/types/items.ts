@@ -27,6 +27,8 @@ export interface Item {
   categoryId: string;
   /** Category display name. */
   category: string;
+  /** Free-text category detail entered when category is "other"/"others". */
+  customCategory?: string | null;
   color: string | null;
   building: string | null;
   location: string | null;

@@ -538,6 +538,9 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                               category:
                                                 itemById.get(claim.itemId)
                                                   ?.category ?? "",
+                                              customCategory:
+                                                itemById.get(claim.itemId)
+                                                  ?.customCategory ?? "",
                                               images: claim.evidence ?? [],
                                             };
                                             navigate(

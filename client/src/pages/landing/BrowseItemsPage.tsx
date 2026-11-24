@@ -196,7 +196,8 @@ export const BrowseItemsPage: React.FC = () => {
       const matchesQuery =
         item.title.toLowerCase().includes(query) ||
         item.location.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query);
+        item.description.toLowerCase().includes(query) ||
+        Boolean(item.customCategory?.toLowerCase().includes(query));
       return matchesCategory && matchesQuery;
     }),
     filters,

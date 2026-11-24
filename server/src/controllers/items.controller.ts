@@ -3,11 +3,11 @@ import { z } from 'zod';
 import {
   CannotRevokeOsaReceiptError,
   DuplicateItemFlagError,
-  categoryExists,
   createItem,
   createItemFlag,
   deleteItem,
   dismissItemFlags,
+  findActiveCategoryById,
   findItemById,
   findItemImageForBlur,
   findItemOwner,
@@ -66,6 +66,7 @@ const createItemSchema = z.object({
   itemDate: itemDateSchema,
   itemTime: itemTimeSchema.optional(),
   categoryId: z.string().uuid('categoryId must be a UUID'),
+  customCategory: z.union([z.string().trim().max(80), z.null()]).optional(),
   color: z.string().trim().min(1).max(50).optional(),
   building: z.string().trim().min(1).max(100).optional(),
   location: z.string().trim().min(1).max(500).optional(),
@@ -82,6 +83,7 @@ const updateItemSchema = z.object({
   itemDate: itemDateSchema.optional(),
   itemTime: z.union([itemTimeSchema, z.literal(''), z.null()]).optional(),
   categoryId: z.string().uuid('categoryId must be a UUID').optional(),
+  customCategory: z.union([z.string().trim().max(80), z.null()]).optional(),
   color: z.union([z.string().trim().max(50), z.null()]).optional(),
   importantDetails: z.union([z.string().trim().max(2000), z.null()]).optional(),
   building: z.union([z.string().trim().max(100), z.null()]).optional(),
@@ -144,6 +146,40 @@ function canManage(req: Request, reporterId: string): boolean {
   return req.user!.role === 'admin' || req.user!.role === 'super_admin';
 }
 
+const CUSTOM_CATEGORY_MIN = 2;
+const CUSTOM_CATEGORY_MAX = 80;
+
+function isOtherCategoryName(name: string): boolean {
+  const normalized = name.trim().toLowerCase();
+  return normalized === 'other' || normalized === 'others';
+}
+
+function resolveCustomCategory(
+  categoryName: string,
+  customCategory: string | null | undefined,
+): { ok: true; value: string | null } | { ok: false; message: string } {
+  if (!isOtherCategoryName(categoryName)) {
+    return { ok: true, value: null };
+  }
+  const trimmed = customCategory?.trim() ?? '';
+  if (!trimmed) {
+    return { ok: false, message: 'Specify the custom category when selecting Other.' };
+  }
+  if (trimmed.length < CUSTOM_CATEGORY_MIN) {
+    return {
+      ok: false,
+      message: `Custom category must be at least ${CUSTOM_CATEGORY_MIN} characters.`,
+    };
+  }
+  if (trimmed.length > CUSTOM_CATEGORY_MAX) {
+    return {
+      ok: false,
+      message: `Custom category must be at most ${CUSTOM_CATEGORY_MAX} characters.`,
+    };
+  }
+  return { ok: true, value: trimmed };
+}
+
 /** POST /api/items — any authenticated user (lost or found report) */
 export async function createItemReport(req: Request, res: Response): Promise<void> {
   const parsed = createItemSchema.safeParse(req.body);
@@ -151,8 +187,14 @@ export async function createItemReport(req: Request, res: Response): Promise<voi
     zodError(res, parsed.error);
     return;
   }
-  if (!(await categoryExists(parsed.data.categoryId))) {
+  const category = await findActiveCategoryById(parsed.data.categoryId);
+  if (!category) {
     res.status(400).json({ message: 'Unknown categoryId.' });
+    return;
+  }
+  const resolvedCustomCategory = resolveCustomCategory(category.name, parsed.data.customCategory);
+  if (!resolvedCustomCategory.ok) {
+    res.status(400).json({ message: resolvedCustomCategory.message });
     return;
   }
   const data = parsed.data;
@@ -167,6 +209,7 @@ export async function createItemReport(req: Request, res: Response): Promise<voi
   const { id } = await createItem({
     reporterId: req.user!.sub,
     ...data,
+    customCategory: resolvedCustomCategory.value,
     images,
     blurredImages,
     receivedByOsa: isAdminUser(req) && data.reportType === 'found',
@@ -255,9 +298,30 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
     });
     return;
   }
-  if (parsed.data.categoryId && !(await categoryExists(parsed.data.categoryId))) {
-    res.status(400).json({ message: 'Unknown categoryId.' });
-    return;
+  let targetCategoryName = owner.categoryName;
+  if (parsed.data.categoryId) {
+    const category = await findActiveCategoryById(parsed.data.categoryId);
+    if (!category) {
+      res.status(400).json({ message: 'Unknown categoryId.' });
+      return;
+    }
+    targetCategoryName = category.name;
+  }
+  const shouldResolveCustomCategory =
+    parsed.data.categoryId !== undefined || parsed.data.customCategory !== undefined;
+  let customCategoryUpdate: string | null | undefined;
+  if (shouldResolveCustomCategory) {
+    const candidateCustomCategory =
+      parsed.data.customCategory !== undefined ? parsed.data.customCategory : owner.customCategory;
+    const resolvedCustomCategory = resolveCustomCategory(
+      targetCategoryName,
+      candidateCustomCategory,
+    );
+    if (!resolvedCustomCategory.ok) {
+      res.status(400).json({ message: resolvedCustomCategory.message });
+      return;
+    }
+    customCategoryUpdate = resolvedCustomCategory.value;
   }
   const data = parsed.data;
   let images = data.images;
@@ -270,7 +334,12 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
   }
   const updated = await updateItem(
     id,
-    { ...data, images, blurredImages },
+    {
+      ...data,
+      ...(customCategoryUpdate !== undefined ? { customCategory: customCategoryUpdate } : {}),
+      images,
+      blurredImages,
+    },
     isAdminUser(req),
     req.user!.sub,
   );

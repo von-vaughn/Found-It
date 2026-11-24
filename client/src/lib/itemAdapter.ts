@@ -38,6 +38,7 @@ export function toClientItem(server: ServerItem): Item {
     isReturned: server.isReturned,
     hasReported: server.hasReported,
     category: server.category as Item["category"],
+    customCategory: server.customCategory ?? undefined,
     building: server.building ?? undefined,
     location: server.location ?? "",
     date: server.itemDate,

@@ -17,34 +17,36 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { ITEM_CATEGORY_LABELS } from "../lib/categoryLabel";
+
 export const ITEM_CATEGORIES = [
-  { id: "electronics", label: "Electronics", icon: Smartphone },
-  { id: "id", label: "ID", icon: ContactRound },
-  { id: "cards", label: "Cards", icon: CreditCard },
-  { id: "bags", label: "Bags", icon: BriefcaseBusiness },
-  { id: "wallets-purses", label: "Wallet", icon: WalletCards },
-  { id: "keys", label: "Keys", icon: KeyRound },
+  { id: "electronics", label: ITEM_CATEGORY_LABELS.electronics, icon: Smartphone },
+  { id: "id", label: ITEM_CATEGORY_LABELS.id, icon: ContactRound },
+  { id: "cards", label: ITEM_CATEGORY_LABELS.cards, icon: CreditCard },
+  { id: "bags", label: ITEM_CATEGORY_LABELS.bags, icon: BriefcaseBusiness },
+  { id: "wallets-purses", label: ITEM_CATEGORY_LABELS["wallets-purses"], icon: WalletCards },
+  { id: "keys", label: ITEM_CATEGORY_LABELS.keys, icon: KeyRound },
   {
     id: "clothing-accessories",
-    label: "Clothing & Accessories",
+    label: ITEM_CATEGORY_LABELS["clothing-accessories"],
     icon: Shirt,
   },
   {
     id: "books-school-supplies",
-    label: "Books & School Supplies",
+    label: ITEM_CATEGORY_LABELS["books-school-supplies"],
     icon: BookOpen,
   },
-  { id: "jewelry", label: "Jewelry", icon: Gem },
-  { id: "eyewear", label: "Eyewear", icon: Glasses },
-  { id: "tumblers", label: "Tumblers", icon: CupSoda },
-  { id: "umbrellas", label: "Umbrellas", icon: Umbrella },
+  { id: "jewelry", label: ITEM_CATEGORY_LABELS.jewelry, icon: Gem },
+  { id: "eyewear", label: ITEM_CATEGORY_LABELS.eyewear, icon: Glasses },
+  { id: "tumblers", label: ITEM_CATEGORY_LABELS.tumblers, icon: CupSoda },
+  { id: "umbrellas", label: ITEM_CATEGORY_LABELS.umbrellas, icon: Umbrella },
   {
     id: "sports-gym-equipment",
-    label: "Sports & Gym Equipment",
+    label: ITEM_CATEGORY_LABELS["sports-gym-equipment"],
     icon: Dumbbell,
   },
-  { id: "documents-papers", label: "Documents & Papers", icon: FileText },
-  { id: "other", label: "Other", icon: Package },
+  { id: "documents-papers", label: ITEM_CATEGORY_LABELS["documents-papers"], icon: FileText },
+  { id: "other", label: ITEM_CATEGORY_LABELS.other, icon: Package },
 ] as const satisfies readonly {
   id: string;
   label: string;

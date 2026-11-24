@@ -22,6 +22,7 @@ interface ItemRow {
   important_details: string | null;
   category_id: string;
   category_name: string;
+  custom_category: string | null;
   reporter_name: string;
   reporter_email: string;
   reporter_school_id: string | null;
@@ -65,7 +66,7 @@ const ITEM_COLUMNS = `
   r.time AS item_time, i.primary_color AS color,
   r.important_details,
   loc.description AS location, b.name AS building,
-  c.id AS category_id, c.name AS category_name,
+  c.id AS category_id, c.name AS category_name, i.custom_category,
   u.first_name || ' ' || u.last_name AS reporter_name, u.email AS reporter_email, u.school_id AS reporter_school_id,
   COALESCE(
     (SELECT json_agg(
@@ -157,6 +158,7 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
     itemTime: row.item_time ? row.item_time.slice(0, 5) : null,
     categoryId: row.category_id,
     category: row.category_name,
+    customCategory: row.custom_category,
     color: row.color,
     building: row.building,
     location: row.location,
@@ -191,12 +193,19 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
   };
 }
 
-export async function categoryExists(id: string): Promise<boolean> {
-  const { rowCount } = await pool.query(
-    `SELECT 1 FROM category WHERE id = $1 AND is_active = TRUE`,
+/** Fetches the active category metadata for validation and "other" category checks. */
+export async function findActiveCategoryById(
+  id: string,
+): Promise<{ id: string; name: string } | null> {
+  const { rows } = await pool.query<{ id: string; name: string }>(
+    `SELECT id, name FROM category WHERE id = $1 AND is_active = TRUE LIMIT 1`,
     [id],
   );
-  return (rowCount ?? 0) > 0;
+  return rows[0] ?? null;
+}
+
+export async function categoryExists(id: string): Promise<boolean> {
+  return (await findActiveCategoryById(id)) !== null;
 }
 
 /** Find-or-create a building by name (case-insensitive). */
@@ -235,8 +244,7 @@ async function upsertLocation(
   return inserted[0].id;
 }
 
-/** Creates the parent report row and its item (plus any location) in one transaction. */
-export async function createItemWithClient(client: PoolClient, input: {
+export interface CreateItemInput {
   reporterId: string;
   reportType: ReportType;
   name: string;
@@ -244,6 +252,7 @@ export async function createItemWithClient(client: PoolClient, input: {
   itemDate: string;
   itemTime?: string;
   categoryId: string;
+  customCategory?: string | null;
   color?: string;
   building?: string;
   location?: string;
@@ -251,7 +260,13 @@ export async function createItemWithClient(client: PoolClient, input: {
   images?: string[];
   blurredImages?: string[];
   receivedByOsa?: boolean;
-}): Promise<{ id: string }> {
+}
+
+/** Creates the parent report row and its item (plus any location) in one transaction. */
+export async function createItemWithClient(
+  client: PoolClient,
+  input: CreateItemInput,
+): Promise<{ id: string }> {
   const buildingId = input.building ? await upsertBuilding(client, input.building) : null;
   const locationId =
     input.location !== undefined || buildingId !== null
@@ -270,11 +285,12 @@ export async function createItemWithClient(client: PoolClient, input: {
     ],
   );
   const { rows: itemRows } = await client.query<{ id: string }>(
-    `INSERT INTO item (report_id, category_id, name, description, primary_color, received_by_osa)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    `INSERT INTO item (report_id, category_id, custom_category, name, description, primary_color, received_by_osa)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
     [
       reportRows[0].id,
       input.categoryId,
+      input.customCategory ?? null,
       input.name,
       input.description,
       input.color ?? null,
@@ -297,22 +313,7 @@ export async function createItemWithClient(client: PoolClient, input: {
   return { id: itemId };
 }
 
-export async function createItem(input: {
-  reporterId: string;
-  reportType: ReportType;
-  name: string;
-  description: string;
-  itemDate: string;
-  itemTime?: string;
-  categoryId: string;
-  color?: string;
-  building?: string;
-  location?: string;
-  importantDetails?: string;
-  images?: string[];
-  blurredImages?: string[];
-  receivedByOsa?: boolean;
-}): Promise<{ id: string }> {
+export async function createItem(input: CreateItemInput): Promise<{ id: string }> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -430,7 +431,7 @@ export async function listItems(
   if (filter?.search) {
     params.push(`%${filter.search.toLowerCase()}%`);
     conditions.push(
-      `(LOWER(i.name) LIKE $${params.length} OR LOWER(i.description) LIKE $${params.length})`,
+      `(LOWER(i.name) LIKE $${params.length} OR LOWER(i.description) LIKE $${params.length} OR LOWER(COALESCE(i.custom_category, '')) LIKE $${params.length})`,
     );
   }
   if (!isAdmin && !filter?.reporterId) {
@@ -459,16 +460,21 @@ export async function findItemOwner(
 ): Promise<{
   reporterId: string;
   name: string;
+  categoryName: string;
+  customCategory: string | null;
   hasResolvedRequest: boolean;
   hasPendingRequest: boolean;
 } | null> {
   const { rows } = await pool.query<{
     reporter_id: string;
     name: string;
+    category_name: string;
+    custom_category: string | null;
     has_resolved_request: boolean;
     has_pending_request: boolean;
   }>(
     `SELECT r.user_id AS reporter_id, i.name,
+       c.name AS category_name, i.custom_category,
        EXISTS (
          SELECT 1 FROM request resolved_request
          WHERE resolved_request.item_id = i.id
@@ -479,7 +485,9 @@ export async function findItemOwner(
          WHERE pending_request.item_id = i.id
            AND pending_request.status = 'pending'
        ) AS has_pending_request
-     FROM item i JOIN report r ON r.id = i.report_id
+     FROM item i
+     JOIN report r ON r.id = i.report_id
+     JOIN category c ON c.id = i.category_id
      WHERE i.id = $1 LIMIT 1`,
     [id],
   );
@@ -487,6 +495,8 @@ export async function findItemOwner(
     ? {
         reporterId: rows[0].reporter_id,
         name: rows[0].name,
+        categoryName: rows[0].category_name,
+        customCategory: rows[0].custom_category,
         hasResolvedRequest: rows[0].has_resolved_request,
         hasPendingRequest: rows[0].has_pending_request,
       }
@@ -613,6 +623,7 @@ export async function updateItem(
     itemDate?: string;
     itemTime?: string | null;
     categoryId?: string;
+    customCategory?: string | null;
     color?: string | null;
     importantDetails?: string | null;
     building?: string | null;
@@ -636,6 +647,10 @@ export async function updateItem(
   if (updates.categoryId !== undefined) {
     itemValues.push(updates.categoryId);
     itemFields.push(`category_id = $${itemValues.length + 1}`);
+  }
+  if (updates.customCategory !== undefined) {
+    itemValues.push(updates.customCategory || null);
+    itemFields.push(`custom_category = $${itemValues.length + 1}`);
   }
   if (updates.color !== undefined) {
     itemValues.push(updates.color || null);

@@ -24,6 +24,7 @@ export interface ServerItem {
   itemTime: string | null;
   categoryId: string;
   category: string;
+  customCategory?: string | null;
   color: string | null;
   building: string | null;
   location: string | null;
@@ -60,6 +61,7 @@ export interface CreateItemPayload {
   itemDate: string;
   itemTime?: string;
   categoryId: string;
+  customCategory?: string;
   color?: string;
   building?: string;
   location?: string;
@@ -121,6 +123,7 @@ export interface UpdateItemPayload {
   itemDate?: string;
   itemTime?: string;
   categoryId?: string;
+  customCategory?: string | null;
   color?: string;
   building?: string;
   location?: string;

@@ -22,7 +22,7 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   receivedByOsa: item.receivedByOsa ?? false,
   lastFinderReminderAt: item.lastFinderReminderAt ?? null,
   image: item.image || item.images?.[0] || "",
-  category: formatCategoryLabel(item.category),
+  category: formatCategoryLabel(item.category, item.customCategory),
   description: item.description,
   building: item.building || item.location || "",
   buildingName: item.building ?? undefined,

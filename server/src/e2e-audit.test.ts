@@ -898,4 +898,101 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     );
     assert.equal(retRow.rows[0].status, 'returned');
   });
+
+  it('6. Other category requires, persists, searches, and clears customCategory', async () => {
+    const ownerAuth = await loginAs(OWNER_EMAIL);
+    const otherCatRow = await pool.query<{ id: string }>(
+      `SELECT id FROM category WHERE LOWER(name) IN ('other', 'others') AND is_active = TRUE LIMIT 1`,
+    );
+    const otherCategoryId = otherCatRow.rows[0]?.id;
+    assert.ok(otherCategoryId, 'Expected seeded active other category');
+    assert.notEqual(otherCategoryId, baselineCategoryId);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const missingCustom = await api('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Mystery Helmet',
+        description: 'Black full-face motorcycle helmet lost in parking area.',
+        itemDate: today,
+        categoryId: otherCategoryId,
+        importantDetails: 'Small sticker on visor',
+      },
+    });
+    assert.equal(missingCustom.status, 400);
+
+    const tooShortCustom = await api('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Mystery Helmet',
+        description: 'Black full-face motorcycle helmet lost in parking area.',
+        itemDate: today,
+        categoryId: otherCategoryId,
+        customCategory: ' a ',
+        importantDetails: 'Small sticker on visor',
+      },
+    });
+    assert.equal(tooShortCustom.status, 400);
+
+    const createdOther = await api<{
+      item: { id: string; category: string; customCategory: string | null };
+    }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Mystery Item',
+        description: 'Lost near the engineering annex gate earlier today.',
+        itemDate: today,
+        categoryId: otherCategoryId,
+        customCategory: '  Helmet  ',
+        importantDetails: 'Matte visor',
+      },
+    });
+    assert.equal(createdOther.status, 201);
+    assert.equal(createdOther.data.item.category, 'other');
+    assert.equal(createdOther.data.item.customCategory, 'Helmet');
+    const otherItemId = createdOther.data.item.id;
+    createdItemIds.push(otherItemId);
+
+    const searchByCustom = await api<{ items: Array<{ id: string; customCategory?: string | null }> }>(
+      'GET',
+      `/api/items?categoryId=${otherCategoryId}&search=Helmet`,
+      { token: ownerAuth.token },
+    );
+    assert.equal(searchByCustom.status, 200);
+    assert.equal(
+      searchByCustom.data.items.some(
+        (entry) => entry.id === otherItemId && entry.customCategory === 'Helmet',
+      ),
+      true,
+    );
+
+    const switchedToStandard = await api<{
+      item: { categoryId: string; customCategory: string | null };
+    }>('PATCH', `/api/items/${otherItemId}`, {
+      token: ownerAuth.token,
+      body: { categoryId: baselineCategoryId },
+    });
+    assert.equal(switchedToStandard.status, 200);
+    assert.equal(switchedToStandard.data.item.categoryId, baselineCategoryId);
+    assert.equal(switchedToStandard.data.item.customCategory, null);
+
+    const switchBackWithoutCustom = await api('PATCH', `/api/items/${otherItemId}`, {
+      token: ownerAuth.token,
+      body: { categoryId: otherCategoryId },
+    });
+    assert.equal(switchBackWithoutCustom.status, 400);
+
+    const switchBackWithCustom = await api<{
+      item: { categoryId: string; customCategory: string | null };
+    }>('PATCH', `/api/items/${otherItemId}`, {
+      token: ownerAuth.token,
+      body: { categoryId: otherCategoryId, customCategory: 'Bike Lock' },
+    });
+    assert.equal(switchBackWithCustom.status, 200);
+    assert.equal(switchBackWithCustom.data.item.categoryId, otherCategoryId);
+    assert.equal(switchBackWithCustom.data.item.customCategory, 'Bike Lock');
+  });
 });

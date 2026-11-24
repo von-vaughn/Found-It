@@ -14,6 +14,7 @@ import { useCreateItem, useUpdateItem } from "@/hooks/useItems";
 import {
   formatCategoryLabel,
   getCategoryUuid,
+  isOtherCategory,
   useCategories,
   useCategoryMap,
 } from "@/hooks/useCategories";
@@ -33,6 +34,7 @@ export interface CreatePostDraft {
   description?: string;
   importantDetails?: string;
   category?: Item["category"] | "";
+  customCategory?: string;
   images?: string[];
 }
 
@@ -75,6 +77,7 @@ type FieldId =
   | "report-building"
   | "report-location"
   | "report-category"
+  | "report-custom-category"
   | "report-description"
   | "report-important-details";
 
@@ -185,6 +188,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [description, setDescription] = useState("");
   const [importantDetails, setImportantDetails] = useState("");
   const [category, setCategory] = useState<Item["category"] | "">("");
+  const [customCategory, setCustomCategory] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | Blob | null>(null);
   const [lostImages, setLostImages] = useState<string[]>([]);
@@ -247,6 +251,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         );
         setImportantDetails(initialItem.confidentialInfo ?? "");
         setCategory(initialItem.category);
+        setCustomCategory(initialItem.customCategory ?? "");
         setUploadedImage(initialItem.image || null);
         setUploadedFile(null);
         const existingLostImages =
@@ -272,6 +277,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         );
         setImportantDetails(initialDraft.importantDetails ?? "");
         setCategory(initialDraft.category ?? "");
+        setCustomCategory(initialDraft.customCategory ?? "");
         setUploadedImage(null);
         setUploadedFile(null);
         setLostImages((initialDraft.images ?? []).slice(0, MAX_POST_IMAGES));
@@ -287,6 +293,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setDescription("");
         setImportantDetails("");
         setCategory("");
+        setCustomCategory("");
         setUploadedImage(null);
         setUploadedFile(null);
         setLostImages([]);
@@ -553,6 +560,16 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
     if (!categoryOptions.some((option) => option.id === category)) {
       errors["report-category"] = "Choose a category.";
+    } else if (isOtherCategory(category)) {
+      const trimmedCustomCategory = customCategory.trim();
+      if (!trimmedCustomCategory) {
+        errors["report-custom-category"] =
+          "Specify what type of category it is.";
+      } else if (trimmedCustomCategory.length < 2) {
+        errors["report-custom-category"] = "Use at least 2 characters.";
+      } else if (trimmedCustomCategory.length > 80) {
+        errors["report-custom-category"] = "Use 80 characters or fewer.";
+      }
     }
 
     if (trimmedDescription && trimmedDescription.length < 10) {
@@ -667,6 +684,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               itemDate: dateValue,
               itemTime: timeValue,
               categoryId,
+              customCategory: isOtherCategory(category)
+                ? customCategory.trim()
+                : null,
               color: color.trim() || undefined,
               building: building.trim() || undefined,
               location: location.trim(),
@@ -695,6 +715,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           itemDate: dateValue,
           itemTime: timeValue || undefined,
           categoryId,
+          ...(isOtherCategory(category)
+            ? { customCategory: customCategory.trim() }
+            : {}),
           color: color.trim() || undefined,
           building: building.trim() || undefined,
           location: location.trim() || undefined,
@@ -1138,7 +1161,18 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               <SelectDropdown
                 id="report-category"
                 value={category}
-                onChange={(val) => setCategory(val as Item["category"] | "")}
+                onChange={(val) => {
+                  const nextCategory = val as Item["category"] | "";
+                  setCategory(nextCategory);
+                  if (!isOtherCategory(nextCategory)) {
+                    setFieldErrors((prev) => {
+                      if (!prev["report-custom-category"]) return prev;
+                      const next = { ...prev };
+                      delete next["report-custom-category"];
+                      return next;
+                    });
+                  }
+                }}
                 options={categoryOptions.map((categoryOption) => ({
                   value: categoryOption.id,
                   label: categoryOption.label,
@@ -1153,6 +1187,32 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               />
             </div>
           </div>
+
+          {isOtherCategory(category) && (
+            <div>
+              <label htmlFor="report-custom-category" className={labelClass}>
+                Specify category{" "}
+                <span className="text-[#E5192D]" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="report-custom-category"
+                name="customCategory"
+                type="text"
+                required
+                maxLength={80}
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="e.g., Helmet, Camera, Musical Instrument…"
+                autoComplete="off"
+                className={inputClass}
+                {...errorProps("report-custom-category")}
+              />
+              <FieldError
+                fieldId="report-custom-category"
+                message={fieldErrors["report-custom-category"]}
+              />
+            </div>
+          )}
 
           <div>
             <label htmlFor="report-description" className={labelClass}>

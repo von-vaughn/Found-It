@@ -9,6 +9,7 @@ export interface Item {
   isReturned?: boolean;
   hasReported?: boolean;
   category: ItemCategory;
+  customCategory?: string;
   building?: string;
   location: string;
   date: string;

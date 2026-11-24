@@ -65,7 +65,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     <div className="pt-3 mt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
       <div className="flex min-w-0 items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
         <CategoryIcon className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
-        <span className="truncate">{formatCategoryLabel(item.category)}</span>
+        <span className="truncate">{formatCategoryLabel(item.category, item.customCategory)}</span>
       </div>
 
       {!isOwnPost && showActionLabel && (
