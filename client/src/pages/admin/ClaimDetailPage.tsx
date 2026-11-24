@@ -19,6 +19,8 @@ export function ClaimDetailPage() {
     handleClaimStatusChange,
     handleOsaReceiptChange,
     isUpdatingOsaReceipt,
+    handleRemindFinder,
+    isRemindingFinder,
   } = useFoundClaimsWorkflow();
 
   const selectedClaim =
@@ -102,6 +104,8 @@ export function ClaimDetailPage() {
         onClaimStatusChange={handleClaimStatusChange}
         onOsaReceiptChange={handleOsaReceiptChange}
         isUpdatingOsaReceipt={isUpdatingOsaReceipt}
+        onRemindFinder={handleRemindFinder}
+        isRemindingFinder={isRemindingFinder}
         plainDetails
       />
     </AdminLayout>

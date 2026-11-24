@@ -17,6 +17,7 @@ export interface Item {
   isClaimed: boolean;
   isReturned: boolean;
   receivedByOsa?: boolean;
+  lastFinderReminderAt?: string | null;
   name: string;
   description: string;
   /** Date the item was lost or found (YYYY-MM-DD). */

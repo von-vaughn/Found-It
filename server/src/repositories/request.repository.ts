@@ -33,6 +33,7 @@ interface ClaimRow {
   received_by_osa: boolean;
   published_item_id: string | null;
   rejection_reason: string | null;
+  approval_instructions: string | null;
   status: ClaimStatus;
   created_at: Date | string;
 }
@@ -43,7 +44,7 @@ const CLAIM_COLUMNS = `
   rq.date_lost, rq.time_lost, rq.location_lost, rq.details,
   rq.important_details, rq.evidence, rq.claimant_title,
   rq.primary_color, rq.building, rq.received_by_osa, rq.published_item_id,
-  rq.rejection_reason, rq.status, rq.created_at
+  rq.rejection_reason, rq.approval_instructions, rq.status, rq.created_at
 `;
 const CLAIM_JOIN = `
   FROM request rq
@@ -92,6 +93,7 @@ function toClaim(row: ClaimRow, includeOsaReceipt = false): Claim {
     ...(includeOsaReceipt ? { receivedByOsa: row.received_by_osa } : {}),
     publishedItemId: row.published_item_id,
     rejectionReason: row.rejection_reason,
+    approvalInstructions: row.approval_instructions,
     status: row.status,
     submitted: new Date(row.created_at).toISOString(),
   };
@@ -120,7 +122,7 @@ export async function findClaimableItem(itemId: string): Promise<{
              (resolved_request.kind = 'claim'
                AND resolved_request.status IN ('claimed', 'returned'))
              OR (resolved_request.kind = 'return'
-               AND resolved_request.status IN ('approved', 'returned'))
+               AND resolved_request.status = 'returned')
            )
        )
      LIMIT 1`,
@@ -302,6 +304,7 @@ export function listAllReturns(): Promise<Claim[]> {
 export type PublishRejectedReturnResult =
   | { status: "not_found" }
   | { status: "not_rejected" }
+  | { status: "not_received" }
   | { status: "already_published"; itemId: string }
   | { status: "invalid_data"; message: string }
   | { status: "published"; itemId: string };
@@ -316,6 +319,7 @@ export async function publishRejectedReturn(
     await client.query("BEGIN");
     const { rows } = await client.query<{
       status: ClaimStatus;
+      received_by_osa: boolean;
       published_item_id: string | null;
       claimant_title: string | null;
       primary_color: string | null;
@@ -329,7 +333,7 @@ export async function publishRejectedReturn(
       category_id: string;
       item_name: string;
     }>(
-      `SELECT rq.status, rq.published_item_id, rq.claimant_title,
+      `SELECT rq.status, rq.received_by_osa, rq.published_item_id, rq.claimant_title,
               rq.primary_color, rq.building, rq.date_lost, rq.time_lost,
               rq.location_lost, rq.details, rq.important_details, rq.evidence,
               item.category_id, item.name AS item_name
@@ -354,6 +358,10 @@ export async function publishRejectedReturn(
     if (request.status !== "rejected") {
       await client.query("ROLLBACK");
       return { status: "not_rejected" };
+    }
+    if (!request.received_by_osa) {
+      await client.query("ROLLBACK");
+      return { status: "not_received" };
     }
 
     const name = request.claimant_title?.trim() || request.item_name;
@@ -382,6 +390,7 @@ export async function publishRejectedReturn(
       location,
       importantDetails: request.important_details ?? undefined,
       images: parseEvidence(request.evidence),
+      receivedByOsa: true,
     });
     await client.query(
       "UPDATE request SET published_item_id = $2 WHERE id = $1",
@@ -465,8 +474,12 @@ export class PhysicalItemNotReceivedError extends Error {
 }
 
 export class AnotherClaimAlreadyApprovedError extends Error {
-  constructor() {
-    super("Another claim for this item is already approved. Reject it first before approving another.");
+  constructor(kind: "claim" | "return" = "claim") {
+    super(
+      kind === "return"
+        ? "Another return request for this item is already approved. Cancel it first before approving another."
+        : "Another claim for this item is already approved. Reject it first before approving another.",
+    );
     this.name = "AnotherClaimAlreadyApprovedError";
   }
 }
@@ -476,6 +489,7 @@ async function updateRequestStatusById(
   id: string,
   status: ClaimStatus,
   rejectionReason?: string,
+  approvalInstructions?: string,
 ): Promise<Claim | null> {
   const client = await pool.connect();
   try {
@@ -525,35 +539,42 @@ async function updateRequestStatusById(
       await client.query("ROLLBACK");
       throw new PhysicalItemNotReceivedError();
     }
-    if (kind === "claim" && status === "approved") {
+    if (status === "approved") {
       const { rows: existingApproved } = await client.query<{ id: string }>(
         `SELECT id
          FROM request
          WHERE item_id = $1
-           AND kind = 'claim'
-           AND status IN ('approved', 'claimed')
-           AND id <> $2
+           AND kind = $2
+           AND status IN ('approved', 'claimed', 'returned')
+           AND id <> $3
          LIMIT 1`,
-        [current.item_id, id],
+        [current.item_id, kind, id],
       );
       if (existingApproved[0]) {
         await client.query("ROLLBACK");
-        throw new AnotherClaimAlreadyApprovedError();
+        throw new AnotherClaimAlreadyApprovedError(kind);
       }
     }
 
     const trimmedReason = rejectionReason?.trim() || null;
+    const trimmedInstructions = approvalInstructions?.trim() || null;
     const { rowCount } = await client.query(
       status === "rejected"
         ? `UPDATE request
            SET status = $2, rejection_reason = $5
            WHERE id = $1 AND kind = $3 AND status = $4`
-        : `UPDATE request
-           SET status = $2
-           WHERE id = $1 AND kind = $3 AND status = $4`,
+        : status === "approved" && kind === "claim"
+          ? `UPDATE request
+             SET status = $2, approval_instructions = $5
+             WHERE id = $1 AND kind = $3 AND status = $4`
+          : `UPDATE request
+             SET status = $2
+             WHERE id = $1 AND kind = $3 AND status = $4`,
       status === "rejected"
         ? [id, status, kind, current.status, trimmedReason]
-        : [id, status, kind, current.status],
+        : status === "approved" && kind === "claim"
+          ? [id, status, kind, current.status, trimmedInstructions]
+          : [id, status, kind, current.status],
     );
     if (rowCount !== 1) {
       await client.query("ROLLBACK");
@@ -583,19 +604,23 @@ async function updateRequestStatusById(
         requesterId: current.user_id,
         itemOwnerId: current.item_owner_id,
         reason: status === "rejected" ? (trimmedReason ?? undefined) : undefined,
+        instructions:
+          status === "approved" && kind === "claim"
+            ? (trimmedInstructions ?? undefined)
+            : undefined,
       });
     }
 
     const shouldAutoRejectOthers =
       kind === "claim"
         ? status === "claimed" || status === "returned"
-        : status === "approved";
+        : status === "returned";
 
     if (shouldAutoRejectOthers) {
       const autoRejectReason =
         kind === "claim"
           ? "This item has already been claimed by its verified owner."
-          : "Another return report for this item was approved.";
+          : "This lost item has already been returned to its owner.";
       const { rows: rejectedRequests } = await client.query<{
         id: string;
         user_id: string;
@@ -638,8 +663,15 @@ export function updateClaimStatusById(
   id: string,
   status: Exclude<ClaimStatus, "pending">,
   rejectionReason?: string,
+  approvalInstructions?: string,
 ): Promise<Claim | null> {
-  return updateRequestStatusById("claim", id, status, rejectionReason);
+  return updateRequestStatusById(
+    "claim",
+    id,
+    status,
+    rejectionReason,
+    approvalInstructions,
+  );
 }
 
 export function updateReturnStatusById(

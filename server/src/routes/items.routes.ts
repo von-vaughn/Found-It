@@ -7,6 +7,7 @@ import {
   getBlurredItemImage,
   getItemById,
   getSuggestedMatches,
+  remindItemFinder,
   removeItemReport,
   updateItemOsaReceipt,
   updateItemReport,
@@ -27,6 +28,7 @@ router.post('/', authenticate, createItemReport);
 router.post('/:id/flag', authenticate, flagItemReport);
 router.patch('/:id', authenticate, updateItemReport); // owner or admin+ (checked in controller)
 router.patch('/:id/osa-receipt', authenticate, requireAdmin, updateItemOsaReceipt);
+router.post('/:id/remind-finder', authenticate, requireAdmin, remindItemFinder);
 router.patch('/:id/flags/dismiss', authenticate, requireAdmin, dismissItemFlagsReport);
 router.delete('/:id', authenticate, removeItemReport); // owner or admin+ (checked in controller)
 

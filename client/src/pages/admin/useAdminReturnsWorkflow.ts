@@ -10,10 +10,7 @@ import {
 import { useItems } from "@/hooks/useItems";
 import type { ClaimRequest } from "@/types/claim";
 
-const RESOLVED_RETURN_STATUSES: ClaimRequest["status"][] = [
-  "Approved",
-  "Returned",
-];
+const RESOLVED_RETURN_STATUSES: ClaimRequest["status"][] = ["Returned"];
 
 /** Shared data and mutations for the admin return items list and detail pages. */
 export function useAdminReturnsWorkflow() {

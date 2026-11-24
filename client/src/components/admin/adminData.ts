@@ -20,6 +20,7 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   title: item.name,
   type: item.reportType === "lost" ? "Lost" : "Found",
   receivedByOsa: item.receivedByOsa ?? false,
+  lastFinderReminderAt: item.lastFinderReminderAt ?? null,
   image: item.image || item.images?.[0] || "",
   category: formatCategoryLabel(item.category),
   description: item.description,

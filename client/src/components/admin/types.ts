@@ -30,6 +30,7 @@ export interface AdminReport {
   title: string;
   type: "Lost" | "Found";
   receivedByOsa: boolean;
+  lastFinderReminderAt?: string | null;
   image: string;
   category: string;
   description: string;

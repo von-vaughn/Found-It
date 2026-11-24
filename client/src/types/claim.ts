@@ -21,6 +21,7 @@ export interface ClaimRequest {
   receivedByOsa?: boolean;
   publishedItemId?: string | null;
   rejectionReason?: string | null;
+  approvalInstructions?: string | null;
 }
 
 export type NewClaimRequest = Omit<

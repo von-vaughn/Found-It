@@ -17,6 +17,7 @@ export interface ServerItem {
   isClaimed: boolean;
   isReturned: boolean;
   receivedByOsa?: boolean;
+  lastFinderReminderAt?: string | null;
   name: string;
   description: string;
   itemDate: string;
@@ -267,6 +268,17 @@ export async function updateOsaReceipt(
   return data.item;
 }
 
+/** POST /api/items/:id/remind-finder — send a surrender reminder to the student finder (3h cooldown). */
+export async function remindFinder(
+  id: string,
+): Promise<{ message: string; lastFinderReminderAt: string }> {
+  const { data } = await api.post<{
+    message: string;
+    lastFinderReminderAt: string;
+  }>(`/items/${id}/remind-finder`);
+  return data;
+}
+
 /** POST /api/items/:id/flag — report a post to admins with a reason. */
 export async function flagItem(id: string, reason: string): Promise<{ message: string }> {
   const { data } = await api.post<{ message: string }>(`/items/${id}/flag`, {
@@ -301,6 +313,7 @@ export default {
   listMyItems,
   updateItem,
   updateOsaReceipt,
+  remindFinder,
   flagItem,
   dismissItemFlags,
   deleteItem,

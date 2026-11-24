@@ -109,6 +109,27 @@ export async function createFinderClaimSubmissionNotification(
   );
 }
 
+export async function createFinderSurrenderReminderNotification(
+  client: PoolClient,
+  input: {
+    itemId: string;
+    itemName: string;
+    finderId: string;
+  },
+): Promise<void> {
+  await client.query(
+    `INSERT INTO notification (
+       user_id, item_id, request_id, kind, event, title, message
+     ) VALUES ($1, $2, NULL, 'claim', 'submitted', $3, $4)`,
+    [
+      input.finderId,
+      input.itemId,
+      "Reminder: surrender found item to OSA",
+      `OSA reminder: someone claimed "${input.itemName}". Please surrender the physical item to the OSA office for verification.`,
+    ],
+  );
+}
+
 export async function createRequestStatusNotification(
   client: PoolClient,
   input: {
@@ -120,6 +141,7 @@ export async function createRequestStatusNotification(
     requesterId: string;
     itemOwnerId: string;
     reason?: string;
+    instructions?: string;
   },
 ): Promise<void> {
   if (!["approved", "rejected", "returned"].includes(input.status)) {
@@ -142,7 +164,9 @@ export async function createRequestStatusNotification(
     input.status === "approved"
       ? input.kind === "return"
         ? `Your return request for ${input.itemName} was approved.`
-        : `Your claim for ${input.itemName} was approved.`
+        : input.instructions
+          ? `Your claim for ${input.itemName} was approved. Instructions: ${input.instructions}`
+          : `Your claim for ${input.itemName} was approved.`
       : input.status === "rejected"
         ? input.kind === "return"
           ? input.reason

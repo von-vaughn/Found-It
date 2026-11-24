@@ -2,6 +2,7 @@ import type { PoolClient } from 'pg';
 import { pool } from '../config/db';
 import type { Item, ItemFlag, ReportType } from '../types/items';
 import { scoreFoundCandidate } from '../utils/item-matching';
+import { createFinderSurrenderReminderNotification } from './notification.repository';
 
 interface ItemRow {
   id: string;
@@ -10,6 +11,7 @@ interface ItemRow {
   is_claimed: boolean;
   is_returned: boolean;
   received_by_osa: boolean;
+  last_finder_reminder_at: Date | string | null;
   name: string;
   description: string;
   item_date: Date | string;
@@ -42,7 +44,7 @@ function toDateOnly(value: Date | string): string {
 // report is the parent of item: who reported, where, when.
 const ITEM_COLUMNS = `
   i.id, r.user_id AS reporter_id, r.report_type,
-  i.received_by_osa,
+  i.received_by_osa, i.last_finder_reminder_at,
   EXISTS (
     SELECT 1 FROM request claim_request
     WHERE claim_request.item_id = i.id
@@ -141,7 +143,14 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
     reportType: row.report_type,
     isClaimed: row.is_claimed,
     isReturned: row.is_returned,
-    ...(isAdmin ? { receivedByOsa: row.received_by_osa } : {}),
+    ...(isAdmin
+      ? {
+          receivedByOsa: row.received_by_osa,
+          lastFinderReminderAt: row.last_finder_reminder_at
+            ? new Date(row.last_finder_reminder_at).toISOString()
+            : null,
+        }
+      : {}),
     name: row.name,
     description: row.description,
     itemDate: toDateOnly(row.item_date),
@@ -241,6 +250,7 @@ export async function createItemWithClient(client: PoolClient, input: {
   importantDetails?: string;
   images?: string[];
   blurredImages?: string[];
+  receivedByOsa?: boolean;
 }): Promise<{ id: string }> {
   const buildingId = input.building ? await upsertBuilding(client, input.building) : null;
   const locationId =
@@ -260,9 +270,16 @@ export async function createItemWithClient(client: PoolClient, input: {
     ],
   );
   const { rows: itemRows } = await client.query<{ id: string }>(
-    `INSERT INTO item (report_id, category_id, name, description, primary_color)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [reportRows[0].id, input.categoryId, input.name, input.description, input.color ?? null],
+    `INSERT INTO item (report_id, category_id, name, description, primary_color, received_by_osa)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [
+      reportRows[0].id,
+      input.categoryId,
+      input.name,
+      input.description,
+      input.color ?? null,
+      Boolean(input.receivedByOsa),
+    ],
   );
   const itemId = itemRows[0].id;
   if (input.images && input.images.length > 0) {
@@ -294,6 +311,7 @@ export async function createItem(input: {
   importantDetails?: string;
   images?: string[];
   blurredImages?: string[];
+  receivedByOsa?: boolean;
 }): Promise<{ id: string }> {
   const client = await pool.connect();
   try {
@@ -349,7 +367,7 @@ export async function findSuggestedMatchesForItem(
              (resolved_request.kind = 'claim'
                AND resolved_request.status IN ('claimed', 'returned'))
              OR (resolved_request.kind = 'return'
-               AND resolved_request.status IN ('approved', 'returned'))
+               AND resolved_request.status = 'returned')
            )
        )
      ORDER BY i.created_at DESC`,
@@ -423,7 +441,7 @@ export async function listItems(
           (resolved_request.kind = 'claim'
             AND resolved_request.status IN ('claimed', 'returned'))
           OR (resolved_request.kind = 'return'
-            AND resolved_request.status IN ('approved', 'returned'))
+            AND resolved_request.status = 'returned')
         )
     )`);
   }
@@ -435,21 +453,32 @@ export async function listItems(
   return rows.map((row) => toItem(row, isAdmin, viewerId));
 }
 
-/** Returns reporterId, item name, and resolved-request status for ownership & guard checks. */
+/** Returns reporterId, item name, and request-state flags for ownership & guard checks. */
 export async function findItemOwner(
   id: string,
-): Promise<{ reporterId: string; name: string; hasResolvedRequest: boolean } | null> {
+): Promise<{
+  reporterId: string;
+  name: string;
+  hasResolvedRequest: boolean;
+  hasPendingRequest: boolean;
+} | null> {
   const { rows } = await pool.query<{
     reporter_id: string;
     name: string;
     has_resolved_request: boolean;
+    has_pending_request: boolean;
   }>(
     `SELECT r.user_id AS reporter_id, i.name,
        EXISTS (
          SELECT 1 FROM request resolved_request
          WHERE resolved_request.item_id = i.id
            AND resolved_request.status IN ('approved', 'claimed', 'returned')
-       ) AS has_resolved_request
+       ) AS has_resolved_request,
+       EXISTS (
+         SELECT 1 FROM request pending_request
+         WHERE pending_request.item_id = i.id
+           AND pending_request.status = 'pending'
+       ) AS has_pending_request
      FROM item i JOIN report r ON r.id = i.report_id
      WHERE i.id = $1 LIMIT 1`,
     [id],
@@ -459,8 +488,114 @@ export async function findItemOwner(
         reporterId: rows[0].reporter_id,
         name: rows[0].name,
         hasResolvedRequest: rows[0].has_resolved_request,
+        hasPendingRequest: rows[0].has_pending_request,
       }
     : null;
+}
+
+export const FINDER_REMINDER_COOLDOWN_MS = 3 * 60 * 60 * 1000;
+
+export type SendFinderReminderResult =
+  | { status: 'not_found' }
+  | { status: 'already_received' }
+  | { status: 'no_pending_claims' }
+  | { status: 'not_school_finder' }
+  | { status: 'cooldown'; nextAllowedAt: string }
+  | { status: 'sent'; itemName: string; lastFinderReminderAt: string };
+
+/**
+ * Sends a manual OSA surrender reminder to a student finder holding a claimed
+ * Found item, enforcing a 3-hour cooldown per item.
+ */
+export async function sendFinderReminder(
+  itemId: string,
+): Promise<SendFinderReminderResult> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query<{
+      id: string;
+      name: string;
+      report_type: ReportType;
+      received_by_osa: boolean;
+      last_finder_reminder_at: Date | string | null;
+      finder_id: string;
+      finder_role: string;
+      finder_active: boolean;
+      finder_verified: boolean;
+      has_pending_claim: boolean;
+    }>(
+      `SELECT i.id, i.name, r.report_type, i.received_by_osa, i.last_finder_reminder_at,
+              u.id AS finder_id, u.role AS finder_role,
+              u.is_active AS finder_active, u.is_verified AS finder_verified,
+              EXISTS (
+                SELECT 1 FROM request rq
+                WHERE rq.item_id = i.id AND rq.kind = 'claim' AND rq.status = 'pending'
+              ) AS has_pending_claim
+       FROM item i
+       JOIN report r ON r.id = i.report_id
+       JOIN "user" u ON u.id = r.user_id
+       WHERE i.id = $1
+       FOR UPDATE OF i`,
+      [itemId],
+    );
+    const row = rows[0];
+    if (!row || row.report_type !== 'found') {
+      await client.query('ROLLBACK');
+      return { status: 'not_found' };
+    }
+    if (row.received_by_osa) {
+      await client.query('ROLLBACK');
+      return { status: 'already_received' };
+    }
+    if (!row.has_pending_claim) {
+      await client.query('ROLLBACK');
+      return { status: 'no_pending_claims' };
+    }
+    if (row.finder_role !== 'school_user' || !row.finder_active || !row.finder_verified) {
+      await client.query('ROLLBACK');
+      return { status: 'not_school_finder' };
+    }
+    if (row.last_finder_reminder_at) {
+      const lastSentMs = new Date(row.last_finder_reminder_at).getTime();
+      const nextAllowedMs = lastSentMs + FINDER_REMINDER_COOLDOWN_MS;
+      if (!Number.isNaN(lastSentMs) && nextAllowedMs > Date.now()) {
+        await client.query('ROLLBACK');
+        return {
+          status: 'cooldown',
+          nextAllowedAt: new Date(nextAllowedMs).toISOString(),
+        };
+      }
+    }
+
+    const { rows: updatedRows } = await client.query<{
+      last_finder_reminder_at: Date | string;
+    }>(
+      `UPDATE item
+       SET last_finder_reminder_at = NOW(), updated_at = NOW()
+       WHERE id = $1
+       RETURNING last_finder_reminder_at`,
+      [itemId],
+    );
+    await createFinderSurrenderReminderNotification(client, {
+      itemId: row.id,
+      itemName: row.name,
+      finderId: row.finder_id,
+    });
+    await client.query('COMMIT');
+    return {
+      status: 'sent',
+      itemName: row.name,
+      lastFinderReminderAt: new Date(
+        updatedRows[0].last_finder_reminder_at,
+      ).toISOString(),
+    };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 export class CannotRevokeOsaReceiptError extends Error {

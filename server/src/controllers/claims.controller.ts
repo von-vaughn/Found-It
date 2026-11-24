@@ -58,6 +58,11 @@ const adminClaimStatusSchema = z
       .trim()
       .max(500, "Rejection reason must be at most 500 characters.")
       .optional(),
+    instructions: z
+      .string()
+      .trim()
+      .max(500, "Approval instructions must be at most 500 characters.")
+      .optional(),
   })
   .superRefine((data, ctx) => {
     if (data.status === "rejected" && (!data.reason || data.reason.length === 0)) {
@@ -65,6 +70,16 @@ const adminClaimStatusSchema = z
         code: "custom",
         path: ["reason"],
         message: "Please provide a reason for rejecting this claim request.",
+      });
+    }
+    if (
+      data.status === "approved" &&
+      (!data.instructions || data.instructions.length === 0)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["instructions"],
+        message: "Please provide instructions for approving this claim request.",
       });
     }
   });
@@ -170,6 +185,7 @@ export async function updateAdminClaimStatus(
       requestId,
       parsed.data.status,
       parsed.data.reason,
+      parsed.data.instructions,
     );
   } catch (error) {
     if (

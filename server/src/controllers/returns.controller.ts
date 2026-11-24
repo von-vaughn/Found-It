@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import {
+  AnotherClaimAlreadyApprovedError,
   createReturnRequest,
   deleteReturnRequest,
   findClaimableItem,
@@ -116,6 +117,13 @@ export async function publishRejectedReturnItem(
     });
     return;
   }
+  if (result.status === "not_received") {
+    res.status(409).json({
+      message:
+        "The physical item must be marked received by OSA before publishing it as a found item.",
+    });
+    return;
+  }
   if (result.status === "invalid_data") {
     res.status(409).json({ message: result.message });
     return;
@@ -163,7 +171,10 @@ export async function updateAdminReturnStatus(
       parsed.data.status,
     );
   } catch (error) {
-    if (error instanceof PhysicalItemNotReceivedError) {
+    if (
+      error instanceof PhysicalItemNotReceivedError ||
+      error instanceof AnotherClaimAlreadyApprovedError
+    ) {
       res.status(409).json({ message: error.message });
       return;
     }

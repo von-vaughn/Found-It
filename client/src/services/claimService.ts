@@ -26,6 +26,7 @@ export interface ServerClaim {
   receivedByOsa?: boolean;
   publishedItemId?: string | null;
   rejectionReason?: string | null;
+  approvalInstructions?: string | null;
   status: ServerClaimStatus;
   submitted: string;
 }
@@ -85,10 +86,15 @@ export async function updateClaimStatus(
   id: string,
   status: Exclude<ServerClaimStatus, "pending">,
   reason?: string,
+  instructions?: string,
 ): Promise<ServerClaim> {
   const { data } = await api.patch<UpdateClaimResponse>(
     `/claims/admin/${id}/status`,
-    { status, ...(reason ? { reason } : {}) },
+    {
+      status,
+      ...(reason ? { reason } : {}),
+      ...(instructions ? { instructions } : {}),
+    },
   );
   return data.claim;
 }

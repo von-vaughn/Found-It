@@ -27,6 +27,7 @@ export interface Claim {
   receivedByOsa?: boolean;
   publishedItemId?: string | null;
   rejectionReason?: string | null;
+  approvalInstructions?: string | null;
   status: ClaimStatus;
   submitted: string;
 }

@@ -107,6 +107,7 @@ export async function migrate(): Promise<void> {
       description TEXT NOT NULL,
       primary_color VARCHAR(50),
       received_by_osa BOOLEAN NOT NULL DEFAULT FALSE,
+      last_finder_reminder_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -143,6 +144,7 @@ export async function migrate(): Promise<void> {
       received_by_osa BOOLEAN NOT NULL DEFAULT FALSE,
       published_item_id UUID REFERENCES item(id) ON DELETE SET NULL,
       rejection_reason TEXT,
+      approval_instructions TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
@@ -264,6 +266,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE image ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     ALTER TABLE image ADD COLUMN IF NOT EXISTS blurred_image_url TEXT;
     ALTER TABLE item ADD COLUMN IF NOT EXISTS received_by_osa BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE item ADD COLUMN IF NOT EXISTS last_finder_reminder_at TIMESTAMPTZ;
     ALTER TABLE category ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
     ALTER TABLE building ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
@@ -279,6 +282,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE request ADD COLUMN IF NOT EXISTS received_by_osa BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS published_item_id UUID REFERENCES item(id) ON DELETE SET NULL;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS approval_instructions TEXT;
   `);
 
   // Backfill blurred_image_url for found items that don't have one yet

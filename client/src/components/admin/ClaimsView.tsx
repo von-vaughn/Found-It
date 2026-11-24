@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Check, ChevronRight, X } from "lucide-react";
+import { Bell, Check, ChevronRight, X } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
@@ -298,6 +298,18 @@ export function ClaimsListPanel({
   );
 }
 
+const FINDER_REMINDER_COOLDOWN_MS = 3 * 60 * 60 * 1000;
+
+function formatCooldownRemaining(remainingMs: number): string {
+  const totalMinutes = Math.ceil(remainingMs / 60_000);
+  if (totalMinutes <= 1) return "1m";
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes}m`;
+}
+
 /** Detail and review panel for a claim request and any competing claims on the same post. */
 export function ClaimDetailPanel({
   claim,
@@ -307,6 +319,8 @@ export function ClaimDetailPanel({
   onClaimStatusChange,
   onOsaReceiptChange,
   isUpdatingOsaReceipt = false,
+  onRemindFinder,
+  isRemindingFinder = false,
 }: {
   claim: ClaimRequest;
   siblingClaims: ClaimRequest[];
@@ -316,9 +330,12 @@ export function ClaimDetailPanel({
     id: string,
     status: ClaimRequest["status"],
     reason?: string,
+    instructions?: string,
   ) => Promise<void>;
   onOsaReceiptChange: (id: string, receivedByOsa: boolean) => void;
   isUpdatingOsaReceipt?: boolean;
+  onRemindFinder?: (id: string) => void;
+  isRemindingFinder?: boolean;
   plainDetails?: boolean;
 }) {
   const [pendingStatusChange, setPendingStatusChange] = useState<{
@@ -327,7 +344,10 @@ export function ClaimDetailPanel({
   } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState("");
+  const [approvalInstructions, setApprovalInstructions] = useState("");
+  const [approvalError, setApprovalError] = useState("");
   const [savingStatusChange, setSavingStatusChange] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const approvalDialogRef = useRef<HTMLDialogElement>(null);
 
   const selectedItemPost = reports.find(
@@ -371,6 +391,8 @@ export function ClaimDetailPanel({
     setPendingStatusChange(null);
     setRejectReason("");
     setRejectError("");
+    setApprovalInstructions("");
+    setApprovalError("");
     if (approvalDialogRef.current?.open) approvalDialogRef.current.close();
   };
 
@@ -386,6 +408,13 @@ export function ClaimDetailPanel({
       setRejectError("Please enter a reason for rejecting this claim request.");
       return;
     }
+    const trimmedInstructions = approvalInstructions.trim();
+    if (pendingStatusChange.status === "Approved" && !trimmedInstructions) {
+      setApprovalError(
+        "Please enter pickup instructions for the claimant before approving.",
+      );
+      return;
+    }
     setSavingStatusChange(true);
     try {
       const confirmedStatus =
@@ -396,6 +425,9 @@ export function ClaimDetailPanel({
         pendingStatusChange.claimId,
         confirmedStatus,
         pendingStatusChange.status === "Rejected" ? trimmedReason : undefined,
+        pendingStatusChange.status === "Approved"
+          ? trimmedInstructions
+          : undefined,
       );
 
       if (pendingStatusChange.status === "ItemClaimed") {
@@ -446,7 +478,24 @@ export function ClaimDetailPanel({
   const hasApprovedClaim = sortedPostClaims.some(
     (item) => item.status === "Approved",
   );
+  const hasPendingPostClaim = sortedPostClaims.some(
+    (item) => item.status === "Pending",
+  );
   const cannotRevokeOsa = Boolean(itemReceived && hasResolvedPostClaim);
+  const lastReminderMs = selectedItemPost?.lastFinderReminderAt
+    ? new Date(selectedItemPost.lastFinderReminderAt).getTime()
+    : NaN;
+  const reminderCooldownRemainingMs =
+    !Number.isNaN(lastReminderMs)
+      ? Math.max(0, lastReminderMs + FINDER_REMINDER_COOLDOWN_MS - nowMs)
+      : 0;
+  const isReminderCoolingDown = reminderCooldownRemainingMs > 0;
+
+  useEffect(() => {
+    if (!isReminderCoolingDown) return;
+    const timer = window.setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, [isReminderCoolingDown]);
 
   const postFacts = buildPostFacts(
     selectedItemPost,
@@ -487,6 +536,28 @@ export function ClaimDetailPanel({
                 ? "Mark not yet received"
                 : "Mark received"}
           </button>
+          {!selectedItemPost.receivedByOsa &&
+            hasPendingPostClaim &&
+            onRemindFinder && (
+              <button
+                type="button"
+                disabled={isRemindingFinder || isReminderCoolingDown}
+                title={
+                  isReminderCoolingDown
+                    ? `Reminder already sent. Available again in ${formatCooldownRemaining(reminderCooldownRemainingMs)}.`
+                    : "Send a reminder to the finder to surrender this item to OSA"
+                }
+                onClick={() => onRemindFinder(selectedItemPost.id)}
+                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
+              >
+                <Bell className="h-3.5 w-3.5" aria-hidden="true" />
+                {isRemindingFinder
+                  ? "Sending…"
+                  : isReminderCoolingDown
+                    ? `Remind in ${formatCooldownRemaining(reminderCooldownRemainingMs)}`
+                    : "Remind finder"}
+              </button>
+            )}
         </div>
       ),
     });
@@ -586,11 +657,39 @@ export function ClaimDetailPanel({
               </p>
             )}
             {pendingStatusChange.status === "Approved" && (
-              <p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-xs leading-relaxed text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-                Once approved, the system will notify{" "}
-                {claimForStatusChange.claimant} to proceed to the OSA office to
-                claim the item.
-              </p>
+              <>
+                <p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-xs leading-relaxed text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                  Once approved, the system will notify{" "}
+                  {claimForStatusChange.claimant} with your instructions to
+                  proceed to the OSA office to claim the item.
+                </p>
+                <div className="mt-4">
+                  <label
+                    htmlFor="claim-approval-instructions"
+                    className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
+                  >
+                    Approval instructions <span className="text-[#E5192D]">*</span>
+                  </label>
+                  <textarea
+                    id="claim-approval-instructions"
+                    rows={3}
+                    maxLength={500}
+                    required
+                    value={approvalInstructions}
+                    onChange={(event) => {
+                      setApprovalInstructions(event.target.value);
+                      if (approvalError) setApprovalError("");
+                    }}
+                    placeholder="Enter pickup instructions (e.g., bring your school ID to OSA Window 2, Mon–Fri 8 AM–5 PM)…"
+                    className="mt-1.5 w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  />
+                  {approvalError && (
+                    <p className="mt-1.5 text-xs font-medium text-[#E5192D]" role="alert">
+                      {approvalError}
+                    </p>
+                  )}
+                </div>
+              </>
             )}
             {isClaimCompletionDecision && claimsToAutoReject.length > 0 && (
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">

@@ -5,7 +5,11 @@ import type { ServerClaimStatus } from "@/services/claimService";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { toClaimRequests } from "@/lib/claimAdapter";
 import { useAdminClaims, useUpdateAdminClaimStatus } from "@/hooks/useClaims";
-import { useItems, useUpdateOsaReceipt } from "@/hooks/useItems";
+import {
+  useItems,
+  useRemindFinder,
+  useUpdateOsaReceipt,
+} from "@/hooks/useItems";
 
 const ADMIN_STATUS: Partial<
   Record<ClaimRequest["status"], Exclude<ServerClaimStatus, "pending">>
@@ -16,7 +20,7 @@ const ADMIN_STATUS: Partial<
   Returned: "returned",
 };
 
-const RESOLVED_CLAIM_STATUSES = new Set(["Approved", "Claimed", "Returned"]);
+const RESOLVED_CLAIM_STATUSES = new Set(["Claimed", "Returned"]);
 
 /** Shared data and mutations for the admin claims list and claim detail pages. */
 export function useFoundClaimsWorkflow() {
@@ -34,6 +38,7 @@ export function useFoundClaimsWorkflow() {
   } = useItems();
   const updateClaimStatus = useUpdateAdminClaimStatus();
   const updateOsaReceipt = useUpdateOsaReceipt();
+  const remindFinderMutation = useRemindFinder();
 
   const allClaims = useMemo(
     () => toClaimRequests(serverClaims),
@@ -72,11 +77,33 @@ export function useFoundClaimsWorkflow() {
     id: string,
     status: ClaimRequest["status"],
     reason?: string,
+    instructions?: string,
   ): Promise<void> => {
     const serverStatus = ADMIN_STATUS[status];
     if (!serverStatus) return;
 
-    await updateClaimStatus.mutateAsync({ id, status: serverStatus, reason });
+    await updateClaimStatus.mutateAsync({
+      id,
+      status: serverStatus,
+      reason,
+      instructions,
+    });
+  };
+
+  const handleRemindFinder = (id: string) => {
+    remindFinderMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Surrender reminder sent to the finder.");
+      },
+      onError: (error) => {
+        const message = (
+          error as { response?: { data?: { message?: string } } }
+        )?.response?.data?.message;
+        toast.error(
+          message || "Could not send reminder to the finder. Please try again.",
+        );
+      },
+    });
   };
 
   const handleOsaReceiptChange = (id: string, receivedByOsa: boolean) => {
@@ -112,5 +139,7 @@ export function useFoundClaimsWorkflow() {
     handleClaimStatusChange,
     handleOsaReceiptChange,
     isUpdatingOsaReceipt: updateOsaReceipt.isPending,
+    handleRemindFinder,
+    isRemindingFinder: remindFinderMutation.isPending,
   };
 }

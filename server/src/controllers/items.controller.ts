@@ -14,6 +14,7 @@ import {
   findSuggestedMatchesForItem,
   listItems,
   saveBlurredImageUrl,
+  sendFinderReminder,
   updateItem,
   updateOsaReceipt,
 } from '../repositories/item.repository';
@@ -163,7 +164,13 @@ export async function createItemReport(req: Request, res: Response): Promise<voi
   if (!blurredImages && data.blurredImage) {
     blurredImages = [data.blurredImage];
   }
-  const { id } = await createItem({ reporterId: req.user!.sub, ...data, images, blurredImages });
+  const { id } = await createItem({
+    reporterId: req.user!.sub,
+    ...data,
+    images,
+    blurredImages,
+    receivedByOsa: isAdminUser(req) && data.reportType === 'found',
+  });
   const item = await findItemById(id, isAdminUser(req), req.user!.sub);
   res.status(201).json({ message: 'Item report submitted.', item });
 }
@@ -239,6 +246,12 @@ export async function updateItemReport(req: Request, res: Response): Promise<voi
   if (owner.hasResolvedRequest) {
     res.status(409).json({
       message: 'Cannot edit a report with an approved, claimed, or returned request.',
+    });
+    return;
+  }
+  if (!isAdminUser(req) && owner.hasPendingRequest) {
+    res.status(409).json({
+      message: 'Cannot edit a report while there are pending requests on it.',
     });
     return;
   }
@@ -338,6 +351,12 @@ export async function removeItemReport(req: Request, res: Response): Promise<voi
     });
     return;
   }
+  if (!isAdminUser(req) && owner.hasPendingRequest) {
+    res.status(409).json({
+      message: 'Cannot delete a report while there are pending requests on it.',
+    });
+    return;
+  }
   await deleteItem(id);
   if (isDeletingOthersReport && reason) {
     await createItemDeletedNotification({
@@ -419,6 +438,55 @@ export async function dismissItemFlagsReport(req: Request, res: Response): Promi
   }
   const updated = await findItemById(id, true, req.user!.sub);
   res.json({ message: 'Flags dismissed.', dismissedCount, item: updated });
+}
+
+/** POST /api/items/:id/remind-finder — OSA manual surrender reminder (3-hour cooldown). */
+export async function remindItemFinder(req: Request, res: Response): Promise<void> {
+  const id = getId(req);
+  if (invalidId(res, id)) return;
+
+  const result = await sendFinderReminder(id);
+  if (result.status === 'not_found') {
+    res.status(404).json({ message: 'Found item report not found.' });
+    return;
+  }
+  if (result.status === 'already_received') {
+    res.status(409).json({ message: 'This item has already been received by OSA.' });
+    return;
+  }
+  if (result.status === 'no_pending_claims') {
+    res.status(409).json({
+      message: 'A reminder can only be sent when there is at least one pending claim.',
+    });
+    return;
+  }
+  if (result.status === 'not_school_finder') {
+    res.status(409).json({
+      message: 'This post was not submitted by an active student finder.',
+    });
+    return;
+  }
+  if (result.status === 'cooldown') {
+    res.status(429).json({
+      message: 'A reminder was already sent within the last 3 hours. Please try again later.',
+      nextAllowedAt: result.nextAllowedAt,
+    });
+    return;
+  }
+
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: 'updated',
+    entityType: 'item',
+    entityId: id,
+    summary: `Sent OSA surrender reminder to finder for "${result.itemName}"`,
+  });
+  res.json({
+    message: 'Reminder sent to the finder.',
+    lastFinderReminderAt: result.lastFinderReminderAt,
+  });
 }
 
 /**

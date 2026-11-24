@@ -12,6 +12,7 @@ import {
   fetchSuggestedMatches,
   updateItem,
   updateOsaReceipt,
+  remindFinder,
   flagItem,
   dismissItemFlags,
   deleteItem,
@@ -157,6 +158,31 @@ export function useUpdateOsaReceipt() {
       queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
       queryClient.invalidateQueries({ queryKey: itemKeys.mine() });
       queryClient.invalidateQueries({ queryKey: itemKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    },
+  });
+}
+
+export function useRemindFinder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => remindFinder(id),
+    onSuccess: (result, id) => {
+      queryClient.setQueriesData<ServerItem[]>(
+        { queryKey: itemKeys.lists() },
+        (prev) =>
+          Array.isArray(prev)
+            ? prev.map((entry) =>
+                entry.id === id
+                  ? { ...entry, lastFinderReminderAt: result.lastFinderReminderAt }
+                  : entry,
+              )
+            : prev,
+      );
+      queryClient.invalidateQueries({ queryKey: itemKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: itemKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });

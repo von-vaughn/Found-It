@@ -61,11 +61,13 @@ export function useUpdateAdminClaimStatus() {
       id,
       status,
       reason,
+      instructions,
     }: {
       id: string;
       status: Exclude<ServerClaimStatus, "pending">;
       reason?: string;
-    }) => updateClaimStatus(id, status, reason),
+      instructions?: string;
+    }) => updateClaimStatus(id, status, reason, instructions),
     onSuccess: (updated) => {
       queryClient.setQueryData<ServerClaim[]>(claimKeys.admin(), (current) =>
         current?.map((claim) =>
