@@ -3,15 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Award,
-  Building2,
-  CalendarDays,
-  Clock3,
-  FileText,
   Flag,
-  Lock,
-  MapPin,
-  Package,
-  Palette,
   Pencil,
   Trash2,
 } from "lucide-react";
@@ -24,7 +16,6 @@ import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
 import { ReportPostDialog } from "@/components/school_user/ReportPostDialog";
-import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { formatCategoryLabel } from "@/hooks/useCategories";
 import { EMPTY_ITEMS } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
@@ -366,8 +357,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
         : [];
   const activeHeroImage =
     galleryImages[selectedImageIndex] ?? galleryImages[0] ?? "";
-  const category = ITEM_CATEGORIES.find(({ id }) => id === item.category);
-  const CategoryIcon = category?.icon ?? Package;
 
   return (
     <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 flex font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
@@ -582,97 +571,55 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             </p>
             <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 dark:border-neutral-800 text-xs sm:grid-cols-2">
               {item.color && (
-                <div className="flex items-start gap-2.5 py-3">
-                  <Palette
-                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900 dark:text-neutral-100">Primary color</dt>
-                    <dd className="mt-1 capitalize text-neutral-500 dark:text-neutral-400">
-                      {item.color}
-                    </dd>
-                  </div>
+                <div className="min-w-0 py-3">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Primary color</dt>
+                  <dd className="mt-1 capitalize text-neutral-500 dark:text-neutral-400">
+                    {item.color}
+                  </dd>
                 </div>
               )}
-              <div className="flex items-start gap-2.5 py-3">
-                <MapPin
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Specific location</dt>
-                  <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                    {item.location}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">Specific location</dt>
+                <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
+                  {item.location}
+                </dd>
               </div>
-              <div className="flex items-start gap-2.5 py-3">
-                <Building2
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Building</dt>
-                  <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                    {item.building?.trim() || "Not provided"}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">Building</dt>
+                <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
+                  {item.building?.trim() || "Not provided"}
+                </dd>
               </div>
-              <div className="flex items-start gap-2.5 py-3">
-                <CalendarDays
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                    {isLost ? "Date lost" : "Date found"}
-                  </dt>
-                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
-                    {itemDate ?? "Not provided"}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">
+                  {isLost ? "Date lost" : "Date found"}
+                </dt>
+                <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
+                  {itemDate ?? "Not provided"}
+                </dd>
               </div>
-              <div className="flex items-start gap-2.5 py-3">
-                <Clock3
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                    {isLost ? "Time lost" : "Time found"}
-                  </dt>
-                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
-                    {itemTime ?? "Not provided"}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">
+                  {isLost ? "Time lost" : "Time found"}
+                </dt>
+                <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
+                  {itemTime ?? "Not provided"}
+                </dd>
               </div>
-              <div className="flex items-start gap-2.5 py-3">
-                <CategoryIcon
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Category</dt>
-                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
-                    {formatCategoryLabel(item.category)}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">Category</dt>
+                <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
+                  {formatCategoryLabel(item.category)}
+                </dd>
               </div>
               {isOwnItem && item.confidentialInfo?.trim() && (
-                <div className="flex items-start gap-2.5 py-3">
-                  <Lock
-                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                      Important details
-                    </dt>
-                    <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                      {item.confidentialInfo}
-                    </dd>
-                  </div>
+                <div className="min-w-0 py-3">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
+                    Important details
+                  </dt>
+                  <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
+                    {item.confidentialInfo}
+                  </dd>
                 </div>
               )}
             </dl>
@@ -785,8 +732,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                             </span>
                           </div>
                           <div className="mt-3 border-b border-neutral-100 dark:border-neutral-800 pb-3">
-                            <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                              <FileText className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                            <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
                               Description
                             </span>
                             <p className="mt-1 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300 break-words">
@@ -796,8 +742,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                           <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
                             {claim.color && (
                               <div>
-                                <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                  <Palette className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                                <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
                                   Primary color
                                 </dt>
                                 <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
@@ -806,8 +751,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </div>
                             )}
                             <div>
-                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                <MapPin className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                              <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
                                 Location found
                               </dt>
                               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -816,8 +760,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                             </div>
                             {claim.building && (
                               <div>
-                                <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                  <Building2 className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                                <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
                                   Building
                                 </dt>
                                 <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -826,8 +769,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </div>
                             )}
                             <div>
-                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                <CalendarDays className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                              <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
                                 Date found
                               </dt>
                               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -835,8 +777,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </dd>
                             </div>
                             <div>
-                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                <Clock3 className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                              <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
                                 Time found
                               </dt>
                               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -844,8 +785,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               </dd>
                             </div>
                             <div>
-                              <dt className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                <CalendarDays className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                              <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
                                 Submitted
                               </dt>
                               <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">

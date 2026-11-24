@@ -2,16 +2,9 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   AlertTriangle,
-  Building2,
-  CalendarDays,
   Check,
-  Clock3,
   Flag,
-  MapPin,
-  Package,
-  Palette,
   ShieldCheck,
-  Tag,
   Trash2,
 } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
@@ -146,43 +139,36 @@ function buildCanonicalFacts(report: AdminReport): ReviewFactRow[] {
   const rows: ReviewFactRow[] = [
     {
       id: "color",
-      icon: Palette,
       label: "Primary color",
       value: report.color?.trim() || "Not specified",
     },
     {
       id: "location",
-      icon: MapPin,
       label: "Specific location",
       value: report.specificLocation?.trim() || "Not provided",
     },
     {
       id: "building",
-      icon: Building2,
       label: "Building",
       value: report.buildingName?.trim() || report.building?.trim() || "Not provided",
     },
     {
       id: "event-date",
-      icon: CalendarDays,
       label: isLost ? "Date lost" : "Date found",
       value: formatAdminEventDate(report.eventDateTime),
     },
     {
       id: "event-time",
-      icon: Clock3,
       label: isLost ? "Time lost" : "Time found",
       value: formatAdminEventTime(report.eventDateTime),
     },
     {
       id: "category",
-      icon: Tag,
       label: "Category",
       value: report.category || "Not provided",
     },
     {
       id: "date-reported",
-      icon: CalendarDays,
       label: "Date reported",
       value: formatDateReported(report.date),
     },
@@ -190,7 +176,6 @@ function buildCanonicalFacts(report: AdminReport): ReviewFactRow[] {
   if (report.type === "Found") {
     rows.push({
       id: "physical-item",
-      icon: Package,
       label: "Physical item",
       value: <OsaReceiptStatus received={report.receivedByOsa} />,
     });
@@ -416,27 +401,16 @@ function ReportedItemDossier({
           </p>
 
           <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 text-xs sm:grid-cols-2 dark:border-neutral-800">
-            {buildCanonicalFacts(activeReport).map((fact) => {
-              const Icon = fact.icon;
-              return (
-                <div key={fact.id} className="flex items-start gap-2.5 py-3">
-                  {Icon && (
-                    <Icon
-                      className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                      {fact.label}
-                    </dt>
-                    <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                      {fact.value}
-                    </dd>
-                  </div>
-                </div>
-              );
-            })}
+            {buildCanonicalFacts(activeReport).map((fact) => (
+              <div key={fact.id} className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">
+                  {fact.label}
+                </dt>
+                <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
+                  {fact.value}
+                </dd>
+              </div>
+            ))}
           </dl>
         </article>
       </div>

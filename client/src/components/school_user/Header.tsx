@@ -1,16 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  ChevronDown,
-  Compass,
-  LogOut,
-  Moon,
-  Sun,
-  User as UserIcon,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
+import React, { useState } from "react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/context/useAuth";
-import { useTheme } from "@/context/useTheme";
 import { useNavigate } from "react-router-dom";
 import { SearchPaletteModal } from "@/components/SearchPaletteModal";
 import { FadeIn } from "@/components/FadeIn";
@@ -43,38 +33,14 @@ export const Header: React.FC<HeaderProps> = ({
   isFilterModalOpen,
   onFilterModalOpenChange,
 }) => {
-  const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [localPaletteOpen, setLocalPaletteOpen] = useState(false);
   const isPaletteOpen = isFilterModalOpen ?? localPaletteOpen;
   const setIsPaletteOpen = (open: boolean) => {
     onFilterModalOpenChange?.(open);
     if (isFilterModalOpen === undefined) setLocalPaletteOpen(open);
   };
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close the account menu on outside click or Escape.
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setProfileDropdownOpen(false);
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setProfileDropdownOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
 
   return (
     <>
@@ -82,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="h-full w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12">
       <div className="notifications-shift h-full flex items-center justify-between w-full transition-[margin,width] duration-300 ease-in-out">
       {/* Search Input Bar */}
-        <div className="flex-1 pr-0 md:pr-4">
+        <div className="flex-1">
           <FadeIn
             onceKey={
               user?.id
@@ -141,111 +107,6 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </FadeIn>
         </div>
-
-      {/* Right User Actions (desktop only — profile lives in the mobile bottom bar) */}
-      <div className="hidden md:flex items-center gap-3 sm:gap-4 shrink-0">
-        {/* User Profile Bar */}
-        <div className="relative" ref={dropdownRef}>
-          <button
-            type="button"
-            data-tour="school-profile-menu"
-            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            aria-label="Open profile menu"
-            aria-expanded={profileDropdownOpen}
-            aria-controls="account-profile-dropdown"
-            className="flex items-center gap-2.5 rounded-full p-1 text-left transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 active:scale-[0.97] cursor-pointer group"
-          >
-            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800 shrink-0">
-              <img
-                src={user?.avatar || "/images/avatars/vaughn_evangelista.svg"}
-                alt="User avatar"
-                className="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "/images/avatars/vaughn_evangelista.svg";
-                }}
-              />
-            </div>
-
-            <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500 transition-transform duration-150 group-hover:text-neutral-600 dark:group-hover:text-neutral-400 ${profileDropdownOpen ? "rotate-180" : ""}`} />
-          </button>
-
-          {/* Profile Dropdown */}
-          {profileDropdownOpen && (
-            <div id="account-profile-dropdown" className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-100 dark:border-neutral-800 p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-800 mb-1">
-                <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                  {user?.name || "Vaughn Evangelista"}
-                </p>
-                <p className="text-[11px] text-neutral-400 dark:text-neutral-500 truncate">
-                  {user?.email || "vaughn@wmsu.edu.ph"}
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  navigate("/dashboard/profile");
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-colors text-left"
-              >
-                <UserIcon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
-                Profile
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  navigate("/dashboard", { state: { startTour: Date.now() } });
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-colors text-left"
-              >
-                <Compass className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
-                Tutorial tour
-              </button>
-
-              <button
-                type="button"
-                role="switch"
-                aria-checked={theme === "dark"}
-                aria-label="Dark mode"
-                onClick={toggleTheme}
-                className="w-full flex items-center justify-between gap-2.5 px-3 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-colors text-left"
-              >
-                <span className="flex items-center gap-2.5">
-                  {theme === "dark" ? (
-                    <Sun className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
-                  ) : (
-                    <Moon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
-                  )}
-                  Dark mode
-                </span>
-                <span
-                  aria-hidden="true"
-                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${theme === "dark" ? "bg-[#E5192D]" : "bg-neutral-200 dark:bg-neutral-700"}`}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${theme === "dark" ? "translate-x-4" : "translate-x-0"}`}
-                  />
-                </span>
-              </button>
-
-              <button
-                onClick={async () => {
-                  setProfileDropdownOpen(false);
-                  await logout();
-                  navigate("/");
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors text-left"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                Sign out
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
       </div>
       </div>
     </header>

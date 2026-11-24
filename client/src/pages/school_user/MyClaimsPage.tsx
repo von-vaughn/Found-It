@@ -3,13 +3,8 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
-  Building2,
-  CalendarDays,
   ClipboardList,
-  Clock3,
   FilePlus2,
-  MapPin,
-  Palette,
   Pencil,
   SearchX,
   Trash2,
@@ -407,11 +402,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
 
                                   <dl className="mt-4 grid grid-cols-2 gap-px border-y border-neutral-200/80 bg-neutral-200/80 text-xs sm:grid-cols-3 dark:border-neutral-800 dark:bg-neutral-800">
                                     <div className="bg-white px-3 py-3 dark:bg-neutral-900">
-                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
-                                        <Palette
-                                          className="h-3.5 w-3.5"
-                                          aria-hidden="true"
-                                        />
+                                      <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
                                         Primary color
                                       </dt>
                                       <dd className="mt-1 font-semibold capitalize text-neutral-900 dark:text-neutral-100">
@@ -419,11 +410,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       </dd>
                                     </div>
                                     <div className="bg-white px-3 py-3 dark:bg-neutral-900">
-                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
-                                        <MapPin
-                                          className="h-3.5 w-3.5"
-                                          aria-hidden="true"
-                                        />
+                                      <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
                                         Location {isFoundReport ? "found" : "lost"}
                                       </dt>
                                       <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
@@ -431,11 +418,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       </dd>
                                     </div>
                                     <div className="bg-white px-3 py-3 dark:bg-neutral-900">
-                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
-                                        <Building2
-                                          className="h-3.5 w-3.5"
-                                          aria-hidden="true"
-                                        />
+                                      <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
                                         Building
                                       </dt>
                                       <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
@@ -443,11 +426,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       </dd>
                                     </div>
                                     <div className="bg-white px-3 py-3 dark:bg-neutral-900">
-                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
-                                        <CalendarDays
-                                          className="h-3.5 w-3.5"
-                                          aria-hidden="true"
-                                        />
+                                      <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
                                         Date {isFoundReport ? "found" : "lost"}
                                       </dt>
                                       <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
@@ -455,11 +434,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       </dd>
                                     </div>
                                     <div className="bg-white px-3 py-3 dark:bg-neutral-900">
-                                      <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
-                                        <Clock3
-                                          className="h-3.5 w-3.5"
-                                          aria-hidden="true"
-                                        />
+                                      <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
                                         Time {isFoundReport ? "found" : "lost"}
                                       </dt>
                                       <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
@@ -473,7 +448,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   </dl>
 
                                   {claim.importantDetails?.trim() && (
-                                    <div className="mt-4 rounded-xl border border-neutral-200/80 bg-neutral-50/80 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
+                                    <div className="mt-4">
                                       <h4 className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
                                         Important Details
                                       </h4>

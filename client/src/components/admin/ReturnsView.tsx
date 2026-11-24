@@ -1,19 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import {
-  Building2,
-  CalendarDays,
-  Check,
-  ChevronRight,
-  Clock3,
-  Lock,
-  MapPin,
-  Package,
-  Palette,
-  Send,
-  Tag,
-  X,
-} from "lucide-react";
+import { Check, ChevronRight, Send, X } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
@@ -76,49 +63,41 @@ function buildLostPostFacts(
   return [
     {
       id: "item-name",
-      icon: Tag,
       label: "Item name",
       value: report.title || fallbackTitle || "Not provided",
     },
     {
       id: "color",
-      icon: Palette,
       label: "Primary color",
       value: report.color?.trim() || "Not provided",
     },
     {
       id: "location-lost",
-      icon: MapPin,
       label: "Specific location",
       value: report.specificLocation?.trim() || "Not provided",
     },
     {
       id: "building",
-      icon: Building2,
       label: "Building",
       value: report.buildingName?.trim() || "Not provided",
     },
     {
       id: "date-lost",
-      icon: CalendarDays,
       label: "Date lost",
       value: formatAdminEventDate(report.eventDateTime),
     },
     {
       id: "time-lost",
-      icon: Clock3,
       label: "Time lost",
       value: formatAdminEventTime(report.eventDateTime),
     },
     {
       id: "category",
-      icon: Tag,
       label: "Category",
       value: report.category || "Not provided",
     },
     {
       id: "important-details",
-      icon: Lock,
       label: "Important details",
       value: (
         <LockedValue
@@ -547,37 +526,31 @@ export function ReturnDetailPanel({
     return [
       {
         id: "color",
-        icon: Palette,
         label: "Primary color",
         value: entry.color?.trim() || "None",
       },
       {
         id: "location-found",
-        icon: MapPin,
         label: "Location found",
         value: entry.location || "None",
       },
       {
         id: "building",
-        icon: Building2,
         label: "Building",
         value: entry.building?.trim() || "None",
       },
       {
         id: "date-found",
-        icon: CalendarDays,
         label: "Date found",
         value: formatDate(entry.dateLost),
       },
       {
         id: "time-found",
-        icon: Clock3,
         label: "Time found",
         value: entry.timeLost || "None",
       },
       {
         id: "physical-item",
-        icon: Package,
         label: "Physical item",
         value: (
           <div className="flex flex-wrap items-center gap-3">
@@ -610,7 +583,6 @@ export function ReturnDetailPanel({
       },
       {
         id: "important-details",
-        icon: Lock,
         label: "Important details",
         value: (
           <LockedValue

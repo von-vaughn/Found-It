@@ -1,16 +1,8 @@
 import { useState } from "react";
 import { useEffect, useRef, type RefObject } from "react";
 import {
-  Building2,
-  CalendarDays,
-  Clock3,
-  FileText,
   Flag,
   Mail,
-  MapPin,
-  Package,
-  Palette,
-  Tag,
   Trash2,
   UserRound,
   X,
@@ -165,8 +157,7 @@ export function ItemDetailsDialog({
             </p>
           </div>
           <div>
-            <h3 className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-              <FileText className="h-3 w-3" aria-hidden="true" />
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
               Description
             </h3>
             <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
@@ -175,8 +166,7 @@ export function ItemDetailsDialog({
           </div>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-4 text-xs">
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Palette className="h-3 w-3" aria-hidden="true" />
+            <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
               Primary color
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -184,8 +174,7 @@ export function ItemDetailsDialog({
             </dd>
           </div>
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <MapPin className="h-3 w-3" aria-hidden="true" />
+            <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
               Specific location
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -193,8 +182,7 @@ export function ItemDetailsDialog({
             </dd>
           </div>
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Building2 className="h-3 w-3" aria-hidden="true" />
+            <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
               Building
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -202,8 +190,7 @@ export function ItemDetailsDialog({
             </dd>
           </div>
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <CalendarDays className="h-3 w-3" aria-hidden="true" />
+            <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
               {report.type === "Lost" ? "Date lost" : "Date found"}
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -211,8 +198,7 @@ export function ItemDetailsDialog({
             </dd>
           </div>
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Clock3 className="h-3 w-3" aria-hidden="true" />
+            <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
               {report.type === "Lost" ? "Time lost" : "Time found"}
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -220,8 +206,7 @@ export function ItemDetailsDialog({
             </dd>
           </div>
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <Tag className="h-3 w-3" aria-hidden="true" />
+            <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
               Category
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -229,8 +214,7 @@ export function ItemDetailsDialog({
             </dd>
           </div>
           <div>
-            <dt className="inline-flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              <CalendarDays className="h-3 w-3" aria-hidden="true" />
+            <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
               Date reported
             </dt>
             <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
@@ -244,7 +228,6 @@ export function ItemDetailsDialog({
           {report.type === "Found" && (
             <div>
               <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                <Package className="mr-1 inline h-3 w-3" aria-hidden="true" />
                 Physical item
               </dt>
               <dd className="mt-1">

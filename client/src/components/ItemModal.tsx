@@ -1,17 +1,8 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  X,
-  MapPin,
-  Clock3,
-  CalendarDays,
-  Palette,
-  Building2,
-  Package,
-} from "lucide-react";
+import { X } from "lucide-react";
 import type { Item } from "@/data/mockItems";
 import { NoItemImage } from "@/components/NoItemImage";
-import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { formatCategoryLabel } from "@/hooks/useCategories";
 import { parseItemEventDate } from "@/lib/date";
 
@@ -50,9 +41,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
         ? [item.image]
         : [];
   const activeImage = gallery[selectedIndex] ?? gallery[0] ?? "";
-  const category =
-    ITEM_CATEGORIES.find(({ id }) => id === item.category) ?? null;
-  const CategoryIcon = category?.icon ?? Package;
 
   return (
     <AnimatePresence>
@@ -141,89 +129,53 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose }) => {
 
             <dl className="grid grid-cols-1 gap-x-6 border-t border-neutral-200/80 dark:border-neutral-800 text-xs sm:grid-cols-2">
               {item.color && (
-                <div className="flex items-start gap-2.5 py-3">
-                  <Palette
-                    className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0">
-                    <dt className="font-bold text-neutral-900 dark:text-neutral-100">Primary color</dt>
-                    <dd className="mt-1 capitalize text-neutral-500 dark:text-neutral-400">
-                      {item.color}
-                    </dd>
-                  </div>
+                <div className="min-w-0 py-3">
+                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Primary color</dt>
+                  <dd className="mt-1 capitalize text-neutral-500 dark:text-neutral-400">
+                    {item.color}
+                  </dd>
                 </div>
               )}
 
-              <div className="flex items-start gap-2.5 py-3">
-                <MapPin
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                    Specific location
-                  </dt>
-                  <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                    {item.location}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">
+                  Specific location
+                </dt>
+                <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
+                  {item.location}
+                </dd>
               </div>
 
-              <div className="flex items-start gap-2.5 py-3">
-                <Building2
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Building</dt>
-                  <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                    {item.building?.trim() || "Not provided"}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">Building</dt>
+                <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
+                  {item.building?.trim() || "Not provided"}
+                </dd>
               </div>
 
-              <div className="flex items-start gap-2.5 py-3">
-                <CalendarDays
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                    {isLost ? "Date lost" : "Date found"}
-                  </dt>
-                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
-                    {itemDate ?? "Not provided"}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">
+                  {isLost ? "Date lost" : "Date found"}
+                </dt>
+                <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
+                  {itemDate ?? "Not provided"}
+                </dd>
               </div>
 
-              <div className="flex items-start gap-2.5 py-3">
-                <Clock3
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                    {isLost ? "Time lost" : "Time found"}
-                  </dt>
-                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
-                    {itemTime ?? "Not provided"}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">
+                  {isLost ? "Time lost" : "Time found"}
+                </dt>
+                <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
+                  {itemTime ?? "Not provided"}
+                </dd>
               </div>
 
-              <div className="flex items-start gap-2.5 py-3">
-                <CategoryIcon
-                  className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <dt className="font-bold text-neutral-900 dark:text-neutral-100">Category</dt>
-                  <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
-                    {formatCategoryLabel(item.category)}
-                  </dd>
-                </div>
+              <div className="min-w-0 py-3">
+                <dt className="font-bold text-neutral-900 dark:text-neutral-100">Category</dt>
+                <dd className="mt-1 text-neutral-500 dark:text-neutral-400">
+                  {formatCategoryLabel(item.category)}
+                </dd>
               </div>
             </dl>
             </div>

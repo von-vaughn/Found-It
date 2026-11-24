@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NoItemImage } from "@/components/NoItemImage";
 import { PhotoCarousel, type CarouselPhoto } from "@/components/PhotoCarousel";
 import {
@@ -12,7 +12,6 @@ import type { MatchTone } from "./requestComparison";
 
 export interface ReviewFactRow {
   id: string;
-  icon?: LucideIcon;
   label: string;
   value: ReactNode;
   note?: string;
@@ -72,33 +71,24 @@ function OriginalPostFacts({
         </div>
 
         <dl className="mt-4 border-t border-neutral-200 dark:border-neutral-800">
-          {facts.map((fact) => {
-            const Icon = fact.icon;
-            return (
-              <div
-                key={fact.id}
-                className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 border-b border-neutral-200 py-2.5 text-sm dark:border-neutral-800"
-              >
-                <dt className="flex items-start gap-2 pt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  {Icon && (
-                    <Icon
-                      className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <span>{fact.label}</span>
-                </dt>
-                <dd className="min-w-0 font-medium text-neutral-900 dark:text-neutral-100">
-                  <div className="break-words">{fact.value}</div>
-                  {fact.note && (
-                    <span className="mt-0.5 block text-xs font-normal text-amber-700 dark:text-amber-300">
-                      {fact.note}
-                    </span>
-                  )}
-                </dd>
-              </div>
-            );
-          })}
+          {facts.map((fact) => (
+            <div
+              key={fact.id}
+              className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 border-b border-neutral-200 py-2.5 text-sm dark:border-neutral-800"
+            >
+              <dt className="pt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                <span>{fact.label}</span>
+              </dt>
+              <dd className="min-w-0 font-medium text-neutral-900 dark:text-neutral-100">
+                <div className="break-words">{fact.value}</div>
+                {fact.note && (
+                  <span className="mt-0.5 block text-xs font-normal text-amber-700 dark:text-amber-300">
+                    {fact.note}
+                  </span>
+                )}
+              </dd>
+            </div>
+          ))}
           <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 border-b border-neutral-200 py-2.5 text-sm dark:border-neutral-800">
             <dt className="pt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
               Description
@@ -486,25 +476,19 @@ function ReviewDetailCard({
             </div>
 
             <dl className="mt-4 grid grid-cols-2 gap-px border-y border-neutral-200/80 bg-neutral-200/80 text-xs sm:grid-cols-3 dark:border-neutral-800 dark:bg-neutral-800">
-              {gridFacts.map((fact) => {
-                const Icon = fact.icon;
-                return (
-                  <div
-                    key={fact.id}
-                    className="bg-white px-3 py-3 dark:bg-neutral-900"
-                  >
-                    <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
-                      {Icon && (
-                        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                      )}
-                      {fact.label}
-                    </dt>
-                    <dd className="mt-1 break-words font-semibold text-neutral-900 dark:text-neutral-100">
-                      {fact.value}
-                    </dd>
-                  </div>
-                );
-              })}
+              {gridFacts.map((fact) => (
+                <div
+                  key={fact.id}
+                  className="bg-white px-3 py-3 dark:bg-neutral-900"
+                >
+                  <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                    {fact.label}
+                  </dt>
+                  <dd className="mt-1 break-words font-semibold text-neutral-900 dark:text-neutral-100">
+                    {fact.value}
+                  </dd>
+                </div>
+              ))}
               {baseFillerNeeded && (
                 <div
                   aria-hidden="true"
@@ -520,13 +504,7 @@ function ReviewDetailCard({
               ))}
               {physicalFact && (
                 <div className="col-span-full bg-white px-3 py-3 dark:bg-neutral-900">
-                  <dt className="inline-flex items-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
-                    {physicalFact.icon && (
-                      <physicalFact.icon
-                        className="h-3.5 w-3.5 shrink-0"
-                        aria-hidden="true"
-                      />
-                    )}
+                  <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
                     {physicalFact.label}
                   </dt>
                   <dd className="mt-1.5 font-semibold text-neutral-900 dark:text-neutral-100">
@@ -537,7 +515,7 @@ function ReviewDetailCard({
             </dl>
 
             {importantFact && (
-              <div className="mt-4 rounded-xl border border-neutral-200/80 bg-neutral-50/80 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
+              <div className="mt-4">
                 <h4 className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
                   {importantFact.label}
                 </h4>

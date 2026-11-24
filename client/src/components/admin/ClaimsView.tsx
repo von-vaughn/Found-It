@@ -1,20 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import {
-  Building2,
-  CalendarClock,
-  CalendarDays,
-  Check,
-  ChevronRight,
-  Clock3,
-  Lock,
-  MapPin,
-  Package,
-  Palette,
-  Tag,
-  X,
-} from "lucide-react";
+import { Check, ChevronRight, X } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
@@ -61,49 +48,41 @@ function buildPostFacts(
   return [
     {
       id: "item-name",
-      icon: Tag,
       label: "Item name",
       value: post.title || fallbackTitle || "None",
     },
     {
       id: "color",
-      icon: Palette,
       label: "Primary color",
       value: post.color?.trim() || "None",
     },
     {
       id: "location",
-      icon: MapPin,
       label: "Specific location",
       value: post.specificLocation || "None",
     },
     {
       id: "building",
-      icon: Building2,
       label: "Building",
       value: post.buildingName?.trim() || "None",
     },
     {
       id: "event-date",
-      icon: CalendarClock,
       label: isFound ? "Date found" : "Date lost",
       value: formatAdminEventDate(post.eventDateTime),
     },
     {
       id: "event-time",
-      icon: Clock3,
       label: isFound ? "Time found" : "Time lost",
       value: formatAdminEventTime(post.eventDateTime),
     },
     {
       id: "category",
-      icon: Tag,
       label: "Category",
       value: post.category || "None",
     },
     {
       id: "important-details",
-      icon: Lock,
       label: "Important details",
       value: (
         <LockedValue
@@ -478,7 +457,6 @@ export function ClaimDetailPanel({
   if (selectedItemPost?.type === "Found") {
     postFacts.push({
       id: "physical-item",
-      icon: Package,
       label: "Physical item",
       value: (
         <div className="flex flex-wrap items-center gap-3">
@@ -526,37 +504,31 @@ export function ClaimDetailPanel({
   const buildClaimFactRows = (requestItem: ClaimRequest): ReviewFactRow[] => [
     {
       id: "color",
-      icon: Palette,
       label: "Primary color",
       value: requestItem.color?.trim() || "None",
     },
     {
       id: "location",
-      icon: MapPin,
       label: isLostItem ? "Location found" : "Location lost",
       value: requestItem.location || "None",
     },
     {
       id: "building",
-      icon: Building2,
       label: "Building",
       value: requestItem.building?.trim() || "None",
     },
     {
       id: "date",
-      icon: CalendarDays,
       label: isLostItem ? "Date found" : "Date lost",
       value: requestItem.dateLost || "None",
     },
     {
       id: "time",
-      icon: Clock3,
       label: isLostItem ? "Time found" : "Time lost",
       value: requestItem.timeLost || "None",
     },
     {
       id: "important-details",
-      icon: Lock,
       label: "Important details",
       value: (
         <LockedValue

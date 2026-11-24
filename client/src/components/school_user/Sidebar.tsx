@@ -6,9 +6,14 @@ import React, {
 } from "react";
 import {
   ClipboardList,
+  Compass,
   Home,
+  LogOut,
+  Moon,
   PlusCircle,
   Bell,
+  Sun,
+  User as UserIcon,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -17,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "@/context/useAuth";
+import { useTheme } from "@/context/useTheme";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import {
   rememberSchoolSidebarExpanded,
@@ -39,6 +45,183 @@ interface SidebarProps {
   onTabChange?: (tab: string) => void;
   onOpenCreateModal?: () => void;
   hideMobileNav?: boolean;
+}
+
+function SchoolAccountMenu({
+  labelsVisible,
+  active,
+  onOpenMenu,
+}: {
+  labelsVisible: boolean;
+  active: boolean;
+  onOpenMenu?: () => void;
+}) {
+  const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const name = user?.name || "Vaughn Evangelista";
+  const email = user?.email || "vaughn@wmsu.edu.ph";
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        type="button"
+        data-tour="school-profile-menu"
+        onClick={() => {
+          const next = !open;
+          if (next) onOpenMenu?.();
+          setOpen(next);
+        }}
+        aria-label="Open profile menu"
+        aria-expanded={open}
+        aria-controls="account-profile-dropdown"
+        title={labelsVisible ? undefined : name}
+        className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+          active
+            ? "text-[#E5192D]"
+            : "text-neutral-700 hover:bg-neutral-100/80 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+        }`}
+      >
+        <span
+          className={`h-8 w-8 shrink-0 overflow-hidden rounded-full border bg-neutral-100 dark:bg-neutral-800 ${
+            active
+              ? "border-[#E5192D]"
+              : "border-neutral-200 dark:border-neutral-800"
+          }`}
+        >
+          <img
+            src={user?.avatar || "/images/avatars/vaughn_evangelista.svg"}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={(event) => {
+              event.currentTarget.src =
+                "/images/avatars/vaughn_evangelista.svg";
+            }}
+          />
+        </span>
+        <span
+          aria-hidden="true"
+          className={`absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold transition-opacity duration-200 ${
+            labelsVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {name}
+        </span>
+      </button>
+
+      {open && (
+        <div
+          id="account-profile-dropdown"
+          role="menu"
+          aria-label="Account"
+          className="absolute bottom-full left-0 z-50 mb-2 w-56 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <div className="mb-1 border-b border-neutral-100 px-3 py-2 dark:border-neutral-800">
+            <p className="truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
+              {name}
+            </p>
+            <p className="truncate text-[11px] text-neutral-400 dark:text-neutral-500">
+              {email}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              rememberSchoolSidebarExpanded(
+                menuRef.current?.closest("aside")?.matches(":hover") ?? false,
+              );
+              navigate("/dashboard/profile");
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+          >
+            <UserIcon className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" />
+            Profile
+          </button>
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              navigate("/dashboard", { state: { startTour: Date.now() } });
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+          >
+            <Compass className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" />
+            Tutorial tour
+          </button>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={theme === "dark"}
+            aria-label="Dark mode"
+            onClick={toggleTheme}
+            className="flex w-full items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+          >
+            <span className="flex items-center gap-2.5">
+              {theme === "dark" ? (
+                <Sun className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+              ) : (
+                <Moon className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+              )}
+              Dark mode
+            </span>
+            <span
+              aria-hidden="true"
+              className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${
+                theme === "dark" ? "bg-[#E5192D]" : "bg-neutral-200 dark:bg-neutral-700"
+              }`}
+            >
+              <span
+                className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                  theme === "dark" ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={async () => {
+              setOpen(false);
+              await logout();
+              navigate("/");
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -326,6 +509,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
       </nav>
+
+      <div className="absolute bottom-5 left-2.5 md:left-4.5">
+        <SchoolAccountMenu
+          labelsVisible={labelsVisible}
+          active={activeTab === "profile"}
+          onOpenMenu={() => setNotificationsOpen(false)}
+        />
+      </div>
     </motion.aside>
     {/* Mobile bottom navigation — replaces the sidebar below md */}
     {!hideMobileNav && (

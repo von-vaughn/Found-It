@@ -72,7 +72,7 @@ const TOUR_STEPS: TourStepConfig[] = [
     ],
     title: "Account menu",
     description: "Open Profile, toggle Dark mode, or replay this tour anytime.",
-    side: "bottom",
+    side: "right",
     align: "end",
   },
 ];
