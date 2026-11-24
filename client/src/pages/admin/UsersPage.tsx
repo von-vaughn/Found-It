@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Check,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
   Plus,
   Power,
   Trash2,
@@ -99,6 +100,29 @@ export function UsersPage() {
   const [pendingUser, setPendingUser] = useState<AdminUser | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [openMenuUserId, setOpenMenuUserId] = useState<string | null>(null);
+  const openMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!openMenuUserId) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (
+        openMenuRef.current &&
+        !openMenuRef.current.contains(event.target as Node)
+      ) {
+        setOpenMenuUserId(null);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenMenuUserId(null);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openMenuUserId]);
 
   const activeRole: RoleFilter = isSuperAdmin ? roleFilter : "school_user";
   const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
@@ -393,7 +417,11 @@ export function UsersPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                    {pageUsers.map((user) => (
+                    {pageUsers.map((user, index) => {
+                      const menuOpen = openMenuUserId === user.id;
+                      const openUpward =
+                        pageUsers.length > 2 && index >= pageUsers.length - 2;
+                      return (
                       <tr
                         key={user.id}
                         className="text-neutral-700 dark:text-neutral-300"
@@ -433,53 +461,89 @@ export function UsersPage() {
                           {user.reportCount}
                         </td>
                         <td className="px-5 py-3.5">
-                          <div className="flex justify-end">
-                            {user.isActive ? (
-                              <button
-                                type="button"
-                                onClick={() => setPendingUser(user)}
-                                disabled={updateStatusMutation.isPending}
-                                aria-label={`Deactivate ${user.name}`}
-                                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                              >
-                                <Power
-                                  className="h-3 w-3"
-                                  aria-hidden="true"
-                                />
-                                Deactivate
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setPendingUser(user)}
-                                disabled={updateStatusMutation.isPending}
-                                aria-label={`Activate ${user.name}`}
-                                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 dark:border-neutral-800 px-3 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                              >
-                                <Check
-                                  className="h-3 w-3"
-                                  aria-hidden="true"
-                                />
-                                Activate
-                              </button>
-                            )}
+                          <div
+                            className="relative flex justify-end"
+                            ref={menuOpen ? openMenuRef : undefined}
+                          >
                             <button
                               type="button"
-                              onClick={() => setDeleteTarget(user)}
-                              disabled={deleteUserMutation.isPending}
-                              aria-label={`Remove ${user.name}`}
-                              className="ml-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50"
+                              aria-label={`Actions for ${user.name}`}
+                              aria-haspopup="menu"
+                              aria-expanded={menuOpen}
+                              onClick={() =>
+                                setOpenMenuUserId((current) =>
+                                  current === user.id ? null : user.id,
+                                )
+                              }
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                             >
-                              <Trash2
-                                className="h-3 w-3"
+                              <MoreVertical
+                                className="h-4 w-4"
                                 aria-hidden="true"
                               />
-                              Remove
                             </button>
+
+                            {menuOpen && (
+                              <div
+                                role="menu"
+                                aria-label={`Actions for ${user.name}`}
+                                className={`absolute right-0 z-30 w-40 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 ${
+                                  openUpward
+                                    ? "bottom-full mb-1"
+                                    : "top-full mt-1"
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled={updateStatusMutation.isPending}
+                                  onClick={() => {
+                                    setOpenMenuUserId(null);
+                                    setPendingUser(user);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                >
+                                  {user.isActive ? (
+                                    <>
+                                      <Power
+                                        className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400"
+                                        aria-hidden="true"
+                                      />
+                                      Deactivate
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check
+                                        className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+                                        aria-hidden="true"
+                                      />
+                                      Activate
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled={deleteUserMutation.isPending}
+                                  onClick={() => {
+                                    setOpenMenuUserId(null);
+                                    setDeleteTarget(user);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                                >
+                                  <Trash2
+                                    className="h-3.5 w-3.5"
+                                    aria-hidden="true"
+                                  />
+                                  Remove
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

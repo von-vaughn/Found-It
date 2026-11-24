@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { BadgeCheck, RotateCcw } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { ClaimsListPanel } from "@/components/admin/ClaimsView";
 import { ReturnsListPanel } from "@/components/admin/ReturnsView";
@@ -86,7 +85,6 @@ export function ClaimsPage() {
               : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
           }`}
         >
-          <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
           <span>Claims</span>
           <span
             className={`rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums ${
@@ -109,7 +107,6 @@ export function ClaimsPage() {
               : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
           }`}
         >
-          <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
           <span>Return</span>
           <span
             className={`rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums ${

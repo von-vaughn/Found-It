@@ -470,14 +470,6 @@ export function ReportedItemsView({
   return (
     <div className="space-y-6">
       <FadeIn>
-        <header className="pb-5">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-              Reported items
-            </h1>
-          </div>
-        </header>
-
         <div className="flex flex-wrap items-center justify-between gap-3">
           <FilterChips
             options={filterChips}
