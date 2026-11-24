@@ -1,6 +1,14 @@
 import React, { useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { CreatePostForm } from "@/components/school_user/CreatePostForm";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import {
+  CreatePostForm,
+  type CreatePostDraft,
+} from "@/components/school_user/CreatePostForm";
 import { FadeIn } from "@/components/FadeIn";
 import { Header } from "@/components/school_user/Header";
 import { Sidebar } from "@/components/school_user/Sidebar";
@@ -25,6 +33,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
   onFiltersChange,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -36,8 +45,15 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const initialDraft =
+    !isEditingRoute
+      ? ((location.state as { draftFromRejectedClaim?: CreatePostDraft } | null)
+          ?.draftFromRejectedClaim ?? null)
+      : null;
+
   const initialType =
-    searchParams.get("type") === "found" ? "found" : "lost";
+    initialDraft?.type ??
+    (searchParams.get("type") === "found" ? "found" : "lost");
 
   const initialItem = useMemo(() => {
     if (!id || !serverItem) return null;
@@ -148,6 +164,7 @@ export const CreatePostPage: React.FC<CreatePostPageProps> = ({
                     }
                     initialType={initialType}
                     initialItem={initialItem}
+                    initialDraft={initialDraft}
                   />
                 </FadeIn>
               </>

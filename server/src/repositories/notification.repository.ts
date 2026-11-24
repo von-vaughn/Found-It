@@ -78,6 +78,37 @@ export async function createAdminSubmissionNotifications(
   );
 }
 
+/**
+ * Alerts the school_user finder when someone submits a claim on their Found
+ * post while the physical item has not yet been received by OSA.
+ */
+export async function createFinderClaimSubmissionNotification(
+  client: PoolClient,
+  requestId: string,
+): Promise<void> {
+  await client.query(
+    `INSERT INTO notification (
+       user_id, item_id, request_id, kind, event, title, message
+     )
+     SELECT reporter.id, rq.item_id, rq.id, 'claim', 'submitted',
+            'Someone claimed your found item',
+            'A claim was submitted for "' || item.name ||
+              '". Please surrender the physical item to the OSA office for verification.'
+     FROM request rq
+     JOIN item ON item.id = rq.item_id
+     JOIN report ON report.id = item.report_id
+     JOIN "user" reporter ON reporter.id = report.user_id
+     WHERE rq.id = $1
+       AND rq.kind = 'claim'
+       AND item.received_by_osa = FALSE
+       AND reporter.id <> rq.user_id
+       AND reporter.role = 'school_user'
+       AND reporter.is_active = TRUE
+       AND reporter.is_verified = TRUE`,
+    [requestId],
+  );
+}
+
 export async function createRequestStatusNotification(
   client: PoolClient,
   input: {

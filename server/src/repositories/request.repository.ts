@@ -9,6 +9,7 @@ import { fetchRemoteImageBuffer, generateBlurredImage } from "../utils/image-blu
 import {
   createClaimedNotifications,
   createAdminSubmissionNotifications,
+  createFinderClaimSubmissionNotification,
   createRequestStatusNotification,
 } from "./notification.repository";
 import type { Claim, ClaimStatus } from "../types/claims";
@@ -115,8 +116,12 @@ export async function findClaimableItem(itemId: string): Promise<{
        AND NOT EXISTS (
          SELECT 1 FROM request resolved_request
          WHERE resolved_request.item_id = i.id
-           AND resolved_request.kind IN ('claim', 'return')
-           AND resolved_request.status IN ('approved', 'claimed', 'returned')
+           AND (
+             (resolved_request.kind = 'claim'
+               AND resolved_request.status IN ('claimed', 'returned'))
+             OR (resolved_request.kind = 'return'
+               AND resolved_request.status IN ('approved', 'returned'))
+           )
        )
      LIMIT 1`,
     [itemId],
@@ -459,6 +464,13 @@ export class PhysicalItemNotReceivedError extends Error {
   }
 }
 
+export class AnotherClaimAlreadyApprovedError extends Error {
+  constructor() {
+    super("Another claim for this item is already approved. Reject it first before approving another.");
+    this.name = "AnotherClaimAlreadyApprovedError";
+  }
+}
+
 async function updateRequestStatusById(
   kind: "claim" | "return",
   id: string,
@@ -468,7 +480,7 @@ async function updateRequestStatusById(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    if (status === "approved") {
+    if (status === "approved" || status === "claimed" || status === "returned") {
       await client.query(
         `SELECT item.id
          FROM item
@@ -512,6 +524,22 @@ async function updateRequestStatusById(
     ) {
       await client.query("ROLLBACK");
       throw new PhysicalItemNotReceivedError();
+    }
+    if (kind === "claim" && status === "approved") {
+      const { rows: existingApproved } = await client.query<{ id: string }>(
+        `SELECT id
+         FROM request
+         WHERE item_id = $1
+           AND kind = 'claim'
+           AND status IN ('approved', 'claimed')
+           AND id <> $2
+         LIMIT 1`,
+        [current.item_id, id],
+      );
+      if (existingApproved[0]) {
+        await client.query("ROLLBACK");
+        throw new AnotherClaimAlreadyApprovedError();
+      }
     }
 
     const trimmedReason = rejectionReason?.trim() || null;
@@ -558,10 +586,15 @@ async function updateRequestStatusById(
       });
     }
 
-    if (status === "approved") {
+    const shouldAutoRejectOthers =
+      kind === "claim"
+        ? status === "claimed" || status === "returned"
+        : status === "approved";
+
+    if (shouldAutoRejectOthers) {
       const autoRejectReason =
         kind === "claim"
-          ? "Another claim for this item was approved."
+          ? "This item has already been claimed by its verified owner."
           : "Another return report for this item was approved.";
       const { rows: rejectedRequests } = await client.query<{
         id: string;
@@ -665,6 +698,9 @@ async function createRequest(
     );
     requestId = rows[0].id;
     await createAdminSubmissionNotifications(client, requestId);
+    if (kind === "claim") {
+      await createFinderClaimSubmissionNotification(client, requestId);
+    }
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");

@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ClipboardList,
   Clock3,
+  FilePlus2,
   MapPin,
   Palette,
   Pencil,
@@ -38,6 +39,8 @@ import {
 } from "@/hooks/useReturns";
 import { toClientItems } from "@/lib/itemAdapter";
 import { toReturnedFoundReportClaim } from "@/lib/claimAdapter";
+import { localTodayDate } from "@/lib/date";
+import type { CreatePostDraft } from "@/components/school_user/CreatePostForm";
 import {
   applyAdvancedFilters,
   countActiveFilters,
@@ -51,6 +54,14 @@ interface MyClaimsPageProps {
   foundReports?: ClaimRequest[];
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
+}
+
+function toIsoDateInput(value?: string): string {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? "" : localTodayDate(parsed);
 }
 
 export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
@@ -353,12 +364,15 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       alt: `Evidence ${photoIdx + 1} for request ${claim.id}`,
                                     })),
                                   ]}
-                                  emptySubtitle="The claimant did not attach any photos to this request."
+                                  emptySubtitle=""
                                 />
                                 <div className="flex min-w-0 flex-col">
                                   <div className="flex flex-wrap items-start justify-between gap-2">
                                     <div className="min-w-0 flex-1">
-                                      <p className="flex flex-wrap items-center gap-x-2 text-[11px] text-neutral-400 dark:text-neutral-500">
+                                      <h2 className="truncate text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                                        {item?.title ?? claim.item ?? "Post"}
+                                      </h2>
+                                      <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-neutral-400 dark:text-neutral-500">
                                         <span className="font-semibold uppercase tracking-wider">
                                           {isFoundReport
                                             ? "Return Request"
@@ -372,9 +386,6 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                           </span>
                                         </span>
                                       </p>
-                                      <h2 className="mt-1 truncate text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-                                        {item?.title ?? claim.item ?? "Post"}
-                                      </h2>
                                     </div>
                                     <div className="flex shrink-0 items-center gap-2">
                                       <span
@@ -515,6 +526,50 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                         </button>
                                       </>
                                     )}
+                                    {claim.status === "Rejected" &&
+                                      !isFoundReport && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const draft: CreatePostDraft = {
+                                              key: `rejected-claim-${claim.id}`,
+                                              type: "lost",
+                                              title:
+                                                claim.claimantTitle?.trim() ||
+                                                claim.item,
+                                              color: claim.color ?? "",
+                                              date: toIsoDateInput(
+                                                claim.dateLost,
+                                              ),
+                                              time: claim.timeLost ?? "",
+                                              building: claim.building ?? "",
+                                              location: claim.location ?? "",
+                                              description: claim.details ?? "",
+                                              importantDetails:
+                                                claim.importantDetails ?? "",
+                                              category:
+                                                itemById.get(claim.itemId)
+                                                  ?.category ?? "",
+                                              images: claim.evidence ?? [],
+                                            };
+                                            navigate(
+                                              "/dashboard/create?type=lost",
+                                              {
+                                                state: {
+                                                  draftFromRejectedClaim: draft,
+                                                },
+                                              },
+                                            );
+                                          }}
+                                          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 text-xs font-bold text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                                        >
+                                          <FilePlus2
+                                            className="h-3.5 w-3.5"
+                                            aria-hidden="true"
+                                          />
+                                          Post as Lost Item
+                                        </button>
+                                      )}
                                     <button
                                       type="button"
                                       onClick={() =>

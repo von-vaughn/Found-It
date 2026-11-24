@@ -47,7 +47,7 @@ const ITEM_COLUMNS = `
     SELECT 1 FROM request claim_request
     WHERE claim_request.item_id = i.id
       AND claim_request.kind = 'claim'
-      AND claim_request.status IN ('approved', 'claimed', 'returned')
+      AND claim_request.status IN ('claimed', 'returned')
   ) AS is_claimed,
   EXISTS (
     SELECT 1 FROM request completed_request
@@ -345,8 +345,12 @@ export async function findSuggestedMatchesForItem(
        AND NOT EXISTS (
          SELECT 1 FROM request resolved_request
          WHERE resolved_request.item_id = i.id
-           AND resolved_request.kind IN ('claim', 'return')
-           AND resolved_request.status IN ('approved', 'claimed', 'returned')
+           AND (
+             (resolved_request.kind = 'claim'
+               AND resolved_request.status IN ('claimed', 'returned'))
+             OR (resolved_request.kind = 'return'
+               AND resolved_request.status IN ('approved', 'returned'))
+           )
        )
      ORDER BY i.created_at DESC`,
     [target.category_id, target.reporter_id, target.id],
@@ -415,8 +419,12 @@ export async function listItems(
     conditions.push(`NOT EXISTS (
       SELECT 1 FROM request resolved_request
       WHERE resolved_request.item_id = i.id
-        AND resolved_request.kind IN ('claim', 'return')
-        AND resolved_request.status IN ('approved', 'claimed', 'returned')
+        AND (
+          (resolved_request.kind = 'claim'
+            AND resolved_request.status IN ('claimed', 'returned'))
+          OR (resolved_request.kind = 'return'
+            AND resolved_request.status IN ('approved', 'returned'))
+        )
     )`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';

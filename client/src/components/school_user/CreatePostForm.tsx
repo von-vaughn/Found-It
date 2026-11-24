@@ -21,6 +21,21 @@ import { uploadFoundImage, uploadImages } from "@/services/itemService";
 import { localTodayDate } from "@/lib/date";
 import toast from "react-hot-toast";
 
+export interface CreatePostDraft {
+  key: string;
+  type: "lost" | "found";
+  title: string;
+  color?: string;
+  date?: string;
+  time?: string;
+  building?: string;
+  location?: string;
+  description?: string;
+  importantDetails?: string;
+  category?: Item["category"] | "";
+  images?: string[];
+}
+
 interface CreatePostFormProps {
   active: boolean;
   onAddItem: (newItem: Item) => void;
@@ -28,6 +43,7 @@ interface CreatePostFormProps {
   onSubmitted: () => void;
   initialType?: "lost" | "found";
   initialItem?: Item | null;
+  initialDraft?: CreatePostDraft | null;
 }
 
 const DEFAULT_DESCRIPTION_PLACEHOLDER = "No additional description provided.";
@@ -143,6 +159,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   onSubmitted,
   initialType = "lost",
   initialItem = null,
+  initialDraft = null,
 }) => {
   const createItemMutation = useCreateItem();
   const updateItemMutation = useUpdateItem();
@@ -186,21 +203,24 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   >("idle");
   const [cameraError, setCameraError] = useState<string | null>(null);
 
-  // Sync all fields when activated: prefill from the item being edited,
-  // otherwise start blank (derived state).
+  // Sync all fields when activated: prefill from the item being edited or a
+  // passed-in draft (e.g. from a rejected claim), otherwise start blank.
   const [prevFormSync, setPrevFormSync] = useState({
     active: false,
     itemId: null as string | null,
+    draftKey: null as string | null,
     initialType: initialType as "lost" | "found",
   });
   if (
     active !== prevFormSync.active ||
     (initialItem?.id ?? null) !== prevFormSync.itemId ||
-    (!initialItem && initialType !== prevFormSync.initialType)
+    (initialDraft?.key ?? null) !== prevFormSync.draftKey ||
+    (!initialItem && !initialDraft && initialType !== prevFormSync.initialType)
   ) {
     setPrevFormSync({
       active,
       itemId: initialItem?.id ?? null,
+      draftKey: initialDraft?.key ?? null,
       initialType,
     });
     setPhotoRequiredError(false);
@@ -236,6 +256,25 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               ? [initialItem.image]
               : [];
         setLostImages(existingLostImages);
+        setLostFileMap({});
+      } else if (initialDraft) {
+        setType(initialDraft.type);
+        setTitle(initialDraft.title);
+        setColor(initialDraft.color ?? "");
+        setDateValue(initialDraft.date ?? "");
+        setTimeValue(initialDraft.time ?? "");
+        setBuilding(initialDraft.building ?? "");
+        setLocation(initialDraft.location ?? "");
+        setDescription(
+          initialDraft.description === DEFAULT_DESCRIPTION_PLACEHOLDER
+            ? ""
+            : (initialDraft.description ?? ""),
+        );
+        setImportantDetails(initialDraft.importantDetails ?? "");
+        setCategory(initialDraft.category ?? "");
+        setUploadedImage(null);
+        setUploadedFile(null);
+        setLostImages((initialDraft.images ?? []).slice(0, MAX_POST_IMAGES));
         setLostFileMap({});
       } else {
         setType(initialType);

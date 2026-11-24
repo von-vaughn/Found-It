@@ -24,7 +24,6 @@ import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import {
   FilterChips,
   OriginalPostCard,
-  RequestSelectorCard,
   ReviewPager,
   SubmittedRequestCard,
   type ReviewFactRow,
@@ -33,7 +32,6 @@ import { AdminPasswordModal, LockedValue } from "./SensitiveDetails";
 import { StatusBadge } from "./StatusBadge";
 import type { AdminReport } from "./types";
 import {
-  compareRequestWithPost,
   formatAdminEventDate,
   formatAdminEventTime,
   sortRequestsByPostMatch,
@@ -41,7 +39,6 @@ import {
 import { useSensitiveUnlock } from "./useSensitiveUnlock";
 
 const LIST_PAGE_SIZE = 10;
-const DETAIL_PAGE_SIZE = 4;
 
 const DEFAULT_CLAIM_FILTERS = [
   "All",
@@ -345,8 +342,6 @@ export function ClaimDetailPanel({
   isUpdatingOsaReceipt?: boolean;
   plainDetails?: boolean;
 }) {
-  const [selectedRequestId, setSelectedRequestId] = useState(claim.id);
-  const [page, setPage] = useState(1);
   const [pendingStatusChange, setPendingStatusChange] = useState<{
     claimId: string;
     status: StatusDecision;
@@ -356,13 +351,6 @@ export function ClaimDetailPanel({
   const [savingStatusChange, setSavingStatusChange] = useState(false);
   const approvalDialogRef = useRef<HTMLDialogElement>(null);
 
-  const [prevRouteClaimId, setPrevRouteClaimId] = useState(claim.id);
-  if (claim.id !== prevRouteClaimId) {
-    setPrevRouteClaimId(claim.id);
-    setSelectedRequestId(claim.id);
-    setPage(1);
-  }
-
   const selectedItemPost = reports.find(
     (report) => report.id === claim.itemId,
   );
@@ -371,28 +359,6 @@ export function ClaimDetailPanel({
       sortRequestsByPostMatch([claim, ...siblingClaims], selectedItemPost),
     [claim, siblingClaims, selectedItemPost],
   );
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(sortedPostClaims.length / DETAIL_PAGE_SIZE),
-  );
-  const safePage = Math.min(page, totalPages);
-  const visibleClaims = sortedPostClaims.slice(
-    (safePage - 1) * DETAIL_PAGE_SIZE,
-    safePage * DETAIL_PAGE_SIZE,
-  );
-  const rangeStart =
-    sortedPostClaims.length === 0 ? 0 : (safePage - 1) * DETAIL_PAGE_SIZE + 1;
-  const rangeEnd = Math.min(
-    safePage * DETAIL_PAGE_SIZE,
-    sortedPostClaims.length,
-  );
-
-  const activeClaim =
-    visibleClaims.find((item) => item.id === selectedRequestId) ??
-    sortedPostClaims.find((item) => item.id === selectedRequestId) ??
-    visibleClaims[0] ??
-    null;
 
   const claimForStatusChange = allClaims.find(
     (item) => item.id === pendingStatusChange?.claimId,
@@ -413,7 +379,7 @@ export function ClaimDetailPanel({
     useSensitiveUnlock();
 
   const claimsToAutoReject =
-    claimForStatusChange && pendingStatusChange?.status === "Approved"
+    claimForStatusChange && pendingStatusChange?.status === "ItemClaimed"
       ? allClaims.filter(
           (item) =>
             item.id !== claimForStatusChange.id &&
@@ -429,7 +395,8 @@ export function ClaimDetailPanel({
     if (approvalDialogRef.current?.open) approvalDialogRef.current.close();
   };
 
-  const isAcceptDecision = pendingStatusChange?.status === "Approved";
+  const isClaimCompletionDecision =
+    pendingStatusChange?.status === "ItemClaimed";
 
   const confirmStatusChange = async () => {
     if (!pendingStatusChange || !claimForStatusChange || savingStatusChange) {
@@ -497,6 +464,9 @@ export function ClaimDetailPanel({
         item.status === "Claimed" ||
         item.status === "Returned",
     );
+  const hasApprovedClaim = sortedPostClaims.some(
+    (item) => item.status === "Approved",
+  );
   const cannotRevokeOsa = Boolean(itemReceived && hasResolvedPostClaim);
 
   const postFacts = buildPostFacts(
@@ -553,55 +523,53 @@ export function ClaimDetailPanel({
     ? `${isLostItem ? "Owner · " : ""}ID ${reporterId}`
     : "Original post details unavailable";
 
-  const activeFactRows: ReviewFactRow[] = activeClaim
-    ? [
-        {
-          id: "color",
-          icon: Palette,
-          label: "Primary color",
-          value: activeClaim.color?.trim() || "None",
-        },
-        {
-          id: "location",
-          icon: MapPin,
-          label: isLostItem ? "Location found" : "Location lost",
-          value: activeClaim.location || "None",
-        },
-        {
-          id: "building",
-          icon: Building2,
-          label: "Building",
-          value: activeClaim.building?.trim() || "None",
-        },
-        {
-          id: "date",
-          icon: CalendarDays,
-          label: isLostItem ? "Date found" : "Date lost",
-          value: activeClaim.dateLost || "None",
-        },
-        {
-          id: "time",
-          icon: Clock3,
-          label: isLostItem ? "Time found" : "Time lost",
-          value: activeClaim.timeLost || "None",
-        },
-        {
-          id: "important-details",
-          icon: Lock,
-          label: "Important details",
-          value: (
-            <LockedValue
-              value={activeClaim.importantDetails}
-              unlocked={unlocked}
-              onUnlock={requestUnlock}
-            />
-          ),
-          note: unlocked
-            ? undefined
-            : "Protected detail. Enter your staff or admin password to reveal.",
-        },
-      ]
-    : [];
+  const buildClaimFactRows = (requestItem: ClaimRequest): ReviewFactRow[] => [
+    {
+      id: "color",
+      icon: Palette,
+      label: "Primary color",
+      value: requestItem.color?.trim() || "None",
+    },
+    {
+      id: "location",
+      icon: MapPin,
+      label: isLostItem ? "Location found" : "Location lost",
+      value: requestItem.location || "None",
+    },
+    {
+      id: "building",
+      icon: Building2,
+      label: "Building",
+      value: requestItem.building?.trim() || "None",
+    },
+    {
+      id: "date",
+      icon: CalendarDays,
+      label: isLostItem ? "Date found" : "Date lost",
+      value: requestItem.dateLost || "None",
+    },
+    {
+      id: "time",
+      icon: Clock3,
+      label: isLostItem ? "Time found" : "Time lost",
+      value: requestItem.timeLost || "None",
+    },
+    {
+      id: "important-details",
+      icon: Lock,
+      label: "Important details",
+      value: (
+        <LockedValue
+          value={requestItem.importantDetails}
+          unlocked={unlocked}
+          onUnlock={requestUnlock}
+        />
+      ),
+      note: unlocked
+        ? undefined
+        : "Protected detail. Enter your staff or admin password to reveal.",
+    },
+  ];
 
   return (
     <div className="overflow-x-clip">
@@ -652,11 +620,11 @@ export function ClaimDetailPanel({
                 claim the item.
               </p>
             )}
-            {isAcceptDecision && claimsToAutoReject.length > 0 && (
+            {isClaimCompletionDecision && claimsToAutoReject.length > 0 && (
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
                 {claimsToAutoReject.length === 1
-                  ? "1 other open request for this item will be automatically rejected."
-                  : `${claimsToAutoReject.length} other open requests for this item will be automatically rejected.`}
+                  ? "1 other pending claim for this item will be automatically rejected once marked as claimed."
+                  : `${claimsToAutoReject.length} other pending claims for this item will be automatically rejected once marked as claimed.`}
               </p>
             )}
             {pendingStatusChange.status === "Rejected" && (
@@ -765,60 +733,6 @@ export function ClaimDetailPanel({
               </p>
             )}
           </div>
-
-          {sortedPostClaims.length > 1 && (
-            <>
-              <div className="mt-3 mb-4 grid gap-2.5 sm:grid-cols-2">
-                {visibleClaims.map((item) => {
-                  const comparison = compareRequestWithPost(
-                    item,
-                    selectedItemPost,
-                  );
-                  const tones = selectedItemPost
-                    ? [
-                        comparison.color.status,
-                        comparison.date.status,
-                        comparison.location.status,
-                        comparison.building.status,
-                      ]
-                    : undefined;
-                  const idNum =
-                    resolveIdNumber(item.schoolId, getClaimantEmail(item)) ||
-                    "N/A";
-                  return (
-                    <RequestSelectorCard
-                      key={item.id}
-                      name={item.claimant}
-                      subtitle={`ID ${idNum} · ${item.submitted}`}
-                      status={item.status}
-                      selected={activeClaim?.id === item.id}
-                      matchTones={tones}
-                      onClick={() => setSelectedRequestId(item.id)}
-                    />
-                  );
-                })}
-              </div>
-
-              <ReviewPager
-                page={safePage}
-                totalPages={totalPages}
-                rangeStart={rangeStart}
-                rangeEnd={rangeEnd}
-                totalItems={sortedPostClaims.length}
-                showRange={false}
-                onPageChange={(nextPage) => {
-                  setPage(nextPage);
-                  const nextVisible = sortedPostClaims.slice(
-                    (nextPage - 1) * DETAIL_PAGE_SIZE,
-                    nextPage * DETAIL_PAGE_SIZE,
-                  );
-                  if (nextVisible[0]) {
-                    setSelectedRequestId(nextVisible[0].id);
-                  }
-                }}
-              />
-            </>
-          )}
         </section>
 
         {sortedPostClaims.length === 0 ? (
@@ -826,105 +740,121 @@ export function ClaimDetailPanel({
             No claim requests submitted for this post yet.
           </div>
         ) : (
-          activeClaim && (
-            <SubmittedRequestCard
-              requestKey={activeClaim.id}
-              requestTypeLabel="Claim Request"
-              submitted={activeClaim.submitted}
-              itemTitle={activeClaim.claimantTitle?.trim() || activeClaim.item}
-              applicantName={activeClaim.claimant}
-              applicantId={
-                resolveIdNumber(
-                  activeClaim.schoolId,
-                  getClaimantEmail(activeClaim),
-                ) || "N/A"
-              }
-              status={activeClaim.status}
-              photos={(activeClaim.evidence ?? []).map((image, index) => ({
-                src: image,
-                alt: `Photo evidence ${index + 1} submitted by ${activeClaim.claimant}`,
-              }))}
-              emptyPhotoSubtitle="The claimant did not attach any photos to this request."
-              notices={
-                !isLostItem &&
-                activeClaim.status === "Pending" &&
-                !itemReceived ? (
-                  <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
-                    Approval is unavailable until the physical item is received
-                    by OSA.
-                  </div>
-                ) : undefined
-              }
-              description={activeClaim.details}
-              facts={activeFactRows}
-              actions={
-                activeClaim.status !== "Claimed" &&
-                activeClaim.status !== "Rejected" ? (
-                  <>
-                    <button
-                      type="button"
-                      disabled={
-                        activeClaim.status !== "Pending" &&
-                        activeClaim.status !== "Approved"
-                      }
-                      onClick={() => {
-                        setRejectReason("");
-                        setRejectError("");
-                        setPendingStatusChange({
-                          claimId: activeClaim.id,
-                          status: "Rejected",
-                        });
-                      }}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
-                    >
-                      <X className="h-3.5 w-3.5" aria-hidden="true" />
-                      Reject
-                    </button>
-                    <button
-                      type="button"
-                      disabled={
-                        activeClaim.status === "Returned" ||
-                        (!isLostItem &&
-                          activeClaim.status !== "Approved" &&
-                          !itemReceived) ||
-                        (!isLostItem &&
-                          itemClaimed &&
-                          activeClaim.status !== "Approved")
-                      }
-                      title={
-                        !isLostItem &&
-                        activeClaim.status === "Pending" &&
-                        !itemReceived
-                          ? "Item must be received by OSA before approving"
-                          : undefined
-                      }
-                      onClick={() =>
-                        setPendingStatusChange({
-                          claimId: activeClaim.id,
-                          status:
-                            !isLostItem && activeClaim.status === "Approved"
-                              ? "ItemClaimed"
+          <div className="space-y-4">
+            {sortedPostClaims.map((requestItem) => {
+              const hasAnotherApprovedClaim =
+                hasApprovedClaim && requestItem.status !== "Approved";
+              return (
+                <SubmittedRequestCard
+                  key={requestItem.id}
+                  requestKey={requestItem.id}
+                  requestTypeLabel="Claim Request"
+                  submitted={requestItem.submitted}
+                  itemTitle={
+                    requestItem.claimantTitle?.trim() || requestItem.item
+                  }
+                  applicantName={requestItem.claimant}
+                  applicantId={
+                    resolveIdNumber(
+                      requestItem.schoolId,
+                      getClaimantEmail(requestItem),
+                    ) || "N/A"
+                  }
+                  status={requestItem.status}
+                  photos={(requestItem.evidence ?? []).map((image, index) => ({
+                    src: image,
+                    alt: `Photo evidence ${index + 1} submitted by ${requestItem.claimant}`,
+                  }))}
+                  emptyPhotoSubtitle="The claimant did not attach any photos to this request."
+                  notices={
+                    !isLostItem &&
+                    requestItem.status === "Pending" &&
+                    !itemReceived ? (
+                      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+                        Approval is unavailable until the physical item is
+                        received by OSA.
+                      </div>
+                    ) : undefined
+                  }
+                  description={requestItem.details}
+                  facts={buildClaimFactRows(requestItem)}
+                  actions={
+                    requestItem.status !== "Claimed" &&
+                    requestItem.status !== "Rejected" ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={
+                            requestItem.status !== "Pending" &&
+                            requestItem.status !== "Approved"
+                          }
+                          onClick={() => {
+                            setRejectReason("");
+                            setRejectError("");
+                            setPendingStatusChange({
+                              claimId: requestItem.id,
+                              status: "Rejected",
+                            });
+                          }}
+                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                        >
+                          <X className="h-3.5 w-3.5" aria-hidden="true" />
+                          Reject
+                        </button>
+                        <button
+                          type="button"
+                          disabled={
+                            requestItem.status === "Returned" ||
+                            (!isLostItem &&
+                              requestItem.status !== "Approved" &&
+                              !itemReceived) ||
+                            (!isLostItem &&
+                              requestItem.status === "Pending" &&
+                              hasAnotherApprovedClaim) ||
+                            (!isLostItem &&
+                              itemClaimed &&
+                              requestItem.status !== "Approved")
+                          }
+                          title={
+                            !isLostItem &&
+                            requestItem.status === "Pending" &&
+                            !itemReceived
+                              ? "Item must be received by OSA before approving"
+                              : !isLostItem &&
+                                  requestItem.status === "Pending" &&
+                                  hasAnotherApprovedClaim
+                                ? "Another claim is currently approved. Reject it first before approving another."
+                                : undefined
+                          }
+                          onClick={() =>
+                            setPendingStatusChange({
+                              claimId: requestItem.id,
+                              status:
+                                !isLostItem && requestItem.status === "Approved"
+                                  ? "ItemClaimed"
+                                  : isLostItem
+                                    ? "Returned"
+                                    : "Approved",
+                            })
+                          }
+                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+                        >
+                          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                          {requestItem.status === "Returned"
+                            ? "Returned"
+                            : requestItem.status === "Approved" && !isLostItem
+                              ? "Mark as claimed"
                               : isLostItem
-                                ? "Returned"
-                                : "Approved",
-                        })
-                      }
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                      {activeClaim.status === "Returned"
-                        ? "Returned"
-                        : activeClaim.status === "Approved" && !isLostItem
-                          ? "Mark as claimed"
-                          : isLostItem
-                            ? "Mark as returned"
-                            : "Approve request"}
-                    </button>
-                  </>
-                ) : undefined
-              }
-            />
-          )
+                                ? "Mark as returned"
+                                : "Approve request"}
+                        </button>
+                      </>
+                    ) : undefined
+                  }
+                />
+              );
+            })}
+          </div>
         )}
       </div>
       </FadeIn>

@@ -36,7 +36,7 @@ export const FoundItemCameraModal: React.FC<FoundItemCameraModalProps> = ({
             ? "max-w-xl"
             : step === "confirmation"
               ? "max-w-md"
-              : "max-w-3xl"
+              : "max-w-xl"
         }`}
       >
         <FoundReportFlow

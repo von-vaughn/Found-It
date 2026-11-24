@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import {
+  AnotherClaimAlreadyApprovedError,
   countRejectedClaimsForUserAndItem,
   createClaim,
   deleteClaim,
@@ -171,7 +172,10 @@ export async function updateAdminClaimStatus(
       parsed.data.reason,
     );
   } catch (error) {
-    if (error instanceof PhysicalItemNotReceivedError) {
+    if (
+      error instanceof PhysicalItemNotReceivedError ||
+      error instanceof AnotherClaimAlreadyApprovedError
+    ) {
       res.status(409).json({ message: error.message });
       return;
     }
