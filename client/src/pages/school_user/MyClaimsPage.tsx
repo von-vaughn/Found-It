@@ -458,6 +458,19 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                     </div>
                                   )}
 
+                                  {claim.status === "Approved" &&
+                                    !isFoundReport &&
+                                    claim.approvalInstructions?.trim() && (
+                                      <div className="mt-3 rounded-xl bg-emerald-50/80 px-4 py-3 dark:bg-emerald-950/30">
+                                        <h4 className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                                          Pickup Instructions from OSA
+                                        </h4>
+                                        <p className="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-emerald-950 dark:text-emerald-100">
+                                          {claim.approvalInstructions}
+                                        </p>
+                                      </div>
+                                    )}
+
                                   {claim.status === "Rejected" &&
                                     claim.rejectionReason?.trim() && (
                                       <div className="mt-3 rounded-xl bg-rose-50/80 px-4 py-3 dark:bg-rose-950/30">

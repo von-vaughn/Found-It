@@ -386,15 +386,19 @@ export function ReturnDetailPanel({
   const confirmTargetRequest = confirmAction
     ? (allRequests.find((item) => item.id === confirmAction.requestId) ?? null)
     : null;
-  const requestsToAutoReject = confirmTargetRequest
-    ? allRequests.filter(
-        (item) =>
-          item.id !== confirmTargetRequest.id &&
-          item.itemId === confirmTargetRequest.itemId &&
-          item.status === "Pending",
-      )
-    : [];
-  const isAcceptReturn = confirmAction?.status === "Approved";
+  const requestsToAutoReject =
+    confirmTargetRequest && confirmAction?.status === "Returned"
+      ? allRequests.filter(
+          (item) =>
+            item.id !== confirmTargetRequest.id &&
+            item.itemId === confirmTargetRequest.itemId &&
+            item.status === "Pending",
+        )
+      : [];
+  const isCompleteReturn = confirmAction?.status === "Returned";
+  const hasApprovedReturn = postRequests.some(
+    (entry) => entry.status === "Approved",
+  );
 
   const { unlocked, promptOpen, requestUnlock, submitPassword, setPromptOpen } =
     useSensitiveUnlock();
@@ -555,7 +559,8 @@ export function ReturnDetailPanel({
         value: (
           <div className="flex flex-wrap items-center gap-3">
             <OsaReceiptStatus received={entryReceived} />
-            {entry.status === "Pending" && (
+            {(entry.status === "Pending" ||
+              (entry.status === "Rejected" && !entry.publishedItemId)) && (
               <button
                 type="button"
                 disabled={updatingEntryOsa}
@@ -641,6 +646,9 @@ export function ReturnDetailPanel({
             const publishingEntry = Boolean(
               isPublishing && publishingId === entry.id,
             );
+            const entryReceived = physicalItemReceived(entry);
+            const hasAnotherApprovedReturn =
+              hasApprovedReturn && entry.status !== "Approved";
             return (
               <SubmittedRequestCard
                 key={entry.id}
@@ -667,6 +675,15 @@ export function ReturnDetailPanel({
                       </div>
                     )}
 
+                    {entry.status === "Rejected" &&
+                      !entry.publishedItemId &&
+                      !entryReceived && (
+                        <div className="mt-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                          Mark the physical item as received by OSA before
+                          posting it as a public found item.
+                        </div>
+                      )}
+
                     {entry.status === "Rejected" && entry.publishedItemId && (
                       <div className="mt-4 rounded-xl bg-neutral-50 px-3.5 py-2.5 text-xs text-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-300">
                         This found-item post is already available in the public
@@ -692,11 +709,13 @@ export function ReturnDetailPanel({
                       </button>
                       <button
                         type="button"
-                        disabled={!entry.receivedByOsa}
+                        disabled={!entry.receivedByOsa || hasAnotherApprovedReturn}
                         title={
                           !entry.receivedByOsa
                             ? "Item must be received by OSA before approving"
-                            : undefined
+                            : hasAnotherApprovedReturn
+                              ? "Another return request is currently approved. Cancel it first before approving another."
+                              : undefined
                         }
                         onClick={() =>
                           requestStatusChange(entry.id, "Approved")
@@ -734,7 +753,14 @@ export function ReturnDetailPanel({
                       type="button"
                       onClick={() => setConfirmPublishRequest(entry)}
                       disabled={
-                        Boolean(entry.publishedItemId) || publishingEntry
+                        Boolean(entry.publishedItemId) ||
+                        publishingEntry ||
+                        !entryReceived
+                      }
+                      title={
+                        !entryReceived && !entry.publishedItemId
+                          ? "Physical item must be marked received by OSA before publishing"
+                          : undefined
                       }
                       className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55"
                     >
@@ -796,11 +822,11 @@ export function ReturnDetailPanel({
                     ? `"${confirmTargetRequest.item}" will be marked as returned to ${confirmTargetRequest.claimant}. Its item report will show Returned.`
                     : `The return request for "${confirmTargetRequest.item}" by ${confirmTargetRequest.claimant} will be marked as rejected.`}
             </p>
-            {isAcceptReturn && requestsToAutoReject.length > 0 && (
+            {isCompleteReturn && requestsToAutoReject.length > 0 && (
               <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
                 {requestsToAutoReject.length === 1
-                  ? "1 other pending request for this item will be automatically rejected."
-                  : `${requestsToAutoReject.length} other pending requests for this item will be automatically rejected.`}
+                  ? "1 other pending request for this item will be automatically rejected once marked as returned."
+                  : `${requestsToAutoReject.length} other pending requests for this item will be automatically rejected once marked as returned.`}
               </p>
             )}
 

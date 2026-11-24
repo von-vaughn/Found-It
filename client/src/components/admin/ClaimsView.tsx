@@ -741,7 +741,9 @@ export function ClaimDetailPanel({
                 disabled={
                   savingStatusChange ||
                   (pendingStatusChange.status === "Rejected" &&
-                    !rejectReason.trim())
+                    !rejectReason.trim()) ||
+                  (pendingStatusChange.status === "Approved" &&
+                    !approvalInstructions.trim())
                 }
                 className="h-9 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -838,14 +840,27 @@ export function ClaimDetailPanel({
                   }))}
                   emptyPhotoSubtitle=""
                   notices={
-                    !isLostItem &&
-                    requestItem.status === "Pending" &&
-                    !itemReceived ? (
-                      <div className="mt-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
-                        Approval is unavailable until the physical item is
-                        received by OSA.
-                      </div>
-                    ) : undefined
+                    <>
+                      {!isLostItem &&
+                        requestItem.status === "Pending" &&
+                        !itemReceived && (
+                          <div className="mt-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                            Approval is unavailable until the physical item is
+                            received by OSA.
+                          </div>
+                        )}
+                      {requestItem.status === "Approved" &&
+                        requestItem.approvalInstructions?.trim() && (
+                          <div className="mt-4 rounded-xl bg-emerald-50/80 px-3.5 py-2.5 text-xs text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
+                            <p className="font-semibold">
+                              Pickup instructions sent to claimant
+                            </p>
+                            <p className="mt-1 whitespace-pre-line break-words leading-relaxed">
+                              {requestItem.approvalInstructions}
+                            </p>
+                          </div>
+                        )}
+                    </>
                   }
                   description={requestItem.details}
                   facts={buildClaimFactRows(requestItem)}

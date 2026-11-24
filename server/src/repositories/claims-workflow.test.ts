@@ -5,16 +5,21 @@ import { migrate } from "../db/migrate";
 import {
   createItem,
   findItemById,
+  findItemOwner,
   listItems,
+  sendFinderReminder,
   updateOsaReceipt,
 } from "./item.repository";
 import { listNotificationsForUser } from "./notification.repository";
 import {
   AnotherClaimAlreadyApprovedError,
   createClaim,
+  createReturnRequest,
   findClaimableItem,
   findClaimById,
   updateClaimStatusById,
+  updateReturnOsaReceipt,
+  updateReturnStatusById,
 } from "./request.repository";
 import { createUser } from "./user.repository";
 import { hashPassword } from "../utils/password";
@@ -221,9 +226,28 @@ describe("Claim Finder Alert & Deferred Competing-Claim Rejection Workflow", () 
     });
     assert.ok(claimA && claimB);
 
-    // 1. Approve Claim A -> Claim B must remain Pending, and the Found post must stay visible & claimable
-    const approvedA = await updateClaimStatusById(claimA.id, "approved");
+    // 1. Approve Claim A with pickup instructions -> Claim B must remain Pending, and the Found post must stay visible & claimable
+    const approvedA = await updateClaimStatusById(
+      claimA.id,
+      "approved",
+      undefined,
+      "Bring your school ID to OSA Window 2 before 5 PM.",
+    );
     assert.equal(approvedA?.status, "approved");
+    assert.equal(
+      approvedA?.approvalInstructions,
+      "Bring your school ID to OSA Window 2 before 5 PM.",
+    );
+    const claimantANotifsOnApprove = await listNotificationsForUser(claimantAId);
+    const approvedNotif = claimantANotifsOnApprove.find(
+      (n) => n.requestId === claimA.id && n.event === "approved",
+    );
+    assert.ok(
+      approvedNotif?.message.includes(
+        "Bring your school ID to OSA Window 2 before 5 PM.",
+      ),
+      "Approval notification should include OSA pickup instructions",
+    );
 
     const publicFeedWhileApproved = await listItems({}, false, claimantBId);
     const visibleItemWhileApproved = publicFeedWhileApproved.find(
@@ -309,5 +333,131 @@ describe("Claim Finder Alert & Deferred Competing-Claim Rejection Workflow", () 
       autoRejectNotif,
       "Expected auto-rejected claimant to receive a rejection notification on Claimed",
     );
+  });
+
+  it("enforces 3-hour cooldown on manual OSA finder reminders and tracks pending-request ownership lock", async () => {
+    const item = await createItem({
+      reporterId: finderId,
+      reportType: "found",
+      name: `Remind Finder Calculator ${RUN}`,
+      description: "Scientific calculator found at Engineering lobby.",
+      itemDate: "2026-11-20",
+      itemTime: "08:30",
+      categoryId,
+      color: "Black",
+      location: "Engineering lobby",
+      importantDetails: "Name sticker removed.",
+    });
+    createdItemIds.push(item.id);
+
+    const ownerBeforeClaim = await findItemOwner(item.id);
+    assert.equal(ownerBeforeClaim?.hasPendingRequest, false);
+
+    const claim = await createClaim({
+      userId: claimantAId,
+      itemId: item.id,
+      claimantTitle: "My Casio Calculator",
+      color: "Black",
+      dateLost: "2026-11-20",
+      timeLost: "08:00",
+      location: "Engineering lobby",
+      details: "Left my scientific calculator on the lobby bench.",
+      importantDetails: "Battery cover has tape.",
+    });
+    assert.ok(claim);
+
+    const ownerWithPending = await findItemOwner(item.id);
+    assert.equal(ownerWithPending?.hasPendingRequest, true);
+
+    const firstReminder = await sendFinderReminder(item.id);
+    assert.equal(firstReminder.status, "sent");
+
+    const secondReminder = await sendFinderReminder(item.id);
+    assert.equal(secondReminder.status, "cooldown");
+
+    const finderNotifs = await listNotificationsForUser(finderId);
+    const manualReminder = finderNotifs.find(
+      (n) =>
+        n.itemId === item.id &&
+        n.title === "Reminder: surrender found item to OSA",
+    );
+    assert.ok(manualReminder, "Finder should receive the manual OSA reminder");
+  });
+
+  it("aligns Return lifecycle with Claims: keeps Lost post & competing returns active on Approved, enforces exclusivity, and auto-rejects on Returned", async () => {
+    const lostItem = await createItem({
+      reporterId: finderId,
+      reportType: "lost",
+      name: `Lost Watch ${RUN}`,
+      description: "Silver wristwatch lost near the cafeteria.",
+      itemDate: "2026-11-20",
+      itemTime: "09:00",
+      categoryId,
+      color: "Silver",
+      location: "Cafeteria",
+      importantDetails: "Engraved initials on clasp.",
+    });
+    createdItemIds.push(lostItem.id);
+
+    const retA = await createReturnRequest({
+      userId: claimantAId,
+      itemId: lostItem.id,
+      claimantTitle: "Silver Watch A",
+      color: "Silver",
+      dateLost: "2026-11-20",
+      timeLost: "10:00",
+      location: "Cafeteria",
+      details: "Found a silver wristwatch by the counter.",
+      importantDetails: "Engraved initials on clasp.",
+    });
+    const retB = await createReturnRequest({
+      userId: claimantBId,
+      itemId: lostItem.id,
+      claimantTitle: "Silver Watch B",
+      color: "Silver",
+      dateLost: "2026-11-20",
+      timeLost: "10:30",
+      location: "Cafeteria",
+      details: "Picked up a silver watch near table 4.",
+      importantDetails: "Metal strap.",
+    });
+    assert.ok(retA && retB);
+
+    await updateReturnOsaReceipt(retA.id, true);
+    await updateReturnOsaReceipt(retB.id, true);
+
+    const approvedA = await updateReturnStatusById(retA.id, "approved");
+    assert.equal(approvedA?.status, "approved");
+
+    // Lost post stays visible & returnable while Return A is only Approved, and Return B stays Pending
+    const feedWhileApproved = await listItems({}, false, claimantBId);
+    assert.ok(feedWhileApproved.some((entry) => entry.id === lostItem.id));
+    assert.ok(await findClaimableItem(lostItem.id));
+    assert.equal((await findClaimById(retB.id))?.status, "pending");
+
+    // Double approval must fail
+    await assert.rejects(
+      () => updateReturnStatusById(retB.id, "approved"),
+      AnotherClaimAlreadyApprovedError,
+    );
+
+    // Cancel Return A back to Pending -> Return B can be approved
+    const cancelledA = await updateReturnStatusById(retA.id, "pending");
+    assert.equal(cancelledA?.status, "pending");
+
+    const approvedB = await updateReturnStatusById(retB.id, "approved");
+    assert.equal(approvedB?.status, "approved");
+
+    // Mark Return B as Returned -> Return A is auto-rejected and Lost post is hidden
+    const returnedB = await updateReturnStatusById(retB.id, "returned");
+    assert.equal(returnedB?.status, "returned");
+
+    assert.equal((await findClaimById(retA.id))?.status, "rejected");
+    const feedAfterReturned = await listItems({}, false, claimantAId);
+    assert.equal(
+      feedAfterReturned.some((entry) => entry.id === lostItem.id),
+      false,
+    );
+    assert.equal(await findClaimableItem(lostItem.id), null);
   });
 });

@@ -570,10 +570,29 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(claimRes.status, 201);
     const claimId = claimRes.data.claim.id;
 
+    // Pending claim locks school-user owner edit/delete on item
+    const editPendingLocked = await api('PATCH', `/api/items/${foundItemId}`, {
+      token: ownerAuth.token,
+      body: { name: 'Edited Charger Name' },
+    });
+    assert.equal(editPendingLocked.status, 409);
+
+    const deletePendingLocked = await api('DELETE', `/api/items/${foundItemId}`, {
+      token: ownerAuth.token,
+    });
+    assert.equal(deletePendingLocked.status, 409);
+
+    // Approving without instructions must fail validation (400)
+    const approveWithoutInstructions = await api('PATCH', `/api/claims/admin/${claimId}/status`, {
+      token: adminAuth.token,
+      body: { status: 'approved' },
+    });
+    assert.equal(approveWithoutInstructions.status, 400);
+
     // Cannot approve before OSA receipt
     const approveEarly = await api('PATCH', `/api/claims/admin/${claimId}/status`, {
       token: adminAuth.token,
-      body: { status: 'approved' },
+      body: { status: 'approved', instructions: 'Bring school ID to OSA.' },
     });
     assert.equal(approveEarly.status, 409);
 
@@ -584,16 +603,25 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     });
     assert.equal(markOsa.status, 200);
 
-    const approveClaim = await api<{ claim: { status: string } }>(
+    const approveClaim = await api<{
+      claim: { status: string; approvalInstructions?: string | null };
+    }>(
       'PATCH',
       `/api/claims/admin/${claimId}/status`,
       {
         token: superAuth.token,
-        body: { status: 'approved' },
+        body: {
+          status: 'approved',
+          instructions: 'Visit OSA Window 2 with your student ID.',
+        },
       },
     );
     assert.equal(approveClaim.status, 200);
     assert.equal(approveClaim.data.claim.status, 'approved');
+    assert.equal(
+      approveClaim.data.claim.approvalInstructions,
+      'Visit OSA Window 2 with your student ID.',
+    );
 
     const revokeOsa = await api('PATCH', `/api/items/${foundItemId}/osa-receipt`, {
       token: adminAuth.token,
@@ -774,6 +802,24 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     });
     assert.equal(rejectRes.status, 200);
 
+    // Cannot publish rejected return before OSA marks physical item received
+    const publishEarly = await api(
+      'POST',
+      `/api/returns/admin/${firstReturnId}/publish`,
+      { token: adminAuth.token },
+    );
+    assert.equal(publishEarly.status, 409);
+
+    const markRejectedOsa = await api(
+      'PATCH',
+      `/api/returns/admin/${firstReturnId}/osa-receipt`,
+      {
+        token: adminAuth.token,
+        body: { receivedByOsa: true },
+      },
+    );
+    assert.equal(markRejectedOsa.status, 200);
+
     const publishRes = await api<{ itemId: string; alreadyPublished: boolean }>(
       'POST',
       `/api/returns/admin/${firstReturnId}/publish`,
@@ -782,6 +828,15 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(publishRes.status, 201);
     assert.equal(publishRes.data.alreadyPublished, false);
     createdItemIds.push(publishRes.data.itemId);
+
+    // Published found item must carry receivedByOsa = true
+    const publishedDetail = await api<{ item: { receivedByOsa?: boolean } }>(
+      'GET',
+      `/api/items/${publishRes.data.itemId}`,
+      { token: adminAuth.token },
+    );
+    assert.equal(publishedDetail.status, 200);
+    assert.equal(publishedDetail.data.item.receivedByOsa, true);
 
     const secondPublish = await api<{ itemId: string; alreadyPublished: boolean }>(
       'POST',
