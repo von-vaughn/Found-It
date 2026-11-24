@@ -4,6 +4,7 @@ import { Overview } from "@/components/admin/Overview";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { ItemDetailsDialog } from "@/components/admin/ItemDetailsDialog";
 import type { AdminSection } from "@/components/admin/types";
+import { useAuth } from "@/context/useAuth";
 import { useItems } from "@/hooks/useItems";
 import { useAdminClaims } from "@/hooks/useClaims";
 import { useAdminReturns } from "@/hooks/useReturns";
@@ -15,6 +16,8 @@ import { useSelectedReport } from "@/components/admin/useSelectedReport";
 
 export function OverviewPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
   const { data: serverItems = [] } = useItems();
@@ -48,6 +51,7 @@ export function OverviewPage() {
         reports={reports}
         claims={claims}
         returnRequests={returnRequests}
+        isSuperAdmin={isSuperAdmin}
         onNavigate={handleNavigate}
       />
       {selectedReport && (

@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Check, ChevronLeft, ChevronRight, Power, Trash2 } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Power,
+  Trash2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FadeIn } from "@/components/FadeIn";
@@ -19,12 +26,19 @@ import { itemKeys } from "@/hooks/useItems";
 import { claimKeys } from "@/hooks/useClaims";
 import { returnKeys } from "@/hooks/useReturns";
 import { AdminLayout } from "./AdminLayout";
-import { AdminAccountsManager, roleLabel } from "./AdminAccountsManager";
+import { CreateAccountModal, roleLabel } from "./AdminAccountsManager";
 
 const PAGE_SIZE = 10;
 const ADMIN_USERS_QUERY_KEY = ["admin-users"] as const;
 
-type UsersTab = "school_user" | "staff" | "admin";
+type RoleFilter = "school_user" | "staff" | "admin";
+
+function initialRoleFromParam(rawTab: string | null, isSuperAdmin: boolean): RoleFilter {
+  if (!isSuperAdmin) return "school_user";
+  if (rawTab === "staff") return "staff";
+  if (rawTab === "admin" || rawTab === "admins") return "admin";
+  return "school_user";
+}
 
 function errorMessage(error: unknown, fallback: string): string {
   const responseMessage = (
@@ -37,12 +51,15 @@ export function UsersPage() {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.role === "super_admin";
+  const [searchParams] = useSearchParams();
+
   const usersQuery = useQuery({
     queryKey: ADMIN_USERS_QUERY_KEY,
     queryFn: listAdminUsers,
     staleTime: 30_000,
     retry: 1,
   });
+
   const invalidateUserDependents = () => {
     void queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
     void queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
@@ -53,6 +70,7 @@ export function UsersPage() {
     void queryClient.invalidateQueries({ queryKey: claimKeys.all });
     void queryClient.invalidateQueries({ queryKey: returnKeys.all });
   };
+
   const createUserMutation = useMutation({
     mutationFn: createAdminUser,
     onSuccess: invalidateUserDependents,
@@ -71,30 +89,19 @@ export function UsersPage() {
     mutationFn: deleteAdminUser,
     onSuccess: invalidateDeletedOrDeactivatedDependents,
   });
-  const [searchParams, setSearchParams] = useSearchParams();
-  // Role view is derived from the URL so deep links (e.g. /superadmin/admins redirect) work.
-  // Only a super admin can open staff/admin views; anyone else is pinned to school users.
-  const rawTab = searchParams.get("tab");
-  const tab: UsersTab = isSuperAdmin
-    ? rawTab === "staff"
-      ? "staff"
-      : rawTab === "admin" || rawTab === "admins"
-        ? "admin"
-        : "school_user"
-    : "school_user";
-  const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
+
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>(() =>
+    initialRoleFromParam(searchParams.get("tab"), isSuperAdmin),
+  );
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingUser, setPendingUser] = useState<AdminUser | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
-  const switchTab = (next: UsersTab) => {
-    setCurrentPage(1);
-    setPendingUser(null);
-    setDeleteTarget(null);
-    setSearchParams(next === "school_user" ? {} : { tab: next }, { replace: true });
-  };
+  const activeRole: RoleFilter = isSuperAdmin ? roleFilter : "school_user";
+  const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
 
   const schoolUsers = useMemo(
     () => allUsers.filter((u) => u.role === "school_user"),
@@ -110,37 +117,54 @@ export function UsersPage() {
   );
   const allUserEmails = useMemo(() => allUsers.map((u) => u.email), [allUsers]);
 
-  const filteredSchoolUsers = useMemo(() => {
+  const roleUsers =
+    activeRole === "school_user"
+      ? schoolUsers
+      : activeRole === "staff"
+        ? staffUsers
+        : adminUsers;
+
+  const filteredUsers = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return schoolUsers.filter((user) => {
-      if (statusFilter !== "All statuses" && (user.isActive ? "Active" : "Inactive") !== statusFilter) {
+    return roleUsers.filter((user) => {
+      if (
+        statusFilter !== "All statuses" &&
+        (user.isActive ? "Active" : "Inactive") !== statusFilter
+      ) {
         return false;
       }
       if (!q) return true;
       return [user.name, user.email].join(" ").toLowerCase().includes(q);
     });
-  }, [query, statusFilter, schoolUsers]);
+  }, [query, statusFilter, roleUsers]);
 
-  const pageCount = Math.max(1, Math.ceil(filteredSchoolUsers.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const page = Math.min(currentPage, pageCount);
-  const pageUsers = filteredSchoolUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const rangeStart = filteredSchoolUsers.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const rangeEnd = Math.min(page * PAGE_SIZE, filteredSchoolUsers.length);
+  const pageUsers = filteredUsers.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
+  const rangeStart =
+    filteredUsers.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * PAGE_SIZE, filteredUsers.length);
+
+  const handleRoleFilterChange = (nextRole: RoleFilter) => {
+    setRoleFilter(nextRole);
+    setCurrentPage(1);
+    setPendingUser(null);
+    setDeleteTarget(null);
+  };
 
   const updateQuery = (value: string) => {
     setQuery(value);
     setCurrentPage(1);
   };
 
-  const isStaffTarget = (user: AdminUser | null) => user !== null && user.role !== "school_user";
-
-  const handleStatusClick = (user: AdminUser) => setPendingUser(user);
-
   const confirmStatusChange = async () => {
     if (!pendingUser) return;
     if (
       pendingUser.role === "super_admin" &&
-      !pendingUser.isActive === false &&
+      pendingUser.isActive &&
       allUsers.filter((u) => u.role === "super_admin" && u.isActive).length <= 1
     ) {
       toast.error("Cannot deactivate the last admin.");
@@ -166,7 +190,10 @@ export function UsersPage() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    if (deleteTarget.role === "super_admin" && allUsers.filter((u) => u.role === "super_admin").length <= 1) {
+    if (
+      deleteTarget.role === "super_admin" &&
+      allUsers.filter((u) => u.role === "super_admin").length <= 1
+    ) {
       toast.error("Cannot delete the last admin.");
       setDeleteTarget(null);
       return;
@@ -181,54 +208,40 @@ export function UsersPage() {
   };
 
   const handleToggleRole = async (target: AdminUser) => {
-    if (target.role === "super_admin" && allUsers.filter((u) => u.role === "super_admin").length <= 1) {
+    if (
+      target.role === "super_admin" &&
+      allUsers.filter((u) => u.role === "super_admin").length <= 1
+    ) {
       toast.error("Cannot demote the last admin.");
       return;
     }
-    const nextRole: AdminUserRole = target.role === "admin" ? "super_admin" : "admin";
+    const nextRole: AdminUserRole =
+      target.role === "admin" ? "super_admin" : "admin";
     try {
       await updateRoleMutation.mutateAsync({ id: target.id, role: nextRole });
-      toast.success(`${target.name} is now ${roleLabel(nextRole).toLowerCase()}.`);
+      toast.success(
+        `${target.name} is now ${roleLabel(nextRole).toLowerCase()}.`,
+      );
     } catch (error) {
-      toast.error(errorMessage(error, "We couldn't change this account's role."));
+      toast.error(
+        errorMessage(error, "We couldn't change this account's role."),
+      );
     }
   };
 
-  const handleCreateStaff = async (values: Parameters<typeof createAdminUser>[0]) => {
+  const handleCreateAccount = async (
+    values: Parameters<typeof createAdminUser>[0],
+  ) => {
     await createUserMutation.mutateAsync(values);
+    setCurrentPage(1);
   };
 
-  // Staff/admin dialogs are rendered inside AdminAccountsManager; school-user dialog lives here.
-  const showSchoolDialog =
-    pendingUser !== null && !isStaffTarget(pendingUser) && tab === "school_user";
-  const showSchoolDeleteDialog =
-    deleteTarget !== null && !isStaffTarget(deleteTarget) && tab === "school_user";
-
-  const accountGroupSwitcher = isSuperAdmin ? (
-    <>
-      <label className="sr-only" htmlFor="user-group-select">
-        Filter by role
-      </label>
-      <select
-        id="user-group-select"
-        name="user-group"
-        value={tab}
-        onChange={(event) => switchTab(event.target.value as UsersTab)}
-        className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-      >
-        <option value="school_user">School Users ({schoolUsers.length})</option>
-        <option value="staff">Staff ({staffUsers.length})</option>
-        <option value="admin">Admins ({adminUsers.length})</option>
-      </select>
-    </>
-  ) : null;
-
-  const loadingPanelTitle =
-    tab === "school_user"
-      ? "School Users"
-      : tab === "staff"
-        ? "Staff"
-        : "Admins";
+  const countLabel =
+    activeRole === "school_user"
+      ? `${filteredUsers.length} users`
+      : activeRole === "staff"
+        ? `${filteredUsers.length} staff`
+        : `${filteredUsers.length} admins`;
 
   return (
     <AdminLayout
@@ -236,16 +249,10 @@ export function UsersPage() {
       showSearch
       query={query}
       onQueryChange={updateQuery}
-      searchPlaceholder={
-        tab === "staff"
-          ? "Search staff by name or email…"
-          : tab === "admin"
-            ? "Search admins by name or email…"
-            : "Search school users by name or email…"
-      }
+      searchPlaceholder="Search accounts by name or email…"
     >
       {usersQuery.isPending ? (
-        <Panel title={loadingPanelTitle}>
+        <Panel title="User Management">
           <div
             className="flex min-h-[400px] items-center justify-center px-5 py-10"
             role="status"
@@ -266,193 +273,281 @@ export function UsersPage() {
         </Panel>
       ) : usersQuery.isError ? (
         <FadeIn delay={0.05}>
-        <Panel title="Unable to load accounts">
-          <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-5 py-10 text-center">
-            <p className="text-sm text-red-700 dark:text-red-400" role="alert">
-              {errorMessage(usersQuery.error, "We couldn't load accounts.")}
-            </p>
-            <button
-              type="button"
-              onClick={() => void usersQuery.refetch()}
-              className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-            >
-              Try again
-            </button>
-          </div>
-        </Panel>
-        </FadeIn>
-      ) : tab === "school_user" ? (
-        <FadeIn key="school_user" delay={0.05}>
-        <Panel
-          title="School Users"
-          action={<span className="text-xs text-neutral-500 dark:text-neutral-400">{filteredSchoolUsers.length} users</span>}
-        >
-          <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
-            <div className="flex flex-wrap gap-2">
-              {accountGroupSwitcher}
-              <label className="sr-only" htmlFor="user-status-filter">
-                Filter by status
-              </label>
-              <select
-                id="user-status-filter"
-                name="user-status"
-                value={statusFilter}
-                onChange={(event) => {
-                  setStatusFilter(event.target.value);
-                  setCurrentPage(1);
-                }}
-                className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+          <Panel title="Unable to load accounts">
+            <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-5 py-10 text-center">
+              <p className="text-sm text-red-700 dark:text-red-400" role="alert">
+                {errorMessage(usersQuery.error, "We couldn't load accounts.")}
+              </p>
+              <button
+                type="button"
+                onClick={() => void usersQuery.refetch()}
+                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
               >
-                <option>All statuses</option>
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
+                Try again
+              </button>
             </div>
-          </div>
+          </Panel>
+        </FadeIn>
+      ) : (
+        <FadeIn delay={0.05}>
+          <Panel
+            title="User Management"
+            action={
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {countLabel}
+                </span>
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setCreateOpen(true)}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                  >
+                    <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                    Create account
+                  </button>
+                )}
+              </div>
+            }
+          >
+            <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
+              <div className="flex flex-wrap gap-2">
+                {isSuperAdmin && (
+                  <>
+                    <label className="sr-only" htmlFor="user-group-select">
+                      Filter by role
+                    </label>
+                    <select
+                      id="user-group-select"
+                      name="user-group"
+                      value={activeRole}
+                      onChange={(event) =>
+                        handleRoleFilterChange(event.target.value as RoleFilter)
+                      }
+                      className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    >
+                      <option value="school_user">
+                        School Users ({schoolUsers.length})
+                      </option>
+                      <option value="staff">
+                        Staff ({staffUsers.length})
+                      </option>
+                      <option value="admin">
+                        Admins ({adminUsers.length})
+                      </option>
+                    </select>
+                  </>
+                )}
+                <label className="sr-only" htmlFor="user-status-filter">
+                  Filter by status
+                </label>
+                <select
+                  id="user-status-filter"
+                  name="user-status"
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                >
+                  <option>All statuses</option>
+                  <option>Active</option>
+                  <option>Inactive</option>
+                </select>
+              </div>
+            </div>
 
-          {pageUsers.length === 0 ? (
-            <div className="flex min-h-[680px] items-center justify-center px-5 py-10">
-              <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">No users match these filters.</p>
-            </div>
-          ) : (
-            <div className="min-h-[680px] overflow-x-auto">
-              <table className="w-full min-w-[880px] text-left text-xs">
-                <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  <tr>
-                    <th scope="col" className="px-5 py-3">User</th>
-                    <th scope="col" className="px-4 py-3">Email</th>
-                    <th scope="col" className="px-4 py-3">Status</th>
-                    <th scope="col" className="px-4 py-3">Joined</th>
-                    <th scope="col" className="px-5 py-3"><span className="sr-only">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                  {pageUsers.map((user) => (
-                    <tr key={user.id} className="text-neutral-700 dark:text-neutral-300">
-                      <td className="px-5 py-3.5">
-                        <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">{user.name}</span>
-                      </td>
-                      <td className="max-w-56 px-4 py-3.5">
-                        <span className="block truncate">{user.email}</span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <StatusBadge status={user.isActive ? "Active" : "Inactive"} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3.5">{user.joined}</td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex justify-end">
-                          {user.isActive ? (
-                            <button
-                              type="button"
-                              onClick={() => handleStatusClick(user)}
-                              disabled={updateStatusMutation.isPending}
-                              aria-label={`Deactivate ${user.name}`}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                            >
-                              <Power className="h-3 w-3" aria-hidden="true" />
-                              Deactivate
-                            </button>
+            {pageUsers.length === 0 ? (
+              <div className="flex min-h-[520px] items-center justify-center px-5 py-10">
+                <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+                  No accounts match these filters.
+                </p>
+              </div>
+            ) : (
+              <div className="min-h-[520px] overflow-x-auto">
+                <table className="w-full min-w-[920px] text-left text-xs">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                    <tr>
+                      <th scope="col" className="px-5 py-3">
+                        User
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Email
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Role
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Status
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Joined
+                      </th>
+                      <th scope="col" className="px-4 py-3">
+                        Reports
+                      </th>
+                      <th scope="col" className="px-5 py-3">
+                        <span className="sr-only">Actions</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                    {pageUsers.map((user) => (
+                      <tr
+                        key={user.id}
+                        className="text-neutral-700 dark:text-neutral-300"
+                      >
+                        <td className="px-5 py-3.5">
+                          <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">
+                            {user.name}
+                          </span>
+                        </td>
+                        <td className="max-w-56 px-4 py-3.5">
+                          <span className="block truncate">{user.email}</span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {user.role === "school_user" ? (
+                            <StatusBadge status={roleLabel(user.role)} />
                           ) : (
                             <button
                               type="button"
-                              onClick={() => handleStatusClick(user)}
-                              disabled={updateStatusMutation.isPending}
-                              aria-label={`Activate ${user.name}`}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 dark:border-neutral-800 px-3 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                              title="Toggle staff / admin role"
+                              onClick={() => void handleToggleRole(user)}
+                              disabled={updateRoleMutation.isPending}
+                              className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                             >
-                              <Check className="h-3 w-3" aria-hidden="true" />
-                              Activate
+                              <StatusBadge status={roleLabel(user.role)} />
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTarget(user)}
-                            disabled={deleteUserMutation.isPending}
-                            aria-label={`Remove ${user.name}`}
-                            className="ml-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50"
-                          >
-                            <Trash2 className="h-3 w-3" aria-hidden="true" />
-                            Remove
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">
-              Showing {rangeStart}–{rangeEnd} of {filteredSchoolUsers.length}
-            </p>
-            {pageCount > 1 && (
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  aria-label="Previous page"
-                  disabled={page <= 1}
-                  onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
-                >
-                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                </button>
-                {Array.from({ length: pageCount }, (_, index) => (
-                  <button
-                    key={index + 1}
-                    type="button"
-                    onClick={() => setCurrentPage(index + 1)}
-                    aria-label={`Page ${index + 1}`}
-                    aria-current={page === index + 1 ? "page" : undefined}
-                    className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
-                      page === index + 1
-                        ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
-                        : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  aria-label="Next page"
-                  disabled={page >= pageCount}
-                  onClick={() => setCurrentPage((value) => Math.min(pageCount, value + 1))}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
-                >
-                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                </button>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <StatusBadge
+                            status={user.isActive ? "Active" : "Inactive"}
+                          />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3.5">
+                          {user.joined}
+                        </td>
+                        <td className="px-4 py-3.5 tabular-nums">
+                          {user.reportCount}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex justify-end">
+                            {user.isActive ? (
+                              <button
+                                type="button"
+                                onClick={() => setPendingUser(user)}
+                                disabled={updateStatusMutation.isPending}
+                                aria-label={`Deactivate ${user.name}`}
+                                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                              >
+                                <Power
+                                  className="h-3 w-3"
+                                  aria-hidden="true"
+                                />
+                                Deactivate
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setPendingUser(user)}
+                                disabled={updateStatusMutation.isPending}
+                                aria-label={`Activate ${user.name}`}
+                                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 dark:border-neutral-800 px-3 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                              >
+                                <Check
+                                  className="h-3 w-3"
+                                  aria-hidden="true"
+                                />
+                                Activate
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(user)}
+                              disabled={deleteUserMutation.isPending}
+                              aria-label={`Remove ${user.name}`}
+                              className="ml-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50"
+                            >
+                              <Trash2
+                                className="h-3 w-3"
+                                aria-hidden="true"
+                              />
+                              Remove
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
-          </div>
-        </Panel>
+
+            <div className="flex flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <p
+                className="text-xs text-neutral-500 dark:text-neutral-400"
+                aria-live="polite"
+              >
+                Showing {rangeStart}–{rangeEnd} of {filteredUsers.length}
+              </p>
+              {pageCount > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    aria-label="Previous page"
+                    disabled={page <= 1}
+                    onClick={() =>
+                      setCurrentPage((value) => Math.max(1, value - 1))
+                    }
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+                  >
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  {Array.from({ length: pageCount }, (_, index) => (
+                    <button
+                      key={index + 1}
+                      type="button"
+                      onClick={() => setCurrentPage(index + 1)}
+                      aria-label={`Page ${index + 1}`}
+                      aria-current={page === index + 1 ? "page" : undefined}
+                      className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                        page === index + 1
+                          ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                          : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    aria-label="Next page"
+                    disabled={page >= pageCount}
+                    onClick={() =>
+                      setCurrentPage((value) => Math.min(pageCount, value + 1))
+                    }
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+                  >
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </Panel>
         </FadeIn>
-      ) : (
-        <AdminAccountsManager
-          key={tab}
-          staff={tab === "staff" ? staffUsers : adminUsers}
-          allEmails={allUserEmails}
-          roleView={tab}
-          query={query}
-          accountGroupSwitcher={accountGroupSwitcher}
-          onCreateStaff={handleCreateStaff}
-          onStatusChange={handleStatusClick}
-          onDelete={(user) => setDeleteTarget(user)}
-          onToggleRole={handleToggleRole}
-          pendingUser={isStaffTarget(pendingUser) ? pendingUser : null}
-          deleteTarget={deleteTarget}
-          onPendingChange={setPendingUser}
-          onDeleteTargetChange={setDeleteTarget}
-          onConfirmStatusChange={confirmStatusChange}
-          onConfirmDelete={confirmDelete}
-          isSavingStatus={updateStatusMutation.isPending}
-          isSavingRole={updateRoleMutation.isPending}
-          isSavingDelete={deleteUserMutation.isPending}
-        />
       )}
 
-      {showSchoolDialog && pendingUser && (
+      <CreateAccountModal
+        open={createOpen}
+        defaultRole={activeRole === "admin" ? "super_admin" : "admin"}
+        existingEmails={allUserEmails}
+        onClose={() => setCreateOpen(false)}
+        onCreateAccount={handleCreateAccount}
+      />
+
+      {pendingUser && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-neutral-950/50 p-4"
           onMouseDown={(event) => {
@@ -466,19 +561,32 @@ export function UsersPage() {
             aria-describedby="user-status-description"
             className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
-            <h2 id="user-status-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              {pendingUser.isActive ? "Deactivate user?" : "Activate user?"}
+            <h2
+              id="user-status-title"
+              className="text-base font-bold text-neutral-900 dark:text-neutral-100"
+            >
+              {pendingUser.isActive
+                ? "Deactivate account?"
+                : "Activate account?"}
             </h2>
-            <p id="user-status-description" className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+            <p
+              id="user-status-description"
+              className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
+            >
               {pendingUser.isActive ? (
                 <>
-                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">{pendingUser.name}</span> will lose
-                  access to FoundIt immediately and be signed out of all sessions.
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {pendingUser.name}
+                  </span>{" "}
+                  will lose access to FoundIt immediately and be signed out of
+                  all sessions.
                 </>
               ) : (
                 <>
-                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">{pendingUser.name}</span> will regain
-                  access to FoundIt.
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {pendingUser.name}
+                  </span>{" "}
+                  will regain access to FoundIt.
                 </>
               )}
             </p>
@@ -493,7 +601,7 @@ export function UsersPage() {
               </button>
               <button
                 type="button"
-                onClick={confirmStatusChange}
+                onClick={() => void confirmStatusChange()}
                 disabled={updateStatusMutation.isPending}
                 className={`h-9 rounded-lg px-3.5 text-xs font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                   pendingUser.isActive
@@ -511,7 +619,8 @@ export function UsersPage() {
           </div>
         </div>
       )}
-      {showSchoolDeleteDialog && deleteTarget && (
+
+      {deleteTarget && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-neutral-950/50 p-4"
           onMouseDown={(event) => {
@@ -525,10 +634,16 @@ export function UsersPage() {
             aria-describedby="user-delete-description"
             className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
           >
-            <h2 id="user-delete-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+            <h2
+              id="user-delete-title"
+              className="text-base font-bold text-neutral-900 dark:text-neutral-100"
+            >
               Remove this account?
             </h2>
-            <p id="user-delete-description" className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+            <p
+              id="user-delete-description"
+              className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400"
+            >
               This permanently removes{" "}
               <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                 {deleteTarget.email}

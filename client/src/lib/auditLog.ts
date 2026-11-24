@@ -36,10 +36,11 @@ export async function fetchAuditLogs(): Promise<AuditLogEntry[]> {
   return data.logs;
 }
 
-export function useAuditLogs() {
+export function useAuditLogs(enabled = true) {
   return useQuery({
     queryKey: ["audit-logs"],
     queryFn: fetchAuditLogs,
+    enabled,
     staleTime: 15_000,
   });
 }

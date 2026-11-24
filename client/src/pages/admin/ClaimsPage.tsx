@@ -82,7 +82,7 @@ export function ClaimsPage() {
           onClick={() => switchTab("claims")}
           className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
             activeTab === "claims"
-              ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+              ? "bg-[#E5192D] text-white"
               : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
           }`}
         >
@@ -91,7 +91,7 @@ export function ClaimsPage() {
           <span
             className={`rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums ${
               activeTab === "claims"
-                ? "bg-white/15 text-white dark:bg-neutral-900/15 dark:text-neutral-900"
+                ? "bg-white/20 text-white"
                 : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
             }`}
           >
@@ -105,16 +105,16 @@ export function ClaimsPage() {
           onClick={() => switchTab("returns")}
           className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
             activeTab === "returns"
-              ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+              ? "bg-[#E5192D] text-white"
               : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
           }`}
         >
           <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>Return Items</span>
+          <span>Return</span>
           <span
             className={`rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums ${
               activeTab === "returns"
-                ? "bg-white/15 text-white dark:bg-neutral-900/15 dark:text-neutral-900"
+                ? "bg-white/20 text-white"
                 : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
             }`}
           >

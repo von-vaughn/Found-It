@@ -1,16 +1,10 @@
-/* eslint-disable react-refresh/only-export-components -- shared manager + helpers live together */
-import { useMemo, useState, type ReactNode } from "react";
-import { Check, ChevronLeft, ChevronRight, Plus, Power, Trash2 } from "lucide-react";
+/* eslint-disable react-refresh/only-export-components -- shared modal + roleLabel helper live together */
+import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { FadeIn } from "@/components/FadeIn";
-import { Panel } from "@/components/admin/Panel";
-import { StatusBadge } from "@/components/admin/StatusBadge";
-import type { AdminUser, AdminUserRole } from "@/components/admin/types";
+import type { AdminUserRole } from "@/components/admin/types";
 import type { CreateAdminUserPayload } from "@/services/adminUserService";
-
-const PAGE_SIZE = 10;
 
 const createAdminSchema = z.object({
   name: z
@@ -20,7 +14,10 @@ const createAdminSchema = z.object({
     .max(100)
     .refine((name) => {
       const [firstName, ...lastNameParts] = name.split(/\s+/);
-      return firstName.length <= 50 && (lastNameParts.join(" ") || firstName).length <= 50;
+      return (
+        firstName.length <= 50 &&
+        (lastNameParts.join(" ") || firstName).length <= 50
+      );
     }, "Each part of the name must be at most 50 characters"),
   email: z.string().trim().toLowerCase().email("Enter a valid email address"),
   password: z
@@ -36,69 +33,27 @@ const createAdminSchema = z.object({
 
 export type CreateAdminValues = z.infer<typeof createAdminSchema>;
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 export function roleLabel(role: AdminUserRole): string {
   if (role === "super_admin") return "Admin";
   if (role === "admin") return "Staff";
   return "School user";
 }
 
-interface AdminAccountsManagerProps {
-  staff: AdminUser[];
-  allEmails?: string[];
-  roleView: "staff" | "admin";
-  query: string;
-  accountGroupSwitcher?: ReactNode;
-  onCreateStaff: (values: CreateAdminUserPayload) => Promise<void>;
-  onStatusChange: (user: AdminUser) => void;
-  onDelete: (user: AdminUser) => void;
-  onToggleRole: (user: AdminUser) => void;
-  pendingUser: AdminUser | null;
-  deleteTarget: AdminUser | null;
-  onPendingChange: (user: AdminUser | null) => void;
-  onDeleteTargetChange: (user: AdminUser | null) => void;
-  onConfirmStatusChange: () => void;
-  onConfirmDelete: () => void;
-  isSavingStatus: boolean;
-  isSavingRole: boolean;
-  isSavingDelete: boolean;
+interface CreateAccountModalProps {
+  open: boolean;
+  defaultRole: "admin" | "super_admin";
+  existingEmails: string[];
+  onClose: () => void;
+  onCreateAccount: (values: CreateAdminUserPayload) => Promise<void>;
 }
 
-export function AdminAccountsManager({
-  staff,
-  allEmails,
-  roleView,
-  query,
-  accountGroupSwitcher,
-  onCreateStaff,
-  pendingUser,
-  deleteTarget,
-  onPendingChange,
-  onDeleteTargetChange,
-  onConfirmStatusChange,
-  onConfirmDelete,
-  onStatusChange,
-  onDelete,
-  onToggleRole,
-  isSavingStatus,
-  isSavingRole,
-  isSavingDelete,
-}: AdminAccountsManagerProps) {
-  const [statusFilter, setStatusFilter] = useState("All statuses");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [createOpen, setCreateOpen] = useState(false);
-
-  const defaultCreateRole: "admin" | "super_admin" =
-    roleView === "admin" ? "super_admin" : "admin";
-
+export function CreateAccountModal({
+  open,
+  defaultRole,
+  existingEmails,
+  onClose,
+  onCreateAccount,
+}: CreateAccountModalProps) {
   const {
     register,
     handleSubmit,
@@ -106,28 +61,16 @@ export function AdminAccountsManager({
     setError,
     formState: { errors, isSubmitting },
   } = useForm<CreateAdminValues>({
-    defaultValues: { name: "", email: "", password: "", role: defaultCreateRole },
+    defaultValues: { name: "", email: "", password: "", role: defaultRole },
   });
 
-  const filteredStaff = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return staff.filter((user) => {
-      if (
-        statusFilter !== "All statuses" &&
-        (user.isActive ? "Active" : "Inactive") !== statusFilter
-      ) {
-        return false;
-      }
-      if (!q) return true;
-      return [user.name, user.email, user.id].join(" ").toLowerCase().includes(q);
-    });
-  }, [query, statusFilter, staff]);
+  useEffect(() => {
+    if (open) {
+      reset({ name: "", email: "", password: "", role: defaultRole });
+    }
+  }, [open, defaultRole, reset]);
 
-  const pageCount = Math.max(1, Math.ceil(filteredStaff.length / PAGE_SIZE));
-  const page = Math.min(currentPage, pageCount);
-  const pageStaff = filteredStaff.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const rangeStart = filteredStaff.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const rangeEnd = Math.min(page * PAGE_SIZE, filteredStaff.length);
+  if (!open) return null;
 
   const onCreate = async (rawValues: CreateAdminValues) => {
     setError("root.server", { message: "" });
@@ -139,13 +82,18 @@ export function AdminAccountsManager({
       return;
     }
     const values = parsed.data;
-    const existingEmails = allEmails ?? staff.map((u) => u.email);
-    if (existingEmails.some((email) => email.toLowerCase() === values.email.toLowerCase())) {
-      setError("email", { message: "An account with this email already exists." });
+    if (
+      existingEmails.some(
+        (email) => email.toLowerCase() === values.email.toLowerCase(),
+      )
+    ) {
+      setError("email", {
+        message: "An account with this email already exists.",
+      });
       return;
     }
     try {
-      await onCreateStaff({
+      await onCreateAccount({
         ...values,
         name: values.name.trim(),
         email: values.email.trim().toLowerCase(),
@@ -154,8 +102,7 @@ export function AdminAccountsManager({
         `${values.name} created as ${roleLabel(values.role).toLowerCase()}.`,
       );
       reset();
-      setCreateOpen(false);
-      setCurrentPage(1);
+      onClose();
     } catch (error) {
       const responseData = (
         error as {
@@ -183,7 +130,8 @@ export function AdminAccountsManager({
       }
       setError("root.server", {
         message:
-          responseData?.message && responseData.message !== "Validation failed."
+          responseData?.message &&
+          responseData.message !== "Validation failed."
             ? responseData.message
             : responseData?.errors?.length
               ? "Check the account details and try again."
@@ -192,406 +140,131 @@ export function AdminAccountsManager({
     }
   };
 
-  const panelTitle = roleView === "admin" ? "Admins" : "Staff";
-  const countUnit = roleView === "admin" ? "admins" : "staff";
-
   return (
-    <>
-      <FadeIn delay={0.05}>
-      <Panel
-        title={panelTitle}
-        action={
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-              {filteredStaff.length} {countUnit}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                reset({
-                  name: "",
-                  email: "",
-                  password: "",
-                  role: defaultCreateRole,
-                });
-                setCreateOpen(true);
-              }}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              Create account
-            </button>
-          </div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-neutral-950/50 p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !isSubmitting) {
+          onClose();
         }
+      }}
+    >
+      <form
+        onSubmit={handleSubmit(onCreate)}
+        className="w-full max-w-md rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
       >
-        <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
-          <div className="flex flex-wrap gap-2">
-            {accountGroupSwitcher}
-            <label className="sr-only" htmlFor="staff-status-filter">
-              Filter by status
-            </label>
-            <select
-              id="staff-status-filter"
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-9 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-            >
-              <option>All statuses</option>
-              <option>Active</option>
-              <option>Inactive</option>
-            </select>
-          </div>
-        </div>
-
-        {pageStaff.length === 0 ? (
-          <div className="flex min-h-[400px] items-center justify-center px-5 py-10">
-            <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
-              {roleView === "admin"
-                ? "No admin accounts match these filters."
-                : "No staff accounts match these filters."}
+        <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+          Create staff or admin account
+        </h2>
+        <div className="mt-4 space-y-3">
+          {errors.root?.server?.message && (
+            <p className="text-xs text-red-600" role="alert">
+              {errors.root.server.message}
             </p>
-          </div>
-        ) : (
-          <div className="min-h-[400px] overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left text-xs">
-              <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                <tr>
-                  <th scope="col" className="px-5 py-3">Account</th>
-                  <th scope="col" className="px-4 py-3">Role</th>
-                  <th scope="col" className="px-4 py-3">Status</th>
-                  <th scope="col" className="px-4 py-3">Joined</th>
-                  <th scope="col" className="px-4 py-3">Reports</th>
-                  <th scope="col" className="px-5 py-3"><span className="sr-only">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {pageStaff.map((admin) => (
-                  <tr key={admin.id} className="text-neutral-700 dark:text-neutral-300">
-                    <td className="px-5 py-3.5">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span
-                          aria-hidden="true"
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-bold text-white"
-                        >
-                          {initials(admin.name)}
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate font-semibold text-neutral-900 dark:text-neutral-100">
-                            {admin.name}
-                          </span>
-                          <span className="block truncate text-[11px] text-neutral-500 dark:text-neutral-400">
-                            {admin.email}
-                          </span>
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <button
-                        type="button"
-                        title="Toggle staff / admin role"
-                        onClick={() => onToggleRole(admin)}
-                        disabled={isSavingRole}
-                        className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                      >
-                        <StatusBadge status={roleLabel(admin.role)} />
-                      </button>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <StatusBadge status={admin.isActive ? "Active" : "Inactive"} />
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3.5">{admin.joined}</td>
-                    <td className="px-4 py-3.5 tabular-nums">{admin.reportCount}</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex justify-end gap-2">
-                        {admin.isActive ? (
-                          <button
-                            type="button"
-                            onClick={() => onStatusChange(admin)}
-                            disabled={isSavingStatus}
-                            aria-label={`Deactivate ${admin.name}`}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 dark:border-red-500/30 px-3 text-[11px] font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                          >
-                            <Power className="h-3 w-3" aria-hidden="true" />
-                            Deactivate
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => onStatusChange(admin)}
-                            disabled={isSavingStatus}
-                            aria-label={`Activate ${admin.name}`}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 dark:border-neutral-800 px-3 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                          >
-                            <Check className="h-3 w-3" aria-hidden="true" />
-                            Activate
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => onDelete(admin)}
-                          disabled={isSavingDelete}
-                          aria-label={`Remove ${admin.name}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-neutral-200 dark:border-neutral-800 text-red-700 dark:text-red-400 transition-colors hover:bg-red-50 hover:text-red-800 dark:hover:bg-red-950/30 dark:hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">
-            Showing {rangeStart}–{rangeEnd} of {filteredStaff.length}
-          </p>
-          {pageCount > 1 && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-label="Previous page"
-                disabled={page <= 1}
-                onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
-              >
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-              </button>
-              {Array.from({ length: pageCount }, (_, index) => (
-                <button
-                  key={index + 1}
-                  type="button"
-                  onClick={() => setCurrentPage(index + 1)}
-                  aria-label={`Page ${index + 1}`}
-                  aria-current={page === index + 1 ? "page" : undefined}
-                  className={`h-7 min-w-7 rounded-md px-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
-                    page === index + 1
-                      ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
-                      : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
-                  }`}
-                >
-                  {index + 1}
-                </button>
-              ))}
-              <button
-                type="button"
-                aria-label="Next page"
-                disabled={page >= pageCount}
-                onClick={() => setCurrentPage((value) => Math.min(pageCount, value + 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-default disabled:opacity-40"
-              >
-                <ChevronRight className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
           )}
-        </div>
-      </Panel>
-      </FadeIn>
-
-      {createOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-neutral-950/50 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !isSubmitting) {
-              setCreateOpen(false);
-            }
-          }}
-        >
-          <form
-            onSubmit={handleSubmit(onCreate)}
-            className="w-full max-w-md rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
-          >
-            <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Create staff or admin account</h2>
-            <div className="mt-4 space-y-3">
-              {errors.root?.server?.message && (
-                <p className="text-xs text-red-600" role="alert">
-                  {errors.root.server.message}
+          <div>
+            <label
+              htmlFor="staff-name"
+              className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+            >
+              Full Name
+            </label>
+            <input
+              id="staff-name"
+              type="text"
+              autoComplete="name"
+              placeholder="e.g. OSA Officer"
+              {...register("name")}
+              className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              disabled={isSubmitting}
+            />
+            {errors.name && (
+              <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
+            )}
+          </div>
+          <div>
+            <label
+              htmlFor="staff-email"
+              className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+            >
+              Email
+            </label>
+            <input
+              id="staff-email"
+              type="email"
+              autoComplete="email"
+              placeholder="admin@wmsu.edu.ph"
+              {...register("email")}
+              className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+              disabled={isSubmitting}
+            />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label
+                htmlFor="staff-password"
+                className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+              >
+                Password
+              </label>
+              <input
+                id="staff-password"
+                type="password"
+                autoComplete="new-password"
+                placeholder="Min. 8 characters"
+                {...register("password")}
+                className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                disabled={isSubmitting}
+              />
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.password.message}
                 </p>
               )}
-              <div>
-                <label htmlFor="staff-name" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                  Full Name
-                </label>
-                <input
-                  id="staff-name"
-                  type="text"
-                  autoComplete="name"
-                  placeholder="e.g. OSA Officer"
-                  {...register("name")}
-                  className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                  disabled={isSubmitting}
-                />
-                {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
-              </div>
-              <div>
-                <label htmlFor="staff-email" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                  Email
-                </label>
-                <input
-                  id="staff-email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="admin@wmsu.edu.ph"
-                  {...register("email")}
-                  className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                  disabled={isSubmitting}
-                />
-                {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="staff-password" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Password
-                  </label>
-                  <input
-                    id="staff-password"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Min. 8 characters"
-                    {...register("password")}
-                    className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                    disabled={isSubmitting}
-                  />
-                  {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
-                </div>
-                <div>
-                  <label htmlFor="staff-role" className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    Role
-                  </label>
-                  <select
-                    id="staff-role"
-                    {...register("role")}
-                    className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                    disabled={isSubmitting}
-                  >
-                    <option value="admin">Staff</option>
-                    <option value="super_admin">Admin</option>
-                  </select>
-                </div>
-              </div>
             </div>
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
+            <div>
+              <label
+                htmlFor="staff-role"
+                className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+              >
+                Role
+              </label>
+              <select
+                id="staff-role"
+                {...register("role")}
+                className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 disabled={isSubmitting}
-                onClick={() => {
-                  setCreateOpen(false);
-                  reset();
-                }}
-                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="h-9 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:opacity-60"
-              >
-                {isSubmitting ? "Creating…" : "Create account"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {pendingUser && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-neutral-950/50 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) onPendingChange(null);
-          }}
-        >
-          <div
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="staff-status-title"
-            className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
-          >
-            <h2 id="staff-status-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              {pendingUser.isActive ? "Deactivate account?" : "Activate account?"}
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-              <span className="font-semibold text-neutral-900 dark:text-neutral-100">{pendingUser.name}</span>{" "}
-              {pendingUser.isActive
-                ? "will lose access immediately and be signed out."
-                : "will regain access to the workspace."}
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => onPendingChange(null)}
-                disabled={isSavingStatus}
-                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={onConfirmStatusChange}
-                disabled={isSavingStatus}
-                className={`h-9 rounded-lg px-3.5 text-xs font-semibold text-white ${
-                  pendingUser.isActive
-                    ? "bg-[#E5192D] hover:bg-[#c81424]"
-                    : "bg-neutral-900 hover:bg-neutral-700"
-                }`}
-              >
-                {isSavingStatus
-                  ? "Saving…"
-                  : pendingUser.isActive
-                    ? "Deactivate"
-                    : "Activate"}
-              </button>
+                <option value="admin">Staff</option>
+                <option value="super_admin">Admin</option>
+              </select>
             </div>
           </div>
         </div>
-      )}
-
-      {deleteTarget && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-neutral-950/50 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) onDeleteTargetChange(null);
-          }}
-        >
-          <div
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="staff-delete-title"
-            className="w-full max-w-sm rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-xl"
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => {
+              reset();
+              onClose();
+            }}
+            className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
           >
-            <h2 id="staff-delete-title" className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              Remove account?
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-              <span className="font-semibold text-neutral-900 dark:text-neutral-100">{deleteTarget.name}</span> will
-              be permanently removed from staff &amp; admin accounts. This cannot be undone.
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => onDeleteTargetChange(null)}
-                disabled={isSavingDelete}
-                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={onConfirmDelete}
-                disabled={isSavingDelete}
-                className="h-9 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white hover:bg-[#c81424]"
-              >
-                {isSavingDelete ? "Removing…" : "Remove"}
-              </button>
-            </div>
-          </div>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="h-9 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:opacity-50"
+          >
+            {isSubmitting ? "Creating…" : "Create account"}
+          </button>
         </div>
-      )}
-    </>
+      </form>
+    </div>
   );
 }
