@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Camera, CameraOff, ImagePlus, Lock, RotateCcw, X } from "lucide-react";
+import { Camera, CameraOff, ImagePlus, Lock, X } from "lucide-react";
 import { SelectDropdown } from "@/components/SelectDropdown";
 import {
   MAX_POST_IMAGES,
@@ -189,12 +189,14 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [importantDetails, setImportantDetails] = useState("");
   const [category, setCategory] = useState<Item["category"] | "">("");
   const [customCategory, setCustomCategory] = useState("");
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<File | Blob | null>(null);
+  const [foundImages, setFoundImages] = useState<string[]>([]);
+  const [foundFileMap, setFoundFileMap] = useState<Record<string, File | Blob>>({});
+  const [foundImagesChanged, setFoundImagesChanged] = useState(false);
   const [lostImages, setLostImages] = useState<string[]>([]);
   const [lostFileMap, setLostFileMap] = useState<Record<string, File | Blob>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
+  const foundUrlsRef = useRef<string[]>([]);
   const lostUrlsRef = useRef<string[]>([]);
   const [photoRequiredError, setPhotoRequiredError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -252,15 +254,17 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setImportantDetails(initialItem.confidentialInfo ?? "");
         setCategory(initialItem.category);
         setCustomCategory(initialItem.customCategory ?? "");
-        setUploadedImage(initialItem.image || null);
-        setUploadedFile(null);
-        const existingLostImages =
+        const existingImages = (
           initialItem.images && initialItem.images.length > 0
             ? initialItem.images
             : initialItem.image
               ? [initialItem.image]
-              : [];
-        setLostImages(existingLostImages);
+              : []
+        ).slice(0, MAX_POST_IMAGES);
+        setFoundImages(initialItem.type === "found" ? existingImages : []);
+        setFoundFileMap({});
+        setFoundImagesChanged(false);
+        setLostImages(initialItem.type === "lost" ? existingImages : []);
         setLostFileMap({});
       } else if (initialDraft) {
         setType(initialDraft.type);
@@ -278,9 +282,18 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setImportantDetails(initialDraft.importantDetails ?? "");
         setCategory(initialDraft.category ?? "");
         setCustomCategory(initialDraft.customCategory ?? "");
-        setUploadedImage(null);
-        setUploadedFile(null);
-        setLostImages((initialDraft.images ?? []).slice(0, MAX_POST_IMAGES));
+        setFoundImages(
+          initialDraft.type === "found"
+            ? (initialDraft.images ?? []).slice(0, MAX_POST_IMAGES)
+            : [],
+        );
+        setFoundFileMap({});
+        setFoundImagesChanged(false);
+        setLostImages(
+          initialDraft.type === "lost"
+            ? (initialDraft.images ?? []).slice(0, MAX_POST_IMAGES)
+            : [],
+        );
         setLostFileMap({});
       } else {
         setType(initialType);
@@ -294,8 +307,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setImportantDetails("");
         setCategory("");
         setCustomCategory("");
-        setUploadedImage(null);
-        setUploadedFile(null);
+        setFoundImages([]);
+        setFoundFileMap({});
+        setFoundImagesChanged(false);
         setLostImages([]);
         setLostFileMap({});
       }
@@ -303,14 +317,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   }
 
   // Avoid leaking object URLs created for uploaded previews.
-  useEffect(() => {
-    return () => {
-      if (uploadedImage) URL.revokeObjectURL(uploadedImage);
-    };
-  }, [uploadedImage]);
-
   useEffect(
     () => () => {
+      foundUrlsRef.current.forEach((url) => {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
       lostUrlsRef.current.forEach((url) => {
         if (url.startsWith("blob:")) URL.revokeObjectURL(url);
       });
@@ -318,14 +329,20 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     [],
   );
 
-  // lostUrlsRef tracks created object URLs for revocation only. It must never
-  // alias lostImages, or the push in handleLostFileChange mutates state.
+  // foundUrlsRef / lostUrlsRef track created object URLs for revocation only.
+  // They must never alias state arrays.
 
-  // Live camera for found-item photos (desktop only): runs only while the
-  // form is active on the Found tab without a photo yet. Mobile uses the
-  // native camera file input instead.
+  // Live camera for found-item photos (desktop only): runs while the form is
+  // active on the Found tab and fewer than MAX_POST_IMAGES photos are captured.
+  // Mobile uses the native camera file input instead.
+  const needsLiveCamera =
+    active &&
+    type === "found" &&
+    !isMobileView &&
+    foundImages.length < MAX_POST_IMAGES;
+
   useEffect(() => {
-    if (!active || type !== "found" || uploadedImage || isMobileView) return;
+    if (!needsLiveCamera) return;
 
     let cancelled = false;
     let stream: MediaStream | null = null;
@@ -379,17 +396,21 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       if (stream !== activeStream) stopCameraStream(stream);
       if (videoElement) videoElement.srcObject = null;
     };
-  }, [active, type, uploadedImage, isMobileView]);
-
-  const previewImage = uploadedImage;
+  }, [needsLiveCamera]);
 
   const handleFoundTabSelect = () => {
     setType("found");
-    setCameraState("starting");
-    setCameraError(null);
+    if (foundImages.length < MAX_POST_IMAGES) {
+      setCameraState("starting");
+      setCameraError(null);
+    }
   };
 
   const handleTakePhoto = () => {
+    if (foundImages.length >= MAX_POST_IMAGES) {
+      toast.error(`You can attach up to ${MAX_POST_IMAGES} pictures.`);
+      return;
+    }
     const video = videoRef.current;
     if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
       toast.error("The camera preview is not ready. Try again in a moment.");
@@ -411,19 +432,43 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         toast.error("Could not capture the photo. Please try again.");
         return;
       }
-      if (uploadedImage) URL.revokeObjectURL(uploadedImage);
-      setUploadedImage(URL.createObjectURL(blob));
-      setUploadedFile(blob);
+      const previewUrl = URL.createObjectURL(blob);
+      foundUrlsRef.current.push(previewUrl);
+      setFoundImages((current) => {
+        if (current.length >= MAX_POST_IMAGES) {
+          URL.revokeObjectURL(previewUrl);
+          return current;
+        }
+        return [...current, previewUrl];
+      });
+      setFoundFileMap((current) => ({ ...current, [previewUrl]: blob }));
+      setFoundImagesChanged(true);
       setPhotoRequiredError(false);
     }, "image/jpeg", 0.92);
   };
 
-  const handleRetakePhoto = () => {
-    if (uploadedImage) URL.revokeObjectURL(uploadedImage);
-    setUploadedImage(null);
-    setUploadedFile(null);
-    setCameraState("starting");
-    setCameraError(null);
+  const handleRemoveFoundImage = (previewToRemove: string) => {
+    const wasAtMax = foundImages.length >= MAX_POST_IMAGES;
+    if (previewToRemove.startsWith("blob:")) {
+      URL.revokeObjectURL(previewToRemove);
+    }
+    foundUrlsRef.current = foundUrlsRef.current.filter(
+      (url) => url !== previewToRemove,
+    );
+    setFoundImages((current) =>
+      current.filter((preview) => preview !== previewToRemove),
+    );
+    setFoundFileMap((current) => {
+      if (!(previewToRemove in current)) return current;
+      const next = { ...current };
+      delete next[previewToRemove];
+      return next;
+    });
+    setFoundImagesChanged(true);
+    if (wasAtMax && !isMobileView) {
+      setCameraState("starting");
+      setCameraError(null);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -431,11 +476,19 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Please choose an image file.");
+      e.target.value = "";
       return;
     }
-    if (uploadedImage) URL.revokeObjectURL(uploadedImage);
-    setUploadedImage(URL.createObjectURL(file));
-    setUploadedFile(file);
+    if (foundImages.length >= MAX_POST_IMAGES) {
+      toast.error(`You can attach up to ${MAX_POST_IMAGES} pictures.`);
+      e.target.value = "";
+      return;
+    }
+    const previewUrl = URL.createObjectURL(file);
+    foundUrlsRef.current.push(previewUrl);
+    setFoundImages((current) => [...current, previewUrl]);
+    setFoundFileMap((current) => ({ ...current, [previewUrl]: file }));
+    setFoundImagesChanged(true);
     setPhotoRequiredError(false);
     // Reset so picking the same file twice still fires onChange.
     e.target.value = "";
@@ -594,7 +647,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     if (isSubmittingRef.current) return;
 
     const errors = validateFields();
-    const photoMissing = type === "found" && !previewImage;
+    const photoMissing = type === "found" && foundImages.length === 0;
     setFieldErrors(errors);
     setPhotoRequiredError(photoMissing);
 
@@ -636,16 +689,28 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
         // Upload images if any
         if (type === "found") {
-          if (uploadedFile) {
-            const uploadRes = await uploadFoundImage(uploadedFile);
-            finalImageUrl = uploadRes.url;
-            finalImageUrls = [uploadRes.url];
-            if (uploadRes.blurredUrl) {
-              finalBlurredUrls = [uploadRes.blurredUrl];
+          const uploadedUrls: string[] = [];
+          const uploadedBlurred: string[] = [];
+          let allHaveBlurred = true;
+          for (const imgUrl of foundImages) {
+            const fileForUrl = foundFileMap[imgUrl];
+            if (fileForUrl) {
+              const uploadRes = await uploadFoundImage(fileForUrl);
+              uploadedUrls.push(uploadRes.url);
+              if (uploadRes.blurredUrl) {
+                uploadedBlurred.push(uploadRes.blurredUrl);
+              } else {
+                allHaveBlurred = false;
+              }
+            } else if (!imgUrl.startsWith("blob:")) {
+              uploadedUrls.push(imgUrl);
+              allHaveBlurred = false;
             }
-          } else if (previewImage && !previewImage.startsWith("blob:")) {
-            finalImageUrl = previewImage;
-            finalImageUrls = [previewImage];
+          }
+          finalImageUrls = uploadedUrls;
+          finalImageUrl = uploadedUrls[0] ?? "";
+          if (allHaveBlurred && uploadedBlurred.length === uploadedUrls.length) {
+            finalBlurredUrls = uploadedBlurred;
           }
         } else {
           // lost item
@@ -673,7 +738,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
         if (isEditing && initialItem) {
           const shouldSendImages =
-            type === "lost" || Boolean(uploadedFile);
+            type === "lost" || foundImagesChanged;
           // PATCH /api/items/:id — server-side update so the edit persists for
           // everyone; omit unchanged found-item images so existing blurred URLs stay intact.
           const updated = await updateItemMutation.mutateAsync({
@@ -790,7 +855,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         {/* Left: photo — live camera for found items, file upload for lost */}
         <div className="min-w-0 md:sticky md:top-24">
           <span className={labelClass}>
-            Photo
+            Photos
             {type === "found" && (
               <>
                 {" "}
@@ -808,24 +873,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   capture="environment"
                   onChange={handleFileChange}
                   className="sr-only"
-                  aria-label="Take a photo with your camera"
+                  aria-label="Take a photo with your camera (up to 4)"
                   tabIndex={-1}
                 />
-                {previewImage ? (
-                  <div
-                    className={`relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-neutral-950 ${
-                      photoRequiredError
-                        ? "outline-2 outline-[#E5192D]"
-                        : ""
-                    }`}
-                  >
-                    <img
-                      src={previewImage}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ) : (
+                {foundImages.length === 0 ? (
                   <button
                     type="button"
                     onClick={() => mobileCameraInputRef.current?.click()}
@@ -843,98 +894,169 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                       Take a photo
                     </span>
                     <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
-                      Opens your camera
+                      Opens your camera (up to {MAX_POST_IMAGES} photos)
                     </span>
                   </button>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {foundImages.map((preview, index) => (
+                        <div
+                          key={preview}
+                          className="relative aspect-square overflow-hidden rounded-lg bg-white dark:bg-neutral-900"
+                        >
+                          <img
+                            src={preview}
+                            alt={`Captured photo ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFoundImage(preview)}
+                            aria-label={`Remove photo ${index + 1}`}
+                            className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 dark:bg-neutral-900/95 text-neutral-600 dark:text-neutral-400 shadow-sm transition-colors hover:bg-white hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                          >
+                            <X className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                        </div>
+                      ))}
+                      {foundImages.length < MAX_POST_IMAGES && (
+                        <button
+                          type="button"
+                          onClick={() => mobileCameraInputRef.current?.click()}
+                          className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 px-3 text-center transition-colors hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-white dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-neutral-400 cursor-pointer"
+                        >
+                          <Camera
+                            className="h-5 w-5 text-neutral-400"
+                            aria-hidden="true"
+                          />
+                          <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                            Take photo
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
-                <div className="mt-2 flex justify-end">
-                  {previewImage && (
-                    <button
-                      type="button"
-                      onClick={handleRetakePhoto}
-                      className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                      Retake
-                    </button>
-                  )}
-                </div>
+                <p className="mt-2 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+                  {foundImages.length}/{MAX_POST_IMAGES} photos taken
+                </p>
               </>
             ) : (
             <>
-              <div
-                className={`relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-neutral-950 ${
-                  photoRequiredError && !previewImage
-                    ? "outline-2 outline-[#E5192D]"
-                    : ""
-                }`}
-              >
-                {previewImage ? (
-                  <img
-                    src={previewImage}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    aria-label="Live camera preview"
-                    className={`h-full w-full object-cover ${
-                      cameraState === "error" ? "hidden" : ""
+              {foundImages.length < MAX_POST_IMAGES ? (
+                <>
+                  <div
+                    className={`relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-neutral-950 ${
+                      photoRequiredError && foundImages.length === 0
+                        ? "outline-2 outline-[#E5192D]"
+                        : ""
                     }`}
-                  />
-                )}
-                {cameraState === "starting" && !previewImage && (
-                  <div
-                    role="status"
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center text-xs font-medium text-white"
                   >
-                    <Camera
-                      className="h-6 w-6"
-                      aria-hidden="true"
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      aria-label="Live camera preview"
+                      className={`h-full w-full object-cover ${
+                        cameraState === "error" ? "hidden" : ""
+                      }`}
                     />
-                    Starting camera…
+                    {cameraState === "starting" && (
+                      <div
+                        role="status"
+                        className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center text-xs font-medium text-white"
+                      >
+                        <Camera
+                          className="h-6 w-6"
+                          aria-hidden="true"
+                        />
+                        Starting camera…
+                      </div>
+                    )}
+                    {cameraState === "error" && (
+                      <div
+                        role="alert"
+                        className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-white"
+                      >
+                        <CameraOff
+                          className="h-6 w-6 text-neutral-300"
+                          aria-hidden="true"
+                        />
+                        <p>{cameraError}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-                {cameraState === "error" && !previewImage && (
-                  <div
-                    role="alert"
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-white"
-                  >
-                    <CameraOff
-                      className="h-6 w-6 text-neutral-300"
-                      aria-hidden="true"
-                    />
-                    <p>{cameraError}</p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      {foundImages.length}/{MAX_POST_IMAGES} photos taken
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleTakePhoto}
+                      disabled={cameraState !== "ready"}
+                      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-neutral-900 px-3.5 text-xs font-bold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-neutral-300 cursor-pointer"
+                    >
+                      <Camera className="h-4 w-4" aria-hidden="true" />
+                      {foundImages.length === 0 ? "Take photo" : "Take another"}
+                    </button>
                   </div>
-                )}
-              </div>
-              <div className="mt-2 flex justify-end">
-                {previewImage ? (
-                  <button
-                    type="button"
-                    onClick={handleRetakePhoto}
-                    className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 rounded cursor-pointer"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                    Retake
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleTakePhoto}
-                    disabled={cameraState !== "ready"}
-                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-neutral-900 px-3.5 text-xs font-bold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-neutral-300 cursor-pointer"
-                  >
-                    <Camera className="h-4 w-4" aria-hidden="true" />
-                    Take photo
-                  </button>
-                )}
-              </div>
-              </>
+                  {foundImages.length > 0 && (
+                    <div className="mt-3 grid grid-cols-4 gap-2">
+                      {foundImages.map((preview, index) => (
+                        <div
+                          key={preview}
+                          className="relative aspect-square overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-950"
+                        >
+                          <img
+                            src={preview}
+                            alt={`Captured photo ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFoundImage(preview)}
+                            aria-label={`Remove photo ${index + 1}`}
+                            className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 dark:bg-neutral-900/95 text-neutral-600 dark:text-neutral-400 shadow-sm transition-colors hover:bg-white hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                          >
+                            <X className="h-3 w-3" aria-hidden="true" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {foundImages.map((preview, index) => (
+                      <div
+                        key={preview}
+                        className="relative aspect-square overflow-hidden rounded-lg bg-neutral-950"
+                      >
+                        <img
+                          src={preview}
+                          alt={`Captured photo ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFoundImage(preview)}
+                          aria-label={`Remove photo ${index + 1}`}
+                          className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 dark:bg-neutral-900/95 text-neutral-600 dark:text-neutral-400 shadow-sm transition-colors hover:bg-white hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                        >
+                          <X className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+                    {foundImages.length}/{MAX_POST_IMAGES} photos taken (remove one to take another)
+                  </p>
+                </div>
+              )}
+            </>
             )
           ) : (
           <>
