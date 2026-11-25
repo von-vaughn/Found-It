@@ -11,8 +11,11 @@ import {
   createAdminSubmissionNotifications,
   createFinderClaimSubmissionNotification,
   createRequestStatusNotification,
+  createReturnFinderSurrenderReminderNotification,
 } from "./notification.repository";
 import type { Claim, ClaimStatus } from "../types/claims";
+
+const RETURN_FINDER_REMINDER_COOLDOWN_MS = 3 * 60 * 60 * 1000;
 
 interface ClaimRow {
   id: string;
@@ -34,6 +37,7 @@ interface ClaimRow {
   published_item_id: string | null;
   rejection_reason: string | null;
   approval_instructions: string | null;
+  last_finder_reminder_at: Date | string | null;
   status: ClaimStatus;
   created_at: Date | string;
 }
@@ -44,7 +48,8 @@ const CLAIM_COLUMNS = `
   rq.date_lost, rq.time_lost, rq.location_lost, rq.details,
   rq.important_details, rq.evidence, rq.claimant_title,
   rq.primary_color, rq.building, rq.received_by_osa, rq.published_item_id,
-  rq.rejection_reason, rq.approval_instructions, rq.status, rq.created_at
+  rq.rejection_reason, rq.approval_instructions, rq.last_finder_reminder_at,
+  rq.status, rq.created_at
 `;
 const CLAIM_JOIN = `
   FROM request rq
@@ -100,6 +105,13 @@ function toClaim(
     approvalInstructions: includeApprovalInstructions
       ? row.approval_instructions
       : null,
+    ...(includeOsaReceipt
+      ? {
+          lastFinderReminderAt: row.last_finder_reminder_at
+            ? new Date(row.last_finder_reminder_at).toISOString()
+            : null,
+        }
+      : {}),
     status: row.status,
     submitted: new Date(row.created_at).toISOString(),
   };
@@ -177,6 +189,119 @@ export async function countRejectedClaimsForUserAndItem(
   return rows[0]?.count ?? 0;
 }
 
+export async function countRejectedReturnsForUserAndItem(
+  userId: string,
+  itemId: string,
+): Promise<number> {
+  const { rows } = await pool.query<{ count: number }>(
+    `SELECT COUNT(*)::int AS count
+     FROM request
+     WHERE user_id = $1 AND item_id = $2 AND kind = 'return' AND status = 'rejected'`,
+    [userId, itemId],
+  );
+  return rows[0]?.count ?? 0;
+}
+
+export type SendReturnFinderReminderResult =
+  | { status: "not_found" }
+  | { status: "not_pending" }
+  | { status: "already_received" }
+  | { status: "inactive_finder" }
+  | { status: "cooldown"; nextAllowedAt: string }
+  | { status: "sent"; itemName: string; lastFinderReminderAt: string };
+
+/**
+ * Sends a surrender reminder notification to the finder on a pending return
+ * request that has not yet been received by OSA, enforcing a 3-hour cooldown.
+ */
+export async function sendReturnFinderReminder(
+  requestId: string,
+): Promise<SendReturnFinderReminderResult> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows } = await client.query<{
+      id: string;
+      item_id: string;
+      item_name: string;
+      status: ClaimStatus;
+      received_by_osa: boolean;
+      last_finder_reminder_at: Date | string | null;
+      finder_id: string;
+      finder_active: boolean;
+      finder_verified: boolean;
+    }>(
+      `SELECT rq.id, rq.item_id, i.name AS item_name, rq.status,
+              rq.received_by_osa, rq.last_finder_reminder_at,
+              u.id AS finder_id, u.is_active AS finder_active,
+              u.is_verified AS finder_verified
+       FROM request rq
+       JOIN item i ON i.id = rq.item_id
+       JOIN "user" u ON u.id = rq.user_id
+       WHERE rq.id = $1 AND rq.kind = 'return'
+       FOR UPDATE OF rq`,
+      [requestId],
+    );
+    const row = rows[0];
+    if (!row) {
+      await client.query("ROLLBACK");
+      return { status: "not_found" };
+    }
+    if (row.status !== "pending") {
+      await client.query("ROLLBACK");
+      return { status: "not_pending" };
+    }
+    if (row.received_by_osa) {
+      await client.query("ROLLBACK");
+      return { status: "already_received" };
+    }
+    if (!row.finder_active || !row.finder_verified) {
+      await client.query("ROLLBACK");
+      return { status: "inactive_finder" };
+    }
+    if (row.last_finder_reminder_at) {
+      const lastSentMs = new Date(row.last_finder_reminder_at).getTime();
+      const nextAllowedMs = lastSentMs + RETURN_FINDER_REMINDER_COOLDOWN_MS;
+      if (!Number.isNaN(lastSentMs) && nextAllowedMs > Date.now()) {
+        await client.query("ROLLBACK");
+        return {
+          status: "cooldown",
+          nextAllowedAt: new Date(nextAllowedMs).toISOString(),
+        };
+      }
+    }
+
+    const { rows: updatedRows } = await client.query<{
+      last_finder_reminder_at: Date | string;
+    }>(
+      `UPDATE request
+       SET last_finder_reminder_at = NOW()
+       WHERE id = $1
+       RETURNING last_finder_reminder_at`,
+      [requestId],
+    );
+    await createReturnFinderSurrenderReminderNotification(client, {
+      itemId: row.item_id,
+      requestId: row.id,
+      itemName: row.item_name,
+      finderId: row.finder_id,
+    });
+    await client.query("COMMIT");
+    return {
+      status: "sent",
+      itemName: row.item_name,
+      lastFinderReminderAt: new Date(
+        updatedRows[0].last_finder_reminder_at,
+      ).toISOString(),
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 export async function findClaimById(
   id: string,
   includeOsaReceipt = false,
@@ -216,7 +341,7 @@ async function findRequestForUserById(
      LIMIT 1`,
     [requestId, userId, kind],
   );
-  return rows[0] ? toClaim(rows[0], false, kind !== "return") : null;
+  return rows[0] ? toClaim(rows[0], kind === "return", kind !== "return") : null;
 }
 
 export function findClaimForUserAndItem(
@@ -315,6 +440,34 @@ export type PublishRejectedReturnResult =
   | { status: "invalid_data"; message: string }
   | { status: "published"; itemId: string };
 
+async function blurPublishedItemImages(itemId: string): Promise<void> {
+  if (!isDriveConfigured()) return;
+  const { rows: insertedImages } = await pool.query<{
+    id: string;
+    image_url: string;
+  }>(
+    `SELECT id, image_url FROM image WHERE item_id = $1 AND blurred_image_url IS NULL`,
+    [itemId],
+  );
+  for (const img of insertedImages) {
+    try {
+      const remoteBuffer = await fetchRemoteImageBuffer(img.image_url);
+      const blurredBuffer = await generateBlurredImage(remoteBuffer);
+      const uploaded = await uploadFileToDrive({
+        name: `blurred-${Date.now()}-${itemId}.jpg`,
+        mimeType: "image/jpeg",
+        content: blurredBuffer,
+      });
+      await saveBlurredImageUrl(img.id, uploaded.directUrl);
+    } catch (err) {
+      console.warn(
+        `[Publish] Could not generate blurred image for ${img.id}:`,
+        err,
+      );
+    }
+  }
+}
+
 /** Publishes a rejected found report as a public found-item post exactly once. */
 export async function publishRejectedReturn(
   requestId: string,
@@ -337,12 +490,13 @@ export async function publishRejectedReturn(
       important_details: string | null;
       evidence: string | null;
       category_id: string;
+      custom_category: string | null;
       item_name: string;
     }>(
       `SELECT rq.status, rq.received_by_osa, rq.published_item_id, rq.claimant_title,
               rq.primary_color, rq.building, rq.date_lost, rq.time_lost,
               rq.location_lost, rq.details, rq.important_details, rq.evidence,
-              item.category_id, item.name AS item_name
+              item.category_id, item.custom_category, item.name AS item_name
        FROM request rq
        JOIN item ON item.id = rq.item_id
        WHERE rq.id = $1 AND rq.kind = 'return'
@@ -391,6 +545,7 @@ export async function publishRejectedReturn(
       itemDate,
       itemTime: request.time_lost?.slice(0, 5) ?? undefined,
       categoryId: request.category_id,
+      customCategory: request.custom_category,
       color: request.primary_color ?? undefined,
       building: request.building ?? undefined,
       location,
@@ -404,26 +559,7 @@ export async function publishRejectedReturn(
     );
     await client.query("COMMIT");
 
-    if (isDriveConfigured()) {
-      const { rows: insertedImages } = await pool.query<{ id: string; image_url: string }>(
-        `SELECT id, image_url FROM image WHERE item_id = $1 AND blurred_image_url IS NULL`,
-        [created.id],
-      );
-      for (const img of insertedImages) {
-        try {
-          const remoteBuffer = await fetchRemoteImageBuffer(img.image_url);
-          const blurredBuffer = await generateBlurredImage(remoteBuffer);
-          const uploaded = await uploadFileToDrive({
-            name: `blurred-${Date.now()}-${created.id}.jpg`,
-            mimeType: "image/jpeg",
-            content: blurredBuffer,
-          });
-          await saveBlurredImageUrl(img.id, uploaded.directUrl);
-        } catch (err) {
-          console.warn(`[Publish] Could not generate blurred image for ${img.id}:`, err);
-        }
-      }
-    }
+    await blurPublishedItemImages(created.id);
 
     return { status: "published", itemId: created.id };
   } catch (error) {
@@ -463,13 +599,12 @@ export function allowedStatusPredecessors(
   status: ClaimStatus,
 ): ClaimStatus[] {
   if (status === "rejected") {
-    return kind === "claim" ? ["pending", "approved"] : ["pending"];
+    return ["pending", "approved"];
   }
   if (status === "approved" || status === "claimed" || status === "returned") {
     return status === "approved" ? ["pending"] : ["approved"];
   }
-  // Cancelling approval returns an approved return request back to pending.
-  return kind === "return" ? ["approved"] : [];
+  return [];
 }
 
 export class PhysicalItemNotReceivedError extends Error {
@@ -483,7 +618,7 @@ export class AnotherClaimAlreadyApprovedError extends Error {
   constructor(kind: "claim" | "return" = "claim") {
     super(
       kind === "return"
-        ? "Another return request for this item is already approved. Cancel it first before approving another."
+        ? "Another return request for this item is already approved. Reject it first before approving another."
         : "Another claim for this item is already approved. Reject it first before approving another.",
     );
     this.name = "AnotherClaimAlreadyApprovedError";
@@ -497,6 +632,7 @@ async function updateRequestStatusById(
   rejectionReason?: string,
   approvalInstructions?: string,
 ): Promise<Claim | null> {
+  const autoPublishedItemIds: string[] = [];
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -515,15 +651,31 @@ async function updateRequestStatusById(
       user_id: string;
       item_id: string;
       item_name: string;
+      category_id: string;
+      custom_category: string | null;
       item_owner_id: string;
       status: ClaimStatus;
       item_received_by_osa: boolean;
       request_received_by_osa: boolean;
+      published_item_id: string | null;
+      claimant_title: string | null;
+      primary_color: string | null;
+      building: string | null;
+      date_lost: Date | string | null;
+      time_lost: string | null;
+      location_lost: string | null;
+      details: string | null;
+      important_details: string | null;
+      evidence: string | null;
     }>(
       `SELECT rq.user_id, rq.item_id, item.name AS item_name,
+              item.category_id, item.custom_category,
               report.user_id AS item_owner_id, rq.status,
               item.received_by_osa AS item_received_by_osa,
-              rq.received_by_osa AS request_received_by_osa
+              rq.received_by_osa AS request_received_by_osa,
+              rq.published_item_id, rq.claimant_title, rq.primary_color,
+              rq.building, rq.date_lost, rq.time_lost, rq.location_lost,
+              rq.details, rq.important_details, rq.evidence
        FROM request rq
        JOIN item ON item.id = rq.item_id
        JOIN report ON report.id = item.report_id
@@ -567,19 +719,15 @@ async function updateRequestStatusById(
     const { rowCount } = await client.query(
       status === "rejected"
         ? `UPDATE request
-           SET status = $2, rejection_reason = $5
+           SET status = $2, rejection_reason = $5, approval_instructions = NULL
            WHERE id = $1 AND kind = $3 AND status = $4`
         : status === "approved"
           ? `UPDATE request
              SET status = $2, approval_instructions = $5
              WHERE id = $1 AND kind = $3 AND status = $4`
-          : status === "pending"
-            ? `UPDATE request
-               SET status = $2, approval_instructions = NULL
-               WHERE id = $1 AND kind = $3 AND status = $4`
-            : `UPDATE request
-               SET status = $2
-               WHERE id = $1 AND kind = $3 AND status = $4`,
+          : `UPDATE request
+             SET status = $2
+             WHERE id = $1 AND kind = $3 AND status = $4`,
       status === "rejected"
         ? [id, status, kind, current.status, trimmedReason]
         : status === "approved"
@@ -591,7 +739,63 @@ async function updateRequestStatusById(
       return null;
     }
 
-    if (kind === "claim" && (status === "claimed" || status === "returned")) {
+    const isRejectingApprovedReturn =
+      kind === "return" &&
+      status === "rejected" &&
+      current.status === "approved";
+
+    if (isRejectingApprovedReturn) {
+      let publishedItemId = current.published_item_id;
+      if (!publishedItemId) {
+        const publishedName =
+          current.claimant_title?.trim() || current.item_name;
+        const publishedDescription =
+          current.details?.trim() ||
+          "Found item submitted via return request.";
+        const publishedDate =
+          toDateOnly(current.date_lost) ??
+          new Date().toISOString().slice(0, 10);
+        const created = await createItemWithClient(client, {
+          reporterId: current.user_id,
+          reportType: "found",
+          name: publishedName,
+          description: publishedDescription,
+          itemDate: publishedDate,
+          itemTime: current.time_lost?.slice(0, 5) ?? undefined,
+          categoryId: current.category_id,
+          customCategory: current.custom_category,
+          color: current.primary_color ?? undefined,
+          building: current.building ?? undefined,
+          location: current.location_lost?.trim() || undefined,
+          importantDetails: current.important_details ?? undefined,
+          images: parseEvidence(current.evidence),
+          receivedByOsa: Boolean(current.request_received_by_osa),
+        });
+        await client.query(
+          "UPDATE request SET published_item_id = $2 WHERE id = $1",
+          [id, created.id],
+        );
+        publishedItemId = created.id;
+        autoPublishedItemIds.push(created.id);
+      }
+
+      await createRequestStatusNotification(client, {
+        requestId: id,
+        itemId: publishedItemId,
+        ownerItemId: current.item_id,
+        itemName: current.item_name,
+        kind,
+        status: "rejected",
+        requesterId: current.user_id,
+        itemOwnerId: current.item_owner_id,
+        reason:
+          "Your found report has been automatically posted as a public found item so its rightful owner can claim it.",
+        notifyOwnerOnReturnRejected: true,
+      });
+    } else if (
+      kind === "claim" &&
+      (status === "claimed" || status === "returned")
+    ) {
       await createClaimedNotifications(client, {
         requestId: id,
         itemId: current.item_id,
@@ -632,6 +836,17 @@ async function updateRequestStatusById(
       const { rows: rejectedRequests } = await client.query<{
         id: string;
         user_id: string;
+        received_by_osa: boolean;
+        published_item_id: string | null;
+        claimant_title: string | null;
+        primary_color: string | null;
+        building: string | null;
+        date_lost: Date | string | null;
+        time_lost: string | null;
+        location_lost: string | null;
+        details: string | null;
+        important_details: string | null;
+        evidence: string | null;
       }>(
         `UPDATE request
          SET status = 'rejected',
@@ -640,10 +855,58 @@ async function updateRequestStatusById(
            AND kind = $2
            AND status = 'pending'
            AND id <> $3
-         RETURNING id, user_id`,
+         RETURNING id, user_id, received_by_osa, published_item_id,
+                   claimant_title, primary_color, building, date_lost,
+                   time_lost, location_lost, details, important_details,
+                   evidence`,
         [current.item_id, kind, id, autoRejectReason],
       );
       for (const rejected of rejectedRequests) {
+        if (kind === "return" && !rejected.published_item_id) {
+          const publishedName =
+            rejected.claimant_title?.trim() || current.item_name;
+          const publishedDescription =
+            rejected.details?.trim() ||
+            "Found item submitted via return request.";
+          const publishedDate =
+            toDateOnly(rejected.date_lost) ??
+            new Date().toISOString().slice(0, 10);
+          const created = await createItemWithClient(client, {
+            reporterId: rejected.user_id,
+            reportType: "found",
+            name: publishedName,
+            description: publishedDescription,
+            itemDate: publishedDate,
+            itemTime: rejected.time_lost?.slice(0, 5) ?? undefined,
+            categoryId: current.category_id,
+            customCategory: current.custom_category,
+            color: rejected.primary_color ?? undefined,
+            building: rejected.building ?? undefined,
+            location: rejected.location_lost?.trim() || undefined,
+            importantDetails: rejected.important_details ?? undefined,
+            images: parseEvidence(rejected.evidence),
+            receivedByOsa: Boolean(rejected.received_by_osa),
+          });
+          await client.query(
+            "UPDATE request SET published_item_id = $2 WHERE id = $1",
+            [rejected.id, created.id],
+          );
+          autoPublishedItemIds.push(created.id);
+
+          await createRequestStatusNotification(client, {
+            requestId: rejected.id,
+            itemId: created.id,
+            itemName: current.item_name,
+            kind,
+            status: "rejected",
+            requesterId: rejected.user_id,
+            itemOwnerId: current.item_owner_id,
+            reason:
+              "This lost item has already been returned to its owner. Your found report has been automatically posted as a public found item so its rightful owner can claim it.",
+          });
+          continue;
+        }
+
         await createRequestStatusNotification(client, {
           requestId: rejected.id,
           itemId: current.item_id,
@@ -664,6 +927,11 @@ async function updateRequestStatusById(
   } finally {
     client.release();
   }
+
+  for (const publishedItemId of autoPublishedItemIds) {
+    await blurPublishedItemImages(publishedItemId);
+  }
+
   return findClaimById(id, true);
 }
 
@@ -684,7 +952,7 @@ export function updateClaimStatusById(
 
 export function updateReturnStatusById(
   id: string,
-  status: Exclude<ClaimStatus, "claimed">,
+  status: Exclude<ClaimStatus, "pending" | "claimed">,
   approvalInstructions?: string,
 ): Promise<Claim | null> {
   return updateRequestStatusById(
@@ -785,6 +1053,7 @@ async function updateRequest(
          date_lost = $5, time_lost = $6, location_lost = $7, details = $8,
          important_details = $9
      WHERE id = $10 AND user_id = $11 AND kind = $12 AND status = 'pending'
+       AND ($12 <> 'return' OR received_by_osa = FALSE)
      RETURNING id`,
     [
       JSON.stringify(input.evidence ?? []),
@@ -801,7 +1070,7 @@ async function updateRequest(
       kind,
     ],
   );
-  return rows[0] ? findClaimById(rows[0].id) : null;
+  return rows[0] ? findClaimById(rows[0].id, kind === "return") : null;
 }
 
 async function deleteRequest(
@@ -811,7 +1080,8 @@ async function deleteRequest(
 ): Promise<boolean> {
   const { rowCount } = await pool.query(
     `DELETE FROM request
-     WHERE id = $1 AND user_id = $2 AND kind = $3 AND status = 'pending'`,
+     WHERE id = $1 AND user_id = $2 AND kind = $3 AND status = 'pending'
+       AND ($3 <> 'return' OR received_by_osa = FALSE)`,
     [requestId, userId, kind],
   );
   return rowCount === 1;

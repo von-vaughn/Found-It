@@ -5,6 +5,7 @@ import {
   getItemReturns,
   getMyReturns,
   publishRejectedReturnItem,
+  remindReturnFinder,
   submitReturn,
   updateAdminReturnOsaReceipt,
   updateAdminReturnStatus,
@@ -20,6 +21,7 @@ router.use(authenticate);
 // Admin returns workspace
 router.get("/admin", requireAdmin, getAllReturns);
 router.post("/admin/:id/publish", requireAdmin, publishRejectedReturnItem);
+router.post("/admin/:id/remind-finder", requireAdmin, remindReturnFinder);
 router.patch("/admin/:id/status", requireAdmin, updateAdminReturnStatus);
 router.patch("/admin/:id/osa-receipt", requireAdmin, updateAdminReturnOsaReceipt);
 

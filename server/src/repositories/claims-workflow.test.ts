@@ -441,14 +441,16 @@ describe("Claim Finder Alert & Deferred Competing-Claim Rejection Workflow", () 
       AnotherClaimAlreadyApprovedError,
     );
 
-    // Cancel Return A back to Pending -> Return B can be approved
-    const cancelledA = await updateReturnStatusById(retA.id, "pending");
-    assert.equal(cancelledA?.status, "pending");
+    // Reject Return A -> auto-published as a found item and Return B can be approved
+    const rejectedA = await updateReturnStatusById(retA.id, "rejected");
+    assert.equal(rejectedA?.status, "rejected");
+    assert.ok(rejectedA?.publishedItemId);
+    createdItemIds.push(rejectedA.publishedItemId);
 
     const approvedB = await updateReturnStatusById(retB.id, "approved");
     assert.equal(approvedB?.status, "approved");
 
-    // Mark Return B as Returned -> Return A is auto-rejected and Lost post is hidden
+    // Mark Return B as Returned -> Lost post is hidden
     const returnedB = await updateReturnStatusById(retB.id, "returned");
     assert.equal(returnedB?.status, "returned");
 

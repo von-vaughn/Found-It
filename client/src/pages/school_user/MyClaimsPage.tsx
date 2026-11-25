@@ -483,8 +483,21 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                       </div>
                                     )}
 
+                                  {isPending &&
+                                    isFoundReport &&
+                                    claim.receivedByOsa && (
+                                      <div className="mt-3 rounded-xl bg-emerald-50/80 px-4 py-3 dark:bg-emerald-950/30">
+                                        <p className="text-xs font-medium leading-relaxed text-emerald-900 dark:text-emerald-200">
+                                          Item received by OSA — this found
+                                          report can no longer be edited or
+                                          deleted.
+                                        </p>
+                                      </div>
+                                    )}
+
                                   <div className="mt-auto flex flex-wrap items-center justify-end gap-2 pt-5">
-                                    {isPending && (
+                                    {isPending &&
+                                      !(isFoundReport && claim.receivedByOsa) && (
                                       <>
                                         <button
                                           type="button"

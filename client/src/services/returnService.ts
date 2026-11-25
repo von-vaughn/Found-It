@@ -73,10 +73,21 @@ export async function publishRejectedReturn(
   return data;
 }
 
+/** POST /api/returns/admin/:id/remind-finder — send a surrender reminder to the finder. */
+export async function remindReturnFinder(
+  id: string,
+): Promise<{ message: string; lastFinderReminderAt: string }> {
+  const { data } = await api.post<{
+    message: string;
+    lastFinderReminderAt: string;
+  }>(`/returns/admin/${id}/remind-finder`);
+  return data;
+}
+
 /** PATCH /api/returns/admin/:id/status — record an admin decision. */
 export async function updateReturnStatus(
   id: string,
-  status: Exclude<ServerClaimStatus, "claimed">,
+  status: Exclude<ServerClaimStatus, "pending" | "claimed">,
   instructions?: string,
 ): Promise<ServerClaim> {
   const { data } = await api.patch<UpdateReturnResponse>(

@@ -14,8 +14,6 @@ export function ClaimsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
-  const [claimStatusFilter, setClaimStatusFilter] = useState("Pending");
-  const [returnStatusFilter, setReturnStatusFilter] = useState("Pending");
 
   const activeTab: RequestsTab =
     searchParams.get("tab") === "returns" ? "returns" : "claims";
@@ -70,7 +68,7 @@ export function ClaimsPage() {
   const tabSwitcher = (
     <FadeIn y={4}>
       <div
-        className="mb-5 inline-flex flex-wrap items-center gap-1 rounded-xl border border-neutral-200 bg-white p-1 dark:border-neutral-800 dark:bg-neutral-900"
+        className="mb-5 inline-flex flex-wrap items-center gap-1 rounded-xl bg-white p-1 dark:bg-neutral-900"
         role="tablist"
         aria-label="Claims and return requests"
       >
@@ -162,9 +160,6 @@ export function ClaimsPage() {
           claims={claimsWorkflow.foundItemClaims}
           reports={claimsWorkflow.reports}
           query={query.trim().toLowerCase()}
-          statusFilter={claimStatusFilter}
-          onStatusFilterChange={setClaimStatusFilter}
-          statusOptions={["Pending", "Approved", "Claimed", "Rejected"]}
           onSelectClaim={handleSelectClaim}
         />
       ) : (
@@ -172,8 +167,6 @@ export function ClaimsPage() {
           visibleRequests={returnsWorkflow.visibleRequests}
           reports={returnsWorkflow.reports}
           query={query}
-          statusFilter={returnStatusFilter}
-          onStatusFilterChange={setReturnStatusFilter}
           onSelectReturn={handleSelectReturn}
         />
       )}

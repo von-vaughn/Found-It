@@ -63,15 +63,17 @@ export function useFoundClaimsWorkflow() {
         .filter((claim) => RESOLVED_CLAIM_STATUSES.has(claim.status))
         .map((claim) => claim.itemId),
     );
-    // Once one request is approved for an item, the other requests for
-    // that item are resolved away — only show the approved one.
+    for (const report of reports) {
+      if (report.status === "Claimed" || report.status === "Returned") {
+        resolvedItemIds.add(report.id);
+      }
+    }
+    // Exclude items that have already been claimed or returned; they remain visible on the Items page.
     return allClaims.filter(
       (claim) =>
-        foundItemIds.has(claim.itemId) &&
-        (!resolvedItemIds.has(claim.itemId) ||
-          RESOLVED_CLAIM_STATUSES.has(claim.status)),
+        foundItemIds.has(claim.itemId) && !resolvedItemIds.has(claim.itemId),
     );
-  }, [allClaims, foundItemIds]);
+  }, [allClaims, foundItemIds, reports]);
 
   const handleClaimStatusChange = async (
     id: string,

@@ -788,13 +788,36 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
       importantDetails: 'Wooden curved handle',
     };
 
-    // Finder submits -> Admin rejects -> Admin publishes rejected return -> Finder resubmits!
+    // Chronological guard: dateFound earlier than lost item's dateLost must fail (400)
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const earlyReturn = await api('POST', '/api/returns', {
+      token: finderAuth.token,
+      body: { ...retPayload, dateLost: yesterday, timeLost: '08:00' },
+    });
+    assert.equal(earlyReturn.status, 400);
+
+    // Finder submits -> Remind finder (200 + 3h cooldown 429) -> Admin rejects -> Admin publishes rejected return -> Finder resubmits!
     const firstReturn = await api<{ returnRequest: { id: string } }>('POST', '/api/returns', {
       token: finderAuth.token,
       body: retPayload,
     });
     assert.equal(firstReturn.status, 201);
     const firstReturnId = firstReturn.data.returnRequest.id;
+
+    const remindFirst = await api<{ lastFinderReminderAt: string }>(
+      'POST',
+      `/api/returns/admin/${firstReturnId}/remind-finder`,
+      { token: adminAuth.token },
+    );
+    assert.equal(remindFirst.status, 200);
+    assert.ok(remindFirst.data.lastFinderReminderAt);
+
+    const remindCooldown = await api(
+      'POST',
+      `/api/returns/admin/${firstReturnId}/remind-finder`,
+      { token: adminAuth.token },
+    );
+    assert.equal(remindCooldown.status, 429);
 
     const rejectRes = await api('PATCH', `/api/returns/admin/${firstReturnId}/status`, {
       token: adminAuth.token,
@@ -854,6 +877,42 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     });
     assert.equal(resubmitted.status, 201);
     const secondReturnId = resubmitted.data.returnRequest.id;
+
+    // Verify 2-rejection retry cap on a separate lost item
+    const capLostRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Lost Cap Item',
+        description: 'Testing return retry cap after two rejections.',
+        itemDate: today,
+        itemTime: '08:00',
+        categoryId: baselineCategoryId,
+        importantDetails: 'Blue tag',
+      },
+    });
+    assert.equal(capLostRes.status, 201);
+    const capLostId = capLostRes.data.item.id;
+    createdItemIds.push(capLostId);
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const attemptRes = await api<{ returnRequest: { id: string } }>('POST', '/api/returns', {
+        token: finderAuth.token,
+        body: { ...retPayload, itemId: capLostId, details: `Attempt ${attempt + 1}` },
+      });
+      assert.equal(attemptRes.status, 201);
+      const rejectAttempt = await api(
+        'PATCH',
+        `/api/returns/admin/${attemptRes.data.returnRequest.id}/status`,
+        { token: adminAuth.token, body: { status: 'rejected' } },
+      );
+      assert.equal(rejectAttempt.status, 200);
+    }
+    const thirdAttempt = await api('POST', '/api/returns', {
+      token: finderAuth.token,
+      body: { ...retPayload, itemId: capLostId, details: 'Third blocked attempt' },
+    });
+    assert.equal(thirdAttempt.status, 409);
 
     // Mark OSA receipt -> approving without instructions must fail (400)
     const osaTrue = await api('PATCH', `/api/returns/admin/${secondReturnId}/osa-receipt`, {
@@ -924,6 +983,19 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     });
     assert.equal(osaRevoke.status, 409);
 
+    // A second finder submits a competing pending return request on the same lost item
+    const competingFinderAuth = await loginAs(ADMIN_EMAIL);
+    const competingReturnRes = await api<{ returnRequest: { id: string } }>('POST', '/api/returns', {
+      token: competingFinderAuth.token,
+      body: {
+        ...retPayload,
+        claimantTitle: 'Another Red Umbrella',
+        details: 'Found a similar red umbrella near the library entrance.',
+      },
+    });
+    assert.equal(competingReturnRes.status, 201);
+    const competingReturnId = competingReturnRes.data.returnRequest.id;
+
     const returned = await api<{ returnRequest: { status: string } }>(
       'PATCH',
       `/api/returns/admin/${secondReturnId}/status`,
@@ -934,6 +1006,30 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     );
     assert.equal(returned.status, 200);
     assert.equal(returned.data.returnRequest.status, 'returned');
+
+    // Competing pending return must be auto-rejected and auto-published as a public found item
+    const competingRow = await pool.query<{
+      status: string;
+      published_item_id: string | null;
+    }>('SELECT status, published_item_id FROM request WHERE id = $1', [competingReturnId]);
+    assert.equal(competingRow.rows[0]?.status, 'rejected');
+    const autoPublishedId = competingRow.rows[0]?.published_item_id;
+    assert.ok(autoPublishedId, 'Expected competing pending return to be auto-published');
+    createdItemIds.push(autoPublishedId);
+
+    const autoPublishedDetail = await api<{
+      item: {
+        reportType: string;
+        name: string;
+        receivedByOsa?: boolean;
+        user: { id: string };
+      };
+    }>('GET', `/api/items/${autoPublishedId}`, { token: adminAuth.token });
+    assert.equal(autoPublishedDetail.status, 200);
+    assert.equal(autoPublishedDetail.data.item.reportType, 'found');
+    assert.equal(autoPublishedDetail.data.item.name, 'Another Red Umbrella');
+    assert.equal(autoPublishedDetail.data.item.receivedByOsa, false);
+    assert.equal(autoPublishedDetail.data.item.user.id, competingFinderAuth.user.id);
 
     const lostRes = await api<{ item: { isReturned: boolean } }>(
       'GET',
@@ -947,6 +1043,137 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
       [secondReturnId],
     );
     assert.equal(retRow.rows[0].status, 'returned');
+
+    // Rejecting an approved return must auto-publish it as a public found item and notify owner + finder
+    const lostForRejectRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Green Water Bottle',
+        description: 'Insulated green bottle left in the auditorium.',
+        itemDate: today,
+        categoryId: baselineCategoryId,
+        location: 'Auditorium Row B',
+        importantDetails: 'Has a small scratch near the lid.',
+      },
+    });
+    assert.equal(lostForRejectRes.status, 201);
+    const lostForRejectId = lostForRejectRes.data.item.id;
+    createdItemIds.push(lostForRejectId);
+
+    const approvedRejectReturnRes = await api<{ returnRequest: { id: string } }>(
+      'POST',
+      '/api/returns',
+      {
+        token: finderAuth.token,
+        body: {
+          ...retPayload,
+          itemId: lostForRejectId,
+          claimantTitle: 'Found Green Bottle',
+          details: 'Found a green bottle near the auditorium entrance.',
+        },
+      },
+    );
+    assert.equal(approvedRejectReturnRes.status, 201);
+    const approvedRejectReturnId = approvedRejectReturnRes.data.returnRequest.id;
+
+    // Even admins cannot delete a report while it has a pending return/claim request
+    const adminDeleteWithPending = await api('DELETE', `/api/items/${lostForRejectId}`, {
+      token: adminAuth.token,
+      body: { reason: 'Duplicate listing test' },
+    });
+    assert.equal(adminDeleteWithPending.status, 409);
+
+    const markOsaForReject = await api(
+      'PATCH',
+      `/api/returns/admin/${approvedRejectReturnId}/osa-receipt`,
+      { token: adminAuth.token, body: { receivedByOsa: true } },
+    );
+    assert.equal(markOsaForReject.status, 200);
+
+    // Once OSA receives the physical item, the finder cannot edit or delete the pending return request
+    const editAfterOsa = await api('PATCH', `/api/returns/${approvedRejectReturnId}`, {
+      token: finderAuth.token,
+      body: {
+        claimantTitle: 'Edited Bottle Title',
+        dateLost: today,
+        timeLost: '11:30',
+        location: 'Auditorium',
+        details: 'Attempted edit after OSA receipt.',
+        importantDetails: 'Green cap.',
+        evidence: ['https://lh3.googleusercontent.com/d/sample-evidence-id'],
+      },
+    });
+    assert.equal(editAfterOsa.status, 409);
+
+    const deleteAfterOsa = await api('DELETE', `/api/returns/${approvedRejectReturnId}`, {
+      token: finderAuth.token,
+    });
+    assert.equal(deleteAfterOsa.status, 409);
+
+    const approveForReject = await api(
+      'PATCH',
+      `/api/returns/admin/${approvedRejectReturnId}/status`,
+      {
+        token: adminAuth.token,
+        body: { status: 'approved', instructions: 'Come to OSA Desk 2 with ID.' },
+      },
+    );
+    assert.equal(approveForReject.status, 200);
+
+    // Reverting an approved return back to pending is no longer allowed
+    const cancelToPending = await api(
+      'PATCH',
+      `/api/returns/admin/${approvedRejectReturnId}/status`,
+      { token: adminAuth.token, body: { status: 'pending' } },
+    );
+    assert.equal(cancelToPending.status, 400);
+
+    // Rejecting an approved return (without reason) succeeds and auto-publishes it
+    const rejectApproved = await api<{
+      returnRequest: {
+        status: string;
+        publishedItemId: string | null;
+        approvalInstructions: string | null;
+      };
+    }>('PATCH', `/api/returns/admin/${approvedRejectReturnId}/status`, {
+      token: adminAuth.token,
+      body: { status: 'rejected' },
+    });
+    assert.equal(rejectApproved.status, 200);
+    assert.equal(rejectApproved.data.returnRequest.status, 'rejected');
+    assert.equal(rejectApproved.data.returnRequest.approvalInstructions, null);
+    const rejectedAutoPubId = rejectApproved.data.returnRequest.publishedItemId;
+    assert.ok(rejectedAutoPubId, 'Expected rejecting an approved return to auto-publish a found item');
+    createdItemIds.push(rejectedAutoPubId);
+
+    const rejectedAutoPubDetail = await api<{
+      item: {
+        reportType: string;
+        name: string;
+        receivedByOsa?: boolean;
+        user: { id: string };
+      };
+    }>('GET', `/api/items/${rejectedAutoPubId}`, { token: adminAuth.token });
+    assert.equal(rejectedAutoPubDetail.status, 200);
+    assert.equal(rejectedAutoPubDetail.data.item.reportType, 'found');
+    assert.equal(rejectedAutoPubDetail.data.item.name, 'Found Green Bottle');
+    assert.equal(rejectedAutoPubDetail.data.item.receivedByOsa, true);
+    assert.equal(rejectedAutoPubDetail.data.item.user.id, finderAuth.user.id);
+
+    const ownerNotifsAfterReject = await api<{
+      notifications: Array<{ requestId: string | null; event: string; title: string }>;
+    }>('GET', '/api/notifications', { token: ownerAuth.token });
+    assert.equal(ownerNotifsAfterReject.status, 200);
+    assert.ok(
+      ownerNotifsAfterReject.data.notifications.some(
+        (n) =>
+          n.requestId === approvedRejectReturnId &&
+          n.event === 'rejected' &&
+          n.title === 'Approved return cancelled',
+      ),
+      'Expected lost-item owner to be notified when approved return is rejected',
+    );
   });
 
   it('6. Other category requires, persists, searches, and clears customCategory', async () => {

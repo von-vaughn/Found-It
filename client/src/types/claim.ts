@@ -22,6 +22,7 @@ export interface ClaimRequest {
   publishedItemId?: string | null;
   rejectionReason?: string | null;
   approvalInstructions?: string | null;
+  lastFinderReminderAt?: string | null;
 }
 
 export type NewClaimRequest = Omit<

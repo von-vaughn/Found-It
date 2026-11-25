@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { Check, ChevronRight, Send, X } from "lucide-react";
+import { Bell, Check, ChevronRight, Send, X } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
@@ -30,14 +30,12 @@ const LIST_PAGE_SIZE = 10;
 const DEFAULT_RETURN_FILTERS = [
   "Pending",
   "Approved",
-  "Returned",
   "Rejected",
 ];
 
 const ADMIN_RETURN_STATUS: Partial<
-  Record<ClaimRequest["status"], Exclude<ServerClaimStatus, "claimed">>
+  Record<ClaimRequest["status"], Exclude<ServerClaimStatus, "pending" | "claimed">>
 > = {
-  Pending: "pending",
   Approved: "approved",
   Rejected: "rejected",
   Returned: "returned",
@@ -50,7 +48,7 @@ function formatDate(value: string): string {
     : new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(date);
 }
 
-type StatusDecision = "Approved" | "Rejected" | "Pending" | "Returned";
+type StatusDecision = "Approved" | "Rejected" | "Returned";
 
 function buildLostPostFacts(
   report: AdminReport | undefined,
@@ -114,15 +112,11 @@ export function ReturnsListPanel({
   visibleRequests,
   reports,
   query,
-  statusFilter,
-  onStatusFilterChange,
   onSelectReturn,
 }: {
   visibleRequests: ClaimRequest[];
   reports: AdminReport[];
   query: string;
-  statusFilter: string;
-  onStatusFilterChange: (value: string) => void;
   onSelectReturn: (id: string) => void;
 }) {
   const [page, setPage] = useState(1);
@@ -156,43 +150,20 @@ export function ReturnsListPanel({
     }));
   };
 
-  const chipOptions = useMemo(
-    () =>
-      DEFAULT_RETURN_FILTERS.map((option) => ({
-        key: option,
-        label: option,
-        count: groupRequests(
-          option === "All"
-            ? queryMatchedRequests
-            : queryMatchedRequests.filter(
-                (request) => request.status === option,
-              ),
-        ).length,
-      })),
+  const requestGroups = useMemo(
+    () => groupRequests(queryMatchedRequests),
     [queryMatchedRequests],
   );
 
-  const requestGroups = useMemo(() => {
-    const filtered =
-      statusFilter === "All"
-        ? queryMatchedRequests
-        : queryMatchedRequests.filter(
-            (request) => request.status === statusFilter,
-          );
-    return groupRequests(filtered);
-  }, [queryMatchedRequests, statusFilter]);
-
   const [prevListKey, setPrevListKey] = useState({
     query: "",
-    statusFilter: "",
     total: -1,
   });
   if (
     query !== prevListKey.query ||
-    statusFilter !== prevListKey.statusFilter ||
     visibleRequests.length !== prevListKey.total
   ) {
-    setPrevListKey({ query, statusFilter, total: visibleRequests.length });
+    setPrevListKey({ query, total: visibleRequests.length });
     setPage(1);
   }
 
@@ -212,37 +183,29 @@ export function ReturnsListPanel({
   return (
     <section aria-labelledby="returns-list-heading" className="space-y-5">
       <FadeIn>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1
-            id="returns-list-heading"
-            className="flex items-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100"
-          >
-            <span>Return Item</span>
-            <span className="font-mono text-base font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
-              {requestGroups.length}
-            </span>
-          </h1>
-        </div>
-        <FilterChips
-          options={chipOptions}
-          value={statusFilter}
-          onChange={onStatusFilterChange}
-          ariaLabel="Filter return requests by status"
-        />
+      <div>
+        <h1
+          id="returns-list-heading"
+          className="flex items-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100"
+        >
+          <span>Return Item</span>
+          <span className="font-mono text-base font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
+            {requestGroups.length}
+          </span>
+        </h1>
       </div>
       </FadeIn>
 
       {requestGroups.length === 0 ? (
         <FadeIn delay={0.05}>
         <div className="rounded-[14px] border border-dashed border-neutral-300 bg-white px-5 py-12 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
-          No return requests match this filter.
+          No return requests yet.
         </div>
         </FadeIn>
       ) : (
         <>
           <StaggerGrid
-            key={`${statusFilter}-${safePage}-${requestGroups.length}-${pageGroups[0]?.representative.itemId ?? ""}`}
+            key={`${safePage}-${requestGroups.length}-${pageGroups[0]?.representative.itemId ?? ""}`}
             className="grid gap-2.5"
           >
             {pageGroups.map((group) => {
@@ -334,6 +297,9 @@ export function ReturnDetailPanel({
   onPublishRejected,
   isPublishing,
   publishingId,
+  onRemindFinder,
+  isRemindingFinder,
+  remindingReturnId,
 }: {
   request: ClaimRequest;
   siblingRequests?: ClaimRequest[];
@@ -342,7 +308,7 @@ export function ReturnDetailPanel({
   physicalItemReceived: (request: ClaimRequest) => boolean;
   onUpdateStatus: (
     id: string,
-    status: Exclude<ServerClaimStatus, "claimed">,
+    status: Exclude<ServerClaimStatus, "pending" | "claimed">,
     instructions?: string,
   ) => Promise<unknown>;
   onUpdateOsaReceipt: (
@@ -360,6 +326,9 @@ export function ReturnDetailPanel({
   ) => void;
   isPublishing: boolean;
   publishingId?: string;
+  onRemindFinder?: (id: string) => void;
+  isRemindingFinder?: boolean;
+  remindingReturnId?: string;
 }) {
   const [confirmAction, setConfirmAction] = useState<{
     requestId: string;
@@ -367,6 +336,12 @@ export function ReturnDetailPanel({
   } | null>(null);
   const [approvalMessage, setApprovalMessage] = useState("");
   const [approvalMessageError, setApprovalMessageError] = useState("");
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [detailStatusFilter, setDetailStatusFilter] = useState<string>(() =>
+    DEFAULT_RETURN_FILTERS.includes(selectedRequest.status)
+      ? selectedRequest.status
+      : "Pending",
+  );
   const [confirmPublishRequest, setConfirmPublishRequest] =
     useState<ClaimRequest | null>(null);
 
@@ -384,6 +359,20 @@ export function ReturnDetailPanel({
     }
     return sortRequestsByPostMatch(combined, selectedLostReport);
   }, [selectedRequest, siblingRequests, selectedLostReport]);
+
+  const detailChipOptions = useMemo(
+    () =>
+      DEFAULT_RETURN_FILTERS.map((option) => ({
+        key: option,
+        label: option,
+        count: postRequests.filter((entry) => entry.status === option).length,
+      })),
+    [postRequests],
+  );
+  const visiblePostRequests = useMemo(
+    () => postRequests.filter((entry) => entry.status === detailStatusFilter),
+    [postRequests, detailStatusFilter],
+  );
 
   const confirmTargetRequest = confirmAction
     ? (allRequests.find((item) => item.id === confirmAction.requestId) ?? null)
@@ -408,8 +397,10 @@ export function ReturnDetailPanel({
   const requestStatusChange = (requestId: string, status: StatusDecision) => {
     const target = allRequests.find((item) => item.id === requestId);
     if (!target) return;
-    if (status === "Pending" || status === "Returned") {
+    if (status === "Returned") {
       if (target.status !== "Approved") return;
+    } else if (status === "Rejected") {
+      if (target.status !== "Pending" && target.status !== "Approved") return;
     } else if (target.status !== "Pending") return;
     setApprovalMessage("");
     setApprovalMessageError("");
@@ -480,6 +471,10 @@ export function ReturnDetailPanel({
       return;
     }
 
+    const wasApprovedBeforeReject =
+      confirmAction.status === "Rejected" &&
+      confirmTargetRequest.status === "Approved";
+
     try {
       await onUpdateStatus(
         confirmAction.requestId,
@@ -495,18 +490,21 @@ export function ReturnDetailPanel({
       toast.success(
         `Approved return of "${confirmTargetRequest.item}" and notified the lost-item owner.`,
       );
-    } else if (confirmAction.status === "Pending") {
-      toast.success(
-        `Approval cancelled. "${confirmTargetRequest.item}" is pending review again.`,
-      );
     } else if (confirmAction.status === "Returned") {
       toast.success(
         `Marked "${confirmTargetRequest.item}" as returned to ${confirmTargetRequest.claimant}.`,
+      );
+    } else if (wasApprovedBeforeReject) {
+      toast.success(
+        `Rejected return request for "${confirmTargetRequest.item}" and posted it as a public found item.`,
       );
     } else {
       toast.success(
         `Rejected return request for "${confirmTargetRequest.item}".`,
       );
+    }
+    if (DEFAULT_RETURN_FILTERS.includes(confirmAction.status)) {
+      setDetailStatusFilter(confirmAction.status);
     }
     setApprovalMessage("");
     setApprovalMessageError("");
@@ -541,11 +539,43 @@ export function ReturnDetailPanel({
     ? `Owner · ID ${ownerId}`
     : "Original post details unavailable";
 
+  const hasActiveReminderCooldown = postRequests.some((entry) => {
+    if (!entry.lastFinderReminderAt) return false;
+    const lastMs = new Date(entry.lastFinderReminderAt).getTime();
+    return !Number.isNaN(lastMs) && lastMs + 3 * 60 * 60 * 1000 > nowMs;
+  });
+
+  useEffect(() => {
+    if (!hasActiveReminderCooldown) return;
+    const timer = window.setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, [hasActiveReminderCooldown]);
+
   const buildReturnFactRows = (entry: ClaimRequest): ReviewFactRow[] => {
     const entryReceived = physicalItemReceived(entry);
     const updatingEntryOsa = Boolean(
       isUpdatingOsaReceipt && updatingOsaId === entry.id,
     );
+    const remindingThisEntry = Boolean(
+      isRemindingFinder && remindingReturnId === entry.id,
+    );
+    const lastReminderMs = entry.lastFinderReminderAt
+      ? new Date(entry.lastFinderReminderAt).getTime()
+      : NaN;
+    const reminderCooldownMs = !Number.isNaN(lastReminderMs)
+      ? Math.max(0, lastReminderMs + 3 * 60 * 60 * 1000 - nowMs)
+      : 0;
+    const reminderCooldownLabel =
+      reminderCooldownMs > 0
+        ? (() => {
+            const totalMinutes = Math.ceil(reminderCooldownMs / 60_000);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return hours > 0
+              ? `Reminded (${hours}h ${minutes}m)`
+              : `Reminded (${minutes}m)`;
+          })()
+        : null;
     return [
       {
         id: "color",
@@ -602,6 +632,26 @@ export function ReturnDetailPanel({
                     : "Mark received"}
               </button>
             )}
+            {entry.status === "Pending" &&
+              !entryReceived &&
+              onRemindFinder && (
+                <button
+                  type="button"
+                  disabled={remindingThisEntry || Boolean(reminderCooldownLabel)}
+                  onClick={() => onRemindFinder(entry.id)}
+                  title={
+                    reminderCooldownLabel
+                      ? "Surrender reminder can be sent once every 3 hours"
+                      : "Send a notification reminding the finder to surrender this item to OSA"
+                  }
+                  className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 transition-colors hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-55 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                >
+                  <Bell className="h-3.5 w-3.5" aria-hidden="true" />
+                  {remindingThisEntry
+                    ? "Sending…"
+                    : (reminderCooldownLabel ?? "Remind finder")}
+                </button>
+              )}
           </div>
         ),
       },
@@ -647,21 +697,27 @@ export function ReturnDetailPanel({
       <div className="mt-8 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            {postRequests.length === 1 ? "Return request" : "Return requests"}{" "}
+            {visiblePostRequests.length === 1
+              ? "Return request"
+              : "Return requests"}{" "}
             <span className="font-mono text-sm font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
-              {postRequests.length}
+              {visiblePostRequests.length}
             </span>
           </h2>
-          {postRequests.length > 1 && (
-            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
-              {selectedLostReport
-                ? "Sorted by match with the post"
-                : "Submitted return requests"}
-            </p>
-          )}
+          <FilterChips
+            options={detailChipOptions}
+            value={detailStatusFilter}
+            onChange={setDetailStatusFilter}
+            ariaLabel="Filter return requests by status"
+          />
         </div>
+        {visiblePostRequests.length === 0 ? (
+          <div className="rounded-[14px] border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+            No {detailStatusFilter.toLowerCase()} return requests for this post.
+          </div>
+        ) : (
         <div className="space-y-4">
-          {postRequests.map((entry) => {
+          {visiblePostRequests.map((entry) => {
             const publishingEntry = Boolean(
               isPublishing && publishingId === entry.id,
             );
@@ -745,7 +801,7 @@ export function ReturnDetailPanel({
                           !entry.receivedByOsa
                             ? "Item must be received by OSA before approving"
                             : hasAnotherApprovedReturn
-                              ? "Another return request is currently approved. Cancel it first before approving another."
+                              ? "Another return request is currently approved. Reject it first before approving another."
                               : undefined
                         }
                         onClick={() =>
@@ -762,11 +818,12 @@ export function ReturnDetailPanel({
                       <button
                         type="button"
                         onClick={() =>
-                          requestStatusChange(entry.id, "Pending")
+                          requestStatusChange(entry.id, "Rejected")
                         }
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] border border-neutral-200 bg-transparent px-4 text-xs font-semibold text-neutral-700 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500"
                       >
-                        Cancel
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                        Reject
                       </button>
                       <button
                         type="button"
@@ -808,6 +865,7 @@ export function ReturnDetailPanel({
             );
           })}
         </div>
+        )}
       </div>
       </FadeIn>
 
@@ -838,19 +896,19 @@ export function ReturnDetailPanel({
             >
               {confirmAction.status === "Approved"
                 ? "Approve this return?"
-                : confirmAction.status === "Pending"
-                  ? "Cancel this approval?"
-                  : confirmAction.status === "Returned"
-                    ? "Mark item as returned?"
+                : confirmAction.status === "Returned"
+                  ? "Mark item as returned?"
+                  : confirmTargetRequest.status === "Approved"
+                    ? "Reject this approved return?"
                     : "Reject this return?"}
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
               {confirmAction.status === "Approved"
                 ? `"${confirmTargetRequest.item}" should only be approved after it has been turned over to the OSA office.`
-                : confirmAction.status === "Pending"
-                  ? `The approval for "${confirmTargetRequest.item}" will be cancelled and the request will return to Pending for review.`
-                  : confirmAction.status === "Returned"
-                    ? `"${confirmTargetRequest.item}" will be marked as returned to ${confirmTargetRequest.claimant}. Its item report will show Returned.`
+                : confirmAction.status === "Returned"
+                  ? `"${confirmTargetRequest.item}" will be marked as returned to ${confirmTargetRequest.claimant}. Its item report will show Returned.`
+                  : confirmTargetRequest.status === "Approved"
+                    ? `The approved return for "${confirmTargetRequest.item}" by ${confirmTargetRequest.claimant} will be marked as rejected. The lost-item owner will be notified, and this item will be automatically posted as a public found item.`
                     : `The return request for "${confirmTargetRequest.item}" by ${confirmTargetRequest.claimant} will be marked as rejected.`}
             </p>
             {confirmAction.status === "Approved" && (
@@ -893,8 +951,8 @@ export function ReturnDetailPanel({
             {isCompleteReturn && requestsToAutoReject.length > 0 && (
               <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
                 {requestsToAutoReject.length === 1
-                  ? "1 other pending request for this item will be automatically rejected once marked as returned."
-                  : `${requestsToAutoReject.length} other pending requests for this item will be automatically rejected once marked as returned.`}
+                  ? "1 other pending return request for this item will be automatically rejected and posted as a public found item."
+                  : `${requestsToAutoReject.length} other pending return requests for this item will be automatically rejected and posted as public found items.`}
               </p>
             )}
 
@@ -921,10 +979,10 @@ export function ReturnDetailPanel({
               >
                 {confirmAction.status === "Approved"
                   ? "Approve return"
-                  : confirmAction.status === "Pending"
-                    ? "Cancel approval"
-                    : confirmAction.status === "Returned"
-                      ? "Mark as returned"
+                  : confirmAction.status === "Returned"
+                    ? "Mark as returned"
+                    : confirmTargetRequest.status === "Approved"
+                      ? "Reject & post item"
                       : "Reject"}
               </button>
             </div>

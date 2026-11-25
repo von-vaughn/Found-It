@@ -199,6 +199,100 @@ export function computeReportsTrend(
   }));
 }
 
+/** Returns sorted descending years found across reports (always includes current year). */
+export function getAvailableReportYears(
+  reports: AdminReport[],
+  now: Date = new Date(),
+): number[] {
+  const years = new Set<number>([now.getFullYear()]);
+  for (const report of reports) {
+    const parsed = parseReportDate(report);
+    if (parsed) years.add(parsed.getFullYear());
+  }
+  return Array.from(years).sort((a, b) => b - a);
+}
+
+/**
+ * Buckets reports for a specific year (all 12 months when monthIndex === "all",
+ * or ~5-day intervals across a specific 0-based monthIndex).
+ */
+export function computeMonthlyReportsTrend(
+  reports: AdminReport[],
+  year: number,
+  monthIndex: number | "all",
+): TrendBucket[] {
+  const shortMonth = new Intl.DateTimeFormat("en-US", { month: "short" });
+
+  if (monthIndex === "all") {
+    const buckets: TrendBucket[] = Array.from({ length: 12 }, (_, m) => ({
+      key: `${year}-${String(m + 1).padStart(2, "0")}`,
+      label: shortMonth.format(new Date(year, m, 1)),
+      lost: 0,
+      found: 0,
+      resolved: 0,
+    }));
+
+    for (const report of reports) {
+      const parsed = parseReportDate(report);
+      if (!parsed || parsed.getFullYear() !== year) continue;
+      const bucket = buckets[parsed.getMonth()];
+      if (!bucket) continue;
+      if (report.type === "Lost") {
+        bucket.lost++;
+      } else {
+        bucket.found++;
+      }
+    }
+    return buckets;
+  }
+
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const step = 5;
+  const buckets: Array<TrendBucket & { startDay: number; endDay: number }> = [];
+
+  for (let startDay = 1; startDay <= daysInMonth; startDay += step) {
+    const endDay = Math.min(startDay + step - 1, daysInMonth);
+    buckets.push({
+      key: `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(startDay).padStart(2, "0")}`,
+      label: startDay === endDay ? `${startDay}` : `${startDay}–${endDay}`,
+      lost: 0,
+      found: 0,
+      resolved: 0,
+      startDay,
+      endDay,
+    });
+  }
+
+  for (const report of reports) {
+    const parsed = parseReportDate(report);
+    if (
+      !parsed ||
+      parsed.getFullYear() !== year ||
+      parsed.getMonth() !== monthIndex
+    ) {
+      continue;
+    }
+    const day = parsed.getDate();
+    const bucket = buckets.find(
+      (entry) => day >= entry.startDay && day <= entry.endDay,
+    );
+    if (!bucket) continue;
+    if (report.type === "Lost") {
+      bucket.lost++;
+    } else {
+      bucket.found++;
+    }
+  }
+
+  return buckets.map(({ key, label, lost, found, resolved }) => ({
+    key,
+    label,
+    lost,
+    found,
+    resolved,
+  }));
+}
+
 export function computeTopCategories(
   reports: AdminReport[],
   limit = 6,

@@ -101,7 +101,12 @@ export function ClaimDetailPage() {
         siblingClaims={siblingClaims}
         allClaims={allClaims}
         reports={reports}
-        onClaimStatusChange={handleClaimStatusChange}
+        onClaimStatusChange={async (id, status, reason, instructions) => {
+          await handleClaimStatusChange(id, status, reason, instructions);
+          if (status === "Claimed" || status === "Returned") {
+            navigate(paths.adminClaims, { replace: true });
+          }
+        }}
         onOsaReceiptChange={handleOsaReceiptChange}
         isUpdatingOsaReceipt={isUpdatingOsaReceipt}
         onRemindFinder={handleRemindFinder}

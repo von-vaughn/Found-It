@@ -20,6 +20,9 @@ export function ReturnItemDetailPage() {
     updateReturnStatus,
     updateOsaReceipt,
     publishRejected,
+    handleRemindFinder,
+    isRemindingFinder,
+    remindingReturnId,
   } = useAdminReturnsWorkflow();
 
   const selectedRequest =
@@ -101,9 +104,17 @@ export function ReturnItemDetailPage() {
         allRequests={requests}
         reports={reports}
         physicalItemReceived={physicalItemReceived}
-        onUpdateStatus={(id, status, instructions) =>
-          updateReturnStatus.mutateAsync({ id, status, instructions })
-        }
+        onUpdateStatus={async (id, status, instructions) => {
+          const result = await updateReturnStatus.mutateAsync({
+            id,
+            status,
+            instructions,
+          });
+          if (status === "returned") {
+            navigate(`${paths.adminClaims}?tab=returns`, { replace: true });
+          }
+          return result;
+        }}
         onUpdateOsaReceipt={(params, options) =>
           updateOsaReceipt.mutate(params, options)
         }
@@ -114,6 +125,9 @@ export function ReturnItemDetailPage() {
         }
         isPublishing={publishRejected.isPending}
         publishingId={publishRejected.variables}
+        onRemindFinder={handleRemindFinder}
+        isRemindingFinder={isRemindingFinder}
+        remindingReturnId={remindingReturnId}
       />
     </AdminLayout>
   );

@@ -2,9 +2,11 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import {
   AnotherClaimAlreadyApprovedError,
+  countRejectedReturnsForUserAndItem,
   createReturnRequest,
   deleteReturnRequest,
   findClaimableItem,
+  findItemEventTiming,
   findReturnForUserById,
   findReturnForUserAndItem,
   listAllReturns,
@@ -12,6 +14,7 @@ import {
   listReturnsByUser,
   PhysicalItemNotReceivedError,
   publishRejectedReturn,
+  sendReturnFinderReminder,
   updateReturnRequest,
   updateReturnOsaReceipt,
   updateReturnStatusById,
@@ -21,6 +24,9 @@ import { recordAuditLog } from "../repositories/audit-log.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
 import { UUID_RE } from "../validation/dates";
 import { validateReturnTarget } from "../validation/returns";
+import { isLostAfterFound } from "./claims.controller";
+
+const MAX_REJECTED_RETURN_ATTEMPTS = 2;
 
 function zodError(res: Response, error: z.ZodError): Response {
   return res.status(400).json({
@@ -40,7 +46,7 @@ function requestIdParam(req: Request): string | null {
 
 const adminReturnStatusSchema = z
   .object({
-    status: z.enum(["pending", "approved", "rejected", "returned"]),
+    status: z.enum(["approved", "rejected", "returned"]),
     instructions: z
       .string()
       .trim()
@@ -78,6 +84,22 @@ export async function submitReturn(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  if (
+    item &&
+    isLostAfterFound(
+      item.itemDate,
+      item.itemTime,
+      parsed.data.dateLost,
+      parsed.data.timeLost,
+    )
+  ) {
+    res.status(400).json({
+      message:
+        "The date and time found cannot be earlier than when the item was reported lost.",
+    });
+    return;
+  }
+
   const existingReturn = await findReturnForUserAndItem(
     req.user!.sub,
     parsed.data.itemId,
@@ -85,6 +107,18 @@ export async function submitReturn(req: Request, res: Response): Promise<void> {
   if (existingReturn) {
     res.status(409).json({
       message: "You already submitted a found report for this item.",
+    });
+    return;
+  }
+
+  const rejectedCount = await countRejectedReturnsForUserAndItem(
+    req.user!.sub,
+    parsed.data.itemId,
+  );
+  if (rejectedCount >= MAX_REJECTED_RETURN_ATTEMPTS) {
+    res.status(409).json({
+      message:
+        "You have reached the maximum number of return attempts for this item.",
     });
     return;
   }
@@ -209,7 +243,7 @@ export async function updateAdminReturnStatus(
     actorId: req.user!.sub,
     actorEmail: req.user!.email,
     actorRole: req.user!.role,
-    action: parsed.data.status === "pending" ? "updated" : parsed.data.status,
+    action: parsed.data.status,
     entityType: "return",
     entityId: returnRequest.id,
     summary: `Updated return request for "${returnRequest.item}" (${returnRequest.claimant}) to ${parsed.data.status}`,
@@ -261,6 +295,62 @@ export async function updateAdminReturnOsaReceipt(
   res.json({ message: "Physical item status updated.", returnRequest });
 }
 
+/** POST /api/returns/admin/:id/remind-finder — nudge the finder to surrender the item to OSA (3-hour cooldown). */
+export async function remindReturnFinder(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const requestId = requestIdParam(req);
+  if (!requestId) {
+    res.status(400).json({ message: "Invalid return request ID." });
+    return;
+  }
+  const result = await sendReturnFinderReminder(requestId);
+  if (result.status === "not_found") {
+    res.status(404).json({ message: "Return request not found." });
+    return;
+  }
+  if (result.status === "not_pending") {
+    res.status(409).json({
+      message: "Only pending return requests can send a surrender reminder.",
+    });
+    return;
+  }
+  if (result.status === "already_received") {
+    res.status(409).json({
+      message: "This physical item has already been marked as received by OSA.",
+    });
+    return;
+  }
+  if (result.status === "inactive_finder") {
+    res.status(409).json({
+      message: "The finder account is no longer active.",
+    });
+    return;
+  }
+  if (result.status === "cooldown") {
+    res.status(429).json({
+      message:
+        "A surrender reminder was already sent recently. You can send another reminder every 3 hours.",
+      nextAllowedAt: result.nextAllowedAt,
+    });
+    return;
+  }
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: "updated",
+    entityType: "return",
+    entityId: requestId,
+    summary: `Sent OSA surrender reminder to finder for "${result.itemName}"`,
+  });
+  res.json({
+    message: "Surrender reminder sent to the finder.",
+    lastFinderReminderAt: result.lastFinderReminderAt,
+  });
+}
+
 /** PATCH /api/returns/:id — edit the signed-in user's pending found report. */
 export async function updateMyReturn(req: Request, res: Response): Promise<void> {
   const parsed = updateClaimSchema.safeParse(req.body);
@@ -285,6 +375,30 @@ export async function updateMyReturn(req: Request, res: Response): Promise<void>
   }
   if (existing.status !== "pending") {
     res.status(409).json({ message: "Only pending found reports can be edited." });
+    return;
+  }
+  if (existing.receivedByOsa) {
+    res.status(409).json({
+      message:
+        "This found report can no longer be edited because the physical item has already been received by OSA.",
+    });
+    return;
+  }
+
+  const timing = await findItemEventTiming(existing.itemId);
+  if (
+    timing &&
+    isLostAfterFound(
+      timing.itemDate,
+      timing.itemTime,
+      parsed.data.dateLost,
+      parsed.data.timeLost,
+    )
+  ) {
+    res.status(400).json({
+      message:
+        "The date and time found cannot be earlier than when the item was reported lost.",
+    });
     return;
   }
 
@@ -314,6 +428,13 @@ export async function deleteMyReturn(req: Request, res: Response): Promise<void>
   }
   if (existing.status !== "pending") {
     res.status(409).json({ message: "Only pending found reports can be deleted." });
+    return;
+  }
+  if (existing.receivedByOsa) {
+    res.status(409).json({
+      message:
+        "This found report can no longer be deleted because the physical item has already been received by OSA.",
+    });
     return;
   }
 

@@ -794,13 +794,16 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                             </div>
                           </dl>
                           {claimStatus === "Approved" && (
-                            <div className="mt-4 rounded-xl bg-cyan-50/70 dark:bg-cyan-950/30 p-3 text-xs text-cyan-900 dark:text-cyan-300">
+                            <div className="mt-4 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 p-3.5 text-xs text-emerald-900 dark:text-emerald-200">
                               <p className="font-bold flex items-center gap-1.5">
-                                <Award className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
-                                Returned to OSA office
+                                <Award className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                {claim.approvalInstructions?.trim()
+                                  ? "Pickup Instructions from OSA"
+                                  : "Returned to OSA office"}
                               </p>
-                              <p className="mt-1 leading-relaxed text-cyan-800 dark:text-cyan-400">
-                                Visit OSA with your school ID to claim.
+                              <p className="mt-1 whitespace-pre-line break-words leading-relaxed text-emerald-950 dark:text-emerald-100">
+                                {claim.approvalInstructions?.trim() ||
+                                  "Visit OSA with your school ID to claim."}
                               </p>
                             </div>
                           )}

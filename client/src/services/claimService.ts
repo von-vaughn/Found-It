@@ -27,6 +27,7 @@ export interface ServerClaim {
   publishedItemId?: string | null;
   rejectionReason?: string | null;
   approvalInstructions?: string | null;
+  lastFinderReminderAt?: string | null;
   status: ServerClaimStatus;
   submitted: string;
 }

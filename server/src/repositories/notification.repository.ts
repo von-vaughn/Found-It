@@ -130,11 +130,35 @@ export async function createFinderSurrenderReminderNotification(
   );
 }
 
+export async function createReturnFinderSurrenderReminderNotification(
+  client: PoolClient,
+  input: {
+    itemId: string;
+    requestId: string;
+    itemName: string;
+    finderId: string;
+  },
+): Promise<void> {
+  await client.query(
+    `INSERT INTO notification (
+       user_id, item_id, request_id, kind, event, title, message
+     ) VALUES ($1, $2, $3, 'return', 'submitted', $4, $5)`,
+    [
+      input.finderId,
+      input.itemId,
+      input.requestId,
+      "Reminder: surrender found item to OSA",
+      `OSA reminder: please surrender "${input.itemName}" to the OSA office so your return request can be verified and approved.`,
+    ],
+  );
+}
+
 export async function createRequestStatusNotification(
   client: PoolClient,
   input: {
     requestId: string;
     itemId: string;
+    ownerItemId?: string;
     itemName: string;
     kind: NotificationKind;
     status: NotificationEvent;
@@ -142,6 +166,7 @@ export async function createRequestStatusNotification(
     itemOwnerId: string;
     reason?: string;
     instructions?: string;
+    notifyOwnerOnReturnRejected?: boolean;
   },
 ): Promise<void> {
   if (!["approved", "rejected", "returned"].includes(input.status)) {
@@ -227,12 +252,30 @@ export async function createRequestStatusNotification(
          ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           input.itemOwnerId,
-          input.itemId,
+          input.ownerItemId ?? input.itemId,
           input.requestId,
           "return",
           "returned",
           "Lost item returned",
           `Your lost item "${input.itemName}" has been marked as returned to you.`,
+        ],
+      );
+    } else if (
+      input.status === "rejected" &&
+      input.notifyOwnerOnReturnRejected
+    ) {
+      await client.query(
+        `INSERT INTO notification (
+           user_id, item_id, request_id, kind, event, title, message
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          input.itemOwnerId,
+          input.ownerItemId ?? input.itemId,
+          input.requestId,
+          "return",
+          "rejected",
+          "Approved return cancelled",
+          `The previously approved return for your lost item "${input.itemName}" was rejected. Please disregard the earlier pickup notice.`,
         ],
       );
     }

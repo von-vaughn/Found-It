@@ -1,9 +1,11 @@
 import { useMemo } from "react";
+import toast from "react-hot-toast";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { toFoundReportClaims } from "@/lib/claimAdapter";
 import {
   useAdminReturns,
   usePublishRejectedReturn,
+  useRemindReturnFinder,
   useUpdateAdminReturnOsaReceipt,
   useUpdateAdminReturnStatus,
 } from "@/hooks/useReturns";
@@ -29,6 +31,23 @@ export function useAdminReturnsWorkflow() {
   const updateReturnStatus = useUpdateAdminReturnStatus();
   const updateOsaReceipt = useUpdateAdminReturnOsaReceipt();
   const publishRejected = usePublishRejectedReturn();
+  const remindFinderMutation = useRemindReturnFinder();
+
+  const handleRemindFinder = (id: string) => {
+    remindFinderMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Surrender reminder sent to the finder.");
+      },
+      onError: (error) => {
+        const message = (
+          error as { response?: { data?: { message?: string } } }
+        )?.response?.data?.message;
+        toast.error(
+          message || "Could not send reminder to the finder. Please try again.",
+        );
+      },
+    });
+  };
 
   const requests = useMemo(
     () => toFoundReportClaims(serverReturns),
@@ -45,14 +64,14 @@ export function useAdminReturnsWorkflow() {
         .filter((request) => RESOLVED_RETURN_STATUSES.includes(request.status))
         .map((request) => request.itemId),
     );
-    // Once one request is approved for an item, the other requests for
-    // that item are resolved away — only show the approved one.
-    return requests.filter(
-      (request) =>
-        !resolvedItemIds.has(request.itemId) ||
-        RESOLVED_RETURN_STATUSES.includes(request.status),
-    );
-  }, [requests]);
+    for (const report of reports) {
+      if (report.status === "Returned" || report.status === "Claimed") {
+        resolvedItemIds.add(report.id);
+      }
+    }
+    // Exclude items that have already been returned or claimed; they remain visible on the Items page.
+    return requests.filter((request) => !resolvedItemIds.has(request.itemId));
+  }, [requests, reports]);
 
   const physicalItemReceived = (request: ClaimRequest) => {
     const publishedItem = request.publishedItemId
@@ -77,5 +96,8 @@ export function useAdminReturnsWorkflow() {
     updateReturnStatus,
     updateOsaReceipt,
     publishRejected,
+    handleRemindFinder,
+    isRemindingFinder: remindFinderMutation.isPending,
+    remindingReturnId: remindFinderMutation.variables,
   };
 }

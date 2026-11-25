@@ -73,7 +73,39 @@ test("notifies both finder and lost item owner when a return request is approved
   );
 });
 
-test("allows cancelling an approved return back to pending while disallowing claim pending transitions", () => {
-  assert.deepEqual(allowedStatusPredecessors("return", "pending"), ["approved"]);
+test("allows rejecting an approved return while disallowing pending transitions", () => {
+  assert.deepEqual(allowedStatusPredecessors("return", "rejected"), ["pending", "approved"]);
+  assert.deepEqual(allowedStatusPredecessors("return", "pending"), []);
   assert.deepEqual(allowedStatusPredecessors("claim", "pending"), []);
+});
+
+test("notifies both finder and lost item owner when an approved return is rejected", async () => {
+  const recordedQueries: { sql: string; values: unknown[] }[] = [];
+  const mockClient = {
+    query: async (sql: string, values?: unknown[]) => {
+      recordedQueries.push({ sql, values: values ?? [] });
+      return { rows: [], rowCount: 1 };
+    },
+  } as unknown as PoolClient;
+
+  await createRequestStatusNotification(mockClient, {
+    requestId: "return-req-456",
+    itemId: "published-found-789",
+    ownerItemId: "lost-item-123",
+    itemName: "Blue Backpack",
+    kind: "return",
+    status: "rejected",
+    requesterId: "finder-user-789",
+    itemOwnerId: "owner-user-001",
+    reason:
+      "Your found report has been automatically posted as a public found item so its rightful owner can claim it.",
+    notifyOwnerOnReturnRejected: true,
+  });
+
+  assert.equal(recordedQueries.length, 2, "Should notify both finder and lost-item owner");
+  assert.equal(recordedQueries[0].values[0], "finder-user-789");
+  assert.equal(recordedQueries[0].values[1], "published-found-789");
+  assert.equal(recordedQueries[1].values[0], "owner-user-001");
+  assert.equal(recordedQueries[1].values[1], "lost-item-123");
+  assert.equal(recordedQueries[1].values[5], "Approved return cancelled");
 });

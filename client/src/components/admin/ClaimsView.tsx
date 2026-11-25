@@ -30,7 +30,6 @@ const LIST_PAGE_SIZE = 10;
 const DEFAULT_CLAIM_FILTERS = [
   "Pending",
   "Approved",
-  "Claimed",
   "Rejected",
 ];
 
@@ -99,17 +98,11 @@ export function ClaimsListPanel({
   claims: claimRequests,
   reports,
   query,
-  statusFilter,
-  onStatusFilterChange,
-  statusOptions = DEFAULT_CLAIM_FILTERS,
   onSelectClaim,
 }: {
   claims: ClaimRequest[];
   reports: AdminReport[];
   query: string;
-  statusFilter: string;
-  onStatusFilterChange: (value: string) => void;
-  statusOptions?: string[];
   onSelectClaim: (id: string) => void;
 }) {
   const [page, setPage] = useState(1);
@@ -137,39 +130,20 @@ export function ClaimsListPanel({
     }));
   };
 
-  const chipOptions = useMemo(
-    () =>
-      statusOptions.map((option) => ({
-        key: option,
-        label: option,
-        count: groupClaims(
-          option === "All"
-            ? queryMatchedClaims
-            : queryMatchedClaims.filter((claim) => claim.status === option),
-        ).length,
-      })),
-    [queryMatchedClaims, statusOptions],
+  const claimGroups = useMemo(
+    () => groupClaims(queryMatchedClaims),
+    [queryMatchedClaims],
   );
-
-  const claimGroups = useMemo(() => {
-    const filtered =
-      statusFilter === "All"
-        ? queryMatchedClaims
-        : queryMatchedClaims.filter((claim) => claim.status === statusFilter);
-    return groupClaims(filtered);
-  }, [queryMatchedClaims, statusFilter]);
 
   const [prevListKey, setPrevListKey] = useState({
     query: "",
-    statusFilter: "",
     total: -1,
   });
   if (
     query !== prevListKey.query ||
-    statusFilter !== prevListKey.statusFilter ||
     claimRequests.length !== prevListKey.total
   ) {
-    setPrevListKey({ query, statusFilter, total: claimRequests.length });
+    setPrevListKey({ query, total: claimRequests.length });
     setPage(1);
   }
 
@@ -189,37 +163,29 @@ export function ClaimsListPanel({
   return (
     <section aria-labelledby="claims-list-heading" className="space-y-5">
       <FadeIn>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1
-            id="claims-list-heading"
-            className="flex items-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100"
-          >
-            <span>Submitted Claims Request</span>
-            <span className="font-mono text-base font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
-              {claimGroups.length}
-            </span>
-          </h1>
-        </div>
-        <FilterChips
-          options={chipOptions}
-          value={statusFilter}
-          onChange={onStatusFilterChange}
-          ariaLabel="Filter claims by status"
-        />
+      <div>
+        <h1
+          id="claims-list-heading"
+          className="flex items-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100"
+        >
+          <span>Submitted Claims Request</span>
+          <span className="font-mono text-base font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
+            {claimGroups.length}
+          </span>
+        </h1>
       </div>
       </FadeIn>
 
       {claimGroups.length === 0 ? (
         <FadeIn delay={0.05}>
         <div className="rounded-[14px] border border-dashed border-neutral-300 bg-white px-5 py-12 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
-          No claim requests match this filter.
+          No claim requests yet.
         </div>
         </FadeIn>
       ) : (
         <>
           <StaggerGrid
-            key={`${statusFilter}-${safePage}-${claimGroups.length}-${pagedClaims[0]?.representative.itemId ?? ""}`}
+            key={`${safePage}-${claimGroups.length}-${pagedClaims[0]?.representative.itemId ?? ""}`}
             className="grid gap-2.5"
           >
             {pagedClaims.map((group) => {
@@ -347,6 +313,9 @@ export function ClaimDetailPanel({
   const [approvalError, setApprovalError] = useState("");
   const [savingStatusChange, setSavingStatusChange] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [detailStatusFilter, setDetailStatusFilter] = useState<string>(() =>
+    DEFAULT_CLAIM_FILTERS.includes(claim.status) ? claim.status : "Pending",
+  );
   const approvalDialogRef = useRef<HTMLDialogElement>(null);
 
   const selectedItemPost = reports.find(
@@ -356,6 +325,21 @@ export function ClaimDetailPanel({
     () =>
       sortRequestsByPostMatch([claim, ...siblingClaims], selectedItemPost),
     [claim, siblingClaims, selectedItemPost],
+  );
+  const detailChipOptions = useMemo(
+    () =>
+      DEFAULT_CLAIM_FILTERS.map((option) => ({
+        key: option,
+        label: option,
+        count: sortedPostClaims.filter((entry) => entry.status === option)
+          .length,
+      })),
+    [sortedPostClaims],
+  );
+  const visiblePostClaims = useMemo(
+    () =>
+      sortedPostClaims.filter((entry) => entry.status === detailStatusFilter),
+    [sortedPostClaims, detailStatusFilter],
   );
 
   const claimForStatusChange = allClaims.find(
@@ -447,6 +431,9 @@ export function ClaimDetailPanel({
         );
       }
 
+      if (DEFAULT_CLAIM_FILTERS.includes(confirmedStatus)) {
+        setDetailStatusFilter(confirmedStatus);
+      }
       closeApprovalDialog();
     } catch (error) {
       const message = axios.isAxiosError<{ message?: string }>(error)
@@ -790,30 +777,29 @@ export function ClaimDetailPanel({
               id="claim-requests-list-heading"
               className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100"
             >
-              {sortedPostClaims.length === 1
+              {visiblePostClaims.length === 1
                 ? "Claim request"
                 : "Claim requests"}{" "}
               <span className="font-mono text-sm font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
-                {sortedPostClaims.length}
+                {visiblePostClaims.length}
               </span>
             </h2>
-            {sortedPostClaims.length > 1 && (
-              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
-                {selectedItemPost
-                  ? "Sorted by match with the post"
-                  : "Submitted claim requests"}
-              </p>
-            )}
+            <FilterChips
+              options={detailChipOptions}
+              value={detailStatusFilter}
+              onChange={setDetailStatusFilter}
+              ariaLabel="Filter claim requests by status"
+            />
           </div>
         </section>
 
-        {sortedPostClaims.length === 0 ? (
+        {visiblePostClaims.length === 0 ? (
           <div className="rounded-[14px] border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-            No claim requests submitted for this post yet.
+            No {detailStatusFilter.toLowerCase()} claim requests for this post.
           </div>
         ) : (
           <div className="space-y-4">
-            {sortedPostClaims.map((requestItem) => {
+            {visiblePostClaims.map((requestItem) => {
               const hasAnotherApprovedClaim =
                 hasApprovedClaim && requestItem.status !== "Approved";
               return (

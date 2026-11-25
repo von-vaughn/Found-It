@@ -509,7 +509,7 @@ export function ReportedItemsView({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)] lg:items-start">
           <FadeIn delay={0.05} className="min-w-0">
           <section aria-label="Flagged items queue" className="min-w-0">
-            <div className="overflow-hidden rounded-2xl bg-white divide-y divide-neutral-100 dark:bg-neutral-900 dark:divide-neutral-800">
+            <div className="space-y-2.5">
               {reports.map((report) => {
                 const isSelected = activeReport?.id === report.id;
                 const flagCount = report.flags?.length ?? report.flagCount ?? 0;
@@ -520,10 +520,10 @@ export function ReportedItemsView({
                     type="button"
                     aria-current={isSelected ? "true" : undefined}
                     onClick={() => onSelectId(report.id)}
-                    className={`flex w-full items-start gap-3.5 p-4 text-left transition-colors active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
+                    className={`flex w-full items-start gap-3.5 rounded-2xl border bg-white p-4 text-left transition-colors active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 ${
                       isSelected
-                        ? "border-l-2 border-l-[#E5192D] bg-red-50/45 dark:bg-red-950/20"
-                        : "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                        ? "border-[#E5192D] ring-1 ring-[#E5192D]/20"
+                        : "border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50/60 dark:border-neutral-800 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/50"
                     }`}
                   >
                     {report.image ? (

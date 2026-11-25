@@ -420,9 +420,10 @@ export async function removeItemReport(req: Request, res: Response): Promise<voi
     });
     return;
   }
-  if (!isAdminUser(req) && owner.hasPendingRequest) {
+  if (owner.hasPendingRequest) {
     res.status(409).json({
-      message: 'Cannot delete a report while there are pending requests on it.',
+      message:
+        'Cannot delete a report while there are pending requests on it. Resolve all pending claims or return requests first.',
     });
     return;
   }

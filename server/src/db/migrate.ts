@@ -151,6 +151,7 @@ export async function migrate(): Promise<void> {
       published_item_id UUID REFERENCES item(id) ON DELETE SET NULL,
       rejection_reason TEXT,
       approval_instructions TEXT,
+      last_finder_reminder_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
@@ -290,6 +291,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE request ADD COLUMN IF NOT EXISTS published_item_id UUID REFERENCES item(id) ON DELETE SET NULL;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS approval_instructions TEXT;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS last_finder_reminder_at TIMESTAMPTZ;
   `);
 
   // Backfill blurred_image_url for found items that don't have one yet

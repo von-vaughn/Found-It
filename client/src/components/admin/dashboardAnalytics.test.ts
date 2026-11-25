@@ -4,10 +4,12 @@ import {
   buildDashboardSummaryCsv,
   computeAccountSummary,
   computeDashboardSummary,
+  computeMonthlyReportsTrend,
   computeReportsTrend,
   computeRequestStatusFunnel,
   computeTopBuildings,
   computeTopCategories,
+  getAvailableReportYears,
 } from "./dashboardAnalytics.ts";
 import type { AdminReport, AdminUser } from "./types.ts";
 import type { ClaimRequest } from "@/types/claim";
@@ -244,4 +246,32 @@ test("computeAccountSummary and buildDashboardSummaryCsv produce structured outp
   });
   assert.match(csv, /Recovery Rate \(%\),50/);
   assert.match(csv, /Accounts,School Users,1/);
+});
+
+test("getAvailableReportYears and computeMonthlyReportsTrend filter by specific month and full year", () => {
+  const years = getAvailableReportYears(
+    sampleReports,
+    new Date("2026-11-25T12:00:00"),
+  );
+  assert.deepEqual(years, [2026]);
+
+  const nov2026 = computeMonthlyReportsTrend(sampleReports, 2026, 10);
+  assert.equal(nov2026.length, 6);
+  const bucket21to25 = nov2026.find((b) => b.label === "21–25");
+  assert.ok(bucket21to25);
+  assert.equal(bucket21to25.lost, 1);
+  assert.equal(bucket21to25.found, 3);
+
+  const fullYear2026 = computeMonthlyReportsTrend(sampleReports, 2026, "all");
+  assert.equal(fullYear2026.length, 12);
+  const novBucket = fullYear2026[10];
+  assert.equal(novBucket.label, "Nov");
+  assert.equal(novBucket.lost, 1);
+  assert.equal(novBucket.found, 3);
+
+  const emptyYear = computeMonthlyReportsTrend(sampleReports, 2025, 10);
+  assert.equal(
+    emptyYear.every((b) => b.lost === 0 && b.found === 0 && b.resolved === 0),
+    true,
+  );
 });

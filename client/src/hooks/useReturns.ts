@@ -15,6 +15,7 @@ import {
   listItemReturns,
   listMyReturns,
   publishRejectedReturn,
+  remindReturnFinder,
   type CreateReturnPayload,
   type PublishReturnResponse,
   type UpdateReturnPayload,
@@ -112,7 +113,7 @@ export function useUpdateAdminReturnStatus() {
       instructions,
     }: {
       id: string;
-      status: Exclude<ServerClaimStatus, "claimed">;
+      status: Exclude<ServerClaimStatus, "pending" | "claimed">;
       instructions?: string;
     }) => updateReturnStatus(id, status, instructions),
     onSuccess: (updated) => {
@@ -125,6 +126,29 @@ export function useUpdateAdminReturnStatus() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    },
+  });
+}
+
+/** Sends an OSA surrender reminder notification to the finder (3-hour cooldown). */
+export function useRemindReturnFinder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: remindReturnFinder,
+    onSuccess: (result, id) => {
+      queryClient.setQueryData<ServerClaim[]>(returnKeys.admin(), (current) =>
+        current?.map((request) =>
+          request.id === id
+            ? { ...request, lastFinderReminderAt: result.lastFinderReminderAt }
+            : request,
+        ),
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: returnKeys.all });
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
