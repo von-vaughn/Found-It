@@ -477,11 +477,6 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           onSubmit={handleDetailsSubmit}
           className="space-y-5 p-5 sm:p-6"
         >
-          {formError && (
-            <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
-              {formError}
-            </p>
-          )}
           <div className="min-w-0 space-y-5">
           <div>
             <label htmlFor="found-item-title" className={labelClass}>
@@ -638,6 +633,12 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           </div>
 
           </div>
+
+          {formError && (
+            <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
+              {formError}
+            </p>
+          )}
 
           <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
             <button

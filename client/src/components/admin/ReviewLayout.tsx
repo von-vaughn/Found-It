@@ -440,12 +440,12 @@ function ReviewDetailCard({
           <article className="flex min-w-0 flex-col">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                  {eyebrow}
-                </p>
-                <h2 className="mt-1 truncate text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                <h2 className="truncate text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                   {title}
                 </h2>
+                <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                  {eyebrow}
+                </p>
                 <p className="mt-0.5 truncate text-xs text-neutral-400 dark:text-neutral-500">
                   {subtitle}
                 </p>
