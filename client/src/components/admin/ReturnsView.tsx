@@ -7,6 +7,7 @@ import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { resolveIdNumber } from "@/lib/idNumber";
 import type { ServerClaimStatus } from "@/services/claimService";
 import type { ClaimRequest } from "@/types/claim";
+import { OsaReceiptConfirmModal } from "./OsaReceiptConfirmModal";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import {
   FilterChips,
@@ -344,6 +345,11 @@ export function ReturnDetailPanel({
   );
   const [confirmPublishRequest, setConfirmPublishRequest] =
     useState<ClaimRequest | null>(null);
+  const [confirmOsaReceipt, setConfirmOsaReceipt] = useState<{
+    requestId: string;
+    itemName: string;
+    nextReceived: boolean;
+  } | null>(null);
 
   const selectedLostReport = reports.find(
     (report) => report.id === selectedRequest.itemId,
@@ -614,10 +620,11 @@ export function ReturnDetailPanel({
                 type="button"
                 disabled={updatingEntryOsa}
                 onClick={() =>
-                  handleOsaReceiptChange(
-                    entry.id,
-                    !(entry.receivedByOsa ?? false),
-                  )
+                  setConfirmOsaReceipt({
+                    requestId: entry.id,
+                    itemName: entry.claimantTitle?.trim() || entry.item,
+                    nextReceived: !(entry.receivedByOsa ?? false),
+                  })
                 }
                 className={`inline-flex h-8 items-center justify-center rounded-[10px] border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-50 ${
                   entry.receivedByOsa
@@ -1046,6 +1053,27 @@ export function ReturnDetailPanel({
           </div>
         </div>
       )}
+
+      <OsaReceiptConfirmModal
+        open={Boolean(confirmOsaReceipt)}
+        itemName={confirmOsaReceipt?.itemName ?? ""}
+        nextReceived={confirmOsaReceipt?.nextReceived ?? true}
+        context="return"
+        isUpdating={Boolean(
+          isUpdatingOsaReceipt &&
+            confirmOsaReceipt &&
+            updatingOsaId === confirmOsaReceipt.requestId,
+        )}
+        onCancel={() => setConfirmOsaReceipt(null)}
+        onConfirm={() => {
+          if (!confirmOsaReceipt) return;
+          handleOsaReceiptChange(
+            confirmOsaReceipt.requestId,
+            confirmOsaReceipt.nextReceived,
+          );
+          setConfirmOsaReceipt(null);
+        }}
+      />
 
       <AdminPasswordModal
         open={promptOpen}

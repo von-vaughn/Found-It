@@ -7,6 +7,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import { OsaReceiptConfirmModal } from "./OsaReceiptConfirmModal";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import { NoItemImage } from "@/components/NoItemImage";
 import type { AdminReport } from "./types";
@@ -63,6 +64,7 @@ export function ItemDetailsDialog({
   isUpdatingOsaReceipt?: boolean;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingOsaReceipt, setConfirmingOsaReceipt] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [imageFailed, setImageFailed] = useState(false);
@@ -291,9 +293,7 @@ export function ItemDetailsDialog({
                       ? "Cannot undo OSA receipt after a request on this item has been approved or completed."
                       : undefined
                   }
-                  onClick={() =>
-                    onOsaReceiptChange(report.id, !report.receivedByOsa)
-                  }
+                  onClick={() => setConfirmingOsaReceipt(true)}
                   className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 ${
                     report.receivedByOsa
                       ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
@@ -423,6 +423,20 @@ export function ItemDetailsDialog({
               </button>
             </div>
         </dialog>
+      )}
+      {onOsaReceiptChange && (
+        <OsaReceiptConfirmModal
+          open={confirmingOsaReceipt}
+          itemName={report.title}
+          nextReceived={!report.receivedByOsa}
+          context="item"
+          isUpdating={isUpdatingOsaReceipt}
+          onCancel={() => setConfirmingOsaReceipt(false)}
+          onConfirm={() => {
+            onOsaReceiptChange(report.id, !report.receivedByOsa);
+            setConfirmingOsaReceipt(false);
+          }}
+        />
       )}
     </dialog>
   );

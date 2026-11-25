@@ -7,6 +7,7 @@ import { NoItemImage } from "@/components/NoItemImage";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { resolveIdNumber } from "@/lib/idNumber";
 import { getClaimantEmail, type ClaimRequest } from "@/types/claim";
+import { OsaReceiptConfirmModal } from "./OsaReceiptConfirmModal";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import {
   FilterChips,
@@ -312,6 +313,11 @@ export function ClaimDetailPanel({
   const [approvalInstructions, setApprovalInstructions] = useState("");
   const [approvalError, setApprovalError] = useState("");
   const [savingStatusChange, setSavingStatusChange] = useState(false);
+  const [confirmOsaReceipt, setConfirmOsaReceipt] = useState<{
+    itemId: string;
+    itemName: string;
+    nextReceived: boolean;
+  } | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [detailStatusFilter, setDetailStatusFilter] = useState<string>(() =>
     DEFAULT_CLAIM_FILTERS.includes(claim.status) ? claim.status : "Pending",
@@ -505,10 +511,11 @@ export function ClaimDetailPanel({
                 : undefined
             }
             onClick={() =>
-              onOsaReceiptChange(
-                selectedItemPost.id,
-                !selectedItemPost.receivedByOsa,
-              )
+              setConfirmOsaReceipt({
+                itemId: selectedItemPost.id,
+                itemName: selectedItemPost.title || claim.item,
+                nextReceived: !selectedItemPost.receivedByOsa,
+              })
             }
             className={`inline-flex h-8 items-center justify-center rounded-[10px] border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45 ${
               selectedItemPost.receivedByOsa
@@ -929,6 +936,23 @@ export function ClaimDetailPanel({
         )}
       </div>
       </FadeIn>
+
+      <OsaReceiptConfirmModal
+        open={Boolean(confirmOsaReceipt)}
+        itemName={confirmOsaReceipt?.itemName ?? ""}
+        nextReceived={confirmOsaReceipt?.nextReceived ?? true}
+        context="claim"
+        isUpdating={isUpdatingOsaReceipt}
+        onCancel={() => setConfirmOsaReceipt(null)}
+        onConfirm={() => {
+          if (!confirmOsaReceipt) return;
+          onOsaReceiptChange(
+            confirmOsaReceipt.itemId,
+            confirmOsaReceipt.nextReceived,
+          );
+          setConfirmOsaReceipt(null);
+        }}
+      />
 
       <AdminPasswordModal
         open={promptOpen}
