@@ -38,9 +38,27 @@ function requestIdParam(req: Request): string | null {
     : null;
 }
 
-const adminReturnStatusSchema = z.object({
-  status: z.enum(["pending", "approved", "rejected", "returned"]),
-});
+const adminReturnStatusSchema = z
+  .object({
+    status: z.enum(["pending", "approved", "rejected", "returned"]),
+    instructions: z
+      .string()
+      .trim()
+      .max(500, "Approval message must be at most 500 characters.")
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.status === "approved" &&
+      (!data.instructions || data.instructions.length === 0)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["instructions"],
+        message: "Please provide a message for the lost-item owner before approving.",
+      });
+    }
+  });
 const adminOsaReceiptSchema = z.object({
   receivedByOsa: z.boolean(),
 });
@@ -169,6 +187,7 @@ export async function updateAdminReturnStatus(
     returnRequest = await updateReturnStatusById(
       requestId,
       parsed.data.status,
+      parsed.data.instructions,
     );
   } catch (error) {
     if (

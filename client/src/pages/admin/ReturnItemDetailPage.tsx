@@ -101,8 +101,8 @@ export function ReturnItemDetailPage() {
         allRequests={requests}
         reports={reports}
         physicalItemReceived={physicalItemReceived}
-        onUpdateStatus={(id, status) =>
-          updateReturnStatus.mutateAsync({ id, status })
+        onUpdateStatus={(id, status, instructions) =>
+          updateReturnStatus.mutateAsync({ id, status, instructions })
         }
         onUpdateOsaReceipt={(params, options) =>
           updateOsaReceipt.mutate(params, options)

@@ -28,7 +28,6 @@ import { useSensitiveUnlock } from "./useSensitiveUnlock";
 const LIST_PAGE_SIZE = 10;
 
 const DEFAULT_RETURN_FILTERS = [
-  "All",
   "Pending",
   "Approved",
   "Returned",
@@ -344,6 +343,7 @@ export function ReturnDetailPanel({
   onUpdateStatus: (
     id: string,
     status: Exclude<ServerClaimStatus, "claimed">,
+    instructions?: string,
   ) => Promise<unknown>;
   onUpdateOsaReceipt: (
     params: { id: string; receivedByOsa: boolean },
@@ -365,6 +365,8 @@ export function ReturnDetailPanel({
     requestId: string;
     status: StatusDecision;
   } | null>(null);
+  const [approvalMessage, setApprovalMessage] = useState("");
+  const [approvalMessageError, setApprovalMessageError] = useState("");
   const [confirmPublishRequest, setConfirmPublishRequest] =
     useState<ClaimRequest | null>(null);
 
@@ -409,6 +411,8 @@ export function ReturnDetailPanel({
     if (status === "Pending" || status === "Returned") {
       if (target.status !== "Approved") return;
     } else if (target.status !== "Pending") return;
+    setApprovalMessage("");
+    setApprovalMessageError("");
     setConfirmAction({ requestId, status });
   };
 
@@ -467,8 +471,21 @@ export function ReturnDetailPanel({
     if (!confirmAction || !confirmTargetRequest) return;
     const serverStatus = ADMIN_RETURN_STATUS[confirmAction.status];
     if (!serverStatus) return;
+
+    const trimmedMessage = approvalMessage.trim();
+    if (confirmAction.status === "Approved" && !trimmedMessage) {
+      setApprovalMessageError(
+        "Please enter a message for the lost-item owner before approving.",
+      );
+      return;
+    }
+
     try {
-      await onUpdateStatus(confirmAction.requestId, serverStatus);
+      await onUpdateStatus(
+        confirmAction.requestId,
+        serverStatus,
+        confirmAction.status === "Approved" ? trimmedMessage : undefined,
+      );
     } catch {
       toast.error("Could not update this return request. Please try again.");
       return;
@@ -476,7 +493,7 @@ export function ReturnDetailPanel({
 
     if (confirmAction.status === "Approved") {
       toast.success(
-        `Approved return of "${confirmTargetRequest.item}" for ${confirmTargetRequest.claimant}.`,
+        `Approved return of "${confirmTargetRequest.item}" and notified the lost-item owner.`,
       );
     } else if (confirmAction.status === "Pending") {
       toast.success(
@@ -491,6 +508,8 @@ export function ReturnDetailPanel({
         `Rejected return request for "${confirmTargetRequest.item}".`,
       );
     }
+    setApprovalMessage("");
+    setApprovalMessageError("");
     setConfirmAction(null);
   };
 
@@ -675,6 +694,18 @@ export function ReturnDetailPanel({
                       </div>
                     )}
 
+                    {entry.status === "Approved" &&
+                      entry.approvalInstructions?.trim() && (
+                        <div className="mt-4 rounded-xl bg-emerald-50/80 px-3.5 py-2.5 text-xs text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
+                          <p className="font-semibold">
+                            Message sent to lost-item owner
+                          </p>
+                          <p className="mt-1 whitespace-pre-line break-words leading-relaxed">
+                            {entry.approvalInstructions}
+                          </p>
+                        </div>
+                      )}
+
                     {entry.status === "Rejected" &&
                       !entry.publishedItemId &&
                       !entryReceived && (
@@ -822,6 +853,43 @@ export function ReturnDetailPanel({
                     ? `"${confirmTargetRequest.item}" will be marked as returned to ${confirmTargetRequest.claimant}. Its item report will show Returned.`
                     : `The return request for "${confirmTargetRequest.item}" by ${confirmTargetRequest.claimant} will be marked as rejected.`}
             </p>
+            {confirmAction.status === "Approved" && (
+              <div className="mt-4">
+                <label
+                  htmlFor="return-approval-message"
+                  className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                >
+                  Message for the lost-item owner{" "}
+                  <span className="text-[#E5192D]" aria-hidden="true">
+                    *
+                  </span>
+                </label>
+                <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
+                  Sent only to the user who posted this lost item, not the finder.
+                </p>
+                <textarea
+                  id="return-approval-message"
+                  rows={3}
+                  maxLength={500}
+                  value={approvalMessage}
+                  onChange={(event) => {
+                    setApprovalMessage(event.target.value);
+                    if (approvalMessageError) setApprovalMessageError("");
+                  }}
+                  placeholder="e.g., Visit OSA Window 1 with your student ID to verify and claim your item."
+                  className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+                />
+                {approvalMessageError && (
+                  <p
+                    role="alert"
+                    className="mt-1 text-xs font-medium text-[#E5192D] dark:text-red-400"
+                  >
+                    {approvalMessageError}
+                  </p>
+                )}
+              </div>
+            )}
+
             {isCompleteReturn && requestsToAutoReject.length > 0 && (
               <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
                 {requestsToAutoReject.length === 1
@@ -833,7 +901,7 @@ export function ReturnDetailPanel({
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                autoFocus
+                autoFocus={confirmAction.status !== "Approved"}
                 onClick={() => setConfirmAction(null)}
                 className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
               >
@@ -841,8 +909,11 @@ export function ReturnDetailPanel({
               </button>
               <button
                 type="button"
+                disabled={
+                  confirmAction.status === "Approved" && !approvalMessage.trim()
+                }
                 onClick={confirmStatusChange}
-                className={`h-10 rounded-xl px-5 text-sm font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                className={`h-10 rounded-xl px-5 text-sm font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 ${
                   confirmAction.status === "Returned"
                     ? "bg-emerald-700 hover:bg-emerald-800 focus-visible:ring-emerald-700"
                     : "bg-[#E5192D] hover:bg-[#c91424] focus-visible:ring-[#E5192D]"

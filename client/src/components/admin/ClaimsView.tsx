@@ -28,7 +28,6 @@ import { useSensitiveUnlock } from "./useSensitiveUnlock";
 const LIST_PAGE_SIZE = 10;
 
 const DEFAULT_CLAIM_FILTERS = [
-  "All",
   "Pending",
   "Approved",
   "Claimed",

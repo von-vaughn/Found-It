@@ -14,7 +14,7 @@ export function ClaimsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
-  const [claimStatusFilter, setClaimStatusFilter] = useState("All");
+  const [claimStatusFilter, setClaimStatusFilter] = useState("Pending");
   const [returnStatusFilter, setReturnStatusFilter] = useState("Pending");
 
   const activeTab: RequestsTab =
@@ -164,7 +164,7 @@ export function ClaimsPage() {
           query={query.trim().toLowerCase()}
           statusFilter={claimStatusFilter}
           onStatusFilterChange={setClaimStatusFilter}
-          statusOptions={["All", "Pending", "Approved", "Claimed", "Rejected"]}
+          statusOptions={["Pending", "Approved", "Claimed", "Rejected"]}
           onSelectClaim={handleSelectClaim}
         />
       ) : (

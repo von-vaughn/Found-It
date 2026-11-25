@@ -203,6 +203,9 @@ export async function createRequestStatusNotification(
     input.itemOwnerId !== input.requesterId
   ) {
     if (input.status === "approved") {
+      const ownerMessage = input.instructions
+        ? `Someone returned your lost item "${input.itemName}". ${input.instructions}`
+        : `Someone returned your lost item "${input.itemName}". Please visit the OSA office to verify and claim it.`;
       await client.query(
         `INSERT INTO notification (
            user_id, item_id, request_id, kind, event, title, message
@@ -214,7 +217,7 @@ export async function createRequestStatusNotification(
           "return",
           "approved",
           "Someone returned your lost item",
-          `Someone returned your lost item "${input.itemName}". Please visit the OSA office to verify and claim it.`,
+          ownerMessage,
         ],
       );
     } else if (input.status === "returned") {

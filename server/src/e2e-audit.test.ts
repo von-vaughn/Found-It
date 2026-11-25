@@ -855,18 +855,68 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(resubmitted.status, 201);
     const secondReturnId = resubmitted.data.returnRequest.id;
 
-    // Mark OSA receipt -> approve -> cannot revoke OSA receipt while approved
+    // Mark OSA receipt -> approving without instructions must fail (400)
     const osaTrue = await api('PATCH', `/api/returns/admin/${secondReturnId}/osa-receipt`, {
       token: adminAuth.token,
       body: { receivedByOsa: true },
     });
     assert.equal(osaTrue.status, 200);
 
-    const approveRet = await api('PATCH', `/api/returns/admin/${secondReturnId}/status`, {
+    const approveRetMissingMessage = await api(
+      'PATCH',
+      `/api/returns/admin/${secondReturnId}/status`,
+      {
+        token: adminAuth.token,
+        body: { status: 'approved' },
+      },
+    );
+    assert.equal(approveRetMissingMessage.status, 400);
+
+    const ownerMessage = 'Visit OSA Window 1 with your student ID to claim your lost item.';
+    const approveRet = await api<{
+      returnRequest: { status: string; approvalInstructions?: string | null };
+    }>('PATCH', `/api/returns/admin/${secondReturnId}/status`, {
       token: adminAuth.token,
-      body: { status: 'approved' },
+      body: { status: 'approved', instructions: ownerMessage },
     });
     assert.equal(approveRet.status, 200);
+    assert.equal(approveRet.data.returnRequest.approvalInstructions, ownerMessage);
+
+    // Owner receives the approval message in their notification; finder does NOT.
+    const ownerNotifs = await api<{
+      notifications: Array<{ requestId: string | null; event: string; message: string }>;
+    }>('GET', '/api/notifications', { token: ownerAuth.token });
+    assert.equal(ownerNotifs.status, 200);
+    const ownerApprovalNotif = ownerNotifs.data.notifications.find(
+      (n) => n.requestId === secondReturnId && n.event === 'approved',
+    );
+    assert.ok(ownerApprovalNotif, 'Expected owner approval notification');
+    assert.ok(
+      ownerApprovalNotif.message.includes(ownerMessage),
+      'Expected owner notification to include admin approval message',
+    );
+
+    const finderNotifs = await api<{
+      notifications: Array<{ requestId: string | null; event: string; message: string }>;
+    }>('GET', '/api/notifications', { token: finderAuth.token });
+    assert.equal(finderNotifs.status, 200);
+    const finderApprovalNotif = finderNotifs.data.notifications.find(
+      (n) => n.requestId === secondReturnId && n.event === 'approved',
+    );
+    assert.ok(finderApprovalNotif, 'Expected finder approval notification');
+    assert.equal(
+      finderApprovalNotif.message.includes(ownerMessage),
+      false,
+      'Finder notification must not contain the lost-item owner message',
+    );
+
+    // Finder's own returns list must not expose the lost-item owner's approval message
+    const finderReturns = await api<{
+      returns: Array<{ id: string; approvalInstructions?: string | null }>;
+    }>('GET', '/api/returns', { token: finderAuth.token });
+    assert.equal(finderReturns.status, 200);
+    const finderReturnRow = finderReturns.data.returns.find((r) => r.id === secondReturnId);
+    assert.equal(finderReturnRow?.approvalInstructions ?? null, null);
 
     const osaRevoke = await api('PATCH', `/api/returns/admin/${secondReturnId}/osa-receipt`, {
       token: adminAuth.token,

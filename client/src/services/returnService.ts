@@ -77,10 +77,11 @@ export async function publishRejectedReturn(
 export async function updateReturnStatus(
   id: string,
   status: Exclude<ServerClaimStatus, "claimed">,
+  instructions?: string,
 ): Promise<ServerClaim> {
   const { data } = await api.patch<UpdateReturnResponse>(
     `/returns/admin/${id}/status`,
-    { status },
+    instructions ? { status, instructions } : { status },
   );
   return data.returnRequest;
 }

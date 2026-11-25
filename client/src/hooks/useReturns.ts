@@ -109,10 +109,12 @@ export function useUpdateAdminReturnStatus() {
     mutationFn: ({
       id,
       status,
+      instructions,
     }: {
       id: string;
       status: Exclude<ServerClaimStatus, "claimed">;
-    }) => updateReturnStatus(id, status),
+      instructions?: string;
+    }) => updateReturnStatus(id, status, instructions),
     onSuccess: (updated) => {
       queryClient.setQueryData<ServerClaim[]>(returnKeys.admin(), (current) =>
         current?.map((request) =>

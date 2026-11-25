@@ -138,9 +138,6 @@ export function AdminLayout({
           activeSection === "post" ? "flex flex-col md:ml-20 md:pl-0" : "md:ml-20"
         }`}
       >
-      {activeSection === "post" && (
-        <div className="hidden h-20 md:block" aria-hidden="true" />
-      )}
       {showSearch && onQueryChange && (
         <header
           className="notifications-shift sticky top-0 z-20 flex h-16 w-full items-center justify-between gap-3 bg-[#f7f7f8]/95 dark:bg-neutral-950/95 px-4 backdrop-blur-sm transition-[margin,width] duration-300 sm:px-6 lg:px-8"

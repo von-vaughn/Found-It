@@ -73,7 +73,11 @@ function parseEvidence(value: string | null): string[] {
   }
 }
 
-function toClaim(row: ClaimRow, includeOsaReceipt = false): Claim {
+function toClaim(
+  row: ClaimRow,
+  includeOsaReceipt = false,
+  includeApprovalInstructions = true,
+): Claim {
   return {
     id: row.id,
     itemId: row.item_id,
@@ -93,7 +97,9 @@ function toClaim(row: ClaimRow, includeOsaReceipt = false): Claim {
     ...(includeOsaReceipt ? { receivedByOsa: row.received_by_osa } : {}),
     publishedItemId: row.published_item_id,
     rejectionReason: row.rejection_reason,
-    approvalInstructions: row.approval_instructions,
+    approvalInstructions: includeApprovalInstructions
+      ? row.approval_instructions
+      : null,
     status: row.status,
     submitted: new Date(row.created_at).toISOString(),
   };
@@ -196,7 +202,7 @@ async function findRequestForUserAndItem(
      LIMIT 1`,
     [userId, itemId, kind, excludeRejected],
   );
-  return rows[0] ? toClaim(rows[0]) : null;
+  return rows[0] ? toClaim(rows[0], false, kind !== "return") : null;
 }
 
 async function findRequestForUserById(
@@ -210,7 +216,7 @@ async function findRequestForUserById(
      LIMIT 1`,
     [requestId, userId, kind],
   );
-  return rows[0] ? toClaim(rows[0]) : null;
+  return rows[0] ? toClaim(rows[0], false, kind !== "return") : null;
 }
 
 export function findClaimForUserAndItem(
@@ -252,7 +258,7 @@ async function listRequestsByUser(
      LIMIT 200`,
     [userId, kind],
   );
-  return rows.map((row) => toClaim(row, true));
+  return rows.map((row) => toClaim(row, true, kind !== "return"));
 }
 
 export function listClaimsByUser(userId: string): Promise<Claim[]> {
@@ -563,16 +569,20 @@ async function updateRequestStatusById(
         ? `UPDATE request
            SET status = $2, rejection_reason = $5
            WHERE id = $1 AND kind = $3 AND status = $4`
-        : status === "approved" && kind === "claim"
+        : status === "approved"
           ? `UPDATE request
              SET status = $2, approval_instructions = $5
              WHERE id = $1 AND kind = $3 AND status = $4`
-          : `UPDATE request
-             SET status = $2
-             WHERE id = $1 AND kind = $3 AND status = $4`,
+          : status === "pending"
+            ? `UPDATE request
+               SET status = $2, approval_instructions = NULL
+               WHERE id = $1 AND kind = $3 AND status = $4`
+            : `UPDATE request
+               SET status = $2
+               WHERE id = $1 AND kind = $3 AND status = $4`,
       status === "rejected"
         ? [id, status, kind, current.status, trimmedReason]
-        : status === "approved" && kind === "claim"
+        : status === "approved"
           ? [id, status, kind, current.status, trimmedInstructions]
           : [id, status, kind, current.status],
     );
@@ -605,9 +615,7 @@ async function updateRequestStatusById(
         itemOwnerId: current.item_owner_id,
         reason: status === "rejected" ? (trimmedReason ?? undefined) : undefined,
         instructions:
-          status === "approved" && kind === "claim"
-            ? (trimmedInstructions ?? undefined)
-            : undefined,
+          status === "approved" ? (trimmedInstructions ?? undefined) : undefined,
       });
     }
 
@@ -677,8 +685,15 @@ export function updateClaimStatusById(
 export function updateReturnStatusById(
   id: string,
   status: Exclude<ClaimStatus, "claimed">,
+  approvalInstructions?: string,
 ): Promise<Claim | null> {
-  return updateRequestStatusById("return", id, status);
+  return updateRequestStatusById(
+    "return",
+    id,
+    status,
+    undefined,
+    approvalInstructions,
+  );
 }
 
 interface CreateRequestInput {
