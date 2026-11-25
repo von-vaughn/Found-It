@@ -31,6 +31,7 @@ const LIST_PAGE_SIZE = 10;
 const DEFAULT_RETURN_FILTERS = [
   "Pending",
   "Approved",
+  "Returned",
   "Rejected",
 ];
 
