@@ -58,10 +58,10 @@ export function Panel({
       onMouseLeave={onMouseLeave}
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
-      className={`min-w-0 bg-white dark:bg-neutral-900 ${borderless ? "" : "rounded-xl border border-neutral-200 dark:border-neutral-800"} ${className}`}
+      className={`min-w-0 rounded-xl bg-white dark:bg-neutral-900 ${borderless ? "" : "border border-neutral-200 dark:border-neutral-800"} ${className}`}
     >
       <div
-        className={`flex min-h-14 items-center justify-between gap-3 px-4 sm:px-5 ${borderless ? "" : "border-b border-neutral-100 dark:border-neutral-800"} ${stickyHeader ? "sticky top-0 z-10 bg-white dark:bg-neutral-900" : ""}`}
+        className={`flex min-h-14 items-center justify-between gap-3 px-4 sm:px-5 border-b border-neutral-100 dark:border-neutral-800 ${stickyHeader ? "sticky top-0 z-10 bg-white dark:bg-neutral-900" : ""}`}
       >
         <div className="flex min-w-0 items-center gap-2">
           <h2

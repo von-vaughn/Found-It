@@ -169,6 +169,7 @@ export function AnalyticsSection({
         <div className="min-w-0 lg:col-span-7">
           <Panel
             title="Reports over time"
+            borderless
             className="flex h-full flex-col"
             action={
               <div
@@ -268,6 +269,7 @@ export function AnalyticsSection({
         <div className="min-w-0 lg:col-span-5">
           <Panel
             title="Request status funnel"
+            borderless
             className="flex h-full flex-col"
             action={
               <span className="text-[11px] tabular-nums text-neutral-500 dark:text-neutral-400">
@@ -332,6 +334,7 @@ export function AnalyticsSection({
       <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-2">
         <Panel
           title="Top categories"
+          borderless
           action={
             <span className="text-[11px] tabular-nums text-neutral-500 dark:text-neutral-400">
               {reports.length} reports
@@ -347,6 +350,7 @@ export function AnalyticsSection({
 
         <Panel
           title="Campus hotspots"
+          borderless
           action={
             <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
               By building

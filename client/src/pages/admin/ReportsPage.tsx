@@ -213,6 +213,7 @@ export function ReportsPage() {
       <FadeIn>
       <Panel
         title="Item reports"
+        borderless
         className="flex h-[calc(100dvh-11.5rem)] flex-col overflow-hidden sm:h-[calc(100dvh-8rem)]"
         action={
           <div className="flex flex-wrap items-center justify-end gap-2">

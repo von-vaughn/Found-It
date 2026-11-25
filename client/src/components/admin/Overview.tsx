@@ -107,7 +107,7 @@ export function Overview({
   ) => (
     <section
       aria-label={ariaLabel}
-      className={`grid overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 ${gridClassName} ${className ?? ""}`}
+      className={`grid overflow-hidden rounded-xl bg-white dark:bg-neutral-900 ${gridClassName} ${className ?? ""}`}
     >
       {items.map(({ label, value, note, icon: Icon, section }) => (
         <button
