@@ -158,7 +158,7 @@ export async function publishRejectedReturnItem(
     res.status(400).json({ message: "Invalid return request ID." });
     return;
   }
-  const result = await publishRejectedReturn(requestId, req.user!.sub);
+  const result = await publishRejectedReturn(requestId);
   if (result.status === "not_found") {
     res.status(404).json({ message: "Return request not found." });
     return;

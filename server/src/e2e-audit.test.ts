@@ -852,14 +852,27 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(publishRes.data.alreadyPublished, false);
     createdItemIds.push(publishRes.data.itemId);
 
-    // Published found item must carry receivedByOsa = true
-    const publishedDetail = await api<{ item: { receivedByOsa?: boolean } }>(
-      'GET',
-      `/api/items/${publishRes.data.itemId}`,
-      { token: adminAuth.token },
-    );
+    // Published found item must carry receivedByOsa = true and credit the original finder
+    const publishedDetail = await api<{
+      item: { receivedByOsa?: boolean; user: { id: string } };
+    }>('GET', `/api/items/${publishRes.data.itemId}`, { token: adminAuth.token });
     assert.equal(publishedDetail.status, 200);
     assert.equal(publishedDetail.data.item.receivedByOsa, true);
+    assert.equal(publishedDetail.data.item.user.id, finderAuth.user.id);
+
+    const finderPubNotifs = await api<{
+      notifications: Array<{ itemId: string | null; requestId: string | null; title: string }>;
+    }>('GET', '/api/notifications', { token: finderAuth.token });
+    assert.equal(finderPubNotifs.status, 200);
+    assert.ok(
+      finderPubNotifs.data.notifications.some(
+        (n) =>
+          n.itemId === publishRes.data.itemId &&
+          n.requestId === firstReturnId &&
+          n.title === 'Found item posted publicly',
+      ),
+      'Expected finder to be notified when OSA publishes their rejected return',
+    );
 
     const secondPublish = await api<{ itemId: string; alreadyPublished: boolean }>(
       'POST',

@@ -153,6 +153,29 @@ export async function createReturnFinderSurrenderReminderNotification(
   );
 }
 
+export async function createPublishedRejectedReturnNotification(
+  client: PoolClient,
+  input: {
+    finderId: string;
+    publishedItemId: string;
+    requestId: string;
+    itemName: string;
+  },
+): Promise<void> {
+  await client.query(
+    `INSERT INTO notification (
+       user_id, item_id, request_id, kind, event, title, message
+     ) VALUES ($1, $2, $3, 'return', 'approved', $4, $5)`,
+    [
+      input.finderId,
+      input.publishedItemId,
+      input.requestId,
+      "Found item posted publicly",
+      `OSA posted your surrendered item "${input.itemName}" as a public found listing so its rightful owner can claim it.`,
+    ],
+  );
+}
+
 export async function createRequestStatusNotification(
   client: PoolClient,
   input: {

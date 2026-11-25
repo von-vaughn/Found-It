@@ -10,6 +10,7 @@ import {
   createClaimedNotifications,
   createAdminSubmissionNotifications,
   createFinderClaimSubmissionNotification,
+  createPublishedRejectedReturnNotification,
   createRequestStatusNotification,
   createReturnFinderSurrenderReminderNotification,
 } from "./notification.repository";
@@ -471,12 +472,12 @@ async function blurPublishedItemImages(itemId: string): Promise<void> {
 /** Publishes a rejected found report as a public found-item post exactly once. */
 export async function publishRejectedReturn(
   requestId: string,
-  adminId: string,
 ): Promise<PublishRejectedReturnResult> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const { rows } = await client.query<{
+      user_id: string;
       status: ClaimStatus;
       received_by_osa: boolean;
       published_item_id: string | null;
@@ -493,10 +494,11 @@ export async function publishRejectedReturn(
       custom_category: string | null;
       item_name: string;
     }>(
-      `SELECT rq.status, rq.received_by_osa, rq.published_item_id, rq.claimant_title,
-              rq.primary_color, rq.building, rq.date_lost, rq.time_lost,
-              rq.location_lost, rq.details, rq.important_details, rq.evidence,
-              item.category_id, item.custom_category, item.name AS item_name
+      `SELECT rq.user_id, rq.status, rq.received_by_osa, rq.published_item_id,
+              rq.claimant_title, rq.primary_color, rq.building, rq.date_lost,
+              rq.time_lost, rq.location_lost, rq.details, rq.important_details,
+              rq.evidence, item.category_id, item.custom_category,
+              item.name AS item_name
        FROM request rq
        JOIN item ON item.id = rq.item_id
        WHERE rq.id = $1 AND rq.kind = 'return'
@@ -538,7 +540,7 @@ export async function publishRejectedReturn(
     }
 
     const created = await createItemWithClient(client, {
-      reporterId: adminId,
+      reporterId: request.user_id,
       reportType: "found",
       name,
       description,
@@ -557,6 +559,12 @@ export async function publishRejectedReturn(
       "UPDATE request SET published_item_id = $2 WHERE id = $1",
       [requestId, created.id],
     );
+    await createPublishedRejectedReturnNotification(client, {
+      finderId: request.user_id,
+      publishedItemId: created.id,
+      requestId,
+      itemName: name,
+    });
     await client.query("COMMIT");
 
     await blurPublishedItemImages(created.id);
