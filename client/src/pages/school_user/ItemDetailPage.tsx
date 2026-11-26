@@ -35,7 +35,7 @@ import type {
   ClaimRequest,
   NewClaimRequest,
 } from "@/types/claim";
-import { ClaimEvidenceGallery } from "@/components/school_user/ClaimEvidenceGallery";
+import { PhotoCarousel } from "@/components/PhotoCarousel";
 import {
   simplifiedClaimStatusStyles,
   simplifyClaimStatus,
@@ -55,15 +55,6 @@ interface ItemDetailPageProps {
   filters: ItemFilters;
   onFiltersChange: (filters: ItemFilters) => void;
 }
-
-const finderStatusStyles: Record<string, string> = {
-  Pending: "bg-amber-500 text-white",
-  "Pending admin approval": "bg-amber-500 text-white",
-  Approved: "bg-emerald-600 text-white",
-  Claimed: "bg-blue-600 text-white",
-  Returned: "bg-teal-600 text-white",
-  Rejected: "bg-rose-600 text-white",
-};
 
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   submittedClaims = [],
@@ -628,129 +619,154 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
               >
                 Responses to Your Lost Item
               </h2>
-              <ul className="mt-4 space-y-3">
+              <ul className="mt-4 divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-white dark:divide-neutral-800 dark:bg-neutral-900">
                   {finderReports.map((claim) => {
-                    const claimStatus = claim.status;
+                    const claimStatusLabel = submissionStatusLabel(claim);
+                    const claimStatusStyle =
+                      simplifiedClaimStatusStyles[claimStatusLabel];
+                    const detailImages = (claim.evidence ?? []).filter(
+                      (src) => src !== item.image,
+                    );
 
                     return (
-                      <li
-                        key={claim.id}
-                        className="rounded-2xl bg-white dark:bg-neutral-900 p-4 sm:p-5"
-                      >
-                      <div className="grid items-stretch gap-8 md:grid-cols-2">
-                        <div className="min-w-0">
-                          {claim.evidence && claim.evidence.length > 0 ? (
-                            <ClaimEvidenceGallery
-                              images={claim.evidence}
-                              altPrefix="Found item photo evidence"
-                            />
-                          ) : (
-                            <NoItemImage
-                              title="No photo evidence provided"
-                              className="h-full min-h-48 w-full"
-                            />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center justify-between gap-3">
-                            <h3 className="min-w-0 truncate text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                              {claim.claimantTitle || "Found item report"}
-                            </h3>
-                            <span
-                              className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold ${finderStatusStyles[claimStatus] ?? "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"}`}
-                            >
-                              {claimStatus}
-                            </span>
-                          </div>
-                          <div className="mt-3 border-b border-neutral-100 dark:border-neutral-800 pb-3">
-                            <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                              Description
-                            </span>
-                            <p className="mt-1 text-xs leading-relaxed text-neutral-700 dark:text-neutral-300 break-words">
-                              {claim.details || "No additional description provided."}
-                            </p>
-                          </div>
-                          <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                            {claim.color && (
-                              <div>
-                                <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                      <li key={claim.id} className="p-4 sm:p-5">
+                        <div className="grid gap-5 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]">
+                          <PhotoCarousel
+                            key={claim.id}
+                            photos={detailImages.map((src, photoIdx) => ({
+                              src,
+                              alt: `Found item photo ${photoIdx + 1} for ${claim.claimantTitle ?? claim.item}`,
+                            }))}
+                            emptySubtitle=""
+                          />
+                          <div className="flex min-w-0 flex-col">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="truncate text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                                  {claim.claimantTitle?.trim() ||
+                                    claim.item ||
+                                    "Found item report"}
+                                </h3>
+                                <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-neutral-400 dark:text-neutral-500">
+                                  <span className="font-semibold uppercase tracking-wider">
+                                    Return Request
+                                  </span>
+                                  <span aria-hidden="true">·</span>
+                                  <span className="font-medium text-neutral-500 dark:text-neutral-400">
+                                    Submitted{" "}
+                                    <span className="font-mono tabular-nums">
+                                      {claim.submitted}
+                                    </span>
+                                  </span>
+                                </p>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <span
+                                  className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold ${claimStatusStyle}`}
+                                >
+                                  {claimStatusLabel}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="mt-4">
+                              <h4 className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+                                Description
+                              </h4>
+                              <p className="mt-1 text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
+                                {claim.details ||
+                                  "No additional description provided."}
+                              </p>
+                            </div>
+
+                            <dl className="mt-4 grid grid-cols-2 gap-px border-y border-neutral-200/80 bg-neutral-200/80 text-xs sm:grid-cols-3 dark:border-neutral-800 dark:bg-neutral-800">
+                              <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
                                   Primary color
                                 </dt>
-                                <dd className="mt-1 font-semibold capitalize text-neutral-800 dark:text-neutral-200">
-                                  {claim.color}
+                                <dd className="mt-1 font-semibold capitalize text-neutral-900 dark:text-neutral-100">
+                                  {claim.color?.trim() || "Not provided"}
                                 </dd>
                               </div>
-                            )}
-                            <div>
-                              <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                Location found
-                              </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                {claim.location || "None"}
-                              </dd>
-                            </div>
-                            {claim.building && (
-                              <div>
-                                <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                              <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                                  Location found
+                                </dt>
+                                <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
+                                  {claim.location || "Not provided"}
+                                </dd>
+                              </div>
+                              <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
                                   Building
                                 </dt>
-                                <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                  {claim.building}
+                                <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
+                                  {claim.building?.trim() || "Not provided"}
                                 </dd>
                               </div>
-                            )}
-                            <div>
-                              <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                Date found
-                              </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                {claim.dateLost}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                Time found
-                              </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                {claim.timeLost || "None"}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
-                                Submitted
-                              </dt>
-                              <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                                {claim.submitted}
-                              </dd>
-                            </div>
-                          </dl>
-                          {claimStatus === "Approved" && (
-                            <div className="mt-4 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 p-3.5 text-xs text-emerald-900 dark:text-emerald-200">
-                              <p className="font-bold">
-                                {claim.approvalInstructions?.trim()
-                                  ? "Pickup Instructions from OSA"
-                                  : "Returned to OSA office"}
-                              </p>
-                              <div className="mt-2 flex items-start justify-between gap-4">
-                                <p className="min-w-0 flex-1 whitespace-pre-line break-words leading-relaxed text-emerald-950 dark:text-emerald-100">
-                                  {claim.approvalInstructions?.trim() ||
-                                    "Visit OSA with your school ID to claim."}
-                                </p>
-                                <PickupQrCard
-                                  kind="return"
-                                  requestId={claim.id}
-                                  itemName={item.title}
-                                />
+                              <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                                  Date found
+                                </dt>
+                                <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
+                                  {claim.dateLost || "Not provided"}
+                                </dd>
                               </div>
-                            </div>
-                          )}
-                          {claimStatus === "Returned" && (
-                            <div className="mt-4 rounded-xl bg-teal-50/70 dark:bg-teal-950/30 p-3 text-xs text-teal-900 dark:text-teal-300">
-                              <p className="font-bold">Item returned</p>
-                            </div>
-                          )}
+                              <div className="bg-white px-3 py-3 dark:bg-neutral-900">
+                                <dt className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                                  Time found
+                                </dt>
+                                <dd className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100">
+                                  {claim.timeLost || "Not provided"}
+                                </dd>
+                              </div>
+                              <div
+                                aria-hidden="true"
+                                className="bg-white dark:bg-neutral-900"
+                              />
+                            </dl>
+
+                            {claim.importantDetails?.trim() && (
+                              <div className="mt-4">
+                                <h4 className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+                                  Important Details
+                                </h4>
+                                <p className="mt-1 text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
+                                  {claim.importantDetails}
+                                </p>
+                              </div>
+                            )}
+
+                            {claimStatusLabel === "Approved" && (
+                              <div className="mt-3 rounded-xl bg-emerald-50/80 px-4 py-3 dark:bg-emerald-950/30">
+                                <h4 className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                                  {claim.approvalInstructions?.trim()
+                                    ? "Pickup Instructions from OSA"
+                                    : "Returned to OSA office"}
+                                </h4>
+                                <div className="mt-2 flex items-start justify-between gap-4">
+                                  <p className="min-w-0 flex-1 whitespace-pre-line break-words text-sm leading-relaxed text-emerald-950 dark:text-emerald-100">
+                                    {claim.approvalInstructions?.trim() ||
+                                      "Visit OSA with your school ID to claim."}
+                                  </p>
+                                  <PickupQrCard
+                                    kind="return"
+                                    requestId={claim.id}
+                                    itemName={item.title}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {claimStatusLabel === "Returned" && (
+                              <div className="mt-3 rounded-xl bg-teal-50/80 px-4 py-3 dark:bg-teal-950/30">
+                                <h4 className="text-[11px] font-semibold text-teal-800 dark:text-teal-300">
+                                  Item returned
+                                </h4>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
                       </li>
                     );
                   })}
