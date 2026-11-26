@@ -65,7 +65,7 @@ function splitDateTime(item: Item): { date: string; time: string } {
 }
 
 const inputClass =
-  "w-full h-11 px-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors";
+  "w-full h-11 px-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white dark:focus:bg-neutral-800 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 dark:focus-visible:ring-neutral-700 transition-colors";
 
 const labelClass =
   "block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 capitalize mb-1.5";
@@ -1335,7 +1335,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the item's appearance"
-              className="w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none"
+              className="w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white dark:focus:bg-neutral-800 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 dark:focus-visible:ring-neutral-700 transition-colors resize-none"
               {...errorProps("report-description")}
             />
             <FieldError
@@ -1356,7 +1356,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               value={importantDetails}
               onChange={(e) => setImportantDetails(e.target.value)}
               placeholder="Unique mark only the owner would know…"
-              className="w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none"
+              className="w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white dark:focus:bg-neutral-800 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 dark:focus-visible:ring-neutral-700 transition-colors resize-none"
               {...errorProps("report-important-details")}
             />
             <FieldError

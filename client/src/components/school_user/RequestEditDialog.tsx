@@ -33,13 +33,13 @@ interface RequestEditFormProps
 }
 
 const inputClass =
-  "w-full h-11 px-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors";
+  "w-full h-11 px-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white dark:focus:bg-neutral-800 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 dark:focus-visible:ring-neutral-700 transition-colors";
 
 const labelClass =
   "block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 capitalize mb-1.5";
 
 const textareaClass =
-  "w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 transition-colors resize-none";
+  "w-full p-3.5 text-sm bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100 focus:bg-white dark:focus:bg-neutral-800 focus:outline-none focus:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-200 dark:focus-visible:ring-neutral-700 transition-colors resize-none";
 
 const MAX_EVIDENCE_IMAGES = 4;
 

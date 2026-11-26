@@ -28,7 +28,7 @@ type CameraState = "starting" | "ready" | "error";
 export type FoundFlowStep = "camera" | "details" | "confirmation";
 
 const inputClass =
-  "w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 px-3.5 py-3 text-sm transition-colors focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200";
+  "w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 px-3.5 py-3 text-sm transition-colors focus:border-neutral-400 focus:bg-white dark:focus:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200 dark:focus-visible:ring-neutral-700";
 
 const labelClass =
   "mb-1.5 block text-[11px] font-bold capitalize text-neutral-500 dark:text-neutral-400";

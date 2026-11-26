@@ -564,7 +564,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[60] flex items-stretch justify-center overflow-y-auto overscroll-contain bg-white sm:items-center sm:bg-neutral-950/45 sm:px-4 sm:py-6 sm:backdrop-blur-[2px]"
+      className="fixed inset-0 z-[60] flex items-stretch justify-center overflow-y-auto overscroll-contain bg-white dark:bg-neutral-950 sm:items-center sm:bg-neutral-950/45 sm:dark:bg-black/65 sm:px-4 sm:py-6 sm:backdrop-blur-[2px]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -579,7 +579,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
         aria-modal="true"
         aria-labelledby="auth-modal-title"
         layout={!isSwitchingAuthMode && !skipScreenAnimation}
-        className="relative my-auto flex min-h-[100dvh] w-full flex-col overflow-y-auto overscroll-contain bg-white sm:my-auto sm:block sm:h-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-md sm:min-h-0 sm:overflow-y-auto sm:rounded-3xl sm:border sm:border-neutral-200 sm:p-8 sm:shadow-2xl"
+        className="relative my-auto flex min-h-[100dvh] w-full flex-col overflow-y-auto overscroll-contain bg-white dark:bg-neutral-900 sm:my-auto sm:block sm:h-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-md sm:min-h-0 sm:overflow-y-auto sm:rounded-3xl sm:border sm:border-neutral-200 sm:dark:border-neutral-800 sm:p-8 sm:shadow-2xl"
         initial={reduceMotion ? false : { opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={reduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.99 }}
@@ -593,7 +593,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
         }}
         onKeyDown={handleDialogKeyDown}
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-neutral-100 bg-white px-5 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:block sm:border-0 sm:bg-transparent sm:p-0 sm:pr-10">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-5 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:block sm:border-0 sm:bg-transparent sm:dark:bg-transparent sm:p-0 sm:pr-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <img
@@ -602,26 +602,26 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 aria-hidden="true"
                 className="h-6 w-6 object-cover rounded-none"
               />
-              <p className="text-sm font-extrabold tracking-tight text-neutral-900">
+              <p className="text-sm font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
                 Found<span className="text-[#E5192D]">It</span>
               </p>
             </div>
             <h2
               id="auth-modal-title"
-              className="mt-3 text-2xl font-extrabold tracking-tight text-neutral-900"
+              className="mt-3 text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
             >
               {title}
             </h2>
             {(signupScreen === "email" || signupScreen === "verify") &&
               mode === "signup" && (
-                <p className="mt-1 text-sm leading-relaxed text-neutral-600">
+                <p className="mt-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                   {signupScreen === "email"
                     ? `Use ${SCHOOL_EMAIL_DOMAINS.join(", ")}.`
                     : `Code sent to ${email}.`}
                 </p>
               )}
             {mode === "forgot" && (
-              <p className="mt-1 text-sm leading-relaxed text-neutral-600">
+              <p className="mt-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
                 {forgotScreen === "email"
                   ? "Enter your account email and we'll send a 6-digit reset code."
                   : `If an account exists for ${email}, enter the code and choose a new password.`}
@@ -632,7 +632,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
             type="button"
             aria-label="Close authentication dialog"
             onClick={onClose}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 sm:absolute sm:right-4 sm:top-4"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 sm:absolute sm:right-4 sm:top-4"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -668,13 +668,13 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 {notice && (
                   <p
                     role="status"
-                    className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm font-medium text-emerald-800"
+                    className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2.5 text-sm font-medium text-emerald-800 dark:text-emerald-200"
                   >
                     {notice}
                   </p>
                 )}
                 <label
-                  className="block text-sm font-semibold text-neutral-800"
+                  className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                   htmlFor="modal-signin-email"
                 >
                   Email Address
@@ -693,12 +693,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   required
                   maxLength={254}
                   aria-invalid={Boolean(error)}
-                  className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                  className="h-12 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
                   placeholder="you@example.com"
                 />
                 <div className="flex items-center justify-between">
                   <label
-                    className="block text-sm font-semibold text-neutral-800"
+                    className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                     htmlFor="modal-signin-password"
                   >
                     Password
@@ -706,7 +706,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   <button
                     type="button"
                     onClick={() => switchMode("forgot")}
-                    className="rounded-sm text-xs font-bold text-[#B42332] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="rounded-sm text-xs font-bold text-[#B42332] dark:text-red-400 underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
                     Forgot password?
                   </button>
@@ -724,7 +724,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   autoComplete="current-password"
                 />
                 {error && (
-                  <p role="alert" className="text-sm font-medium text-red-700">
+                  <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
                     {error}
                   </p>
                 )}
@@ -732,14 +732,14 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-wait disabled:opacity-60"
                   >
                     {isLoading ? "Signing in…" : "Sign In"}
                   </button>
                 </div>
                 {import.meta.env.DEV && (
-                  <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-800/50 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">
                       Dev Demo Accounts (One-Click Fill)
                     </p>
                     <div className="grid grid-cols-2 gap-2">
@@ -775,7 +775,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                             setPassword(demo.password);
                             setError("");
                           }}
-                          className="inline-flex min-h-8 items-center justify-center rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                          className="inline-flex min-h-8 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                         >
                           {demo.label}
                         </button>
@@ -783,12 +783,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     </div>
                   </div>
                 )}
-                <p className="pt-1 text-center text-sm text-neutral-600">
+                <p className="pt-1 text-center text-sm text-neutral-600 dark:text-neutral-400">
                   Don't have an account?{" "}
                   <button
                     type="button"
                     onClick={() => switchMode("signup")}
-                    className="rounded-sm font-bold text-[#B42332] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="rounded-sm font-bold text-[#B42332] dark:text-red-400 underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
                     Sign Up
                   </button>
@@ -811,7 +811,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 }}
               >
                 <label
-                  className="block text-sm font-semibold text-neutral-800"
+                  className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                   htmlFor="modal-forgot-email"
                 >
                   Email Address
@@ -831,14 +831,14 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   maxLength={254}
                   aria-invalid={Boolean(error)}
                   aria-describedby={error ? "forgot-email-error" : undefined}
-                  className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                  className="h-12 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
                   placeholder="you@wmsu.edu.ph"
                 />
                 {error && (
                   <p
                     id="forgot-email-error"
                     role="alert"
-                    className="text-sm font-medium text-red-700"
+                    className="text-sm font-medium text-red-700 dark:text-red-400"
                   >
                     {error}
                   </p>
@@ -847,17 +847,17 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-wait disabled:opacity-60"
                   >
                     {isLoading ? "Sending code…" : "Send Reset Code"}
                   </button>
                 </div>
-                <p className="pt-1 text-center text-sm text-neutral-600">
+                <p className="pt-1 text-center text-sm text-neutral-600 dark:text-neutral-400">
                   Remembered your password?{" "}
                   <button
                     type="button"
                     onClick={() => switchMode("signin")}
-                    className="rounded-sm font-bold text-[#B42332] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="rounded-sm font-bold text-[#B42332] dark:text-red-400 underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
                     Sign In
                   </button>
@@ -879,12 +879,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   ease: [0.16, 1, 0.3, 1],
                 }}
               >
-                <div className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3">
+                <div className="flex items-center justify-between rounded-xl bg-neutral-50 dark:bg-neutral-800/70 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-neutral-500">
+                    <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
                       Email Address
                     </p>
-                    <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900">
+                    <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                       {email}
                     </p>
                   </div>
@@ -894,7 +894,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       setError("");
                       changeForgotScreen("email");
                     }}
-                    className="ml-3 shrink-0 text-xs font-semibold text-[#E5192D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="ml-3 shrink-0 text-xs font-semibold text-[#E5192D] dark:text-red-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
                     Change
                   </button>
@@ -903,7 +903,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 <div>
                   <label
                     htmlFor="modal-reset-code"
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                   >
                     6-Digit Reset Code
                   </label>
@@ -922,14 +922,14 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       );
                       setError("");
                     }}
-                    className="h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-center font-mono text-2xl font-bold tracking-[0.4em] text-neutral-900 outline-none transition placeholder:tracking-normal focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                    className="h-14 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 text-center font-mono text-2xl font-bold tracking-[0.4em] text-neutral-900 dark:text-neutral-100 outline-none transition placeholder:tracking-normal placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
                     placeholder="000000"
                   />
                 </div>
 
                 <div>
                   <label
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                     htmlFor="modal-reset-password"
                   >
                     New Password
@@ -947,14 +947,14 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     }
                     autoComplete="new-password"
                   />
-                  <p className="mt-1.5 text-xs text-neutral-600">
+                  <p className="mt-1.5 text-xs text-neutral-600 dark:text-neutral-400">
                     Use 8–72 characters.
                   </p>
                 </div>
 
                 <div>
                   <label
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                     htmlFor="modal-reset-confirm-password"
                   >
                     Confirm New Password
@@ -975,7 +975,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 </div>
 
                 {error && (
-                  <p role="alert" className="text-sm font-medium text-red-700">
+                  <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
                     {error}
                   </p>
                 )}
@@ -984,7 +984,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   <button
                     type="submit"
                     disabled={isLoading || resetCode.length !== 6}
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isLoading ? (
                       "Resetting password…"
@@ -997,15 +997,15 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   </button>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-4 text-sm">
-                  <span className="text-neutral-600">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4 text-sm">
+                  <span className="text-neutral-600 dark:text-neutral-400">
                     Didn&apos;t get the code?
                   </span>
                   <button
                     type="button"
                     onClick={handleResendResetCode}
                     disabled={resetCountdown > 0}
-                    className="inline-flex items-center gap-1.5 rounded-sm font-bold text-[#B42332] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:text-neutral-500"
+                    className="inline-flex items-center gap-1.5 rounded-sm font-bold text-[#B42332] dark:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:text-neutral-500 dark:disabled:text-neutral-500"
                   >
                     <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                     {resetCountdown > 0
@@ -1036,7 +1036,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 }}
               >
                 <label
-                  className="block text-sm font-semibold text-neutral-800"
+                  className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                   htmlFor="modal-signup-email"
                 >
                   School Email <span className="text-[#E5192D]">*</span>
@@ -1056,14 +1056,14 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   maxLength={254}
                   aria-invalid={Boolean(error)}
                   aria-describedby={error ? "signup-email-error" : undefined}
-                  className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                  className="h-12 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
                   placeholder="you@wmsu.edu.ph"
                 />
                 {error && (
                   <p
                     id="signup-email-error"
                     role="alert"
-                    className="text-sm font-medium text-red-700"
+                    className="text-sm font-medium text-red-700 dark:text-red-400"
                   >
                     {error}
                   </p>
@@ -1072,17 +1072,17 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-wait disabled:opacity-60"
                   >
                     {isLoading ? "Checking…" : "Continue"}
                   </button>
                 </div>
-                <p className="pt-1 text-center text-sm text-neutral-600">
+                <p className="pt-1 text-center text-sm text-neutral-600 dark:text-neutral-400">
                   Already have an account?{" "}
                   <button
                     type="button"
                     onClick={() => switchMode("signin")}
-                    className="rounded-sm font-bold text-[#B42332] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="rounded-sm font-bold text-[#B42332] dark:text-red-400 underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
                     Sign In
                   </button>
@@ -1109,12 +1109,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   ease: [0.16, 1, 0.3, 1],
                 }}
               >
-                <div className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3">
+                <div className="flex items-center justify-between rounded-xl bg-neutral-50 dark:bg-neutral-800/70 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-neutral-500">
+                    <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
                       Email Address
                     </p>
-                    <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900">
+                    <p className="mt-0.5 truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                       {email}
                     </p>
                   </div>
@@ -1124,7 +1124,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       setError("");
                       changeSignupScreen("email");
                     }}
-                    className="ml-3 shrink-0 text-xs font-semibold text-[#E5192D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="ml-3 shrink-0 text-xs font-semibold text-[#E5192D] dark:text-red-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
                     Change
                   </button>
@@ -1133,7 +1133,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
                   <div>
                     <label
-                      className="mb-1.5 block min-h-10 text-sm font-semibold text-neutral-800"
+                      className="mb-1.5 block min-h-10 text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                       htmlFor="modal-first-name"
                     >
                       First Name <span className="text-[#E5192D]">*</span>
@@ -1150,12 +1150,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       }}
                       required
                       maxLength={50}
-                      className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-3 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                      className="h-12 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
                     />
                   </div>
                   <div>
                     <label
-                      className="mb-1.5 block min-h-10 text-sm font-semibold text-neutral-800"
+                      className="mb-1.5 block min-h-10 text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                       htmlFor="modal-middle-initial"
                     >
                       Middle Initial
@@ -1171,19 +1171,19 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                       }
                       maxLength={1}
                       aria-label="Middle Initial (optional)"
-                      className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-3 text-center text-base text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                      className="h-12 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 text-center text-base text-neutral-900 dark:text-neutral-100 outline-none transition placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
                     />
                   </div>
                 </div>
                 {error && error.includes("first name") && (
-                  <p role="alert" className="text-sm font-medium text-red-700">
+                  <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
                     {error}
                   </p>
                 )}
 
                 <div>
                   <label
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                     htmlFor="modal-last-name"
                   >
                     Last Name <span className="text-[#E5192D]">*</span>
@@ -1200,12 +1200,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     required
                     maxLength={50}
                     aria-invalid={error === "Enter your last name."}
-                    className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                    className="h-12 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
                   />
                   {error === "Enter your last name." && (
                     <p
                       role="alert"
-                      className="mt-1.5 text-sm font-medium text-red-700"
+                      className="mt-1.5 text-sm font-medium text-red-700 dark:text-red-400"
                     >
                       {error}
                     </p>
@@ -1214,7 +1214,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
                 <div>
                   <label
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                     htmlFor="modal-school-id"
                   >
                     School ID <span className="text-[#E5192D]">*</span>
@@ -1232,12 +1232,12 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     required
                     maxLength={30}
                     aria-invalid={error.toLowerCase().includes("school id")}
-                    className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-base text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                    className="h-12 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 text-base text-neutral-900 dark:text-neutral-100 outline-none transition placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
                   />
                   {error.toLowerCase().includes("school id") && (
                     <p
                       role="alert"
-                      className="mt-1.5 text-sm font-medium text-red-700"
+                      className="mt-1.5 text-sm font-medium text-red-700 dark:text-red-400"
                     >
                       {error}
                     </p>
@@ -1246,7 +1246,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
                 <div>
                   <label
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    className="mb-1.5 block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                     htmlFor="modal-signup-password"
                   >
                     Password
@@ -1264,13 +1264,13 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     }
                     autoComplete="new-password"
                   />
-                  <p className="mt-1.5 text-xs text-neutral-600">
+                  <p className="mt-1.5 text-xs text-neutral-600 dark:text-neutral-400">
                     Use 8–72 characters.
                   </p>
                   {error.toLowerCase().includes("password") && (
                     <p
                       role="alert"
-                      className="mt-1 text-sm font-medium text-red-700"
+                      className="mt-1 text-sm font-medium text-red-700 dark:text-red-400"
                     >
                       {error}
                     </p>
@@ -1284,7 +1284,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   !error.toLowerCase().includes("password") && (
                     <p
                       role="alert"
-                      className="text-sm font-medium text-red-700"
+                      className="text-sm font-medium text-red-700 dark:text-red-400"
                     >
                       {error}
                     </p>
@@ -1298,25 +1298,25 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                         setError("");
                         changeSignupScreen("email");
                       }}
-                      className="inline-flex h-12 flex-1 items-center justify-center rounded-xl border border-neutral-300 px-4 text-sm font-bold text-neutral-800 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+                      className="inline-flex h-12 flex-1 items-center justify-center rounded-xl border border-neutral-300 dark:border-neutral-700 px-4 text-sm font-bold text-neutral-800 dark:text-neutral-200 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900"
                     >
                       Back
                     </button>
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-[#E5192D] px-4 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+                      className="inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-[#E5192D] px-4 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-wait disabled:opacity-60"
                     >
                       {isLoading ? "Creating account…" : "Create Account"}
                     </button>
                   </div>
                 </div>
-                <p className="text-center text-sm text-neutral-600">
+                <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
                   Already have an account?{" "}
                   <button
                     type="button"
                     onClick={() => switchMode("signin")}
-                    className="rounded-sm font-bold text-[#B42332] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                    className="rounded-sm font-bold text-[#B42332] dark:text-red-400 underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                   >
                     Sign In
                   </button>
@@ -1341,7 +1341,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                 <div>
                     <label
                       htmlFor="modal-verification-code"
-                      className="mb-2 block text-sm font-semibold text-neutral-800"
+                      className="mb-2 block text-sm font-semibold text-neutral-800 dark:text-neutral-200"
                     >
                       6-Digit Verification Code
                     </label>
@@ -1364,14 +1364,14 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     aria-describedby={
                       error ? "verification-code-error" : undefined
                     }
-                    className="h-14 w-full rounded-xl border border-neutral-300 bg-white px-4 text-center font-mono text-2xl font-bold tracking-[0.4em] text-neutral-900 outline-none transition placeholder:tracking-normal focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+                    className="h-14 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 text-center font-mono text-2xl font-bold tracking-[0.4em] text-neutral-900 dark:text-neutral-100 outline-none transition placeholder:tracking-normal placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
                     placeholder="000000"
                   />
                   {error && (
                     <p
                       id="verification-code-error"
                       role="alert"
-                      className="mt-2 text-sm font-medium text-red-700"
+                      className="mt-2 text-sm font-medium text-red-700 dark:text-red-400"
                     >
                       {error}
                     </p>
@@ -1381,7 +1381,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                   <button
                     type="submit"
                     disabled={isVerifying || verificationCode.length !== 6}
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isVerifying ? (
                       "Verifying code…"
@@ -1393,15 +1393,15 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
                     )}
                   </button>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-4 text-sm">
-                  <span className="text-neutral-600">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4 text-sm">
+                  <span className="text-neutral-600 dark:text-neutral-400">
                     Didn&apos;t get the code?
                   </span>
                   <button
                     type="button"
                     onClick={handleResendCode}
                     disabled={verificationCountdown > 0}
-                    className="inline-flex items-center gap-1.5 rounded-sm font-bold text-[#B42332] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:text-neutral-500"
+                    className="inline-flex items-center gap-1.5 rounded-sm font-bold text-[#B42332] dark:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:text-neutral-500 dark:disabled:text-neutral-500"
                   >
                     <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                     {verificationCountdown > 0
@@ -1446,14 +1446,14 @@ function PasswordInput({
         required
         minLength={autoComplete === "new-password" ? 8 : undefined}
         maxLength={autoComplete === "new-password" ? 72 : undefined}
-        className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 pr-12 text-base text-neutral-900 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100"
+        className="h-12 w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 pr-12 text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none transition focus:border-[#E5192D] focus:ring-2 focus:ring-red-100 dark:focus:ring-red-500/25"
       />
       <button
         type="button"
         aria-label={showPassword ? "Hide password" : "Show password"}
         aria-pressed={showPassword}
         onClick={onToggleVisibility}
-        className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+        className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
       >
         {showPassword ? (
           <EyeOff className="h-4 w-4" aria-hidden="true" />
