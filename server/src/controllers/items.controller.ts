@@ -11,7 +11,6 @@ import {
   findItemById,
   findItemImageForBlur,
   findItemOwner,
-  findSuggestedMatchesForItem,
   listItems,
   saveBlurredImageUrl,
   sendFinderReminder,
@@ -253,15 +252,6 @@ export async function getItemById(req: Request, res: Response): Promise<void> {
     return;
   }
   res.json({ item });
-}
-
-/** GET /api/items/:id/matches — top found-item matches for a lost item report */
-export async function getSuggestedMatches(req: Request, res: Response): Promise<void> {
-  const id = getId(req);
-  if (invalidId(res, id)) return;
-  const viewerId = req.user?.sub ?? '';
-  const items = await findSuggestedMatchesForItem(id, isAdminUser(req), viewerId);
-  res.json({ items, count: items.length });
 }
 
 /** PATCH /api/items/:id — owner or admin+ (name/description/date/category only) */

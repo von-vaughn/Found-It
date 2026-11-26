@@ -21,23 +21,14 @@ export function selectRelatedItems(options: {
   candidates: readonly Item[];
   isOwnItem: boolean;
   viewerId?: string;
-  excludeIds?: ReadonlySet<string>;
   limit?: number;
 }): { targetType: Item["type"]; items: Item[] } {
-  const {
-    currentItem,
-    candidates,
-    isOwnItem,
-    viewerId,
-    excludeIds,
-    limit = 4,
-  } = options;
+  const { currentItem, candidates, isOwnItem, viewerId, limit = 4 } = options;
   const targetType = resolveRelatedTargetType(currentItem.type, isOwnItem);
 
   const items = candidates
     .filter((entry) => {
       if (entry.id === currentItem.id) return false;
-      if (excludeIds?.has(entry.id)) return false;
       if (isOwnItem && viewerId && entry.reporterId === viewerId) return false;
       return entry.category === currentItem.category && entry.type === targetType;
     })

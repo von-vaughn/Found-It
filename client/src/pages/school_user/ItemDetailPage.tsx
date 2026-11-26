@@ -25,7 +25,6 @@ import {
   useItemDetail,
   useDeleteItem,
   useItems,
-  useSuggestedMatches,
 } from "@/hooks/useItems";
 import { useItemReturns } from "@/hooks/useReturns";
 import { toClientItem, toClientItems } from "@/lib/itemAdapter";
@@ -175,7 +174,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
   };
 
   // Related posts come from the backend list:
-  // - Own Lost post -> Found items in same category (excluding Possible matches & own posts)
+  // - Own Lost post -> Found items in same category (excluding own posts)
   // - Own Found post -> Lost items in same category (excluding own posts)
   // - Someone else's post -> same type in same category
   const apiItems = useMemo(
@@ -191,28 +190,16 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     isOwnItem &&
     (item?.type === "lost" || serverItem?.reportType === "lost"),
   );
-  const { data: serverSuggestedMatches = [] } = useSuggestedMatches(
-    item?.id,
-    isOwnLostItem,
-  );
-  const suggestedMatches = useMemo(
-    () => toClientItems(serverSuggestedMatches),
-    [serverSuggestedMatches],
-  );
 
   const { targetType: relatedTargetType, items: relatedItems } = useMemo(() => {
     if (!item) return { targetType: "found" as const, items: [] };
-    const suggestedIds = isOwnLostItem
-      ? new Set(suggestedMatches.map((entry) => entry.id))
-      : undefined;
     return selectRelatedItems({
       currentItem: item,
       candidates: apiItems,
       isOwnItem,
       viewerId: user?.id,
-      excludeIds: suggestedIds,
     });
-  }, [apiItems, isOwnItem, isOwnLostItem, item, suggestedMatches, user?.id]);
+  }, [apiItems, isOwnItem, item, user?.id]);
   const { data: serverItemReturns = [] } = useItemReturns(
     isOwnLostItem ? item?.id : undefined,
   );
@@ -632,35 +619,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           </article>
           </FadeIn>
           </div>
-
-          {/* Possible matches: found reports the system suggests for your lost item */}
-          {serverItem && isOwnItem && isLost && suggestedMatches.length > 0 && (
-            <FadeIn key={`matches-${item.id}`} delay={0.1}>
-              <section aria-labelledby="suggested-matches-heading">
-                <h2
-                  id="suggested-matches-heading"
-                  className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
-                >
-                  Possible matches
-                </h2>
-                <StaggerGrid
-                  key={`matches-grid-${item.id}`}
-                  className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
-                >
-                  {suggestedMatches.map((suggested) => (
-                    <StaggerItem key={suggested.id}>
-                      <ItemCard
-                        item={suggested}
-                        onItemClick={(selected) =>
-                          navigate(`/dashboard/items/${selected.id}`)
-                        }
-                      />
-                    </StaggerItem>
-                  ))}
-                </StaggerGrid>
-              </section>
-            </FadeIn>
-          )}
 
           {/* Related posts: opposite type when viewing own post, same type otherwise */}
           {relatedItems.length > 0 && (

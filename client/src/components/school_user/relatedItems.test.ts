@@ -27,8 +27,8 @@ describe("relatedItems", () => {
     makeItem({ id: "lost-own", type: "lost", category: "electronics", reporterId: "owner-1" }),
     makeItem({ id: "lost-other-1", type: "lost", category: "electronics", reporterId: "user-2" }),
     makeItem({ id: "found-own", type: "found", category: "electronics", reporterId: "owner-1" }),
-    makeItem({ id: "found-suggested", type: "found", category: "electronics", reporterId: "user-3" }),
-    makeItem({ id: "found-other-1", type: "found", category: "electronics", reporterId: "user-4" }),
+    makeItem({ id: "found-other-1", type: "found", category: "electronics", reporterId: "user-3" }),
+    makeItem({ id: "found-other-2", type: "found", category: "electronics", reporterId: "user-4" }),
     makeItem({ id: "found-bags", type: "found", category: "bags", reporterId: "user-5" }),
   ];
 
@@ -39,18 +39,17 @@ describe("relatedItems", () => {
     assert.equal(resolveRelatedTargetType("lost", false), "lost");
   });
 
-  it("shows same-category Found items (excluding suggested matches & own posts) for own Lost item", () => {
+  it("shows same-category Found items (excluding own posts) for own Lost item", () => {
     const result = selectRelatedItems({
       currentItem: candidates[0],
       candidates,
       isOwnItem: true,
       viewerId: "owner-1",
-      excludeIds: new Set(["found-suggested"]),
     });
     assert.equal(result.targetType, "found");
     assert.deepEqual(
       result.items.map((entry) => entry.id),
-      ["found-other-1"],
+      ["found-other-1", "found-other-2"],
     );
   });
 
@@ -78,7 +77,7 @@ describe("relatedItems", () => {
     assert.equal(result.targetType, "found");
     assert.deepEqual(
       result.items.map((entry) => entry.id),
-      ["found-own", "found-suggested"],
+      ["found-own", "found-other-1"],
     );
   });
 

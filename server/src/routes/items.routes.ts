@@ -6,7 +6,6 @@ import {
   getAllItems,
   getBlurredItemImage,
   getItemById,
-  getSuggestedMatches,
   remindItemFinder,
   removeItemReport,
   updateItemOsaReceipt,
@@ -20,7 +19,6 @@ const router = Router();
 // Public read routes — guests can browse; logged-in users get richer data
 router.get('/', optionalAuthenticate, getAllItems);
 router.get('/:id/image/blurred', getBlurredItemImage);
-router.get('/:id/matches', optionalAuthenticate, getSuggestedMatches);
 router.get('/:id', optionalAuthenticate, getItemById);
 
 // Write routes require authentication

@@ -105,12 +105,6 @@ export async function getItemById(id: string): Promise<ServerItem> {
   return data.item;
 }
 
-/** GET /api/items/:id/matches — fetch top found-item matches for a lost report. */
-export async function fetchSuggestedMatches(id: string): Promise<ServerItem[]> {
-  const { data } = await api.get<ListItemsResponse>(`/items/${id}/matches`);
-  return data.items;
-}
-
 /** GET /api/items?mine=true — convenience wrapper for the current user's own reports. */
 export async function listMyItems(): Promise<ServerItem[]> {
   return listItems({ mine: true });

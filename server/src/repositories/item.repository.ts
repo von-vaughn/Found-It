@@ -1,7 +1,6 @@
 import type { PoolClient } from 'pg';
 import { pool } from '../config/db';
 import type { Item, ItemFlag, ReportType } from '../types/items';
-import { scoreFoundCandidate } from '../utils/item-matching';
 import { createFinderSurrenderReminderNotification } from './notification.repository';
 
 interface ItemRow {
@@ -373,70 +372,6 @@ export async function findItemById(
     [id],
   );
   return rows[0] ? toItem(rows[0], isAdmin, viewerId) : null;
-}
-
-export async function findSuggestedMatchesForItem(
-  id: string,
-  isAdmin: boolean,
-  viewerId: string,
-): Promise<Item[]> {
-  const { rows: targetRows } = await pool.query<ItemRow>(
-    `SELECT ${ITEM_COLUMNS} ${ITEM_JOIN} WHERE i.id = $1 LIMIT 1`,
-    [id],
-  );
-  const target = targetRows[0];
-  if (!target || target.report_type !== 'lost') {
-    return [];
-  }
-
-  const { rows: candidateRows } = await pool.query<ItemRow>(
-    `SELECT ${ITEM_COLUMNS}
-     ${ITEM_JOIN}
-     WHERE r.report_type = 'found'
-       AND i.category_id = $1
-       AND r.user_id <> $2
-       AND i.id <> $3
-       AND NOT EXISTS (
-         SELECT 1 FROM request resolved_request
-         WHERE resolved_request.item_id = i.id
-           AND (
-             (resolved_request.kind = 'claim'
-               AND resolved_request.status IN ('claimed', 'returned'))
-             OR (resolved_request.kind = 'return'
-               AND resolved_request.status = 'returned')
-           )
-       )
-     ORDER BY i.created_at DESC`,
-    [target.category_id, target.reporter_id, target.id],
-  );
-
-  const lostMatchable = {
-    name: target.name,
-    description: target.description,
-    itemDate: toDateOnly(target.item_date),
-    itemTime: target.item_time,
-    color: target.color,
-    building: target.building,
-    location: target.location,
-  };
-
-  return candidateRows
-    .map((row) => {
-      const score = scoreFoundCandidate(lostMatchable, {
-        name: row.name,
-        description: row.description,
-        itemDate: toDateOnly(row.item_date),
-        itemTime: row.item_time,
-        color: row.color,
-        building: row.building,
-        location: row.location,
-      });
-      return score === null ? null : { row, score };
-    })
-    .filter((entry): entry is { row: ItemRow; score: number } => entry !== null)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 4)
-    .map(({ row }) => toItem(row, isAdmin, viewerId));
 }
 
 export async function listItems(
