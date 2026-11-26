@@ -15,6 +15,7 @@ import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
 import { PickupQrCard } from "@/components/school_user/PickupQrCard";
+import { selectRelatedItems } from "@/components/school_user/relatedItems";
 import { ReportPostDialog } from "@/components/school_user/ReportPostDialog";
 import { formatCategoryLabel } from "@/hooks/useCategories";
 import { EMPTY_ITEMS } from "@/data/mockItems";
@@ -173,24 +174,14 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     navigate("/dashboard");
   };
 
-  // Related posts come from the backend list, not the example-content props:
-  // same category, same lost/found type, excluding the item being viewed.
+  // Related posts come from the backend list:
+  // - Own Lost post -> Found items in same category (excluding Possible matches & own posts)
+  // - Own Found post -> Lost items in same category (excluding own posts)
+  // - Someone else's post -> same type in same category
   const apiItems = useMemo(
     () => (serverItems ? toClientItems(serverItems) : []),
     [serverItems],
   );
-
-  const relatedItems = useMemo(() => {
-    if (!item) return [];
-    return apiItems
-      .filter(
-        (entry) =>
-          entry.id !== item.id &&
-          entry.category === item.category &&
-          entry.type === item.type,
-      )
-      .slice(0, 4);
-  }, [apiItems, item]);
 
   const isOwnItem = Boolean(
     serverItem && user?.id && serverItem.reporterId === user.id,
@@ -208,6 +199,20 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     () => toClientItems(serverSuggestedMatches),
     [serverSuggestedMatches],
   );
+
+  const { targetType: relatedTargetType, items: relatedItems } = useMemo(() => {
+    if (!item) return { targetType: "found" as const, items: [] };
+    const suggestedIds = isOwnLostItem
+      ? new Set(suggestedMatches.map((entry) => entry.id))
+      : undefined;
+    return selectRelatedItems({
+      currentItem: item,
+      candidates: apiItems,
+      isOwnItem,
+      viewerId: user?.id,
+      excludeIds: suggestedIds,
+    });
+  }, [apiItems, isOwnItem, isOwnLostItem, item, suggestedMatches, user?.id]);
   const { data: serverItemReturns = [] } = useItemReturns(
     isOwnLostItem ? item?.id : undefined,
   );
@@ -657,7 +662,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
             </FadeIn>
           )}
 
-          {/* Related posts: same category and same lost/found type */}
+          {/* Related posts: opposite type when viewing own post, same type otherwise */}
           {relatedItems.length > 0 && (
             <FadeIn key={`related-${item.id}`} delay={0.12}>
               <section aria-labelledby="related-heading">
@@ -665,7 +670,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                   id="related-heading"
                   className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
                 >
-                  Related {isLost ? "lost" : "found"}{" "}
+                  Related {relatedTargetType}{" "}
                   {formatCategoryLabel(item.category).toLowerCase()} reports
                 </h2>
                 <StaggerGrid

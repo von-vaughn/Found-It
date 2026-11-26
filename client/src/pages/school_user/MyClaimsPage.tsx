@@ -240,18 +240,16 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
       <div
         className="sidebar-shift ml-0 flex min-h-screen min-w-0 flex-1 flex-col pb-20 md:pb-0 md:ml-20 transition-[margin] duration-300"
       >
-        <div className="hidden md:block">
-          <Header
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchInputRef={searchInputRef}
-            activeFilterCount={countActiveFilters(filters)}
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            onClearFilters={() => onFiltersChange(defaultFilters)}
-            filterResultCount={applyAdvancedFilters(items, filters).length}
-          />
-        </div>
+        <Header
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchInputRef={searchInputRef}
+          activeFilterCount={countActiveFilters(filters)}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          onClearFilters={() => onFiltersChange(defaultFilters)}
+          filterResultCount={applyAdvancedFilters(items, filters).length}
+        />
 
         <main className="mx-auto w-full max-w-[1440px] flex-1 bg-[#f7f7f8] dark:bg-neutral-950 px-4 pt-2 pb-8 sm:px-8 lg:px-12">
           <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">

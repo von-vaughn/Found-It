@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "node --test src/lib/categoryLabel.test.ts src/lib/claimAdapter.test.ts src/lib/idNumber.test.ts src/lib/date.test.ts src/lib/pickupQr.test.ts src/components/school_user/claimStatus.test.ts src/components/auth/schoolUserGuard.test.ts src/components/admin/dashboardAnalytics.test.ts",
+    "test": "node --test src/lib/categoryLabel.test.ts src/lib/claimAdapter.test.ts src/lib/idNumber.test.ts src/lib/date.test.ts src/lib/pickupQr.test.ts src/components/school_user/claimStatus.test.ts src/components/school_user/relatedItems.test.ts src/components/auth/schoolUserGuard.test.ts src/components/admin/dashboardAnalytics.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
