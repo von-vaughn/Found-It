@@ -32,6 +32,7 @@ export interface ServerItem {
   image?: string | null;
   images?: string[];
   user: { id: string; name: string; email?: string; schoolId?: string };
+  resolvedBy?: { id: string; name: string; email?: string; schoolId?: string } | null;
   flagCount?: number;
   flags?: ItemFlag[];
   hasReported?: boolean;

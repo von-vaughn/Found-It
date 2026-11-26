@@ -40,6 +40,8 @@ export interface Item {
   importantDetails?: string;
   /** Reporter identity. Email and schoolId are included for admin/super_admin only. */
   user: { id: string; name: string; email?: string; schoolId?: string };
+  /** Claimant or finder who completed the claim/return (present for admin/super_admin only). */
+  resolvedBy?: { id: string; name: string; email?: string; schoolId?: string } | null;
   /** Open flag count and details (present for admin/super_admin only). */
   flagCount?: number;
   flags?: ItemFlag[];

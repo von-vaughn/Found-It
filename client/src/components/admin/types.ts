@@ -39,6 +39,9 @@ export interface AdminReport {
   reportedBy: string;
   reporterEmail: string;
   reporterSchoolId?: string;
+  resolvedBy?: string;
+  resolvedByEmail?: string;
+  resolvedBySchoolId?: string;
   status: RecordStatus;
   date: string;
   eventDateTime?: string;

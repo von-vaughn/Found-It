@@ -237,6 +237,24 @@ export function ItemDetailsDialog({
               </dd>
             </div>
           )}
+          {report.resolvedBy &&
+            (report.status === "Claimed" || report.status === "Returned") && (
+              <div>
+                <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                  {report.status === "Claimed" ? "Claimed by" : "Returned by"}
+                </dt>
+                <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                  <span>{report.resolvedBy}</span>
+                  <span className="block text-[11px] font-normal text-neutral-500 dark:text-neutral-400">
+                    ID{" "}
+                    {resolveIdNumber(
+                      report.resolvedBySchoolId,
+                      report.resolvedByEmail,
+                    ) || "N/A"}
+                  </span>
+                </dd>
+              </div>
+            )}
         </dl>
         {(report.flags?.length ?? 0) > 0 && (
           <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 p-3.5 space-y-2.5">

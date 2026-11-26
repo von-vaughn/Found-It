@@ -154,6 +154,7 @@ export function ReportsPage() {
         report.building,
         report.color,
         report.reportedBy,
+        report.resolvedBy ?? "",
         report.id,
       ].some((value) => value.toLowerCase().includes(normalizedQuery));
     });

@@ -651,39 +651,32 @@ export function ClaimDetailPanel({
               </p>
             )}
             {pendingStatusChange.status === "Approved" && (
-              <>
-                <p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-xs leading-relaxed text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-                  Once approved, the system will notify{" "}
-                  {claimForStatusChange.claimant} with your instructions to
-                  proceed to the OSA office to claim the item.
-                </p>
-                <div className="mt-4">
-                  <label
-                    htmlFor="claim-approval-instructions"
-                    className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
-                  >
-                    Approval instructions <span className="text-[#E5192D]">*</span>
-                  </label>
-                  <textarea
-                    id="claim-approval-instructions"
-                    rows={3}
-                    maxLength={500}
-                    required
-                    value={approvalInstructions}
-                    onChange={(event) => {
-                      setApprovalInstructions(event.target.value);
-                      if (approvalError) setApprovalError("");
-                    }}
-                    placeholder="Enter pickup instructions (e.g., bring your school ID to OSA Window 2, Mon–Fri 8 AM–5 PM)…"
-                    className="mt-1.5 w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                  {approvalError && (
-                    <p className="mt-1.5 text-xs font-medium text-[#E5192D]" role="alert">
-                      {approvalError}
-                    </p>
-                  )}
-                </div>
-              </>
+              <div className="mt-4">
+                <label
+                  htmlFor="claim-approval-instructions"
+                  className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
+                >
+                  Approval instructions <span className="text-[#E5192D]">*</span>
+                </label>
+                <textarea
+                  id="claim-approval-instructions"
+                  rows={3}
+                  maxLength={500}
+                  required
+                  value={approvalInstructions}
+                  onChange={(event) => {
+                    setApprovalInstructions(event.target.value);
+                    if (approvalError) setApprovalError("");
+                  }}
+                  placeholder="Enter pickup instructions (e.g., bring your school ID to OSA Window 2, Mon–Fri 8 AM–5 PM)…"
+                  className="mt-1.5 w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                />
+                {approvalError && (
+                  <p className="mt-1.5 text-xs font-medium text-[#E5192D]" role="alert">
+                    {approvalError}
+                  </p>
+                )}
+              </div>
             )}
             {isClaimCompletionDecision && claimsToAutoReject.length > 0 && (
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">

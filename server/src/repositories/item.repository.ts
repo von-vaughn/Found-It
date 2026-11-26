@@ -26,6 +26,12 @@ interface ItemRow {
   reporter_name: string;
   reporter_email: string;
   reporter_school_id: string | null;
+  resolved_by: {
+    id: string;
+    name: string;
+    email: string;
+    schoolId: string | null;
+  } | null;
   images: Array<{ url: string; blurred_url: string | null }> | null;
   flags: ItemFlag[] | null;
   flag_reporter_ids: string[] | null;
@@ -68,6 +74,25 @@ const ITEM_COLUMNS = `
   loc.description AS location, b.name AS building,
   c.id AS category_id, c.name AS category_name, i.custom_category,
   u.first_name || ' ' || u.last_name AS reporter_name, u.email AS reporter_email, u.school_id AS reporter_school_id,
+  (
+    SELECT json_build_object(
+      'id', ru.id,
+      'name', ru.first_name || ' ' || ru.last_name,
+      'email', ru.email,
+      'schoolId', ru.school_id
+    )
+    FROM request completed_request
+    JOIN "user" ru ON ru.id = completed_request.user_id
+    WHERE completed_request.item_id = i.id
+      AND (
+        (completed_request.kind = 'claim'
+          AND completed_request.status IN ('claimed', 'returned'))
+        OR (completed_request.kind = 'return'
+          AND completed_request.status = 'returned')
+      )
+    ORDER BY completed_request.created_at DESC
+    LIMIT 1
+  ) AS resolved_by,
   COALESCE(
     (SELECT json_agg(
       json_build_object('url', img.image_url, 'blurred_url', img.blurred_image_url)
@@ -177,6 +202,16 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
       : { id: row.reporter_id, name: row.reporter_name },
     ...(isAdmin
       ? {
+          resolvedBy: row.resolved_by
+            ? {
+                id: row.resolved_by.id,
+                name: row.resolved_by.name,
+                email: row.resolved_by.email,
+                ...(row.resolved_by.schoolId
+                  ? { schoolId: row.resolved_by.schoolId }
+                  : {}),
+              }
+            : null,
           flagCount: Array.isArray(row.flags) ? row.flags.length : 0,
           flags: Array.isArray(row.flags) ? row.flags : [],
         }

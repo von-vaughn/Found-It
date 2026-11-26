@@ -29,10 +29,13 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   reportedBy: item.user.name,
   reporterEmail: item.user.email ?? "",
   reporterSchoolId: item.user.schoolId,
-  status: item.isReturned
-    ? "Returned"
-    : item.isClaimed
-      ? "Claimed"
+  resolvedBy: item.resolvedBy?.name,
+  resolvedByEmail: item.resolvedBy?.email,
+  resolvedBySchoolId: item.resolvedBy?.schoolId,
+  status: item.isClaimed
+    ? "Claimed"
+    : item.isReturned
+      ? "Returned"
     : item.reportType === "lost"
       ? "Lost"
       : "Found",

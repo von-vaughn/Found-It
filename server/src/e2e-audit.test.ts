@@ -1044,13 +1044,20 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(autoPublishedDetail.data.item.receivedByOsa, false);
     assert.equal(autoPublishedDetail.data.item.user.id, competingFinderAuth.user.id);
 
-    const lostRes = await api<{ item: { isReturned: boolean } }>(
+    const lostRes = await api<{ item: { isReturned: boolean; resolvedBy?: unknown } }>(
       'GET',
       `/api/items/${lostItemId}`,
       { token: ownerAuth.token },
     );
     assert.equal(lostRes.status, 200);
     assert.equal(lostRes.data.item.isReturned, true);
+    assert.equal(lostRes.data.item.resolvedBy, undefined);
+
+    const adminLostRes = await api<{
+      item: { isReturned: boolean; resolvedBy?: { id: string; name: string } | null };
+    }>('GET', `/api/items/${lostItemId}`, { token: adminAuth.token });
+    assert.equal(adminLostRes.status, 200);
+    assert.equal(adminLostRes.data.item.resolvedBy?.id, finderAuth.user.id);
     const retRow = await pool.query<{ status: string }>(
       'SELECT status FROM request WHERE id = $1',
       [secondReturnId],

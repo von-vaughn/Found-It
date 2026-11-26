@@ -94,9 +94,6 @@ export function ItemTable({
               Color
             </th>
             <th scope="col" className="px-4 py-3">
-              Reported by
-            </th>
-            <th scope="col" className="px-4 py-3">
               Date
             </th>
             <th scope="col" className="px-4 py-3">
@@ -180,7 +177,6 @@ export function ItemTable({
                 <span className="block truncate">{row.building}</span>
               </td>
               <td className="px-4 py-3.5">{row.color || "—"}</td>
-              <td className="px-4 py-3.5">{row.reportedBy}</td>
               <td className="whitespace-nowrap px-4 py-3.5">
                 {new Intl.DateTimeFormat("en", {
                   month: "short",
