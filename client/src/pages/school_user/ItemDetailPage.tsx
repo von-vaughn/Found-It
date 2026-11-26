@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  Award,
   Flag,
   Pencil,
   Trash2,
@@ -15,6 +14,7 @@ import { FadeIn } from "@/components/FadeIn";
 import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { FoundItemCameraModal } from "@/components/school_user/FoundItemCameraModal";
 import { OwnershipClaimModal } from "@/components/school_user/OwnershipClaimModal";
+import { PickupQrCard } from "@/components/school_user/PickupQrCard";
 import { ReportPostDialog } from "@/components/school_user/ReportPostDialog";
 import { formatCategoryLabel } from "@/hooks/useCategories";
 import { EMPTY_ITEMS } from "@/data/mockItems";
@@ -795,8 +795,7 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                           </dl>
                           {claimStatus === "Approved" && (
                             <div className="mt-4 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 p-3.5 text-xs text-emerald-900 dark:text-emerald-200">
-                              <p className="font-bold flex items-center gap-1.5">
-                                <Award className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              <p className="font-bold">
                                 {claim.approvalInstructions?.trim()
                                   ? "Pickup Instructions from OSA"
                                   : "Returned to OSA office"}
@@ -805,6 +804,11 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                                 {claim.approvalInstructions?.trim() ||
                                   "Visit OSA with your school ID to claim."}
                               </p>
+                              <PickupQrCard
+                                kind="return"
+                                requestId={claim.id}
+                                itemName={item.title}
+                              />
                             </div>
                           )}
                           {claimStatus === "Returned" && (

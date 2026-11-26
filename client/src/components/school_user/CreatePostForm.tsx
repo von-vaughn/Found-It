@@ -8,6 +8,7 @@ import {
 import { ITEM_CATEGORIES } from "@/data/itemCategories";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
+import { useIsMobileView } from "@/hooks/useIsMobileView";
 import type { Item } from "@/data/mockItems";
 import { toClientItem } from "@/lib/itemAdapter";
 import { useCreateItem, useUpdateItem } from "@/hooks/useItems";
@@ -104,19 +105,6 @@ function FieldError({
 
 function stopCameraStream(stream: MediaStream | null): void {
   stream?.getTracks().forEach((track) => track.stop());
-}
-
-function useIsMobileView(): boolean {
-  const [isMobile, setIsMobile] = useState(() =>
-    window.matchMedia("(max-width: 767px)").matches,
-  );
-  useEffect(() => {
-    const query = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(query.matches);
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-  return isMobile;
 }
 
 function getCameraErrorMessage(error: unknown): string {

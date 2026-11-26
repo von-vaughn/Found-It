@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Header } from "@/components/school_user/Header";
+import { PickupQrCard } from "@/components/school_user/PickupQrCard";
 import { Sidebar } from "@/components/school_user/Sidebar";
 import {
   RequestEditDialog,
@@ -459,15 +460,23 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
                                   )}
 
                                   {claim.status === "Approved" &&
-                                    !isFoundReport &&
-                                    claim.approvalInstructions?.trim() && (
+                                    !isFoundReport && (
                                       <div className="mt-3 rounded-xl bg-emerald-50/80 px-4 py-3 dark:bg-emerald-950/30">
-                                        <h4 className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-                                          Pickup Instructions from OSA
-                                        </h4>
-                                        <p className="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-emerald-950 dark:text-emerald-100">
-                                          {claim.approvalInstructions}
-                                        </p>
+                                        {claim.approvalInstructions?.trim() && (
+                                          <>
+                                            <h4 className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                                              Pickup Instructions from OSA
+                                            </h4>
+                                            <p className="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-emerald-950 dark:text-emerald-100">
+                                              {claim.approvalInstructions}
+                                            </p>
+                                          </>
+                                        )}
+                                        <PickupQrCard
+                                          kind="claim"
+                                          requestId={claim.id}
+                                          itemName={claim.item}
+                                        />
                                       </div>
                                     )}
 
