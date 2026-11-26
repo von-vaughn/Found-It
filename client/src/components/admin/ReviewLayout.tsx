@@ -134,14 +134,12 @@ export function OriginalPostCard({
     const typeBadge = normalizedType.includes("lost")
       ? {
           label: "Lost",
-          style:
-            "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-300",
+          style: "bg-orange-500 text-white",
         }
       : normalizedType.includes("found")
         ? {
             label: "Found",
-            style:
-              "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300",
+            style: "bg-sky-500 text-white",
           }
         : null;
 

@@ -57,14 +57,12 @@ interface ItemDetailPageProps {
 }
 
 const finderStatusStyles: Record<string, string> = {
-  Pending:
-    "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-200",
-  "Pending admin approval":
-    "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-200",
-  Approved: "bg-cyan-50 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-200",
-  Claimed: "bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200",
-  Returned: "bg-teal-50 dark:bg-teal-950 text-teal-800 dark:text-teal-200",
-  Rejected: "bg-rose-50 dark:bg-rose-950 text-rose-800 dark:text-rose-200",
+  Pending: "bg-amber-500 text-white",
+  "Pending admin approval": "bg-amber-500 text-white",
+  Approved: "bg-emerald-600 text-white",
+  Claimed: "bg-blue-600 text-white",
+  Returned: "bg-teal-600 text-white",
+  Rejected: "bg-rose-600 text-white",
 };
 
 export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
@@ -620,45 +618,15 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
           </FadeIn>
           </div>
 
-          {/* Related posts: opposite type when viewing own post, same type otherwise */}
-          {relatedItems.length > 0 && (
-            <FadeIn key={`related-${item.id}`} delay={0.12}>
-              <section aria-labelledby="related-heading">
-                <h2
-                  id="related-heading"
-                  className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
-                >
-                  Related {relatedTargetType}{" "}
-                  {formatCategoryLabel(item.category).toLowerCase()} reports
-                </h2>
-                <StaggerGrid
-                  key={`related-grid-${item.id}`}
-                  className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
-                >
-                  {relatedItems.map((related) => (
-                    <StaggerItem key={related.id}>
-                      <ItemCard
-                        item={related}
-                        onItemClick={(selected) =>
-                          navigate(`/dashboard/items/${selected.id}`)
-                        }
-                      />
-                    </StaggerItem>
-                  ))}
-                </StaggerGrid>
-              </section>
-            </FadeIn>
-          )}
-
           {/* People holding this item (own lost reports only) */}
           {isOwnItem && isLost && finderReports.length > 0 && (
-            <FadeIn key={`responses-${item.id}`} delay={0.14}>
+            <FadeIn key={`responses-${item.id}`} delay={0.12}>
               <section aria-labelledby="finder-reports-heading">
               <h2
                 id="finder-reports-heading"
                 className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
               >
-                Responses to Your Lost Items ({finderReports.length})
+                Responses to Your Lost Item
               </h2>
               <ul className="mt-4 space-y-3">
                   {finderReports.map((claim) => {
@@ -763,15 +731,17 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                                   ? "Pickup Instructions from OSA"
                                   : "Returned to OSA office"}
                               </p>
-                              <p className="mt-1 whitespace-pre-line break-words leading-relaxed text-emerald-950 dark:text-emerald-100">
-                                {claim.approvalInstructions?.trim() ||
-                                  "Visit OSA with your school ID to claim."}
-                              </p>
-                              <PickupQrCard
-                                kind="return"
-                                requestId={claim.id}
-                                itemName={item.title}
-                              />
+                              <div className="mt-2 flex items-start justify-between gap-4">
+                                <p className="min-w-0 flex-1 whitespace-pre-line break-words leading-relaxed text-emerald-950 dark:text-emerald-100">
+                                  {claim.approvalInstructions?.trim() ||
+                                    "Visit OSA with your school ID to claim."}
+                                </p>
+                                <PickupQrCard
+                                  kind="return"
+                                  requestId={claim.id}
+                                  itemName={item.title}
+                                />
+                              </div>
                             </div>
                           )}
                           {claimStatus === "Returned" && (
@@ -785,6 +755,36 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                     );
                   })}
                 </ul>
+              </section>
+            </FadeIn>
+          )}
+
+          {/* Related posts: opposite type when viewing own post, same type otherwise */}
+          {relatedItems.length > 0 && (
+            <FadeIn key={`related-${item.id}`} delay={0.14}>
+              <section aria-labelledby="related-heading">
+                <h2
+                  id="related-heading"
+                  className="text-sm font-extrabold text-neutral-900 dark:text-neutral-100 text-balance"
+                >
+                  Related {relatedTargetType}{" "}
+                  {formatCategoryLabel(item.category).toLowerCase()} reports
+                </h2>
+                <StaggerGrid
+                  key={`related-grid-${item.id}`}
+                  className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+                >
+                  {relatedItems.map((related) => (
+                    <StaggerItem key={related.id}>
+                      <ItemCard
+                        item={related}
+                        onItemClick={(selected) =>
+                          navigate(`/dashboard/items/${selected.id}`)
+                        }
+                      />
+                    </StaggerItem>
+                  ))}
+                </StaggerGrid>
               </section>
             </FadeIn>
           )}
