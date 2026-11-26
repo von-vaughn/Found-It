@@ -7,6 +7,7 @@ import {
   deleteReturnRequest,
   findClaimableItem,
   findItemEventTiming,
+  findReturnEvidenceImageForBlur,
   findReturnForUserById,
   findReturnForUserAndItem,
   listAllReturns,
@@ -25,6 +26,8 @@ import { createClaimSchema, updateClaimSchema } from "../validation/claims";
 import { UUID_RE } from "../validation/dates";
 import { validateReturnTarget } from "../validation/returns";
 import { isLostAfterFound } from "./claims.controller";
+import { isTrustedImageUrl } from "./items.controller";
+import { fetchRemoteImageBuffer, generateBlurredImage } from "../utils/image-blur";
 
 const MAX_REJECTED_RETURN_ATTEMPTS = 2;
 
@@ -468,4 +471,51 @@ export async function getItemReturns(req: Request, res: Response): Promise<void>
   }
   const returns = await listReturnsByItem(itemId, isAdmin);
   res.json({ returns, count: returns.length });
+}
+
+/**
+ * GET /api/returns/:id/evidence/blurred — Streams a server-blurred version of
+ * a return request's evidence image for the lost-item owner.
+ */
+export async function getBlurredReturnEvidenceImage(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const requestId = requestIdParam(req);
+  if (!requestId) {
+    res.status(400).json({ message: "Invalid return request ID." });
+    return;
+  }
+
+  const rawIndex =
+    typeof req.query.index === "string"
+      ? Number.parseInt(req.query.index, 10)
+      : 0;
+  const imageIndex = Number.isFinite(rawIndex) && rawIndex >= 0 ? rawIndex : 0;
+
+  const imageUrl = await findReturnEvidenceImageForBlur(requestId, imageIndex);
+  if (!imageUrl) {
+    res.status(404).json({ message: "Image not found." });
+    return;
+  }
+
+  if (!imageUrl.startsWith("https://") || !isTrustedImageUrl(imageUrl)) {
+    res.status(400).json({ message: "Untrusted source image URL." });
+    return;
+  }
+
+  try {
+    const remoteBuffer = await fetchRemoteImageBuffer(imageUrl);
+    const blurredBuffer = await generateBlurredImage(remoteBuffer);
+
+    res.setHeader("Content-Type", "image/jpeg");
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=86400, stale-while-revalidate=604800",
+    );
+    res.send(blurredBuffer);
+  } catch (err) {
+    console.error("[Return Blur] Error generating blurred evidence image:", err);
+    res.status(500).json({ message: "Failed to process blurred image." });
+  }
 }

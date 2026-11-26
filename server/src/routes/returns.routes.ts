@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   deleteMyReturn,
   getAllReturns,
+  getBlurredReturnEvidenceImage,
   getItemReturns,
   getMyReturns,
   publishRejectedReturnItem,
@@ -15,6 +16,9 @@ import { authenticate } from "../middleware/authenticate";
 import { requireAdmin } from "../middleware/authorize";
 
 const router = Router();
+
+// Public image streaming endpoint (only serves blurred evidence of approved/returned returns)
+router.get("/:id/evidence/blurred", getBlurredReturnEvidenceImage);
 
 router.use(authenticate);
 

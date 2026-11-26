@@ -409,7 +409,38 @@ export async function listReturnsByItem(
      ORDER BY rq.created_at DESC`,
     [itemId],
   );
-  return rows.map((row) => toClaim(row, true));
+  return rows.map((row) => {
+    const claim = toClaim(row, true);
+    if (isAdmin) return claim;
+    return {
+      ...claim,
+      evidence: claim.evidence.map(
+        (_, index) => `/api/returns/${claim.id}/evidence/blurred?index=${index}`,
+      ),
+    };
+  });
+}
+
+/**
+ * Retrieves an evidence image URL of an approved/returned return request by index
+ * for server-side blurring when displayed to the lost-item owner.
+ */
+export async function findReturnEvidenceImageForBlur(
+  requestId: string,
+  imageIndex = 0,
+): Promise<string | null> {
+  const { rows } = await pool.query<{ evidence: string | null }>(
+    `SELECT evidence
+     FROM request
+     WHERE id = $1
+       AND kind = 'return'
+       AND status IN ('approved', 'returned')
+     LIMIT 1`,
+    [requestId],
+  );
+  if (!rows[0]) return null;
+  const images = parseEvidence(rows[0].evidence);
+  return images[imageIndex] ?? null;
 }
 
 async function listAllRequests(kind: "claim" | "return"): Promise<Claim[]> {
