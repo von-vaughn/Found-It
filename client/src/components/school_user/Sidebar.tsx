@@ -421,7 +421,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       initial={false}
       animate={{ width: expanded && !notificationsOpen ? 240 : collapsedWidth }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className={`shrink-0 bg-white dark:bg-neutral-950 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
+      className={`shrink-0 bg-white dark:bg-neutral-900 dark:border-r dark:border-neutral-800 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
     >
       {/* Top Logo */}
       <button
@@ -522,7 +522,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {!hideMobileNav && (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-50 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-sm md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 bg-white/95 dark:bg-neutral-900/95 dark:border-t dark:border-neutral-800 backdrop-blur-sm md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="grid grid-cols-5">
@@ -622,7 +622,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? { left: collapsedWidth, willChange: "transform, opacity" }
               : undefined
           }
-          className="fixed z-40 flex flex-col bg-white dark:bg-neutral-950 max-md:shadow-xl md:shadow-none max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:rounded-t-2xl md:top-0 md:bottom-0 md:w-80"
+          className="fixed z-40 flex flex-col bg-white dark:bg-neutral-900 dark:border-r dark:border-neutral-800 max-md:shadow-xl md:shadow-none max-md:inset-x-0 max-md:bottom-16 max-md:top-auto max-md:max-h-[70dvh] max-md:rounded-t-2xl max-md:dark:border-t max-md:dark:border-r-0 md:top-0 md:bottom-0 md:w-80"
         >
           <div className="flex shrink-0 items-center justify-between px-5 py-5">
             <div>
