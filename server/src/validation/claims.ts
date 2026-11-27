@@ -21,5 +21,23 @@ export const createClaimSchema = z.object({
 
 export const updateClaimSchema = createClaimSchema.omit({ itemId: true });
 
+export const createWalkInClaimSchema = z.discriminatedUnion("mode", [
+  z.object({
+    itemId: z.string().uuid("itemId must be a UUID"),
+    mode: z.literal("account"),
+    userId: z.string().uuid("Select a valid school user account"),
+    notes: z.string().trim().max(500, "Notes must be at most 500 characters").optional(),
+  }),
+  z.object({
+    itemId: z.string().uuid("itemId must be a UUID"),
+    mode: z.literal("guest"),
+    fullName: z.string().trim().min(2, "Full name is required").max(120),
+    schoolId: z.string().trim().min(2, "School ID is required").max(30),
+    contact: z.string().trim().max(120, "Contact must be at most 120 characters").optional(),
+    notes: z.string().trim().max(500, "Notes must be at most 500 characters").optional(),
+  }),
+]);
+
 export type CreateClaimInput = z.infer<typeof createClaimSchema>;
 export type UpdateClaimInput = z.infer<typeof updateClaimSchema>;
+export type CreateWalkInClaimInput = z.infer<typeof createWalkInClaimSchema>;

@@ -42,6 +42,7 @@ export interface AdminReport {
   resolvedBy?: string;
   resolvedByEmail?: string;
   resolvedBySchoolId?: string;
+  resolvedByIsWalkIn?: boolean;
   releasedBy?: string;
   releasedByRole?: "staff" | "admin";
   releasedAt?: string | null;

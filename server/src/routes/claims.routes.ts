@@ -3,7 +3,9 @@ import {
   deleteMyClaim,
   getAllClaims,
   getMyClaims,
+  searchClaimantSchoolUsers,
   submitClaim,
+  submitWalkInClaim,
   updateAdminClaimStatus,
   updateMyClaim,
 } from "../controllers/claims.controller";
@@ -14,8 +16,10 @@ const router = Router();
 
 router.use(authenticate);
 
-// Admin claim workspace
+// Admin/Staff claim workspace
 router.get("/admin", requireStaff, getAllClaims);
+router.get("/admin/school-users", requireStaff, searchClaimantSchoolUsers);
+router.post("/admin/walk-in", requireStaff, submitWalkInClaim);
 router.patch("/admin/:id/status", requireStaff, updateAdminClaimStatus);
 
 router.get("/", getMyClaims);

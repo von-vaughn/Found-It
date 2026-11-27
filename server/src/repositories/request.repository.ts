@@ -44,13 +44,16 @@ interface ClaimRow {
   released_by_email: string | null;
   released_by_role: "staff" | "admin" | null;
   released_at: Date | string | null;
+  is_walkin: boolean;
   status: ClaimStatus;
   created_at: Date | string;
 }
 
 const CLAIM_COLUMNS = `
   rq.id, rq.item_id, i.name AS item_name,
-  u.first_name || ' ' || u.last_name AS claimant, u.email, u.school_id,
+  COALESCE(u.first_name || ' ' || u.last_name, rq.walkin_name, 'Walk-in claimant') AS claimant,
+  COALESCE(u.email, rq.walkin_contact, '') AS email,
+  COALESCE(u.school_id, rq.walkin_school_id) AS school_id,
   rq.date_lost, rq.time_lost, rq.location_lost, rq.details,
   rq.important_details, rq.evidence, rq.claimant_title,
   rq.primary_color, rq.building, rq.received_by_osa, rq.published_item_id,
@@ -60,12 +63,13 @@ const CLAIM_COLUMNS = `
   rb.email AS released_by_email,
   rb.role AS released_by_role,
   rq.released_at,
+  rq.is_walkin,
   rq.status, rq.created_at
 `;
 const CLAIM_JOIN = `
   FROM request rq
   JOIN item i ON i.id = rq.item_id
-  JOIN "user" u ON u.id = rq.user_id
+  LEFT JOIN "user" u ON u.id = rq.user_id
   LEFT JOIN "user" rb ON rb.id = rq.released_by
 `;
 
@@ -141,6 +145,7 @@ function toClaim(
             : null,
         }
       : {}),
+    ...(row.is_walkin ? { isWalkIn: true } : {}),
     status: row.status,
     submitted: new Date(row.created_at).toISOString(),
   };
@@ -1216,4 +1221,238 @@ export function deleteReturnRequest(
   requestId: string,
 ): Promise<boolean> {
   return deleteRequest("return", userId, requestId);
+}
+
+export interface WalkInSchoolUserOption {
+  id: string;
+  name: string;
+  email: string;
+  schoolId: string | null;
+}
+
+/** Searches active school_user accounts for Staff/Admin walk-in claim attribution. */
+export async function searchActiveSchoolUsers(
+  search: string,
+  limit = 20,
+): Promise<WalkInSchoolUserOption[]> {
+  const safeLimit = Math.min(Math.max(limit, 1), 50);
+  const trimmed = search.trim().toLowerCase();
+  const params: unknown[] = [];
+  let searchClause = "";
+  if (trimmed) {
+    params.push(`%${trimmed}%`);
+    searchClause = `AND (
+      LOWER(first_name || ' ' || last_name) LIKE $1
+      OR LOWER(email) LIKE $1
+      OR LOWER(COALESCE(school_id, '')) LIKE $1
+    )`;
+  }
+  params.push(safeLimit);
+  const { rows } = await pool.query<{
+    id: string;
+    name: string;
+    email: string;
+    school_id: string | null;
+  }>(
+    `SELECT id, first_name || ' ' || last_name AS name, email, school_id
+     FROM "user"
+     WHERE role = 'school_user'
+       AND is_active = TRUE
+       ${searchClause}
+     ORDER BY first_name ASC, last_name ASC
+     LIMIT $${params.length}`,
+    params,
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    schoolId: row.school_id,
+  }));
+}
+
+export class WalkInClaimError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = "WalkInClaimError";
+  }
+}
+
+export type CreateWalkInClaimRepoInput =
+  | {
+      itemId: string;
+      releasedByUserId: string;
+      mode: "account";
+      userId: string;
+      notes?: string;
+    }
+  | {
+      itemId: string;
+      releasedByUserId: string;
+      mode: "guest";
+      fullName: string;
+      schoolId: string;
+      contact?: string;
+      notes?: string;
+    };
+
+/**
+ * Records and immediately completes a walk-in claim at the OSA desk for a Found
+ * item. Supports both registered School Users and unregistered walk-in claimants.
+ */
+export async function createWalkInClaim(
+  input: CreateWalkInClaimRepoInput,
+): Promise<Claim> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const { rows: itemRows } = await client.query<{
+      id: string;
+      name: string;
+      report_type: "lost" | "found";
+      received_by_osa: boolean;
+      reporter_id: string;
+    }>(
+      `SELECT i.id, i.name, r.report_type, i.received_by_osa, r.user_id AS reporter_id
+       FROM item i
+       JOIN report r ON r.id = i.report_id
+       WHERE i.id = $1
+       FOR UPDATE OF i`,
+      [input.itemId],
+    );
+    const item = itemRows[0];
+    if (!item) {
+      throw new WalkInClaimError(404, "Item not found.");
+    }
+    if (item.report_type !== "found") {
+      throw new WalkInClaimError(
+        409,
+        "Walk-in claims are only available for found items.",
+      );
+    }
+    if (!item.received_by_osa) {
+      throw new PhysicalItemNotReceivedError();
+    }
+
+    const { rows: existingRequests } = await client.query<{
+      id: string;
+      status: ClaimStatus;
+    }>(
+      `SELECT id, status
+       FROM request
+       WHERE item_id = $1
+         AND kind = 'claim'
+         AND status IN ('approved', 'claimed', 'returned')
+       LIMIT 1`,
+      [input.itemId],
+    );
+    if (existingRequests[0]) {
+      if (existingRequests[0].status === "approved") {
+        throw new AnotherClaimAlreadyApprovedError("claim");
+      }
+      throw new WalkInClaimError(
+        409,
+        "This item has already been claimed or returned.",
+      );
+    }
+
+    let linkedUserId: string | null = null;
+    if (input.mode === "account") {
+      const { rows: userRows } = await client.query<{
+        id: string;
+        role: string;
+        is_active: boolean;
+      }>(
+        `SELECT id, role, is_active FROM "user" WHERE id = $1 LIMIT 1`,
+        [input.userId],
+      );
+      if (!userRows[0] || !userRows[0].is_active || userRows[0].role !== "school_user") {
+        throw new WalkInClaimError(
+          400,
+          "Selected user must be an active school user account.",
+        );
+      }
+      linkedUserId = userRows[0].id;
+    }
+
+    // Reject any pending online claims on this item BEFORE inserting the walk-in
+    // claim so a student who already filed a pending claim and then walked into
+    // OSA does not collide with idx_request_claim_unique.
+    const { rows: rejectedPending } = await client.query<{
+      id: string;
+      user_id: string | null;
+    }>(
+      `UPDATE request
+       SET status = 'rejected',
+           rejection_reason = CASE
+             WHEN $2::uuid IS NOT NULL AND user_id = $2::uuid
+               THEN 'Completed via walk-in claim at OSA.'
+             ELSE 'This item has already been claimed by another user.'
+           END,
+           approval_instructions = NULL
+       WHERE item_id = $1
+         AND kind = 'claim'
+         AND status = 'pending'
+       RETURNING id, user_id`,
+      [input.itemId, linkedUserId],
+    );
+
+    const { rows: insertedRows } = await client.query<{ id: string }>(
+      `INSERT INTO request (
+         item_id, user_id, kind, status, details,
+         is_walkin, walkin_name, walkin_school_id, walkin_contact,
+         released_by, released_at
+       ) VALUES ($1, $2, 'claim', 'claimed', $3, TRUE, $4, $5, $6, $7, NOW())
+       RETURNING id`,
+      [
+        input.itemId,
+        linkedUserId,
+        input.notes?.trim() || "Walk-in claim verified and released at OSA desk.",
+        input.mode === "guest" ? input.fullName.trim() : null,
+        input.mode === "guest" ? input.schoolId.trim() : null,
+        input.mode === "guest" ? (input.contact?.trim() || null) : null,
+        input.releasedByUserId,
+      ],
+    );
+    const createdId = insertedRows[0].id;
+
+    for (const competing of rejectedPending) {
+      if (!competing.user_id || competing.user_id === linkedUserId) continue;
+      await createRequestStatusNotification(client, {
+        requestId: competing.id,
+        itemId: input.itemId,
+        itemName: item.name,
+        kind: "claim",
+        status: "rejected",
+        requesterId: competing.user_id,
+        itemOwnerId: item.reporter_id,
+        reason: "This item has already been claimed by another user.",
+      });
+    }
+
+    await createClaimedNotifications(client, {
+      requestId: createdId,
+      itemId: input.itemId,
+      itemName: item.name,
+      requesterId: linkedUserId,
+      itemOwnerId: item.reporter_id,
+      status: "claimed",
+    });
+
+    const { rows: fullRows } = await client.query<ClaimRow>(
+      `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN} WHERE rq.id = $1 LIMIT 1`,
+      [createdId],
+    );
+
+    await client.query("COMMIT");
+    return toClaim(fullRows[0], true);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }

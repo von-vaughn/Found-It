@@ -4,6 +4,7 @@ import {
   AnotherClaimAlreadyApprovedError,
   countRejectedClaimsForUserAndItem,
   createClaim,
+  createWalkInClaim,
   deleteClaim,
   findClaimForUserById,
   findClaimableItem,
@@ -12,12 +13,18 @@ import {
   listAllClaimsPage,
   listClaimsByUser,
   PhysicalItemNotReceivedError,
+  searchActiveSchoolUsers,
   updateClaim,
   updateClaimStatusById,
+  WalkInClaimError,
 } from "../repositories/request.repository";
 import { recordAuditLog } from "../repositories/audit-log.repository";
 import { minutesApart, reportMoment } from "../utils/item-matching";
-import { createClaimSchema, updateClaimSchema } from "../validation/claims";
+import {
+  createClaimSchema,
+  createWalkInClaimSchema,
+  updateClaimSchema,
+} from "../validation/claims";
 import { parsePagination } from "../validation/pagination";
 import { UUID_RE } from "../validation/dates";
 
@@ -159,11 +166,69 @@ export async function getMyClaims(req: Request, res: Response): Promise<void> {
   res.json({ claims, count: claims.length });
 }
 
-/** GET /api/claims/admin — every ownership claim (admin+). */
+/** GET /api/claims/admin — every ownership claim (staff+). */
 export async function getAllClaims(req: Request, res: Response): Promise<void> {
   const pagination = parsePagination(req.query, { limit: 500, maxLimit: 500 });
   const { items: claims, hasMore } = await listAllClaimsPage(pagination);
   res.json({ claims, count: claims.length, hasMore });
+}
+
+/** GET /api/claims/admin/school-users — search active school users for walk-in claims (staff+). */
+export async function searchClaimantSchoolUsers(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const search = typeof req.query.search === "string" ? req.query.search : "";
+  const users = await searchActiveSchoolUsers(search, 20);
+  res.json({ users, count: users.length });
+}
+
+/** POST /api/claims/admin/walk-in — record and complete a walk-in claim at OSA (staff+). */
+export async function submitWalkInClaim(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const parsed = createWalkInClaimSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+
+  let claim;
+  try {
+    claim = await createWalkInClaim({
+      ...parsed.data,
+      releasedByUserId: req.user!.sub,
+    });
+  } catch (error) {
+    if (error instanceof WalkInClaimError) {
+      res.status(error.status).json({ message: error.message });
+      return;
+    }
+    if (
+      error instanceof PhysicalItemNotReceivedError ||
+      error instanceof AnotherClaimAlreadyApprovedError
+    ) {
+      res.status(409).json({ message: error.message });
+      return;
+    }
+    throw error;
+  }
+
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: "claimed",
+    entityType: "claim",
+    entityId: claim.id,
+    summary: `Recorded walk-in claim for "${claim.item}" (${claim.claimant}${claim.schoolId ? `, ID ${claim.schoolId}` : ""})`,
+  });
+
+  res.status(201).json({
+    message: "Walk-in claim recorded and item marked as claimed.",
+    claim,
+  });
 }
 
 /** PATCH /api/claims/admin/:id/status — update a claim decision (admin+). */

@@ -32,7 +32,7 @@ export interface ServerItem {
   image?: string | null;
   images?: string[];
   user: { id: string; name: string; email?: string; schoolId?: string };
-  resolvedBy?: { id: string; name: string; email?: string; schoolId?: string } | null;
+  resolvedBy?: { id?: string | null; name: string; email?: string; schoolId?: string; isWalkIn?: boolean } | null;
   releasedBy?: { id: string; name: string; email?: string; role?: "staff" | "admin" } | null;
   releasedAt?: string | null;
   flagCount?: number;

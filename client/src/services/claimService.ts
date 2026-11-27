@@ -35,6 +35,7 @@ export interface ServerClaim {
     role?: "staff" | "admin";
   } | null;
   releasedAt?: string | null;
+  isWalkIn?: boolean;
   status: ServerClaimStatus;
   submitted: string;
 }
@@ -110,6 +111,53 @@ export async function listAllClaimsPage(params?: {
 export async function listAllClaims(): Promise<ServerClaim[]> {
   const { claims } = await listAllClaimsPage();
   return claims;
+}
+
+export interface WalkInSchoolUserOption {
+  id: string;
+  name: string;
+  email: string;
+  schoolId: string | null;
+}
+
+export type CreateWalkInClaimPayload =
+  | {
+      itemId: string;
+      mode: "account";
+      userId: string;
+      notes?: string;
+    }
+  | {
+      itemId: string;
+      mode: "guest";
+      fullName: string;
+      schoolId: string;
+      contact?: string;
+      notes?: string;
+    };
+
+/** GET /api/claims/admin/school-users — search active school users for walk-in claims. */
+export async function searchSchoolUsersForWalkIn(
+  search: string,
+): Promise<WalkInSchoolUserOption[]> {
+  const { data } = await api.get<{
+    users: WalkInSchoolUserOption[];
+    count: number;
+  }>("/claims/admin/school-users", {
+    params: search.trim() ? { search: search.trim() } : {},
+  });
+  return data.users;
+}
+
+/** POST /api/claims/admin/walk-in — record and complete a walk-in claim at OSA. */
+export async function createWalkInClaim(
+  payload: CreateWalkInClaimPayload,
+): Promise<ServerClaim> {
+  const { data } = await api.post<CreateClaimResponse>(
+    "/claims/admin/walk-in",
+    payload,
+  );
+  return data.claim;
 }
 
 /** PATCH /api/claims/admin/:id/status — record an admin decision. */

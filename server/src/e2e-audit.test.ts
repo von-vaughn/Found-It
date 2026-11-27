@@ -1304,4 +1304,177 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(switchBackWithCustom.data.item.categoryId, otherCategoryId);
     assert.equal(switchBackWithCustom.data.item.customCategory, 'Bike Lock');
   });
+
+  it('7. Supports Walk-in Claims for both registered School Users and unregistered guests, with OSA guard, auto-reject, releasedBy, and audit logging', async () => {
+    const ownerAuth = await loginAs(OWNER_EMAIL);
+    const claimantAuth = await loginAs(CLAIMANT_EMAIL);
+    const staffAuth = await loginAs(ADMIN_EMAIL);
+    const adminAuth = await loginAs(SUPER_EMAIL);
+    const today = new Date().toISOString().slice(0, 10);
+
+    // School user cannot call the staff school-user search endpoint
+    const deniedSearch = await api('GET', '/api/claims/admin/school-users?search=Audit', {
+      token: ownerAuth.token,
+    });
+    assert.equal(deniedSearch.status, 403);
+
+    // Staff CAN search active school users for walk-in claims
+    const staffSearch = await api<{ users: Array<{ id: string; email: string }> }>(
+      'GET',
+      `/api/claims/admin/school-users?search=${encodeURIComponent(CLAIMANT_EMAIL)}`,
+      { token: staffAuth.token },
+    );
+    assert.equal(staffSearch.status, 200);
+    assert.ok(staffSearch.data.users.some((u) => u.id === claimantUserId));
+
+    // Create Found Item #1 (for registered account walk-in)
+    const foundRes1 = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'WalkIn Umbrella',
+        description: 'Black folding umbrella left at gate',
+        itemDate: today,
+        itemTime: '08:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(foundRes1.status, 201);
+    const foundItem1 = foundRes1.data.item.id;
+    createdItemIds.push(foundItem1);
+
+    // Blocked before OSA receipt
+    const beforeOsa = await api('POST', '/api/claims/admin/walk-in', {
+      token: staffAuth.token,
+      body: { itemId: foundItem1, mode: 'account', userId: claimantUserId },
+    });
+    assert.equal(beforeOsa.status, 409);
+
+    // Mark received by OSA
+    const markOsa1 = await api('PATCH', `/api/items/${foundItem1}/osa-receipt`, {
+      token: staffAuth.token,
+      body: { receivedByOsa: true },
+    });
+    assert.equal(markOsa1.status, 200);
+
+    // Submit a competing pending online claim from claimantAuth before walk-in
+    const onlineClaim = await api<{ claim: { id: string } }>('POST', '/api/claims', {
+      token: claimantAuth.token,
+      body: {
+        itemId: foundItem1,
+        claimantTitle: 'My umbrella',
+        dateLost: today,
+        timeLost: '07:30',
+        location: 'Library',
+        details: 'Lost this morning',
+        importantDetails: 'Has red handle',
+      },
+    });
+    assert.equal(onlineClaim.status, 201);
+
+    // Staff completes walk-in claim for registered School User (claimantUserId)
+    const walkInAccount = await api<{
+      claim: {
+        id: string;
+        status: string;
+        isWalkIn?: boolean;
+        releasedBy?: { id: string; role?: string } | null;
+        releasedAt?: string | null;
+      };
+    }>('POST', '/api/claims/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        itemId: foundItem1,
+        mode: 'account',
+        userId: claimantUserId,
+        notes: 'Verified student ID at OSA Window 1',
+      },
+    });
+    assert.equal(walkInAccount.status, 201);
+    assert.equal(walkInAccount.data.claim.status, 'claimed');
+    assert.equal(walkInAccount.data.claim.isWalkIn, true);
+    assert.equal(walkInAccount.data.claim.releasedBy?.id, adminUserId);
+    assert.equal(walkInAccount.data.claim.releasedBy?.role, 'staff');
+    assert.ok(walkInAccount.data.claim.releasedAt);
+
+    // Competing pending online claim was auto-rejected
+    const { rows: rejectedOnline } = await pool.query<{ status: string }>(
+      'SELECT status FROM request WHERE id = $1',
+      [onlineClaim.data.claim.id],
+    );
+    assert.equal(rejectedOnline[0]?.status, 'rejected');
+
+    // Create Found Item #2 (for unregistered guest walk-in)
+    const foundRes2 = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'WalkIn Tumbler',
+        description: 'Blue insulated tumbler',
+        itemDate: today,
+        itemTime: '09:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(foundRes2.status, 201);
+    const foundItem2 = foundRes2.data.item.id;
+    createdItemIds.push(foundItem2);
+
+    await api('PATCH', `/api/items/${foundItem2}/osa-receipt`, {
+      token: adminAuth.token,
+      body: { receivedByOsa: true },
+    });
+
+    // Admin completes walk-in claim for unregistered guest
+    const walkInGuest = await api<{
+      claim: {
+        id: string;
+        claimant: string;
+        schoolId?: string;
+        isWalkIn?: boolean;
+        releasedBy?: { id: string; role?: string } | null;
+      };
+    }>('POST', '/api/claims/admin/walk-in', {
+      token: adminAuth.token,
+      body: {
+        itemId: foundItem2,
+        mode: 'guest',
+        fullName: 'Juan Dela Cruz',
+        schoolId: '2024-99001',
+        contact: '09171234567',
+        notes: 'Verified physical school ID',
+      },
+    });
+    assert.equal(walkInGuest.status, 201);
+    assert.equal(walkInGuest.data.claim.claimant, 'Juan Dela Cruz');
+    assert.equal(walkInGuest.data.claim.schoolId, '2024-99001');
+    assert.equal(walkInGuest.data.claim.isWalkIn, true);
+    assert.equal(walkInGuest.data.claim.releasedBy?.id, superUserId);
+    assert.equal(walkInGuest.data.claim.releasedBy?.role, 'admin');
+
+    // Item detail for Staff/Admin exposes resolvedBy (with isWalkIn) and releasedBy
+    const adminItemView = await api<{
+      item: {
+        isClaimed: boolean;
+        resolvedBy?: { name: string; schoolId?: string; isWalkIn?: boolean } | null;
+        releasedBy?: { id: string; role?: string } | null;
+      };
+    }>('GET', `/api/items/${foundItem2}`, { token: staffAuth.token });
+    assert.equal(adminItemView.status, 200);
+    assert.equal(adminItemView.data.item.isClaimed, true);
+    assert.equal(adminItemView.data.item.resolvedBy?.name, 'Juan Dela Cruz');
+    assert.equal(adminItemView.data.item.resolvedBy?.schoolId, '2024-99001');
+    assert.equal(adminItemView.data.item.resolvedBy?.isWalkIn, true);
+    assert.equal(adminItemView.data.item.releasedBy?.id, superUserId);
+
+    // School user view does NOT expose resolvedBy or releasedBy
+    const schoolItemView = await api<{
+      item: { resolvedBy?: unknown; releasedBy?: unknown };
+    }>('GET', `/api/items/${foundItem2}`, { token: ownerAuth.token });
+    assert.equal(schoolItemView.status, 200);
+    assert.equal(schoolItemView.data.item.resolvedBy, undefined);
+    assert.equal(schoolItemView.data.item.releasedBy, undefined);
+  });
 });

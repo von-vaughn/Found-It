@@ -295,6 +295,22 @@ export async function migrate(): Promise<void> {
 
     ALTER TABLE request ADD COLUMN IF NOT EXISTS released_by UUID REFERENCES "user"(id) ON DELETE SET NULL;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS released_at TIMESTAMPTZ;
+    ALTER TABLE request ALTER COLUMN user_id DROP NOT NULL;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS is_walkin BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS walkin_name VARCHAR(120);
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS walkin_school_id VARCHAR(30);
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS walkin_contact VARCHAR(120);
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'request'::regclass
+          AND conname = 'request_claimant_identity_check'
+      ) THEN
+        ALTER TABLE request ADD CONSTRAINT request_claimant_identity_check
+          CHECK (user_id IS NOT NULL OR (is_walkin = TRUE AND char_length(trim(COALESCE(walkin_name, ''))) > 0));
+      END IF;
+    END $$;
   `);
 
   await pool.query(`

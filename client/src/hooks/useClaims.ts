@@ -10,11 +10,13 @@ import { itemKeys } from "@/hooks/useItems";
 import { notificationKeys } from "@/hooks/useNotifications";
 import {
   createClaim,
+  createWalkInClaim,
   deleteClaim,
   listAllClaims,
   listAllClaimsPage,
   listMyClaims,
   updateClaimStatus,
+  type CreateWalkInClaimPayload,
   type ServerClaim,
   type ServerClaimStatus,
   type UpdateClaimPayload,
@@ -108,6 +110,22 @@ export function useUpdateAdminClaimStatus() {
         ),
       );
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: claimKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    },
+  });
+}
+
+/** Records a completed walk-in claim (registered user or guest) and refreshes caches. */
+export function useCreateWalkInClaim() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateWalkInClaimPayload) =>
+      createWalkInClaim(payload),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: claimKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });

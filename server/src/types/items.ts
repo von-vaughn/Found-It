@@ -41,7 +41,7 @@ export interface Item {
   /** Reporter identity. Email and schoolId are included for staff/admin only. */
   user: { id: string; name: string; email?: string; schoolId?: string };
   /** Claimant or finder who completed the claim/return (present for staff/admin only). */
-  resolvedBy?: { id: string; name: string; email?: string; schoolId?: string } | null;
+  resolvedBy?: { id?: string | null; name: string; email?: string; schoolId?: string; isWalkIn?: boolean } | null;
   /** Staff or admin who marked the item claimed/returned (present for staff/admin only). */
   releasedBy?: { id: string; name: string; email?: string; role?: 'staff' | 'admin' } | null;
   /** Timestamp when the item was marked claimed/returned (present for staff/admin only). */

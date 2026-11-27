@@ -38,6 +38,7 @@ export interface Claim {
   lastFinderReminderAt?: string | null;
   releasedBy?: ClaimReleasedBy | null;
   releasedAt?: string | null;
+  isWalkIn?: boolean;
   status: ClaimStatus;
   submitted: string;
 }

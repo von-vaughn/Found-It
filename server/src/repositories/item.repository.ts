@@ -26,10 +26,11 @@ interface ItemRow {
   reporter_email: string;
   reporter_school_id: string | null;
   resolved_by: {
-    id: string;
+    id: string | null;
     name: string;
-    email: string;
+    email: string | null;
     schoolId: string | null;
+    isWalkIn: boolean;
   } | null;
   released_by: {
     id: string;
@@ -83,12 +84,13 @@ const ITEM_COLUMNS = `
   (
     SELECT json_build_object(
       'id', ru.id,
-      'name', ru.first_name || ' ' || ru.last_name,
-      'email', ru.email,
-      'schoolId', ru.school_id
+      'name', COALESCE(ru.first_name || ' ' || ru.last_name, completed_request.walkin_name, 'Walk-in claimant'),
+      'email', COALESCE(ru.email, completed_request.walkin_contact),
+      'schoolId', COALESCE(ru.school_id, completed_request.walkin_school_id),
+      'isWalkIn', completed_request.is_walkin
     )
     FROM request completed_request
-    JOIN "user" ru ON ru.id = completed_request.user_id
+    LEFT JOIN "user" ru ON ru.id = completed_request.user_id
     WHERE completed_request.item_id = i.id
       AND (
         (completed_request.kind = 'claim'
@@ -234,12 +236,13 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
       ? {
           resolvedBy: row.resolved_by
             ? {
-                id: row.resolved_by.id,
+                ...(row.resolved_by.id ? { id: row.resolved_by.id } : {}),
                 name: row.resolved_by.name,
-                email: row.resolved_by.email,
+                ...(row.resolved_by.email ? { email: row.resolved_by.email } : {}),
                 ...(row.resolved_by.schoolId
                   ? { schoolId: row.resolved_by.schoolId }
                   : {}),
+                ...(row.resolved_by.isWalkIn ? { isWalkIn: true } : {}),
               }
             : null,
           releasedBy: row.released_by

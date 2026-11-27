@@ -32,6 +32,7 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   resolvedBy: item.resolvedBy?.name,
   resolvedByEmail: item.resolvedBy?.email,
   resolvedBySchoolId: item.resolvedBy?.schoolId,
+  resolvedByIsWalkIn: item.resolvedBy?.isWalkIn ?? false,
   releasedBy: item.releasedBy?.name,
   releasedByRole: item.releasedBy?.role,
   releasedAt: item.releasedAt ?? null,
