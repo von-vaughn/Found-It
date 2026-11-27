@@ -78,6 +78,13 @@ export interface ListItemsParams {
   categoryId?: string;
   search?: string;
   mine?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListItemsPageResult {
+  items: ServerItem[];
+  hasMore: boolean;
 }
 
 // ─── API functions ─────────────────────────────────────────────────────────
@@ -88,15 +95,28 @@ export async function createItem(payload: CreateItemPayload): Promise<ServerItem
   return data.item;
 }
 
-/** GET /api/items — list all items (with optional filters). */
-export async function listItems(params?: ListItemsParams): Promise<ServerItem[]> {
+/** GET /api/items — list a page of items (with optional filters & pagination). */
+export async function listItemsPage(params?: ListItemsParams): Promise<ListItemsPageResult> {
   const query: Record<string, string> = {};
   if (params?.reportType) query.reportType = params.reportType;
   if (params?.categoryId) query.categoryId = params.categoryId;
   if (params?.search) query.search = params.search;
   if (params?.mine) query.mine = "true";
-  const { data } = await api.get<ListItemsResponse>("/items", { params: query });
-  return data.items;
+  if (params?.limit !== undefined) query.limit = String(params.limit);
+  if (params?.offset !== undefined) query.offset = String(params.offset);
+  const { data } = await api.get<ListItemsResponse & { hasMore?: boolean }>("/items", {
+    params: query,
+  });
+  return {
+    items: data.items,
+    hasMore: Boolean(data.hasMore),
+  };
+}
+
+/** GET /api/items — list all items (with optional filters). */
+export async function listItems(params?: ListItemsParams): Promise<ServerItem[]> {
+  const { items } = await listItemsPage(params);
+  return items;
 }
 
 /** GET /api/items/:id — fetch a single item by ID. */

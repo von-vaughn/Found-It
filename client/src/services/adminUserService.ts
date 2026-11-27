@@ -14,6 +14,12 @@ interface ServerAdminUser {
 interface UsersResponse {
   users: ServerAdminUser[];
   count: number;
+  hasMore?: boolean;
+}
+
+export interface ListAdminUsersPageResult {
+  users: AdminUser[];
+  hasMore: boolean;
 }
 
 interface UserResponse {
@@ -44,9 +50,23 @@ function toAdminUser(user: ServerAdminUser): AdminUser {
   };
 }
 
+export async function listAdminUsersPage(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<ListAdminUsersPageResult> {
+  const query: Record<string, string> = {};
+  if (params?.limit !== undefined) query.limit = String(params.limit);
+  if (params?.offset !== undefined) query.offset = String(params.offset);
+  const { data } = await api.get<UsersResponse>("/users", { params: query });
+  return {
+    users: data.users.map(toAdminUser),
+    hasMore: Boolean(data.hasMore),
+  };
+}
+
 export async function listAdminUsers(): Promise<AdminUser[]> {
-  const { data } = await api.get<UsersResponse>("/users");
-  return data.users.map(toAdminUser);
+  const { users } = await listAdminUsersPage();
+  return users;
 }
 
 export async function createAdminUser(

@@ -55,6 +55,12 @@ interface CreateClaimResponse {
 interface ListClaimsResponse {
   claims: ServerClaim[];
   count: number;
+  hasMore?: boolean;
+}
+
+export interface ListClaimsPageResult {
+  claims: ServerClaim[];
+  hasMore: boolean;
 }
 
 interface UpdateClaimResponse {
@@ -76,10 +82,27 @@ export async function listMyClaims(): Promise<ServerClaim[]> {
   return data.claims;
 }
 
+/** GET /api/claims/admin — paginated ownership claims (admin+). */
+export async function listAllClaimsPage(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<ListClaimsPageResult> {
+  const query: Record<string, string> = {};
+  if (params?.limit !== undefined) query.limit = String(params.limit);
+  if (params?.offset !== undefined) query.offset = String(params.offset);
+  const { data } = await api.get<ListClaimsResponse>("/claims/admin", {
+    params: query,
+  });
+  return {
+    claims: data.claims,
+    hasMore: Boolean(data.hasMore),
+  };
+}
+
 /** GET /api/claims/admin — every ownership claim (admin+). */
 export async function listAllClaims(): Promise<ServerClaim[]> {
-  const { data } = await api.get<ListClaimsResponse>("/claims/admin");
-  return data.claims;
+  const { claims } = await listAllClaimsPage();
+  return claims;
 }
 
 /** PATCH /api/claims/admin/:id/status — record an admin decision. */

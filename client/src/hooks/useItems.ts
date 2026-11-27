@@ -1,4 +1,5 @@
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -7,6 +8,7 @@ import {
 import {
   createItem,
   listItems,
+  listItemsPage,
   listMyItems,
   getItemById,
   updateItem,
@@ -50,6 +52,40 @@ export function useItems(
     queryFn: () => listItems(params),
     ...options,
   });
+}
+
+export function useInfiniteItems(
+  params?: Omit<ListItemsParams, "limit" | "offset">,
+  pageSize = 24,
+) {
+  const viewerKey = useViewerKey();
+  const query = useInfiniteQuery({
+    queryKey: [...itemKeys.all, "infinite", params ?? {}, pageSize, viewerKey],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listItemsPage({ ...params, limit: pageSize, offset: pageParam }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.reduce((sum, page) => sum + page.items.length, 0);
+    },
+    staleTime: 30_000,
+  });
+
+  const items: ServerItem[] = [];
+  const seen = new Set<string>();
+  for (const page of query.data?.pages ?? []) {
+    for (const item of page.items) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        items.push(item);
+      }
+    }
+  }
+
+  return {
+    ...query,
+    items,
+  };
 }
 
 // ─── GET /api/items?mine=true (current user's own reports) ──────────────────

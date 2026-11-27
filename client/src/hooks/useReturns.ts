@@ -1,4 +1,5 @@
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -12,6 +13,7 @@ import {
   createReturnRequest,
   deleteReturnRequest,
   listAllReturns,
+  listAllReturnsPage,
   listItemReturns,
   listMyReturns,
   publishRejectedReturn,
@@ -57,6 +59,37 @@ export function useAdminReturns() {
     queryFn: listAllReturns,
     staleTime: 15_000,
   });
+}
+
+/** Paginated admin returns with Load More support. */
+export function useInfiniteAdminReturns(pageSize = 50) {
+  const query = useInfiniteQuery({
+    queryKey: [...returnKeys.all, "admin-infinite", pageSize],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listAllReturnsPage({ limit: pageSize, offset: pageParam }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.reduce((sum, page) => sum + page.returns.length, 0);
+    },
+    staleTime: 15_000,
+  });
+
+  const returns: ServerClaim[] = [];
+  const seen = new Set<string>();
+  for (const page of query.data?.pages ?? []) {
+    for (const entry of page.returns) {
+      if (!seen.has(entry.id)) {
+        seen.add(entry.id);
+        returns.push(entry);
+      }
+    }
+  }
+
+  return {
+    ...query,
+    returns,
+  };
 }
 
 /** Return reports filed for a specific item (for lost item owner or admin). */

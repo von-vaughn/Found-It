@@ -57,10 +57,28 @@ export async function listItemReturns(itemId: string): Promise<ServerClaim[]> {
   return data.returns;
 }
 
+/** GET /api/returns/admin — paginated return requests (admin+). */
+export async function listAllReturnsPage(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ returns: ServerClaim[]; hasMore: boolean }> {
+  const query: Record<string, string> = {};
+  if (params?.limit !== undefined) query.limit = String(params.limit);
+  if (params?.offset !== undefined) query.offset = String(params.offset);
+  const { data } = await api.get<ListReturnsResponse & { hasMore?: boolean }>(
+    "/returns/admin",
+    { params: query },
+  );
+  return {
+    returns: data.returns,
+    hasMore: Boolean(data.hasMore),
+  };
+}
+
 /** GET /api/returns/admin — every return request (admin+). */
 export async function listAllReturns(): Promise<ServerClaim[]> {
-  const { data } = await api.get<ListReturnsResponse>("/returns/admin");
-  return data.returns;
+  const { returns } = await listAllReturnsPage();
+  return returns;
 }
 
 /** POST /api/returns/admin/:id/publish — publish rejected found evidence. */

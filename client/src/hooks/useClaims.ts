@@ -1,4 +1,5 @@
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -11,6 +12,7 @@ import {
   createClaim,
   deleteClaim,
   listAllClaims,
+  listAllClaimsPage,
   listMyClaims,
   updateClaimStatus,
   type ServerClaim,
@@ -50,6 +52,37 @@ export function useAdminClaims() {
     queryFn: listAllClaims,
     staleTime: 15_000,
   });
+}
+
+/** Paginated admin claims with Load More support. */
+export function useInfiniteAdminClaims(pageSize = 50) {
+  const query = useInfiniteQuery({
+    queryKey: [...claimKeys.all, "admin-infinite", pageSize],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listAllClaimsPage({ limit: pageSize, offset: pageParam }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.reduce((sum, page) => sum + page.claims.length, 0);
+    },
+    staleTime: 15_000,
+  });
+
+  const claims: ServerClaim[] = [];
+  const seen = new Set<string>();
+  for (const page of query.data?.pages ?? []) {
+    for (const claim of page.claims) {
+      if (!seen.has(claim.id)) {
+        seen.add(claim.id);
+        claims.push(claim);
+      }
+    }
+  }
+
+  return {
+    ...query,
+    claims,
+  };
 }
 
 /** Records an admin decision and refreshes every cached claim list. */

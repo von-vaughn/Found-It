@@ -48,13 +48,37 @@ interface ListNotificationsResponse {
   notifications: ServerNotification[];
   count: number;
   unreadCount: number;
+  hasMore?: boolean;
+}
+
+export interface ListNotificationsPageResult {
+  notifications: ServerNotification[];
+  unreadCount: number;
+  hasMore: boolean;
+}
+
+/** GET /api/notifications — paginated notifications for the signed-in user. */
+export async function listNotificationsPage(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<ListNotificationsPageResult> {
+  const query: Record<string, string> = {};
+  if (params?.limit !== undefined) query.limit = String(params.limit);
+  if (params?.offset !== undefined) query.offset = String(params.offset);
+  const { data } = await api.get<ListNotificationsResponse>("/notifications", {
+    params: query,
+  });
+  return {
+    notifications: data.notifications,
+    unreadCount: data.unreadCount,
+    hasMore: Boolean(data.hasMore),
+  };
 }
 
 /** GET /api/notifications — the signed-in user's notifications. */
 export async function listNotifications(): Promise<ServerNotification[]> {
-  const { data } =
-    await api.get<ListNotificationsResponse>("/notifications");
-  return data.notifications;
+  const { notifications } = await listNotificationsPage();
+  return notifications;
 }
 
 /** PATCH /api/notifications/:id/read — persist one notification's read state. */
