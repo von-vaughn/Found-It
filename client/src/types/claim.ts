@@ -30,6 +30,7 @@ export interface ClaimRequest {
     role?: "staff" | "admin";
   } | null;
   releasedAt?: string | null;
+  isWalkIn?: boolean;
 }
 
 export type NewClaimRequest = Omit<

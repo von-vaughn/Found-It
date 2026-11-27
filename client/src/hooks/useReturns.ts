@@ -11,6 +11,7 @@ import { notificationKeys } from "@/hooks/useNotifications";
 import type { ServerClaim, ServerClaimStatus } from "@/services/claimService";
 import {
   createReturnRequest,
+  createWalkInReturn,
   deleteReturnRequest,
   listAllReturns,
   listAllReturnsPage,
@@ -19,6 +20,7 @@ import {
   publishRejectedReturn,
   remindReturnFinder,
   type CreateReturnPayload,
+  type CreateWalkInReturnPayload,
   type PublishReturnResponse,
   type UpdateReturnPayload,
   updateReturnRequest,
@@ -131,6 +133,22 @@ export function useCreateReturnRequest() {
       if ((error as { response?: { status?: number } }).response?.status === 409) {
         queryClient.invalidateQueries({ queryKey: returnKeys.all });
       }
+    },
+  });
+}
+
+/** Records a walk-in return at OSA and refreshes returns, items, notifications, and audit logs. */
+export function useCreateWalkInReturn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateWalkInReturnPayload) =>
+      createWalkInReturn(payload),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: returnKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
 }

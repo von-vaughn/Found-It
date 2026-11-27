@@ -1662,9 +1662,9 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(receivedRes.status, 201);
     const receivedId = receivedRes.data.item.id;
     createdItemIds.push(receivedId);
-    const markReceived = await api('PATCH', `/api/items/${receivedId}/received`, {
+    const markReceived = await api('PATCH', `/api/items/${receivedId}/osa-receipt`, {
       token: staffAuth.token,
-      body: { received: true },
+      body: { receivedByOsa: true },
     });
     assert.equal(markReceived.status, 200);
 
@@ -1732,5 +1732,209 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
         n.message.includes('Expiring Warning Watch'),
     );
     assert.equal(matches.length, 1);
+  });
+
+  it('10. supports Walk-In Return Requests for registered users and guests with guards, approval, handover, and audit logging', async () => {
+    const ownerAuth = await loginAs(OWNER_EMAIL);
+    const finderAuth = await loginAs(CLAIMANT_EMAIL);
+    const staffAuth = await loginAs(ADMIN_EMAIL);
+    const superAuth = await loginAs(SUPER_EMAIL);
+    const today = new Date().toISOString().slice(0, 10);
+
+    // A) Found item -> walk-in return MUST be rejected (409)
+    const foundRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'Found Item Not Returnable',
+        description: 'Should reject walk-in return',
+        itemDate: today,
+        itemTime: '09:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(foundRes.status, 201);
+    const foundItemId = foundRes.data.item.id;
+    createdItemIds.push(foundItemId);
+
+    const wrongTypeRes = await api('POST', '/api/returns/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        itemId: foundItemId,
+        mode: 'guest',
+        fullName: 'Walk In Finder',
+        approvalInstructions: 'Claim at OSA Window 1.',
+      },
+    });
+    assert.equal(wrongTypeRes.status, 409);
+
+    // B) Lost item #1 -> registered school user walk-in return
+    const lost1Res = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Lost Scientific Calculator',
+        description: 'Black Casio calculator lost in Library',
+        itemDate: today,
+        itemTime: '09:30',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(lost1Res.status, 201);
+    const lost1Id = lost1Res.data.item.id;
+    createdItemIds.push(lost1Id);
+
+    // Self-return (owner == finder) MUST be rejected (400)
+    const selfReturnRes = await api('POST', '/api/returns/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        itemId: lost1Id,
+        mode: 'account',
+        userId: ownerAuth.user.id,
+        approvalInstructions: 'Claim at OSA Window 1.',
+      },
+    });
+    assert.equal(selfReturnRes.status, 400);
+
+    // Missing pickup instructions MUST be rejected (400)
+    const missingInstructionsRes = await api('POST', '/api/returns/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        itemId: lost1Id,
+        mode: 'account',
+        userId: finderAuth.user.id,
+      },
+    });
+    assert.equal(missingInstructionsRes.status, 400);
+
+    // Registered school user walk-in return -> 201 approved + receivedByOsa + isWalkIn
+    const accountReturnRes = await api<{
+      returnRequest: {
+        id: string;
+        status: string;
+        isWalkIn?: boolean;
+        receivedByOsa?: boolean;
+        approvalInstructions?: string | null;
+      };
+    }>('POST', '/api/returns/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        itemId: lost1Id,
+        mode: 'account',
+        userId: finderAuth.user.id,
+        locationFound: 'Library 2nd floor',
+        details: 'Found near study cubicles',
+        approvalInstructions: 'Bring School ID to OSA desk.',
+      },
+    });
+    assert.equal(accountReturnRes.status, 201);
+    assert.equal(accountReturnRes.data.returnRequest.status, 'approved');
+    assert.equal(accountReturnRes.data.returnRequest.isWalkIn, true);
+    assert.equal(accountReturnRes.data.returnRequest.receivedByOsa, true);
+    assert.equal(
+      accountReturnRes.data.returnRequest.approvalInstructions,
+      'Bring School ID to OSA desk.',
+    );
+
+    // Second walk-in return while one is already approved -> 409
+    const duplicateReturnRes = await api('POST', '/api/returns/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        itemId: lost1Id,
+        mode: 'guest',
+        fullName: 'Second Finder',
+        approvalInstructions: 'Claim at OSA Window 1.',
+      },
+    });
+    assert.equal(duplicateReturnRes.status, 409);
+
+    // Verify Lost item owner received approval notification
+    const ownerNotifs = await api<{
+      notifications: Array<{ itemId: string | null; event: string; message: string }>;
+    }>('GET', '/api/notifications', { token: ownerAuth.token });
+    assert.ok(
+      ownerNotifs.data.notifications.some(
+        (n) =>
+          n.itemId === lost1Id &&
+          n.event === 'approved' &&
+          n.message.includes('Lost Scientific Calculator'),
+      ),
+    );
+
+    // C) Lost item #2 -> guest walk-in return + QR handover completion
+    const lost2Res = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Lost Blue Tumbler',
+        description: 'Insulated blue water bottle',
+        itemDate: today,
+        itemTime: '10:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(lost2Res.status, 201);
+    const lost2Id = lost2Res.data.item.id;
+    createdItemIds.push(lost2Id);
+
+    const guestReturnRes = await api<{
+      returnRequest: {
+        id: string;
+        claimant: string;
+        schoolId?: string;
+        status: string;
+        isWalkIn?: boolean;
+        receivedByOsa?: boolean;
+      };
+    }>('POST', '/api/returns/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        itemId: lost2Id,
+        mode: 'guest',
+        fullName: 'Maria Santos',
+        schoolId: '2024-88991',
+        contact: '09171234567',
+        locationFound: 'Canteen table 4',
+        approvalInstructions: 'Claim at OSA desk between 8 AM and 5 PM.',
+      },
+    });
+    assert.equal(guestReturnRes.status, 201);
+    const guestReturnId = guestReturnRes.data.returnRequest.id;
+    assert.equal(guestReturnRes.data.returnRequest.claimant, 'Maria Santos');
+    assert.equal(guestReturnRes.data.returnRequest.schoolId, '2024-88991');
+    assert.equal(guestReturnRes.data.returnRequest.status, 'approved');
+    assert.equal(guestReturnRes.data.returnRequest.isWalkIn, true);
+    assert.equal(guestReturnRes.data.returnRequest.receivedByOsa, true);
+
+    // Complete handover via status -> returned (simulating owner QR scan at OSA)
+    const handoverRes = await api<{
+      returnRequest: {
+        status: string;
+        releasedBy?: { id: string } | null;
+      };
+    }>('PATCH', `/api/returns/admin/${guestReturnId}/status`, {
+      token: staffAuth.token,
+      body: { status: 'returned' },
+    });
+    assert.equal(handoverRes.status, 200);
+    assert.equal(handoverRes.data.returnRequest.status, 'returned');
+    assert.equal(handoverRes.data.returnRequest.releasedBy?.id, staffAuth.user.id);
+
+    // Verify audit log recorded the walk-in return
+    const auditRes = await api<{
+      logs: Array<{ entityType: string; entityId: string; summary: string }>;
+    }>('GET', '/api/audit-logs?limit=50', { token: superAuth.token });
+    assert.equal(auditRes.status, 200);
+    assert.ok(
+      auditRes.data.logs.some(
+        (log) =>
+          log.entityType === 'return' &&
+          log.entityId === guestReturnId &&
+          log.summary.includes('walk-in return'),
+      ),
+    );
   });
 });

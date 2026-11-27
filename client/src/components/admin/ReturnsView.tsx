@@ -642,6 +642,7 @@ export function ReturnDetailPanel({
             )}
             {entry.status === "Pending" &&
               !entryReceived &&
+              !entry.isWalkIn &&
               onRemindFinder && (
                 <button
                   type="button"
@@ -765,7 +766,9 @@ export function ReturnDetailPanel({
                 requestTypeLabel="Return Request"
                 submitted={entry.submitted}
                 itemTitle={entry.claimantTitle?.trim() || entry.item}
-                applicantName={entry.claimant}
+                applicantName={
+                  entry.isWalkIn ? `${entry.claimant} (Walk-in)` : entry.claimant
+                }
                 applicantId={
                   resolveIdNumber(entry.schoolId, entry.email) || "N/A"
                 }

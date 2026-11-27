@@ -1,4 +1,54 @@
+import { z } from "zod";
 import type { ReportType } from "../types/items";
+
+const optionalWalkInReturnFields = {
+  locationFound: z
+    .string()
+    .trim()
+    .max(200, "Location found must be at most 200 characters")
+    .optional(),
+  details: z
+    .string()
+    .trim()
+    .max(1000, "Details must be at most 1000 characters")
+    .optional(),
+  evidence: z
+    .array(z.string().url("Evidence must be an image URL").max(2048))
+    .max(4)
+    .optional(),
+  approvalInstructions: z
+    .string()
+    .trim()
+    .min(1, "Pickup instructions are required")
+    .max(500, "Pickup instructions must be at most 500 characters"),
+};
+
+export const createWalkInReturnSchema = z.discriminatedUnion("mode", [
+  z.object({
+    itemId: z.string().uuid("itemId must be a UUID"),
+    mode: z.literal("account"),
+    userId: z.string().uuid("Select a valid school user account"),
+    ...optionalWalkInReturnFields,
+  }),
+  z.object({
+    itemId: z.string().uuid("itemId must be a UUID"),
+    mode: z.literal("guest"),
+    fullName: z.string().trim().min(2, "Full name is required").max(120),
+    schoolId: z
+      .string()
+      .trim()
+      .max(30, "School ID must be at most 30 characters")
+      .optional(),
+    contact: z
+      .string()
+      .trim()
+      .max(120, "Contact must be at most 120 characters")
+      .optional(),
+    ...optionalWalkInReturnFields,
+  }),
+]);
+
+export type CreateWalkInReturnInput = z.infer<typeof createWalkInReturnSchema>;
 
 interface ReturnTarget {
   reporterId: string;

@@ -4,6 +4,7 @@ import {
   AnotherClaimAlreadyApprovedError,
   countRejectedReturnsForUserAndItem,
   createReturnRequest,
+  createWalkInReturn,
   deleteReturnRequest,
   findClaimableItem,
   findItemEventTiming,
@@ -19,13 +20,17 @@ import {
   updateReturnRequest,
   updateReturnOsaReceipt,
   updateReturnStatusById,
+  WalkInReturnError,
 } from "../repositories/request.repository";
 import { CannotRevokeOsaReceiptError, findItemOwner } from "../repositories/item.repository";
 import { recordAuditLog } from "../repositories/audit-log.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
 import { parsePagination } from "../validation/pagination";
 import { UUID_RE } from "../validation/dates";
-import { validateReturnTarget } from "../validation/returns";
+import {
+  createWalkInReturnSchema,
+  validateReturnTarget,
+} from "../validation/returns";
 import { isLostAfterFound } from "./claims.controller";
 import { isTrustedImageUrl } from "./items.controller";
 import { fetchRemoteImageBuffer, generateBlurredImage } from "../utils/image-blur";
@@ -163,7 +168,7 @@ export async function publishRejectedReturnItem(
     res.status(400).json({ message: "Invalid return request ID." });
     return;
   }
-  const result = await publishRejectedReturn(requestId);
+  const result = await publishRejectedReturn(requestId, req.user!.sub);
   if (result.status === "not_found") {
     res.status(404).json({ message: "Return request not found." });
     return;
@@ -474,6 +479,59 @@ export async function getItemReturns(req: Request, res: Response): Promise<void>
   }
   const returns = await listReturnsByItem(itemId, isAdmin);
   res.json({ returns, count: returns.length });
+}
+
+/**
+ * POST /api/returns/admin/walk-in — Record a walk-in return at the OSA desk
+ * for a Lost item (supports both registered school users and walk-in guests).
+ */
+export async function submitWalkInReturn(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const parsed = createWalkInReturnSchema.safeParse(req.body);
+  if (!parsed.success) {
+    zodError(res, parsed.error);
+    return;
+  }
+
+  if (parsed.data.evidence?.some((url) => !isTrustedImageUrl(url))) {
+    res.status(400).json({
+      message: "Evidence images must be uploaded through FoundIt.",
+    });
+    return;
+  }
+
+  try {
+    const returnRequest = await createWalkInReturn(parsed.data);
+    await recordAuditLog({
+      actorId: req.user!.sub,
+      actorEmail: req.user!.email,
+      actorRole: req.user!.role,
+      action: "approved",
+      entityType: "return",
+      entityId: returnRequest.id,
+      summary:
+        parsed.data.mode === "account"
+          ? `Recorded walk-in return for "${returnRequest.item}" from ${returnRequest.claimant} (registered user) and approved for owner pickup.`
+          : `Recorded walk-in return for "${returnRequest.item}" from ${returnRequest.claimant} (no account) and approved for owner pickup.`,
+    });
+    res.status(201).json({
+      message:
+        "Walk-in return recorded. The lost item owner has been notified with a pickup QR pass.",
+      returnRequest,
+    });
+  } catch (error) {
+    if (error instanceof AnotherClaimAlreadyApprovedError) {
+      res.status(409).json({ message: error.message });
+      return;
+    }
+    if (error instanceof WalkInReturnError) {
+      res.status(error.status).json({ message: error.message });
+      return;
+    }
+    throw error;
+  }
 }
 
 /**

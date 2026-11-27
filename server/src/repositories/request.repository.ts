@@ -561,12 +561,13 @@ async function blurPublishedItemImages(itemId: string): Promise<void> {
 /** Publishes a rejected found report as a public found-item post exactly once. */
 export async function publishRejectedReturn(
   requestId: string,
+  fallbackReporterId?: string,
 ): Promise<PublishRejectedReturnResult> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const { rows } = await client.query<{
-      user_id: string;
+      user_id: string | null;
       status: ClaimStatus;
       received_by_osa: boolean;
       published_item_id: string | null;
@@ -628,8 +629,17 @@ export async function publishRejectedReturn(
       };
     }
 
+    const reporterId = request.user_id ?? fallbackReporterId;
+    if (!reporterId) {
+      await client.query("ROLLBACK");
+      return {
+        status: "invalid_data",
+        message: "Unable to determine a reporter account for this published item.",
+      };
+    }
+
     const created = await createItemWithClient(client, {
-      reporterId: request.user_id,
+      reporterId,
       reportType: "found",
       name,
       description,
@@ -648,12 +658,14 @@ export async function publishRejectedReturn(
       "UPDATE request SET published_item_id = $2 WHERE id = $1",
       [requestId, created.id],
     );
-    await createPublishedRejectedReturnNotification(client, {
-      finderId: request.user_id,
-      publishedItemId: created.id,
-      requestId,
-      itemName: name,
-    });
+    if (request.user_id) {
+      await createPublishedRejectedReturnNotification(client, {
+        finderId: request.user_id,
+        publishedItemId: created.id,
+        requestId,
+        itemName: name,
+      });
+    }
     await client.query("COMMIT");
 
     await blurPublishedItemImages(created.id);
@@ -746,7 +758,7 @@ async function updateRequestStatusById(
     }
     const predecessors = allowedStatusPredecessors(kind, status);
     const { rows } = await client.query<{
-      user_id: string;
+      user_id: string | null;
       item_id: string;
       item_name: string;
       category_id: string;
@@ -861,7 +873,7 @@ async function updateRequestStatusById(
           toDateOnly(current.date_lost) ??
           new Date().toISOString().slice(0, 10);
         const created = await createItemWithClient(client, {
-          reporterId: current.user_id,
+          reporterId: current.user_id ?? releasedByUserId ?? current.item_owner_id,
           reportType: "found",
           name: publishedName,
           description: publishedDescription,
@@ -1458,6 +1470,196 @@ export async function createWalkInClaim(
       requesterId: linkedUserId,
       itemOwnerId: item.reporter_id,
       status: "claimed",
+    });
+
+    const { rows: fullRows } = await client.query<ClaimRow>(
+      `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN} WHERE rq.id = $1 LIMIT 1`,
+      [createdId],
+    );
+
+    await client.query("COMMIT");
+    return toClaim(fullRows[0], true);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export class WalkInReturnError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "WalkInReturnError";
+    this.status = status;
+  }
+}
+
+export type CreateWalkInReturnRepoInput =
+  | {
+      itemId: string;
+      mode: "account";
+      userId: string;
+      locationFound?: string;
+      details?: string;
+      evidence?: string[];
+      approvalInstructions: string;
+    }
+  | {
+      itemId: string;
+      mode: "guest";
+      fullName: string;
+      schoolId?: string;
+      contact?: string;
+      locationFound?: string;
+      details?: string;
+      evidence?: string[];
+      approvalInstructions: string;
+    };
+
+/**
+ * Records a walk-in return at the OSA desk for a Lost item.
+ * Marks the item as received by OSA and immediately approves the return so the
+ * Lost item owner receives a Pickup QR Pass to claim it at OSA.
+ */
+export async function createWalkInReturn(
+  input: CreateWalkInReturnRepoInput,
+): Promise<Claim> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const { rows: itemRows } = await client.query<{
+      id: string;
+      name: string;
+      report_type: "lost" | "found";
+      reporter_id: string;
+    }>(
+      `SELECT i.id, i.name, r.report_type, r.user_id AS reporter_id
+       FROM item i
+       JOIN report r ON r.id = i.report_id
+       WHERE i.id = $1
+       FOR UPDATE OF i`,
+      [input.itemId],
+    );
+    const item = itemRows[0];
+    if (!item) {
+      throw new WalkInReturnError(404, "Item not found.");
+    }
+    if (item.report_type !== "lost") {
+      throw new WalkInReturnError(
+        409,
+        "Walk-in returns are only available for lost items.",
+      );
+    }
+
+    const { rows: existingReturns } = await client.query<{
+      id: string;
+      status: ClaimStatus;
+    }>(
+      `SELECT id, status
+       FROM request
+       WHERE item_id = $1
+         AND kind = 'return'
+         AND status IN ('approved', 'returned')
+       LIMIT 1`,
+      [input.itemId],
+    );
+    if (existingReturns[0]) {
+      if (existingReturns[0].status === "approved") {
+        throw new AnotherClaimAlreadyApprovedError("return");
+      }
+      throw new WalkInReturnError(
+        409,
+        "This lost item has already been returned.",
+      );
+    }
+
+    let linkedUserId: string | null = null;
+    if (input.mode === "account") {
+      const { rows: userRows } = await client.query<{
+        id: string;
+        role: string;
+        is_active: boolean;
+      }>(
+        `SELECT id, role, is_active FROM "user" WHERE id = $1 LIMIT 1`,
+        [input.userId],
+      );
+      if (
+        !userRows[0] ||
+        !userRows[0].is_active ||
+        userRows[0].role !== "school_user"
+      ) {
+        throw new WalkInReturnError(
+          400,
+          "Selected user must be an active school user account.",
+        );
+      }
+      if (userRows[0].id === item.reporter_id) {
+        throw new WalkInReturnError(
+          400,
+          "The finder cannot be the same user who reported the lost item.",
+        );
+      }
+      linkedUserId = userRows[0].id;
+
+      // Supersede any pending online return from this same finder on this item
+      // so inserting the approved walk-in return does not collide with unique indexes.
+      await client.query(
+        `UPDATE request
+         SET status = 'rejected',
+             rejection_reason = 'Completed via walk-in return at OSA.',
+             approval_instructions = NULL
+         WHERE item_id = $1
+           AND kind = 'return'
+           AND user_id = $2
+           AND status = 'pending'`,
+        [input.itemId, linkedUserId],
+      );
+    }
+
+    const trimmedLocation = input.locationFound?.trim() || null;
+    const trimmedDetails =
+      input.details?.trim() || "Walk-in return received and verified at OSA desk.";
+    const trimmedInstructions = input.approvalInstructions?.trim() || null;
+    const serializedEvidence =
+      input.evidence && input.evidence.length > 0
+        ? JSON.stringify(input.evidence)
+        : null;
+
+    const { rows: insertedRows } = await client.query<{ id: string }>(
+      `INSERT INTO request (
+         item_id, user_id, kind, status,
+         received_by_osa, is_walkin,
+         walkin_name, walkin_school_id, walkin_contact,
+         location_lost, details, evidence, approval_instructions
+       ) VALUES ($1, $2, 'return', 'approved', TRUE, TRUE, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id`,
+      [
+        input.itemId,
+        linkedUserId,
+        input.mode === "guest" ? input.fullName.trim() : null,
+        input.mode === "guest" ? (input.schoolId?.trim() || null) : null,
+        input.mode === "guest" ? (input.contact?.trim() || null) : null,
+        trimmedLocation,
+        trimmedDetails,
+        serializedEvidence,
+        trimmedInstructions,
+      ],
+    );
+    const createdId = insertedRows[0].id;
+
+    await createRequestStatusNotification(client, {
+      requestId: createdId,
+      itemId: input.itemId,
+      itemName: item.name,
+      kind: "return",
+      status: "approved",
+      requesterId: linkedUserId,
+      itemOwnerId: item.reporter_id,
+      instructions: trimmedInstructions ?? undefined,
     });
 
     const { rows: fullRows } = await client.query<ClaimRow>(

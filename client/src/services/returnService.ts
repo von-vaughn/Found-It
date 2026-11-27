@@ -22,6 +22,28 @@ export interface PublishReturnResponse {
 
 export type UpdateReturnPayload = Omit<CreateReturnPayload, "itemId">;
 
+export type CreateWalkInReturnPayload =
+  | {
+      itemId: string;
+      mode: "account";
+      userId: string;
+      locationFound?: string;
+      details?: string;
+      evidence?: string[];
+      approvalInstructions: string;
+    }
+  | {
+      itemId: string;
+      mode: "guest";
+      fullName: string;
+      schoolId?: string;
+      contact?: string;
+      locationFound?: string;
+      details?: string;
+      evidence?: string[];
+      approvalInstructions: string;
+    };
+
 interface CreateReturnResponse {
   message: string;
   returnRequest: ServerClaim;
@@ -42,6 +64,17 @@ export async function createReturnRequest(
   payload: CreateReturnPayload,
 ): Promise<ServerClaim> {
   const { data } = await api.post<CreateReturnResponse>("/returns", payload);
+  return data.returnRequest;
+}
+
+/** POST /api/returns/admin/walk-in — record a walk-in return at the OSA desk (staff+). */
+export async function createWalkInReturn(
+  payload: CreateWalkInReturnPayload,
+): Promise<ServerClaim> {
+  const { data } = await api.post<CreateReturnResponse>(
+    "/returns/admin/walk-in",
+    payload,
+  );
   return data.returnRequest;
 }
 

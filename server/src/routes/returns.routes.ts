@@ -8,6 +8,7 @@ import {
   publishRejectedReturnItem,
   remindReturnFinder,
   submitReturn,
+  submitWalkInReturn,
   updateAdminReturnOsaReceipt,
   updateAdminReturnStatus,
   updateMyReturn,
@@ -24,6 +25,7 @@ router.use(authenticate);
 
 // Admin returns workspace
 router.get("/admin", requireStaff, getAllReturns);
+router.post("/admin/walk-in", requireStaff, submitWalkInReturn);
 router.post("/admin/:id/publish", requireStaff, publishRejectedReturnItem);
 router.post("/admin/:id/remind-finder", requireStaff, remindReturnFinder);
 router.patch("/admin/:id/status", requireStaff, updateAdminReturnStatus);

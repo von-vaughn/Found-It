@@ -55,6 +55,7 @@ export function toClaimRequest(claim: ServerClaim): ClaimRequest {
     lastFinderReminderAt: claim.lastFinderReminderAt ?? null,
     releasedBy: claim.releasedBy ?? null,
     releasedAt: claim.releasedAt ?? null,
+    isWalkIn: claim.isWalkIn ?? false,
     status: statusMap[claim.status],
     submitted: formatSubmitted(claim.submitted),
   };

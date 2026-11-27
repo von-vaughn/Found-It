@@ -185,7 +185,7 @@ export async function createRequestStatusNotification(
     itemName: string;
     kind: NotificationKind;
     status: NotificationEvent;
-    requesterId: string;
+    requesterId: string | null;
     itemOwnerId: string;
     reason?: string;
     instructions?: string;
