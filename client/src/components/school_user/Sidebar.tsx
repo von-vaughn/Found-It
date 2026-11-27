@@ -5,6 +5,7 @@ import React, {
   useState,
 } from "react";
 import {
+  ArrowLeftRight,
   ClipboardList,
   Compass,
   Home,
@@ -175,6 +176,24 @@ function SchoolAccountMenu({
             <Compass className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" />
             Tutorial tour
           </button>
+
+          {user?.role === "staff" && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                navigate("/admin");
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+            >
+              <ArrowLeftRight
+                className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400"
+                aria-hidden="true"
+              />
+              Switch to Staff
+            </button>
+          )}
 
           <button
             type="button"

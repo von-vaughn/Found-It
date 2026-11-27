@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, LogOut, Moon, Sun, X } from "lucide-react";
+import { ArrowLeftRight, Bell, LogOut, Moon, Sun, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { LoadMoreButton } from "@/components/LoadMoreButton";
@@ -133,6 +133,23 @@ function AdminAccountMenu({ labelsVisible }: AdminAccountMenuProps) {
               {email}
             </p>
           </div>
+          {user?.role === "staff" && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                navigate("/dashboard");
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+            >
+              <ArrowLeftRight
+                className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400"
+                aria-hidden="true"
+              />
+              Switch to School User
+            </button>
+          )}
           <button
             type="button"
             role="switch"

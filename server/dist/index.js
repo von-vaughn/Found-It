@@ -28,6 +28,7 @@ const error_handler_1 = require("./middleware/error-handler");
 const rate_limit_1 = require("./middleware/rate-limit");
 const mailer_1 = require("./utils/mailer");
 const google_drive_1 = require("./utils/google-drive");
+const item_repository_1 = require("./repositories/item.repository");
 const app = (0, express_1.default)();
 exports.app = app;
 // Trust first proxy hop (correct client IP for rate-limiting behind docker/nginx proxy)
@@ -106,11 +107,28 @@ async function boot() {
         console.error('Hint: copy .env.example to .env and set DATABASE_URL, or run: docker compose up -d db');
         process.exit(1);
     }
+    const runFoundExpiryCleanup = async () => {
+        try {
+            const { deletedCount } = await (0, item_repository_1.deleteExpiredUnsurrenderedFoundItems)(item_repository_1.FOUND_ITEM_SURRENDER_EXPIRY_DAYS);
+            if (deletedCount > 0) {
+                console.log(`[Expiry Cleanup] Auto-deleted ${deletedCount} un-surrendered found item post(s) older than ${item_repository_1.FOUND_ITEM_SURRENDER_EXPIRY_DAYS} days.`);
+            }
+        }
+        catch (err) {
+            console.error('[Expiry Cleanup] Failed to clean up expired found items:', err);
+        }
+    };
+    await runFoundExpiryCleanup();
+    const expiryCleanupTimer = setInterval(() => {
+        void runFoundExpiryCleanup();
+    }, 60 * 60 * 1000);
+    expiryCleanupTimer.unref();
     const server = app.listen(env_1.env.PORT, () => {
         console.log(`Server running on http://localhost:${env_1.env.PORT}`);
     });
     const shutdown = (signal) => {
         console.log(`Received ${signal}, shutting down gracefully...`);
+        clearInterval(expiryCleanupTimer);
         server.close(() => {
             void db_1.pool.end().then(() => {
                 console.log('Database pool closed.');

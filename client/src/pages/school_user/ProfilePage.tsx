@@ -3,7 +3,7 @@ import { toClientItems } from "@/lib/itemAdapter";
 import { resolveIdNumber } from "@/lib/idNumber";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, Compass, LogOut, Plus } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, Compass, LogOut, Plus } from "lucide-react";
 import { animate, motion, useReducedMotion } from "motion/react";
 import { FadeIn } from "@/components/FadeIn";
 import { Header } from "@/components/school_user/Header";
@@ -254,6 +254,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
                     {profileMenuOpen && (
                       <div className="absolute right-0 top-full z-30 mt-2 w-48 rounded-2xl border border-neutral-100 bg-white p-2 shadow-xl md:hidden dark:border-neutral-800 dark:bg-neutral-900">
+                        {user?.role === "staff" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProfileMenuOpen(false);
+                              navigate("/admin");
+                            }}
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-neutral-300 dark:hover:bg-neutral-800"
+                          >
+                            <ArrowLeftRight className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+                            Switch to Staff
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => {

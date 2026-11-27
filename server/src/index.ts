@@ -22,6 +22,10 @@ import { errorHandler, notFound } from './middleware/error-handler';
 import { apiLimiter } from './middleware/rate-limit';
 import { assertMailConfigured } from './utils/mailer';
 import { isDriveConfigured, testDriveConnection } from './utils/google-drive';
+import {
+  deleteExpiredUnsurrenderedFoundItems,
+  FOUND_ITEM_SURRENDER_EXPIRY_DAYS,
+} from './repositories/item.repository';
 
 const app = express();
 
@@ -112,12 +116,34 @@ async function boot(): Promise<void> {
     process.exit(1);
   }
 
+  const runFoundExpiryCleanup = async (): Promise<void> => {
+    try {
+      const { deletedCount } = await deleteExpiredUnsurrenderedFoundItems(
+        FOUND_ITEM_SURRENDER_EXPIRY_DAYS,
+      );
+      if (deletedCount > 0) {
+        console.log(
+          `[Expiry Cleanup] Auto-deleted ${deletedCount} un-surrendered found item post(s) older than ${FOUND_ITEM_SURRENDER_EXPIRY_DAYS} days.`,
+        );
+      }
+    } catch (err) {
+      console.error('[Expiry Cleanup] Failed to clean up expired found items:', err);
+    }
+  };
+
+  await runFoundExpiryCleanup();
+  const expiryCleanupTimer = setInterval(() => {
+    void runFoundExpiryCleanup();
+  }, 60 * 60 * 1000);
+  expiryCleanupTimer.unref();
+
   const server = app.listen(env.PORT, () => {
     console.log(`Server running on http://localhost:${env.PORT}`);
   });
 
   const shutdown = (signal: string): void => {
     console.log(`Received ${signal}, shutting down gracefully...`);
+    clearInterval(expiryCleanupTimer);
     server.close(() => {
       void pool.end().then(() => {
         console.log('Database pool closed.');

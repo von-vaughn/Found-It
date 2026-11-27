@@ -6,6 +6,7 @@ import { pool } from './config/db';
 import { env } from './config/env';
 import { migrate } from './db/migrate';
 import { createUser } from './repositories/user.repository';
+import { deleteExpiredUnsurrenderedFoundItems } from './repositories/item.repository';
 import { storeRefreshToken } from './repositories/refresh-token.repository';
 import { hashPassword } from './utils/password';
 import { signRefreshToken } from './utils/jwt';
@@ -1476,5 +1477,147 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(schoolItemView.status, 200);
     assert.equal(schoolItemView.data.item.resolvedBy, undefined);
     assert.equal(schoolItemView.data.item.releasedBy, undefined);
+  });
+
+  it('8. Auto-deletes un-surrendered Found item posts older than 14 days while keeping received, recent, and Lost posts', async () => {
+    const ownerAuth = await loginAs(OWNER_EMAIL);
+    const claimantAuth = await loginAs(CLAIMANT_EMAIL);
+    const staffAuth = await loginAs(ADMIN_EMAIL);
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 1. Expired un-surrendered Found item (15 days old, received_by_osa = false) -> MUST be deleted
+    const expiredFoundRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'Expired Unsurrendered Keys',
+        description: 'Keychain never turned over to OSA',
+        itemDate: today,
+        itemTime: '08:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(expiredFoundRes.status, 201);
+    const expiredFoundId = expiredFoundRes.data.item.id;
+    createdItemIds.push(expiredFoundId);
+
+    // Add a pending claim so we verify claimant also gets notified
+    const pendingClaim = await api('POST', '/api/claims', {
+      token: claimantAuth.token,
+      body: {
+        itemId: expiredFoundId,
+        claimantTitle: 'My keys',
+        dateLost: today,
+        timeLost: '07:00',
+        location: 'Library',
+        details: 'Lost keychain',
+        importantDetails: 'Silver keyring',
+      },
+    });
+    assert.equal(pendingClaim.status, 201);
+
+    // 2. Old Found item WITH received_by_osa = true (15 days old) -> MUST NOT be deleted
+    const receivedFoundRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'Old Received Wallet',
+        description: 'Already turned over to OSA',
+        itemDate: today,
+        itemTime: '08:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(receivedFoundRes.status, 201);
+    const receivedFoundId = receivedFoundRes.data.item.id;
+    createdItemIds.push(receivedFoundId);
+    await api('PATCH', `/api/items/${receivedFoundId}/osa-receipt`, {
+      token: staffAuth.token,
+      body: { receivedByOsa: true },
+    });
+
+    // 3. Old Lost item (15 days old) -> MUST NOT be deleted
+    const oldLostRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Old Lost Notebook',
+        description: 'Lost 2 weeks ago',
+        itemDate: today,
+        itemTime: '08:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(oldLostRes.status, 201);
+    const oldLostId = oldLostRes.data.item.id;
+    createdItemIds.push(oldLostId);
+
+    // 4. Recent un-surrendered Found item (5 days old) -> MUST NOT be deleted
+    const recentFoundRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'Recent Found Pen',
+        description: 'Found 5 days ago',
+        itemDate: today,
+        itemTime: '08:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(recentFoundRes.status, 201);
+    const recentFoundId = recentFoundRes.data.item.id;
+    createdItemIds.push(recentFoundId);
+
+    // Backdate items in PostgreSQL
+    await pool.query(
+      `UPDATE item SET created_at = NOW() - INTERVAL '15 days' WHERE id = ANY($1::uuid[])`,
+      [[expiredFoundId, receivedFoundId, oldLostId]],
+    );
+    await pool.query(
+      `UPDATE item SET created_at = NOW() - INTERVAL '5 days' WHERE id = $1`,
+      [recentFoundId],
+    );
+
+    const cleanup = await deleteExpiredUnsurrenderedFoundItems(14);
+    assert.ok(cleanup.deletedItemIds.includes(expiredFoundId));
+    assert.equal(cleanup.deletedItemIds.includes(receivedFoundId), false);
+    assert.equal(cleanup.deletedItemIds.includes(oldLostId), false);
+    assert.equal(cleanup.deletedItemIds.includes(recentFoundId), false);
+
+    // Verify expired Found item is gone and the other 3 remain
+    const goneRes = await api('GET', `/api/items/${expiredFoundId}`, { token: staffAuth.token });
+    assert.equal(goneRes.status, 404);
+    const stillReceived = await api('GET', `/api/items/${receivedFoundId}`, { token: staffAuth.token });
+    assert.equal(stillReceived.status, 200);
+    const stillLost = await api('GET', `/api/items/${oldLostId}`, { token: staffAuth.token });
+    assert.equal(stillLost.status, 200);
+    const stillRecent = await api('GET', `/api/items/${recentFoundId}`, { token: staffAuth.token });
+    assert.equal(stillRecent.status, 200);
+
+    // Verify both finder and pending claimant received notifications
+    const ownerNotifs = await api<{ notifications: Array<{ title: string; message: string }> }>(
+      'GET',
+      '/api/notifications',
+      { token: ownerAuth.token },
+    );
+    assert.ok(
+      ownerNotifs.data.notifications.some(
+        (n) => n.title === 'Found post expired' && n.message.includes('Expired Unsurrendered Keys'),
+      ),
+    );
+    const claimantNotifs = await api<{ notifications: Array<{ title: string; message: string }> }>(
+      'GET',
+      '/api/notifications',
+      { token: claimantAuth.token },
+    );
+    assert.ok(
+      claimantNotifs.data.notifications.some(
+        (n) => n.title === 'Claim cancelled' && n.message.includes('Expired Unsurrendered Keys'),
+      ),
+    );
   });
 });

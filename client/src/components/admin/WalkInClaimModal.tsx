@@ -3,8 +3,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  UserCheck,
-  UserPlus,
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -98,7 +96,7 @@ export function WalkInClaimModal({
       }
       if (lookupState !== "found" || !matchedUserId) {
         setError(
-          'No registered account found for this School ID. Use "No account (Walk-in)" instead.',
+          'No registered account found for this School ID. Use "No account" instead.',
         );
         return;
       }
@@ -123,7 +121,7 @@ export function WalkInClaimModal({
       return;
     }
     if (schoolId.trim().length < 2) {
-      setError("Enter the claimant's school ID or ID number.");
+      setError("Enter the claimant's School Id.");
       return;
     }
 
@@ -204,13 +202,12 @@ export function WalkInClaimModal({
               setMode("account");
               setError("");
             }}
-            className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`inline-flex h-9 items-center justify-center rounded-lg text-xs font-semibold transition-colors ${
               mode === "account"
                 ? "bg-white text-neutral-900 shadow-xs dark:bg-neutral-900 dark:text-neutral-100"
                 : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
             }`}
           >
-            <UserCheck className="h-3.5 w-3.5" aria-hidden="true" />
             Registered user
           </button>
           <button
@@ -221,14 +218,13 @@ export function WalkInClaimModal({
               setMode("guest");
               setError("");
             }}
-            className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`inline-flex h-9 items-center justify-center rounded-lg text-xs font-semibold transition-colors ${
               mode === "guest"
                 ? "bg-white text-neutral-900 shadow-xs dark:bg-neutral-900 dark:text-neutral-100"
                 : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
             }`}
           >
-            <UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
-            No account (Walk-in)
+            No account
           </button>
         </div>
 
@@ -292,7 +288,7 @@ export function WalkInClaimModal({
                   />
                   <span>
                     No registered account found for this School ID. Double-check
-                    the ID or switch to &ldquo;No account (Walk-in)&rdquo;.
+                    the ID or switch to &ldquo;No account&rdquo;.
                   </span>
                 </p>
               )}
@@ -327,7 +323,7 @@ export function WalkInClaimModal({
                     htmlFor="walkin-school-id"
                     className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
                   >
-                    School ID / ID number{" "}
+                    School Id{" "}
                     <span className="text-[#E5192D]">*</span>
                   </label>
                   <input
@@ -349,7 +345,7 @@ export function WalkInClaimModal({
                     htmlFor="walkin-contact"
                     className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
                   >
-                    Email / Contact{" "}
+                    Email{" "}
                     <span className="font-normal text-neutral-400">
                       (optional)
                     </span>
@@ -360,7 +356,7 @@ export function WalkInClaimModal({
                     maxLength={120}
                     value={contact}
                     onChange={(event) => setContact(event.target.value)}
-                    placeholder="Email or mobile number"
+                    placeholder="Email address"
                     className="mt-1 h-10 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
                   />
                 </div>

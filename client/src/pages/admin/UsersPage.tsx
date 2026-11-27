@@ -5,9 +5,10 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
-  Plus,
   Power,
+  Shield,
   Trash2,
+  UserRound,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -22,7 +23,6 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { AdminUser, AdminUserRole } from "@/components/admin/types";
 import { useAuth } from "@/context/useAuth";
 import {
-  createAdminUser,
   deleteAdminUser,
   listAdminUsersPage,
   updateAdminUserRole,
@@ -32,7 +32,7 @@ import { itemKeys } from "@/hooks/useItems";
 import { claimKeys } from "@/hooks/useClaims";
 import { returnKeys } from "@/hooks/useReturns";
 import { AdminLayout } from "./AdminLayout";
-import { CreateAccountModal, roleLabel } from "./AdminAccountsManager";
+import { roleLabel } from "./AdminAccountsManager";
 
 const PAGE_SIZE = 10;
 const ADMIN_USERS_QUERY_KEY = ["admin-users"] as const;
@@ -83,10 +83,6 @@ export function UsersPage() {
     void queryClient.invalidateQueries({ queryKey: returnKeys.all });
   };
 
-  const createUserMutation = useMutation({
-    mutationFn: createAdminUser,
-    onSuccess: invalidateUserDependents,
-  });
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       updateAdminUserStatus(id, isActive),
@@ -110,7 +106,6 @@ export function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingUser, setPendingUser] = useState<AdminUser | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
   const [openMenuUserId, setOpenMenuUserId] = useState<string | null>(null);
   const openMenuRef = useRef<HTMLDivElement>(null);
 
@@ -162,7 +157,6 @@ export function UsersPage() {
     () => allUsers.filter((u) => u.role === "admin"),
     [allUsers],
   );
-  const allUserEmails = useMemo(() => allUsers.map((u) => u.email), [allUsers]);
 
   const roleUsers =
     activeRole === "school_user"
@@ -254,16 +248,18 @@ export function UsersPage() {
     }
   };
 
-  const handleToggleRole = async (target: AdminUser) => {
+  const handleChangeRole = async (
+    target: AdminUser,
+    nextRole: AdminUserRole,
+  ) => {
     if (
       target.role === "admin" &&
+      nextRole !== "admin" &&
       allUsers.filter((u) => u.role === "admin").length <= 1
     ) {
       toast.error("Cannot demote the last admin.");
       return;
     }
-    const nextRole: AdminUserRole =
-      target.role === "staff" ? "admin" : "staff";
     try {
       await updateRoleMutation.mutateAsync({ id: target.id, role: nextRole });
       toast.success(
@@ -274,13 +270,6 @@ export function UsersPage() {
         errorMessage(error, "We couldn't change this account's role."),
       );
     }
-  };
-
-  const handleCreateAccount = async (
-    values: Parameters<typeof createAdminUser>[0],
-  ) => {
-    await createUserMutation.mutateAsync(values);
-    setCurrentPage(1);
   };
 
   const countLabel =
@@ -340,21 +329,9 @@ export function UsersPage() {
           <Panel
             title="User Management"
             action={
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                  {countLabel}
-                </span>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => setCreateOpen(true)}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
-                  >
-                    <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                    Create account
-                  </button>
-                )}
-              </div>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                {countLabel}
+              </span>
             }
           >
             <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
@@ -458,19 +435,9 @@ export function UsersPage() {
                           <span className="block truncate">{user.email}</span>
                         </td>
                         <td className="px-4 py-3.5">
-                          {user.role === "school_user" ? (
-                            <StatusBadge status={roleLabel(user.role)} />
-                          ) : (
-                            <button
-                              type="button"
-                              title="Toggle staff / admin role"
-                              onClick={() => void handleToggleRole(user)}
-                              disabled={updateRoleMutation.isPending}
-                              className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-                            >
-                              <StatusBadge status={roleLabel(user.role)} />
-                            </button>
-                          )}
+                          <span className="whitespace-nowrap">
+                            {roleLabel(user.role)}
+                          </span>
                         </td>
                         <td className="px-4 py-3.5">
                           <StatusBadge
@@ -510,12 +477,90 @@ export function UsersPage() {
                               <div
                                 role="menu"
                                 aria-label={`Actions for ${user.name}`}
-                                className={`absolute right-0 z-30 w-40 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 ${
+                                className={`absolute right-0 z-30 w-48 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 ${
                                   openUpward
                                     ? "bottom-full mb-1"
                                     : "top-full mt-1"
                                 }`}
                               >
+                                {user.id !== currentUser?.id &&
+                                  user.role === "school_user" && (
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      disabled={updateRoleMutation.isPending}
+                                      onClick={() => {
+                                        setOpenMenuUserId(null);
+                                        void handleChangeRole(user, "staff");
+                                      }}
+                                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                    >
+                                      <Shield
+                                        className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
+                                        aria-hidden="true"
+                                      />
+                                      Promote to Staff
+                                    </button>
+                                  )}
+                                {user.id !== currentUser?.id &&
+                                  user.role === "staff" && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        role="menuitem"
+                                        disabled={updateRoleMutation.isPending}
+                                        onClick={() => {
+                                          setOpenMenuUserId(null);
+                                          void handleChangeRole(user, "admin");
+                                        }}
+                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                      >
+                                        <Shield
+                                          className="h-3.5 w-3.5 text-neutral-700 dark:text-neutral-300"
+                                          aria-hidden="true"
+                                        />
+                                        Promote to Admin
+                                      </button>
+                                      <button
+                                        type="button"
+                                        role="menuitem"
+                                        disabled={updateRoleMutation.isPending}
+                                        onClick={() => {
+                                          setOpenMenuUserId(null);
+                                          void handleChangeRole(
+                                            user,
+                                            "school_user",
+                                          );
+                                        }}
+                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                      >
+                                        <UserRound
+                                          className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400"
+                                          aria-hidden="true"
+                                        />
+                                        Demote to School User
+                                      </button>
+                                    </>
+                                  )}
+                                {user.id !== currentUser?.id &&
+                                  user.role === "admin" && (
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      disabled={updateRoleMutation.isPending}
+                                      onClick={() => {
+                                        setOpenMenuUserId(null);
+                                        void handleChangeRole(user, "staff");
+                                      }}
+                                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                    >
+                                      <UserRound
+                                        className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400"
+                                        aria-hidden="true"
+                                      />
+                                      Demote to Staff
+                                    </button>
+                                  )}
                                 <button
                                   type="button"
                                   role="menuitem"
@@ -636,14 +681,6 @@ export function UsersPage() {
           </Panel>
         </FadeIn>
       )}
-
-      <CreateAccountModal
-        open={createOpen}
-        defaultRole={activeRole === "admin" ? "admin" : "staff"}
-        existingEmails={allUserEmails}
-        onClose={() => setCreateOpen(false)}
-        onCreateAccount={handleCreateAccount}
-      />
 
       {pendingUser && (
         <div

@@ -904,3 +904,87 @@ export async function dismissItemFlags(itemId: string, adminId: string): Promise
   );
   return rowCount ?? 0;
 }
+
+export const FOUND_ITEM_SURRENDER_EXPIRY_DAYS = 14;
+
+/**
+ * Automatically deletes Found item posts that have not been surrendered to OSA
+ * (`received_by_osa = FALSE`) after `maxAgeDays` (default 14 days / 2 weeks).
+ * Notifies the finder and any pending claimants before deleting the report.
+ */
+export async function deleteExpiredUnsurrenderedFoundItems(
+  maxAgeDays = FOUND_ITEM_SURRENDER_EXPIRY_DAYS,
+): Promise<{ deletedCount: number; deletedItemIds: string[] }> {
+  const safeDays = Math.max(1, Math.floor(maxAgeDays));
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: expired } = await client.query<{
+      item_id: string;
+      report_id: string;
+      item_name: string;
+      reporter_id: string;
+    }>(
+      `SELECT i.id AS item_id, i.report_id, i.name AS item_name, r.user_id AS reporter_id
+       FROM item i
+       JOIN report r ON r.id = i.report_id
+       WHERE r.report_type = 'found'
+         AND i.received_by_osa = FALSE
+         AND i.created_at <= NOW() - ($1::int * INTERVAL '1 day')
+         AND NOT EXISTS (
+           SELECT 1 FROM request rq
+           WHERE rq.item_id = i.id
+             AND rq.status IN ('approved', 'claimed', 'returned')
+         )
+       FOR UPDATE OF i SKIP LOCKED`,
+      [safeDays],
+    );
+
+    const deletedItemIds: string[] = [];
+
+    for (const row of expired) {
+      const { rows: pendingClaimants } = await client.query<{ user_id: string }>(
+        `SELECT DISTINCT user_id
+         FROM request
+         WHERE item_id = $1
+           AND kind = 'claim'
+           AND status = 'pending'
+           AND user_id IS NOT NULL`,
+        [row.item_id],
+      );
+
+      await client.query(
+        `INSERT INTO notification (user_id, item_id, request_id, kind, event, title, message)
+         VALUES ($1, NULL, NULL, 'item', 'deleted', 'Found post expired', $2)`,
+        [
+          row.reporter_id,
+          `Your found item post "${row.item_name}" was automatically deleted because the item was not surrendered to OSA within ${safeDays} days.`,
+        ],
+      );
+
+      for (const claimant of pendingClaimants) {
+        if (claimant.user_id === row.reporter_id) continue;
+        await client.query(
+          `INSERT INTO notification (user_id, item_id, request_id, kind, event, title, message)
+           VALUES ($1, NULL, NULL, 'claim', 'rejected', 'Claim cancelled', $2)`,
+          [
+            claimant.user_id,
+            `Your claim for "${row.item_name}" was cancelled because the found item was not surrendered to OSA within ${safeDays} days and the post expired.`,
+          ],
+        );
+      }
+
+      // Deleting the report cascades to item, image, request, and item_flag.
+      await client.query(`DELETE FROM report WHERE id = $1`, [row.report_id]);
+      deletedItemIds.push(row.item_id);
+    }
+
+    await client.query('COMMIT');
+    return { deletedCount: deletedItemIds.length, deletedItemIds };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
