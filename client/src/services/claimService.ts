@@ -136,6 +136,17 @@ export type CreateWalkInClaimPayload =
       notes?: string;
     };
 
+/** GET /api/claims/admin/school-users?schoolId=... — check if an active school user exists by School ID. */
+export async function checkSchoolUserBySchoolId(
+  schoolId: string,
+): Promise<{ exists: boolean; userId: string | null }> {
+  const { data } = await api.get<{ exists: boolean; userId: string | null }>(
+    "/claims/admin/school-users",
+    { params: { schoolId: schoolId.trim() } },
+  );
+  return data;
+}
+
 /** GET /api/claims/admin/school-users — search active school users for walk-in claims. */
 export async function searchSchoolUsersForWalkIn(
   search: string,

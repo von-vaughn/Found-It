@@ -1230,6 +1230,24 @@ export interface WalkInSchoolUserOption {
   schoolId: string | null;
 }
 
+/** Checks whether an active school_user account exists with the exact School ID. */
+export async function findActiveSchoolUserBySchoolId(
+  schoolId: string,
+): Promise<{ id: string } | null> {
+  const trimmed = schoolId.trim();
+  if (!trimmed) return null;
+  const { rows } = await pool.query<{ id: string }>(
+    `SELECT id
+     FROM "user"
+     WHERE role = 'school_user'
+       AND is_active = TRUE
+       AND LOWER(TRIM(COALESCE(school_id, ''))) = LOWER($1)
+     LIMIT 1`,
+    [trimmed],
+  );
+  return rows[0] ?? null;
+}
+
 /** Searches active school_user accounts for Staff/Admin walk-in claim attribution. */
 export async function searchActiveSchoolUsers(
   search: string,

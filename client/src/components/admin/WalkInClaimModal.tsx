@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, Search, UserCheck, UserPlus, X } from "lucide-react";
-import toast from "react-hot-toast";
 import {
-  searchSchoolUsersForWalkIn,
-  type WalkInSchoolUserOption,
-} from "@/services/claimService";
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  UserCheck,
+  UserPlus,
+  X,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import { checkSchoolUserBySchoolId } from "@/services/claimService";
 import { useCreateWalkInClaim } from "@/hooks/useClaims";
 
 interface WalkInClaimModalProps {
@@ -16,6 +20,7 @@ interface WalkInClaimModalProps {
 }
 
 type WalkInMode = "account" | "guest";
+type LookupState = "idle" | "checking" | "found" | "not_found";
 
 export function WalkInClaimModal({
   open,
@@ -25,16 +30,13 @@ export function WalkInClaimModal({
   onSuccess,
 }: WalkInClaimModalProps) {
   const [mode, setMode] = useState<WalkInMode>("account");
-  const [search, setSearch] = useState("");
-  const [results, setResults] = useState<WalkInSchoolUserOption[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [selectedUser, setSelectedUser] =
-    useState<WalkInSchoolUserOption | null>(null);
+  const [accountSchoolId, setAccountSchoolId] = useState("");
+  const [lookupState, setLookupState] = useState<LookupState>("idle");
+  const [matchedUserId, setMatchedUserId] = useState<string | null>(null);
 
   const [fullName, setFullName] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [contact, setContact] = useState("");
-  const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
 
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -52,25 +54,36 @@ export function WalkInClaimModal({
 
   useEffect(() => {
     if (!open || mode !== "account") return;
+    const trimmed = accountSchoolId.trim();
+    if (!trimmed) return;
+
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      setSearching(true);
-      searchSchoolUsersForWalkIn(search)
-        .then((users) => {
-          if (!cancelled) setResults(users);
+      setLookupState("checking");
+      checkSchoolUserBySchoolId(trimmed)
+        .then((res) => {
+          if (cancelled) return;
+          if (res.exists && res.userId) {
+            setLookupState("found");
+            setMatchedUserId(res.userId);
+          } else {
+            setLookupState("not_found");
+            setMatchedUserId(null);
+          }
         })
         .catch(() => {
-          if (!cancelled) setResults([]);
-        })
-        .finally(() => {
-          if (!cancelled) setSearching(false);
+          if (!cancelled) {
+            setLookupState("not_found");
+            setMatchedUserId(null);
+          }
         });
-    }, 200);
+    }, 250);
+
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [open, mode, search]);
+  }, [open, mode, accountSchoolId]);
 
   if (!open) return null;
 
@@ -79,18 +92,23 @@ export function WalkInClaimModal({
     setError("");
 
     if (mode === "account") {
-      if (!selectedUser) {
-        setError("Select a registered school user first.");
+      if (!accountSchoolId.trim()) {
+        setError("Enter the claimant's School ID.");
+        return;
+      }
+      if (lookupState !== "found" || !matchedUserId) {
+        setError(
+          'No registered account found for this School ID. Use "No account (Walk-in)" instead.',
+        );
         return;
       }
       try {
         await createWalkInClaim.mutateAsync({
           itemId,
           mode: "account",
-          userId: selectedUser.id,
-          notes: notes.trim() || undefined,
+          userId: matchedUserId,
         });
-        toast.success(`Item marked as claimed by ${selectedUser.name}.`);
+        toast.success("Walk-in claim recorded and item marked as claimed.");
         onSuccess();
       } catch (err) {
         const msg = (err as { response?: { data?: { message?: string } } })
@@ -116,7 +134,6 @@ export function WalkInClaimModal({
         fullName: fullName.trim(),
         schoolId: schoolId.trim(),
         contact: contact.trim() || undefined,
-        notes: notes.trim() || undefined,
       });
       toast.success(`Item marked as claimed by ${fullName.trim()}.`);
       onSuccess();
@@ -141,7 +158,10 @@ export function WalkInClaimModal({
       }}
       onClose={onClose}
       onClick={(event) => {
-        if (event.target === event.currentTarget && !createWalkInClaim.isPending) {
+        if (
+          event.target === event.currentTarget &&
+          !createWalkInClaim.isPending
+        ) {
           onClose();
         }
       }}
@@ -216,73 +236,66 @@ export function WalkInClaimModal({
           {mode === "account" ? (
             <div className="space-y-2.5">
               <label
-                htmlFor="walkin-user-search"
+                htmlFor="walkin-account-school-id"
                 className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
               >
-                Find school user <span className="text-[#E5192D]">*</span>
+                School ID <span className="text-[#E5192D]">*</span>
               </label>
-              <div className="relative">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
-                  aria-hidden="true"
-                />
-                <input
-                  id="walkin-user-search"
-                  type="search"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search by name, email, or school ID…"
-                  className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
-                />
-              </div>
+              <input
+                id="walkin-account-school-id"
+                type="text"
+                autoComplete="off"
+                maxLength={30}
+                value={accountSchoolId}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setAccountSchoolId(next);
+                  setMatchedUserId(null);
+                  setLookupState(next.trim() ? "checking" : "idle");
+                  setError("");
+                }}
+                placeholder="Enter student School ID (e.g., 2022-00412)"
+                className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
+              />
 
-              <div className="max-h-48 overflow-y-auto rounded-xl border border-neutral-200 divide-y divide-neutral-100 dark:border-neutral-800 dark:divide-neutral-800">
-                {searching ? (
-                  <div className="flex items-center justify-center gap-2 py-6 text-xs text-neutral-500 dark:text-neutral-400">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                    Searching…
-                  </div>
-                ) : results.length === 0 ? (
-                  <p className="py-6 text-center text-xs text-neutral-500 dark:text-neutral-400">
-                    No matching school users found. Switch to &ldquo;No account (Walk-in)&rdquo; if they aren&apos;t registered.
-                  </p>
-                ) : (
-                  results.map((u) => {
-                    const isSelected = selectedUser?.id === u.id;
-                    return (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedUser(u);
-                          setError("");
-                        }}
-                        className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors ${
-                          isSelected
-                            ? "bg-red-50/70 dark:bg-red-500/15"
-                            : "hover:bg-neutral-50 dark:hover:bg-neutral-800/70"
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                            {u.name}
-                          </p>
-                          <p className="truncate text-[11px] text-neutral-500 dark:text-neutral-400">
-                            {u.schoolId ? `ID ${u.schoolId} · ` : ""}
-                            {u.email}
-                          </p>
-                        </div>
-                        {isSelected && (
-                          <Check
-                            className="h-4 w-4 shrink-0 text-[#E5192D]"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
+              {lookupState === "checking" && (
+                <p className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  <Loader2
+                    className="h-3.5 w-3.5 animate-spin"
+                    aria-hidden="true"
+                  />
+                  Checking School ID…
+                </p>
+              )}
+
+              {lookupState === "found" && (
+                <p
+                  role="status"
+                  className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+                >
+                  <CheckCircle2
+                    className="h-4 w-4 shrink-0"
+                    aria-hidden="true"
+                  />
+                  School ID found. Ready to mark as claimed.
+                </p>
+              )}
+
+              {lookupState === "not_found" && (
+                <p
+                  role="alert"
+                  className="flex items-start gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+                >
+                  <AlertCircle
+                    className="mt-0.5 h-4 w-4 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    No registered account found for this School ID. Double-check
+                    the ID or switch to &ldquo;No account (Walk-in)&rdquo;.
+                  </span>
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -314,7 +327,8 @@ export function WalkInClaimModal({
                     htmlFor="walkin-school-id"
                     className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
                   >
-                    School ID / ID number <span className="text-[#E5192D]">*</span>
+                    School ID / ID number{" "}
+                    <span className="text-[#E5192D]">*</span>
                   </label>
                   <input
                     id="walkin-school-id"
@@ -336,7 +350,9 @@ export function WalkInClaimModal({
                     className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
                   >
                     Email / Contact{" "}
-                    <span className="font-normal text-neutral-400">(optional)</span>
+                    <span className="font-normal text-neutral-400">
+                      (optional)
+                    </span>
                   </label>
                   <input
                     id="walkin-contact"
@@ -351,25 +367,6 @@ export function WalkInClaimModal({
               </div>
             </div>
           )}
-
-          <div>
-            <label
-              htmlFor="walkin-notes"
-              className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
-            >
-              Verification notes{" "}
-              <span className="font-normal text-neutral-400">(optional)</span>
-            </label>
-            <textarea
-              id="walkin-notes"
-              rows={2}
-              maxLength={500}
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="e.g., Presented school ID and described lockscreen / contents."
-              className="mt-1 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
-            />
-          </div>
 
           {error && (
             <p
@@ -393,11 +390,13 @@ export function WalkInClaimModal({
               type="submit"
               disabled={
                 createWalkInClaim.isPending ||
-                (mode === "account" && !selectedUser)
+                (mode === "account" && lookupState !== "found")
               }
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-xs font-bold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {createWalkInClaim.isPending ? "Recording…" : "Confirm & mark claimed"}
+              {createWalkInClaim.isPending
+                ? "Recording…"
+                : "Confirm & mark claimed"}
             </button>
           </div>
         </form>

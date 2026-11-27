@@ -13,6 +13,7 @@ import {
   listAllClaimsPage,
   listClaimsByUser,
   PhysicalItemNotReceivedError,
+  findActiveSchoolUserBySchoolId,
   searchActiveSchoolUsers,
   updateClaim,
   updateClaimStatusById,
@@ -173,11 +174,16 @@ export async function getAllClaims(req: Request, res: Response): Promise<void> {
   res.json({ claims, count: claims.length, hasMore });
 }
 
-/** GET /api/claims/admin/school-users — search active school users for walk-in claims (staff+). */
+/** GET /api/claims/admin/school-users — check exact schoolId or search active school users (staff+). */
 export async function searchClaimantSchoolUsers(
   req: Request,
   res: Response,
 ): Promise<void> {
+  if (typeof req.query.schoolId === "string") {
+    const match = await findActiveSchoolUserBySchoolId(req.query.schoolId);
+    res.json({ exists: Boolean(match), userId: match?.id ?? null });
+    return;
+  }
   const search = typeof req.query.search === "string" ? req.query.search : "";
   const users = await searchActiveSchoolUsers(search, 20);
   res.json({ users, count: users.length });
