@@ -9,7 +9,7 @@ import {
   findClaimableItem,
   findClaimForUserAndItem,
   findItemEventTiming,
-  listAllClaims,
+  listAllClaimsPage,
   listClaimsByUser,
   PhysicalItemNotReceivedError,
   updateClaim,
@@ -18,6 +18,7 @@ import {
 import { recordAuditLog } from "../repositories/audit-log.repository";
 import { minutesApart, reportMoment } from "../utils/item-matching";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
+import { parsePagination } from "../validation/pagination";
 import { UUID_RE } from "../validation/dates";
 
 export const MAX_REJECTED_CLAIMS_PER_ITEM = 2;
@@ -159,9 +160,10 @@ export async function getMyClaims(req: Request, res: Response): Promise<void> {
 }
 
 /** GET /api/claims/admin — every ownership claim (admin+). */
-export async function getAllClaims(_req: Request, res: Response): Promise<void> {
-  const claims = await listAllClaims();
-  res.json({ claims, count: claims.length });
+export async function getAllClaims(req: Request, res: Response): Promise<void> {
+  const pagination = parsePagination(req.query, { limit: 500, maxLimit: 500 });
+  const { items: claims, hasMore } = await listAllClaimsPage(pagination);
+  res.json({ claims, count: claims.length, hasMore });
 }
 
 /** PATCH /api/claims/admin/:id/status — update a claim decision (admin+). */

@@ -10,7 +10,7 @@ import {
   findReturnEvidenceImageForBlur,
   findReturnForUserById,
   findReturnForUserAndItem,
-  listAllReturns,
+  listAllReturnsPage,
   listReturnsByItem,
   listReturnsByUser,
   PhysicalItemNotReceivedError,
@@ -23,6 +23,7 @@ import {
 import { CannotRevokeOsaReceiptError, findItemOwner } from "../repositories/item.repository";
 import { recordAuditLog } from "../repositories/audit-log.repository";
 import { createClaimSchema, updateClaimSchema } from "../validation/claims";
+import { parsePagination } from "../validation/pagination";
 import { UUID_RE } from "../validation/dates";
 import { validateReturnTarget } from "../validation/returns";
 import { isLostAfterFound } from "./claims.controller";
@@ -146,9 +147,10 @@ export async function getMyReturns(req: Request, res: Response): Promise<void> {
 }
 
 /** GET /api/returns/admin — every return request (admin+). */
-export async function getAllReturns(_req: Request, res: Response): Promise<void> {
-  const returns = await listAllReturns();
-  res.json({ returns, count: returns.length });
+export async function getAllReturns(req: Request, res: Response): Promise<void> {
+  const pagination = parsePagination(req.query, { limit: 500, maxLimit: 500 });
+  const { items: returns, hasMore } = await listAllReturnsPage(pagination);
+  res.json({ returns, count: returns.length, hasMore });
 }
 
 /** POST /api/returns/admin/:id/publish — publish rejected found evidence publicly. */

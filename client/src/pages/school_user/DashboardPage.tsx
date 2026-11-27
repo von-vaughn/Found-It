@@ -293,8 +293,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
 
         {/* Dashboard Main Container */}
-        <main className="flex-1 min-w-0 w-full max-w-[1440px] mx-auto bg-[#f7f7f8] dark:bg-neutral-950 px-4 sm:px-8 lg:px-12 pt-2 pb-5 space-y-5">
-          <div className="@container notifications-shift min-w-0 w-full space-y-5 transition-[margin,width] duration-300 ease-in-out">
+        <main className="flex-1 flex flex-col min-w-0 w-full max-w-[1440px] mx-auto bg-[#f7f7f8] dark:bg-neutral-950 px-4 sm:px-8 lg:px-12 pt-2 pb-5 space-y-5">
+          <div className="@container notifications-shift flex-1 flex flex-col min-w-0 w-full space-y-5 transition-[margin,width] duration-300 ease-in-out">
            {/* Filter Pills and Tabs Bar */}
 
           <FadeIn delay={0.05} className="w-full min-w-0">
@@ -379,7 +379,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </FadeIn>
 
           {/* Masonry Items Grid */}
-          <div data-tour="school-feed" className="relative">
+          <div data-tour="school-feed" className="relative flex-1 flex flex-col">
           <div
             data-tour="school-feed-highlight"
             aria-hidden="true"
@@ -410,7 +410,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               ))}
             </StaggerGrid>
           ) : (
-            <div className="min-h-[60dvh] text-center flex flex-col items-center justify-center">
+            <div className="flex-1 py-12 text-center flex flex-col items-center justify-center">
               <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 dark:text-neutral-500 mb-4">
                 <SearchX className="w-8 h-8 stroke-[1.5]" />
               </div>

@@ -374,7 +374,7 @@ export async function findItemById(
   return rows[0] ? toItem(rows[0], isAdmin, viewerId) : null;
 }
 
-export async function listItems(
+export async function listItemsPage(
   filter: {
     reportType?: ReportType;
     categoryId?: string;
@@ -383,7 +383,8 @@ export async function listItems(
   },
   isAdmin: boolean,
   viewerId: string,
-): Promise<Item[]> {
+  pagination: { limit: number; offset: number } = { limit: 200, offset: 0 },
+): Promise<{ items: Item[]; hasMore: boolean }> {
   const conditions: string[] = [];
   const params: unknown[] = [];
   if (filter?.reportType) {
@@ -417,11 +418,34 @@ export async function listItems(
     )`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  params.push(pagination.limit + 1);
+  const limitParam = `$${params.length}`;
+  params.push(pagination.offset);
+  const offsetParam = `$${params.length}`;
   const { rows } = await pool.query<ItemRow>(
-    `SELECT ${ITEM_COLUMNS} ${ITEM_JOIN} ${where} ORDER BY i.created_at DESC LIMIT 200`,
+    `SELECT ${ITEM_COLUMNS} ${ITEM_JOIN} ${where} ORDER BY i.created_at DESC, i.id DESC LIMIT ${limitParam} OFFSET ${offsetParam}`,
     params,
   );
-  return rows.map((row) => toItem(row, isAdmin, viewerId));
+  const hasMore = rows.length > pagination.limit;
+  const pageRows = hasMore ? rows.slice(0, pagination.limit) : rows;
+  return {
+    items: pageRows.map((row) => toItem(row, isAdmin, viewerId)),
+    hasMore,
+  };
+}
+
+export async function listItems(
+  filter: {
+    reportType?: ReportType;
+    categoryId?: string;
+    search?: string;
+    reporterId?: string;
+  },
+  isAdmin: boolean,
+  viewerId: string,
+): Promise<Item[]> {
+  const { items } = await listItemsPage(filter, isAdmin, viewerId);
+  return items;
 }
 
 /** Returns reporterId, item name, and request-state flags for ownership & guard checks. */

@@ -213,8 +213,8 @@ export const BrowseItemsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 pt-5 pb-10 sm:pt-7 sm:pb-14">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex-1 flex flex-col bg-[#f7f7f8] dark:bg-neutral-950 pt-5 pb-10 sm:pt-7 sm:pb-14">
+      <div className="flex-1 flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-4 mb-8 w-full">
           <FadeIn>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -341,7 +341,7 @@ export const BrowseItemsPage: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div className="min-h-[60dvh] flex flex-col items-center justify-center">
+          <div className="flex-1 py-12 flex flex-col items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-neutral-400 mb-3" />
             <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading items…</p>
           </div>
@@ -364,7 +364,7 @@ export const BrowseItemsPage: React.FC = () => {
             ))}
           </StaggerGrid>
         ) : (
-          <div className="min-h-[60dvh] text-center flex flex-col items-center justify-center">
+          <div className="flex-1 py-12 text-center flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-neutral-400 mb-4">
               <SearchX className="w-8 h-8 stroke-[1.5]" />
             </div>

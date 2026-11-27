@@ -251,11 +251,11 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
           filterResultCount={applyAdvancedFilters(items, filters).length}
         />
 
-        <main className="mx-auto w-full max-w-[1440px] flex-1 bg-[#f7f7f8] dark:bg-neutral-950 px-4 pt-2 pb-8 sm:px-8 lg:px-12">
-          <div className="notifications-shift min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
+        <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col bg-[#f7f7f8] dark:bg-neutral-950 px-4 pt-2 pb-8 sm:px-8 lg:px-12">
+          <div className="notifications-shift flex flex-1 flex-col min-w-0 w-full transition-[margin,width] duration-300 ease-in-out">
             <h1 className="sr-only">Claims &amp; Returned</h1>
 
-            <div>
+            <div className="flex flex-1 flex-col">
             <FadeIn>
             <nav
               aria-label="Filter requests by status"
@@ -459,21 +459,21 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
 
                                   {claim.status === "Approved" &&
                                     !isFoundReport && (
-                                      <div className="mt-3 rounded-xl bg-emerald-50/80 px-4 py-3 dark:bg-emerald-950/30">
-                                        <h4 className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-                                          Pickup Instructions from OSA
-                                        </h4>
-                                        <div className="mt-2 flex items-start justify-between gap-4">
-                                          <p className="min-w-0 flex-1 whitespace-pre-line break-words text-sm leading-relaxed text-emerald-950 dark:text-emerald-100">
+                                      <div className="mt-3 flex items-center justify-between gap-4 rounded-xl bg-emerald-50/80 px-4 py-3 dark:bg-emerald-950/30">
+                                        <div className="min-w-0 flex-1 self-start">
+                                          <h4 className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                                            Pickup Instructions from OSA
+                                          </h4>
+                                          <p className="mt-2 whitespace-pre-line break-words text-sm leading-relaxed text-emerald-950 dark:text-emerald-100">
                                             {claim.approvalInstructions?.trim() ||
                                               "Visit OSA with your school ID to claim."}
                                           </p>
-                                          <PickupQrCard
-                                            kind="claim"
-                                            requestId={claim.id}
-                                            itemName={claim.item}
-                                          />
                                         </div>
+                                        <PickupQrCard
+                                          kind="claim"
+                                          requestId={claim.id}
+                                          itemName={claim.item}
+                                        />
                                       </div>
                                     )}
 
@@ -612,8 +612,9 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
               <FadeIn
                 key={`${statusFilter}-${searchQuery.trim() ? "search" : "empty"}`}
                 delay={0.05}
+                className="flex-1 flex flex-col"
               >
-              <div className="flex min-h-[60dvh] flex-col items-center justify-center px-4 py-16 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500">
                   {searchQuery || myClaims.length > 0 ? (
                     <SearchX

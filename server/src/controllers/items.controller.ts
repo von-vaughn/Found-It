@@ -11,7 +11,7 @@ import {
   findItemById,
   findItemImageForBlur,
   findItemOwner,
-  listItems,
+  listItemsPage,
   saveBlurredImageUrl,
   sendFinderReminder,
   updateItem,
@@ -24,6 +24,7 @@ import {
 import { recordAuditLog } from '../repositories/audit-log.repository';
 import { REPORT_TYPES, type ReportType } from '../types/items';
 import { fetchRemoteImageBuffer, generateBlurredImage } from '../utils/image-blur';
+import { parsePagination } from '../validation/pagination';
 import { isDriveConfigured, uploadFileToDrive } from '../utils/google-drive';
 import { pastOrTodayDateSchema } from '../validation/dates';
 
@@ -233,12 +234,14 @@ export async function getAllItems(req: Request, res: Response): Promise<void> {
     return;
   }
   const viewerId = req.user?.sub ?? '';
-  const items = await listItems(
+  const pagination = parsePagination(req.query, { limit: 200, maxLimit: 200 });
+  const { items, hasMore } = await listItemsPage(
     { reportType, categoryId, search, reporterId: mine },
     isAdminUser(req),
     viewerId,
+    pagination,
   );
-  res.json({ items, count: items.length });
+  res.json({ items, count: items.length, hasMore });
 }
 
 /** GET /api/items/:id — any user or guest */

@@ -1,12 +1,13 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import {
-  listNotificationsForUser,
+  listNotificationsPageForUser,
   markAllNotificationsRead,
   markNotificationRead,
   deleteNotificationForUser,
   deleteReadNotificationsForUser,
 } from "../repositories/notification.repository";
+import { parsePagination } from "../validation/pagination";
 
 const notificationIdSchema = z.string().uuid();
 
@@ -14,12 +15,14 @@ export async function getMyNotifications(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const notifications = await listNotificationsForUser(req.user!.sub);
+  const pagination = parsePagination(req.query, { limit: 100, maxLimit: 100 });
+  const { notifications, hasMore, unreadCount } =
+    await listNotificationsPageForUser(req.user!.sub, pagination);
   res.json({
     notifications,
     count: notifications.length,
-    unreadCount: notifications.filter((notification) => !notification.isRead)
-      .length,
+    unreadCount,
+    hasMore,
   });
 }
 

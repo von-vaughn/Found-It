@@ -342,19 +342,43 @@ export async function createClaimedNotifications(
   );
 }
 
+export async function listNotificationsPageForUser(
+  userId: string,
+  pagination: { limit: number; offset: number } = { limit: 100, offset: 0 },
+): Promise<{ notifications: Notification[]; hasMore: boolean; unreadCount: number }> {
+  const [listResult, unreadResult] = await Promise.all([
+    pool.query<NotificationRow>(
+      `SELECT id, item_id, request_id, kind, event, title, message,
+              is_read, created_at
+       FROM notification
+       WHERE user_id = $1
+       ORDER BY created_at DESC, id DESC
+       LIMIT $2 OFFSET $3`,
+      [userId, pagination.limit + 1, pagination.offset],
+    ),
+    pool.query<{ count: number }>(
+      `SELECT COUNT(*)::int AS count
+       FROM notification
+       WHERE user_id = $1 AND is_read = FALSE`,
+      [userId],
+    ),
+  ]);
+  const hasMore = listResult.rows.length > pagination.limit;
+  const pageRows = hasMore
+    ? listResult.rows.slice(0, pagination.limit)
+    : listResult.rows;
+  return {
+    notifications: pageRows.map(toNotification),
+    hasMore,
+    unreadCount: unreadResult.rows[0]?.count ?? 0,
+  };
+}
+
 export async function listNotificationsForUser(
   userId: string,
 ): Promise<Notification[]> {
-  const { rows } = await pool.query<NotificationRow>(
-    `SELECT id, item_id, request_id, kind, event, title, message,
-            is_read, created_at
-     FROM notification
-     WHERE user_id = $1
-     ORDER BY created_at DESC, id DESC
-     LIMIT 100`,
-    [userId],
-  );
-  return rows.map(toNotification);
+  const { notifications } = await listNotificationsPageForUser(userId);
+  return notifications;
 }
 
 export async function markNotificationRead(

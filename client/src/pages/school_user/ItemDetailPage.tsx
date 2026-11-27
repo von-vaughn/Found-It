@@ -738,23 +738,23 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                             )}
 
                             {claimStatusLabel === "Approved" && (
-                              <div className="mt-3 rounded-xl bg-emerald-50/80 px-4 py-3 dark:bg-emerald-950/30">
-                                <h4 className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-                                  {claim.approvalInstructions?.trim()
-                                    ? "Pickup Instructions from OSA"
-                                    : "Returned to OSA office"}
-                                </h4>
-                                <div className="mt-2 flex items-start justify-between gap-4">
-                                  <p className="min-w-0 flex-1 whitespace-pre-line break-words text-sm leading-relaxed text-emerald-950 dark:text-emerald-100">
+                              <div className="mt-3 flex items-center justify-between gap-4 rounded-xl bg-emerald-50/80 px-4 py-3 dark:bg-emerald-950/30">
+                                <div className="min-w-0 flex-1 self-start">
+                                  <h4 className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                                    {claim.approvalInstructions?.trim()
+                                      ? "Pickup Instructions from OSA"
+                                      : "Returned to OSA office"}
+                                  </h4>
+                                  <p className="mt-2 whitespace-pre-line break-words text-sm leading-relaxed text-emerald-950 dark:text-emerald-100">
                                     {claim.approvalInstructions?.trim() ||
                                       "Visit OSA with your school ID to claim."}
                                   </p>
-                                  <PickupQrCard
-                                    kind="return"
-                                    requestId={claim.id}
-                                    itemName={item.title}
-                                  />
                                 </div>
+                                <PickupQrCard
+                                  kind="return"
+                                  requestId={claim.id}
+                                  itemName={item.title}
+                                />
                               </div>
                             )}
 

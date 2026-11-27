@@ -5,7 +5,7 @@ import {
   deleteUser,
   findUserByEmail,
   findUserById,
-  listUsers,
+  listUsersPage,
   runWithActiveSuperAdminGuard,
   setUserActive,
   updateUserRole,
@@ -14,6 +14,7 @@ import { recordAuditLog } from '../repositories/audit-log.repository';
 import { revokeAllUserTokens } from '../repositories/refresh-token.repository';
 import { ROLES, type Role } from '../types/roles';
 import { hashPassword } from '../utils/password';
+import { parsePagination } from '../validation/pagination';
 
 const roleSchema = z.object({ role: z.enum(ROLES) });
 const activeSchema = z.object({ isActive: z.boolean() });
@@ -129,8 +130,9 @@ export async function getAllUsers(req: Request, res: Response): Promise<void> {
     res.status(400).json({ message: `Invalid role filter. Allowed: ${ROLES.join(', ')}` });
     return;
   }
-  const users = await listUsers({ role, search });
-  res.json({ users, count: users.length });
+  const pagination = parsePagination(req.query, { limit: 200, maxLimit: 200 });
+  const { users, hasMore } = await listUsersPage({ role, search }, pagination);
+  res.json({ users, count: users.length, hasMore });
 }
 
 /** GET /api/users/:id — self or super_admin */

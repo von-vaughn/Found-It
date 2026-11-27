@@ -110,9 +110,10 @@ export async function createUser(input: {
   return toSafeUser(rows[0]);
 }
 
-export async function listUsers(
+export async function listUsersPage(
   filter?: { role?: Role; search?: string },
-): Promise<Array<SafeUser & { reportCount: number }>> {
+  pagination: { limit: number; offset: number } = { limit: 200, offset: 0 },
+): Promise<{ users: Array<SafeUser & { reportCount: number }>; hasMore: boolean }> {
   const conditions: string[] = [];
   const params: unknown[] = [];
   if (filter?.role) {
@@ -124,16 +125,32 @@ export async function listUsers(
     conditions.push(`(LOWER(first_name || ' ' || last_name) LIKE $${params.length} OR LOWER(email) LIKE $${params.length})`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  params.push(pagination.limit + 1);
+  const limitParam = `$${params.length}`;
+  params.push(pagination.offset);
+  const offsetParam = `$${params.length}`;
   const { rows } = await pool.query<UserListRow>(
     `SELECT ${SAFE_USER_COLUMNS},
        (SELECT COUNT(*)::int FROM report WHERE report.user_id = "user".id) AS report_count
-     FROM "user" ${where} ORDER BY created_at DESC LIMIT 200`,
+     FROM "user" ${where} ORDER BY created_at DESC, id DESC LIMIT ${limitParam} OFFSET ${offsetParam}`,
     params,
   );
-  return rows.map((row) => ({
-    ...toSafeUser(row),
-    reportCount: row.report_count,
-  }));
+  const hasMore = rows.length > pagination.limit;
+  const pageRows = hasMore ? rows.slice(0, pagination.limit) : rows;
+  return {
+    users: pageRows.map((row) => ({
+      ...toSafeUser(row),
+      reportCount: row.report_count,
+    })),
+    hasMore,
+  };
+}
+
+export async function listUsers(
+  filter?: { role?: Role; search?: string },
+): Promise<Array<SafeUser & { reportCount: number }>> {
+  const { users } = await listUsersPage(filter);
+  return users;
 }
 
 export async function updateUserRole(id: string, role: Role): Promise<SafeUser | null> {

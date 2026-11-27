@@ -443,25 +443,49 @@ export async function findReturnEvidenceImageForBlur(
   return images[imageIndex] ?? null;
 }
 
-async function listAllRequests(kind: "claim" | "return"): Promise<Claim[]> {
+async function listAllRequestsPage(
+  kind: "claim" | "return",
+  pagination: { limit: number; offset: number } = { limit: 500, offset: 0 },
+): Promise<{ items: Claim[]; hasMore: boolean }> {
   const { rows } = await pool.query<ClaimRow>(
     `SELECT ${CLAIM_COLUMNS} ${CLAIM_JOIN}
      WHERE rq.kind = $1
-     ORDER BY rq.created_at DESC
-     LIMIT 500`,
-    [kind],
+     ORDER BY rq.created_at DESC, rq.id DESC
+     LIMIT $2 OFFSET $3`,
+    [kind, pagination.limit + 1, pagination.offset],
   );
-  return rows.map((row) => toClaim(row, true));
+  const hasMore = rows.length > pagination.limit;
+  const pageRows = hasMore ? rows.slice(0, pagination.limit) : rows;
+  return {
+    items: pageRows.map((row) => toClaim(row, true)),
+    hasMore,
+  };
+}
+
+/** Every ownership claim, for the admin claims workspace (paginated). */
+export function listAllClaimsPage(
+  pagination?: { limit: number; offset: number },
+): Promise<{ items: Claim[]; hasMore: boolean }> {
+  return listAllRequestsPage("claim", pagination);
 }
 
 /** Every ownership claim, for the admin claims workspace. */
-export function listAllClaims(): Promise<Claim[]> {
-  return listAllRequests("claim");
+export async function listAllClaims(): Promise<Claim[]> {
+  const { items } = await listAllRequestsPage("claim");
+  return items;
+}
+
+/** Every found report filed on a lost post, for the admin returns workspace (paginated). */
+export function listAllReturnsPage(
+  pagination?: { limit: number; offset: number },
+): Promise<{ items: Claim[]; hasMore: boolean }> {
+  return listAllRequestsPage("return", pagination);
 }
 
 /** Every found report filed on a lost post, for the admin returns workspace. */
-export function listAllReturns(): Promise<Claim[]> {
-  return listAllRequests("return");
+export async function listAllReturns(): Promise<Claim[]> {
+  const { items } = await listAllRequestsPage("return");
+  return items;
 }
 
 export type PublishRejectedReturnResult =

@@ -72,7 +72,7 @@ function AppContent() {
 
       {!isDashboard && (!isHome || shouldShowHomeChrome) && <Navbar />}
 
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col">
         <AppRoutes
           onBrowseLost={handleBrowseLost}
           onBrowseFound={handleBrowseFound}
