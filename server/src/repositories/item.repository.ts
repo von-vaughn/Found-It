@@ -906,6 +906,84 @@ export async function dismissItemFlags(itemId: string, adminId: string): Promise
 }
 
 export const FOUND_ITEM_SURRENDER_EXPIRY_DAYS = 14;
+export const FOUND_ITEM_SURRENDER_WARNING_DAYS = 11;
+
+/**
+ * Sends a one-time pre-deletion reminder notification to finders whose Found
+ * item post has not been surrendered to OSA (`received_by_osa = FALSE`) once
+ * the post reaches `warningAgeDays` (default 11 days — 3 days before the
+ * 14-day auto-delete).
+ */
+export async function warnExpiringUnsurrenderedFoundItems(
+  warningAgeDays = FOUND_ITEM_SURRENDER_WARNING_DAYS,
+  maxAgeDays = FOUND_ITEM_SURRENDER_EXPIRY_DAYS,
+): Promise<{ warnedCount: number; warnedItemIds: string[] }> {
+  const safeMaxDays = Math.max(2, Math.floor(maxAgeDays));
+  const safeWarningDays = Math.min(Math.max(1, Math.floor(warningAgeDays)), safeMaxDays - 1);
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: expiring } = await client.query<{
+      item_id: string;
+      item_name: string;
+      reporter_id: string;
+      days_left: number;
+    }>(
+      `SELECT i.id AS item_id,
+              i.name AS item_name,
+              r.user_id AS reporter_id,
+              GREATEST(
+                1,
+                CEIL(
+                  EXTRACT(EPOCH FROM ((i.created_at + ($2::int * INTERVAL '1 day')) - NOW())) / 86400.0
+                )::int
+              ) AS days_left
+       FROM item i
+       JOIN report r ON r.id = i.report_id
+       WHERE r.report_type = 'found'
+         AND i.received_by_osa = FALSE
+         AND i.expiry_warning_sent_at IS NULL
+         AND i.created_at <= NOW() - ($1::int * INTERVAL '1 day')
+         AND i.created_at > NOW() - ($2::int * INTERVAL '1 day')
+         AND NOT EXISTS (
+           SELECT 1 FROM request rq
+           WHERE rq.item_id = i.id
+             AND rq.status IN ('approved', 'claimed', 'returned')
+         )
+       FOR UPDATE OF i SKIP LOCKED`,
+      [safeWarningDays, safeMaxDays],
+    );
+
+    const warnedItemIds: string[] = [];
+
+    for (const row of expiring) {
+      const daysLeft = Math.max(1, Number(row.days_left) || 1);
+      await client.query(
+        `INSERT INTO notification (user_id, item_id, request_id, kind, event, title, message)
+         VALUES ($1, $2, NULL, 'item', 'submitted', 'Found post expiring soon', $3)`,
+        [
+          row.reporter_id,
+          row.item_id,
+          `Reminder: Your found item post "${row.item_name}" has not been turned over to OSA yet. Please surrender it to the OSA office within ${daysLeft} day${daysLeft === 1 ? '' : 's'} or the post will be automatically deleted.`,
+        ],
+      );
+
+      await client.query(
+        `UPDATE item SET expiry_warning_sent_at = NOW() WHERE id = $1`,
+        [row.item_id],
+      );
+      warnedItemIds.push(row.item_id);
+    }
+
+    await client.query('COMMIT');
+    return { warnedCount: warnedItemIds.length, warnedItemIds };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
 
 /**
  * Automatically deletes Found item posts that have not been surrendered to OSA

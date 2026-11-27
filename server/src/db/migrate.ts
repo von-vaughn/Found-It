@@ -364,6 +364,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE image ADD COLUMN IF NOT EXISTS blurred_image_url TEXT;
     ALTER TABLE item ADD COLUMN IF NOT EXISTS received_by_osa BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE item ADD COLUMN IF NOT EXISTS last_finder_reminder_at TIMESTAMPTZ;
+    ALTER TABLE item ADD COLUMN IF NOT EXISTS expiry_warning_sent_at TIMESTAMPTZ;
     ALTER TABLE item ADD COLUMN IF NOT EXISTS custom_category VARCHAR(80);
     ALTER TABLE category ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
     ALTER TABLE building ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;

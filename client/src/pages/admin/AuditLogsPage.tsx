@@ -7,7 +7,6 @@ import { AdminLayout } from "./AdminLayout";
 import { roleLabel } from "./AdminAccountsManager";
 import {
   actionLabel,
-  entityTypeLabel,
   filterAuditLogs,
   useAuditLogs,
 } from "@/lib/auditLog";
@@ -184,12 +183,11 @@ export function AuditLogsPage() {
           </div>
         ) : (
           <div className="min-h-[400px] overflow-x-auto">
-            <table className="w-full min-w-[1020px] text-left text-xs">
+            <table className="w-full min-w-[820px] text-left text-xs">
               <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <tr>
                   <th scope="col" className="px-5 py-3">Staff / Admin</th>
                   <th scope="col" className="px-4 py-3">Action</th>
-                  <th scope="col" className="px-4 py-3">Target</th>
                   <th scope="col" className="px-4 py-3">Summary</th>
                   <th scope="col" className="px-5 py-3">Date</th>
                 </tr>
@@ -218,15 +216,7 @@ export function AuditLogsPage() {
                     <td className="px-4 py-3.5">
                       <StatusBadge status={actionLabel(log.action)} />
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span className="block font-semibold text-neutral-900 dark:text-neutral-100">
-                        {entityTypeLabel(log.entityType)}
-                      </span>
-                      <span className="mt-0.5 block font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
-                        {log.entityId}
-                      </span>
-                    </td>
-                    <td className="max-w-72 px-4 py-3.5">
+                    <td className="max-w-md px-4 py-3.5">
                       <span className="line-clamp-2 leading-relaxed">
                         {log.summary || "—"}
                       </span>

@@ -25,6 +25,8 @@ import { isDriveConfigured, testDriveConnection } from './utils/google-drive';
 import {
   deleteExpiredUnsurrenderedFoundItems,
   FOUND_ITEM_SURRENDER_EXPIRY_DAYS,
+  FOUND_ITEM_SURRENDER_WARNING_DAYS,
+  warnExpiringUnsurrenderedFoundItems,
 } from './repositories/item.repository';
 
 const app = express();
@@ -124,6 +126,16 @@ async function boot(): Promise<void> {
       if (deletedCount > 0) {
         console.log(
           `[Expiry Cleanup] Auto-deleted ${deletedCount} un-surrendered found item post(s) older than ${FOUND_ITEM_SURRENDER_EXPIRY_DAYS} days.`,
+        );
+      }
+
+      const { warnedCount } = await warnExpiringUnsurrenderedFoundItems(
+        FOUND_ITEM_SURRENDER_WARNING_DAYS,
+        FOUND_ITEM_SURRENDER_EXPIRY_DAYS,
+      );
+      if (warnedCount > 0) {
+        console.log(
+          `[Expiry Cleanup] Sent pre-deletion warning for ${warnedCount} un-surrendered found item post(s).`,
         );
       }
     } catch (err) {

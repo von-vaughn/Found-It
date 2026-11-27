@@ -6,7 +6,10 @@ import { pool } from './config/db';
 import { env } from './config/env';
 import { migrate } from './db/migrate';
 import { createUser } from './repositories/user.repository';
-import { deleteExpiredUnsurrenderedFoundItems } from './repositories/item.repository';
+import {
+  deleteExpiredUnsurrenderedFoundItems,
+  warnExpiringUnsurrenderedFoundItems,
+} from './repositories/item.repository';
 import { storeRefreshToken } from './repositories/refresh-token.repository';
 import { hashPassword } from './utils/password';
 import { signRefreshToken } from './utils/jwt';
@@ -1619,5 +1622,115 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
         (n) => n.title === 'Claim cancelled' && n.message.includes('Expired Unsurrendered Keys'),
       ),
     );
+  });
+
+  it('9. sends a one-time pre-deletion warning for un-surrendered Found items between day 11 and day 14', async () => {
+    const ownerAuth = await loginAs(OWNER_EMAIL);
+    const staffAuth = await loginAs(ADMIN_EMAIL);
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 1) Un-surrendered Found item aged 12 days -> MUST receive warning once
+    const expiringRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'Expiring Warning Watch',
+        description: 'Not surrendered yet, 12 days old',
+        itemDate: today,
+        itemTime: '10:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(expiringRes.status, 201);
+    const expiringId = expiringRes.data.item.id;
+    createdItemIds.push(expiringId);
+
+    // 2) Surrendered Found item aged 12 days -> MUST NOT be warned
+    const receivedRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'Surrendered Safe Watch',
+        description: 'Already turned over to OSA',
+        itemDate: today,
+        itemTime: '10:15',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(receivedRes.status, 201);
+    const receivedId = receivedRes.data.item.id;
+    createdItemIds.push(receivedId);
+    const markReceived = await api('PATCH', `/api/items/${receivedId}/received`, {
+      token: staffAuth.token,
+      body: { received: true },
+    });
+    assert.equal(markReceived.status, 200);
+
+    // 3) Lost item aged 12 days -> MUST NOT be warned
+    const lostRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Lost Twelve Day Cap',
+        description: 'Lost item should never receive surrender warning',
+        itemDate: today,
+        itemTime: '10:30',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(lostRes.status, 201);
+    const lostId = lostRes.data.item.id;
+    createdItemIds.push(lostId);
+
+    // 4) Recent Found item aged 5 days -> MUST NOT be warned yet
+    const freshRes = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'found',
+        name: 'Fresh Five Day Charger',
+        description: 'Still well within window',
+        itemDate: today,
+        itemTime: '10:45',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(freshRes.status, 201);
+    const freshId = freshRes.data.item.id;
+    createdItemIds.push(freshId);
+
+    await pool.query(
+      `UPDATE item SET created_at = NOW() - INTERVAL '12 days' WHERE id = ANY($1::uuid[])`,
+      [[expiringId, receivedId, lostId]],
+    );
+    await pool.query(
+      `UPDATE item SET created_at = NOW() - INTERVAL '5 days' WHERE id = $1`,
+      [freshId],
+    );
+
+    const firstRun = await warnExpiringUnsurrenderedFoundItems(11, 14);
+    assert.ok(firstRun.warnedItemIds.includes(expiringId));
+    assert.equal(firstRun.warnedItemIds.includes(receivedId), false);
+    assert.equal(firstRun.warnedItemIds.includes(lostId), false);
+    assert.equal(firstRun.warnedItemIds.includes(freshId), false);
+
+    // Second run must be idempotent — no duplicate warning for the same item
+    const secondRun = await warnExpiringUnsurrenderedFoundItems(11, 14);
+    assert.equal(secondRun.warnedItemIds.includes(expiringId), false);
+
+    // Verify finder received exactly one warning notification pointing to the item
+    const ownerNotifs = await api<{
+      notifications: Array<{ itemId: string | null; title: string; message: string }>;
+    }>('GET', '/api/notifications', { token: ownerAuth.token });
+    const matches = ownerNotifs.data.notifications.filter(
+      (n) =>
+        n.itemId === expiringId &&
+        n.title === 'Found post expiring soon' &&
+        n.message.includes('Expiring Warning Watch'),
+    );
+    assert.equal(matches.length, 1);
   });
 });

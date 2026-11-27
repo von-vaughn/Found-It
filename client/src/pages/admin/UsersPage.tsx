@@ -1,14 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  Check,
   ChevronLeft,
   ChevronRight,
   MoreVertical,
-  Power,
-  Shield,
-  Trash2,
-  UserRound,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -493,12 +488,8 @@ export function UsersPage() {
                                         setOpenMenuUserId(null);
                                         void handleChangeRole(user, "staff");
                                       }}
-                                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                      className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                                     >
-                                      <Shield
-                                        className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
-                                        aria-hidden="true"
-                                      />
                                       Promote to Staff
                                     </button>
                                   )}
@@ -513,12 +504,8 @@ export function UsersPage() {
                                           setOpenMenuUserId(null);
                                           void handleChangeRole(user, "admin");
                                         }}
-                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                        className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                                       >
-                                        <Shield
-                                          className="h-3.5 w-3.5 text-neutral-700 dark:text-neutral-300"
-                                          aria-hidden="true"
-                                        />
                                         Promote to Admin
                                       </button>
                                       <button
@@ -532,12 +519,8 @@ export function UsersPage() {
                                             "school_user",
                                           );
                                         }}
-                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                        className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                                       >
-                                        <UserRound
-                                          className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400"
-                                          aria-hidden="true"
-                                        />
                                         Demote to School User
                                       </button>
                                     </>
@@ -552,12 +535,8 @@ export function UsersPage() {
                                         setOpenMenuUserId(null);
                                         void handleChangeRole(user, "staff");
                                       }}
-                                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                      className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                                     >
-                                      <UserRound
-                                        className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400"
-                                        aria-hidden="true"
-                                      />
                                       Demote to Staff
                                     </button>
                                   )}
@@ -569,25 +548,9 @@ export function UsersPage() {
                                     setOpenMenuUserId(null);
                                     setPendingUser(user);
                                   }}
-                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                  className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                                 >
-                                  {user.isActive ? (
-                                    <>
-                                      <Power
-                                        className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400"
-                                        aria-hidden="true"
-                                      />
-                                      Deactivate
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Check
-                                        className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
-                                        aria-hidden="true"
-                                      />
-                                      Activate
-                                    </>
-                                  )}
+                                  {user.isActive ? "Deactivate" : "Activate"}
                                 </button>
                                 <button
                                   type="button"
@@ -597,12 +560,8 @@ export function UsersPage() {
                                     setOpenMenuUserId(null);
                                     setDeleteTarget(user);
                                   }}
-                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                                  className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-500/10"
                                 >
-                                  <Trash2
-                                    className="h-3.5 w-3.5"
-                                    aria-hidden="true"
-                                  />
                                   Remove
                                 </button>
                               </div>
