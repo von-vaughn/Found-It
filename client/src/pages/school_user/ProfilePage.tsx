@@ -342,10 +342,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               >
                 <FadeIn delay={0.05}>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
-                    My reports
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
                     <h2
                       id="profile-reports-heading"
                       className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
@@ -381,7 +378,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         type="button"
                         onClick={() => setReportFilter(tab.id)}
                         aria-pressed={isActive}
-                        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                           isActive
                             ? "bg-[#E5192D] text-white"
                             : "bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"

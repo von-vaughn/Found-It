@@ -421,7 +421,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       initial={false}
       animate={{ width: expanded && !notificationsOpen ? 240 : collapsedWidth }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className={`shrink-0 bg-white dark:bg-neutral-900 dark:border-r dark:border-neutral-800 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
+      className={`shrink-0 bg-white dark:bg-neutral-900 hidden md:flex flex-col items-center py-5 fixed inset-y-0 left-0 z-50 selection:bg-[#E5192D] selection:text-white`}
     >
       {/* Top Logo */}
       <button

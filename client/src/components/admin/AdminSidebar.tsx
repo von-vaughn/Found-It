@@ -292,7 +292,7 @@ export function AdminSidebar<TSection extends string>({
           width: expanded && !notificationsOpen ? 240 : collapsedWidth,
         }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center bg-white dark:bg-neutral-900 dark:border-r dark:border-neutral-800 py-5 selection:bg-[#E5192D] selection:text-white"
+        className="fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col items-center bg-white dark:bg-neutral-900 py-5 selection:bg-[#E5192D] selection:text-white"
       >
         <Link
           to="/admin"
