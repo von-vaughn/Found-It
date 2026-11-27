@@ -65,7 +65,7 @@ export function AppRoutes({
   }).map((route) => ({
     ...route,
     element: (
-      <ProtectedRoute allowedRoles={["school_user", "admin", "super_admin"]}>
+      <ProtectedRoute allowedRoles={["school_user", "staff", "admin"]}>
         {route.element}
       </ProtectedRoute>
     ),
@@ -74,7 +74,7 @@ export function AppRoutes({
   const adminRoutes = getAdminRoutes().map((route) => ({
     ...route,
     element: (
-      <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
+      <ProtectedRoute allowedRoles={["staff", "admin"]}>
         {route.element}
       </ProtectedRoute>
     ),

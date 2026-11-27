@@ -71,7 +71,7 @@ export async function createAdminSubmissionNotifications(
      JOIN "user" submitter ON submitter.id = rq.user_id
      CROSS JOIN "user" admin
      WHERE rq.id = $1
-       AND admin.role IN ('admin', 'super_admin')
+       AND admin.role IN ('staff', 'admin')
        AND admin.is_active = TRUE
        AND admin.is_verified = TRUE`,
     [requestId],
@@ -446,7 +446,7 @@ export async function createAdminItemFlagNotifications(input: {
      FROM "user" flagger
      CROSS JOIN "user" admin
      WHERE flagger.id = $3
-       AND admin.role IN ('admin', 'super_admin')
+       AND admin.role IN ('staff', 'admin')
        AND admin.is_active = TRUE
        AND admin.is_verified = TRUE`,
     [input.itemId, input.itemName, input.reporterId, input.reason],

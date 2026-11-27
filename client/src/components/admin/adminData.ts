@@ -93,18 +93,18 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
   },
 ];
 
-/** Sections only a super admin may reach; hidden from the sidebar and route-guarded. */
-export const superAdminOnlySections: AdminSection[] = [
+/** Sections only an admin may reach; hidden from the staff sidebar and route-guarded. */
+export const adminOnlySections: AdminSection[] = [
   "users",
   "audit",
 ];
 
 export function navigationFor(
-  isSuperAdmin: boolean,
+  isAdmin: boolean,
 ): AdminSidebarItem<AdminSection>[] {
-  return isSuperAdmin
+  return isAdmin
     ? navigation
-    : navigation.filter((item) => !superAdminOnlySections.includes(item.id));
+    : navigation.filter((item) => !adminOnlySections.includes(item.id));
 }
 
 export const pageCopy: Record<AdminSection, { title: string; description: string }> = {
@@ -139,7 +139,7 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
 };
 
 /** Copy that differs when an admin views the same section. */
-export const superAdminPageCopy: Partial<
+export const adminPageCopy: Partial<
   Record<AdminSection, { title: string; description: string }>
 > = {
   overview: {
@@ -162,10 +162,10 @@ export const superAdminPageCopy: Partial<
 
 export function getPageCopy(
   section: AdminSection,
-  isSuperAdmin: boolean,
+  isAdmin: boolean,
 ): { title: string; description: string } {
   return (
-    (isSuperAdmin ? superAdminPageCopy[section] : undefined) ??
+    (isAdmin ? adminPageCopy[section] : undefined) ??
     pageCopy[section]
   );
 }

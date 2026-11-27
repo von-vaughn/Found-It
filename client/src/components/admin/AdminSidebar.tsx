@@ -77,7 +77,7 @@ function AdminAccountMenu({ labelsVisible }: AdminAccountMenuProps) {
   }, [open]);
 
   const name =
-    user?.name || (user?.role === "super_admin" ? "Admin" : "Staff");
+    user?.name || (user?.role === "admin" ? "Admin" : "Staff");
   const email = user?.email || "osa@wmsu.edu.ph";
 
   const handleSignOut = async () => {

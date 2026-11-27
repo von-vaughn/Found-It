@@ -4,7 +4,7 @@ export interface SafeAuthUser {
   id: string;
   name: string;
   email: string;
-  role: "school_user" | "admin" | "super_admin";
+  role: "school_user" | "staff" | "admin";
   isActive: boolean;
   isVerified: boolean;
   hasSeenTutorial?: boolean;

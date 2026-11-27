@@ -8,15 +8,15 @@ import {
   updateMyClaim,
 } from "../controllers/claims.controller";
 import { authenticate } from "../middleware/authenticate";
-import { requireAdmin } from "../middleware/authorize";
+import { requireStaff } from "../middleware/authorize";
 
 const router = Router();
 
 router.use(authenticate);
 
 // Admin claim workspace
-router.get("/admin", requireAdmin, getAllClaims);
-router.patch("/admin/:id/status", requireAdmin, updateAdminClaimStatus);
+router.get("/admin", requireStaff, getAllClaims);
+router.patch("/admin/:id/status", requireStaff, updateAdminClaimStatus);
 
 router.get("/", getMyClaims);
 router.post("/", submitClaim);

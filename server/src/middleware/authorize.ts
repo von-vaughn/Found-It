@@ -5,11 +5,11 @@ import { ROLE_LEVEL, type Role } from '../types/roles';
  * Role-based authorization.
  *
  * Usage:
- *   authorize('admin')              -> admin + super_admin allowed
- *   authorize('super_admin')        -> super_admin only
- *   authorize('school_user', 'admin', ...) -> any of the listed roles (hierarchy-aware via minimum level)
+ *   authorize('staff')              -> staff + admin allowed
+ *   authorize('admin')              -> admin only
+ *   authorize('school_user', 'staff', ...) -> any of the listed roles (hierarchy-aware via minimum level)
  *
- * The check is hierarchy-aware: passing 'admin' allows 'admin' and 'super_admin'.
+ * The check is hierarchy-aware: passing 'staff' allows 'staff' and 'admin'.
  * Passing multiple roles allows any role at/above the lowest listed level.
  */
 export function authorize(...allowed: Role[]) {
@@ -30,5 +30,5 @@ export function authorize(...allowed: Role[]) {
 }
 
 /** Convenience guards */
-export const requireAdmin = authorize('admin'); // admin + super_admin
-export const requireSuperAdmin = authorize('super_admin'); // super_admin only
+export const requireStaff = authorize('staff'); // staff + admin
+export const requireAdmin = authorize('admin'); // admin only

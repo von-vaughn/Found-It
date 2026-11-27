@@ -28,20 +28,20 @@ const createAdminSchema = z.object({
       (password) => new TextEncoder().encode(password).length <= 72,
       "Password cannot exceed 72 bytes",
     ),
-  role: z.enum(["admin", "super_admin"]),
+  role: z.enum(["staff", "admin"]),
 });
 
 export type CreateAdminValues = z.infer<typeof createAdminSchema>;
 
 export function roleLabel(role: AdminUserRole): string {
-  if (role === "super_admin") return "Admin";
-  if (role === "admin") return "Staff";
+  if (role === "admin") return "Admin";
+  if (role === "staff") return "Staff";
   return "School user";
 }
 
 interface CreateAccountModalProps {
   open: boolean;
-  defaultRole: "admin" | "super_admin";
+  defaultRole: "staff" | "admin";
   existingEmails: string[];
   onClose: () => void;
   onCreateAccount: (values: CreateAdminUserPayload) => Promise<void>;
@@ -238,8 +238,8 @@ export function CreateAccountModal({
                 className="h-10 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 disabled={isSubmitting}
               >
-                <option value="admin">Staff</option>
-                <option value="super_admin">Admin</option>
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
           </div>

@@ -429,7 +429,7 @@ async function seedDemoRequests(): Promise<void> {
 }
 
 /**
- * Ensures the canonical categories and at least one super_admin exist, plus
+ * Ensures the canonical categories and at least one admin exist, plus
  * optional demo accounts (dev only). Idempotent — safe to run on every boot.
  */
 export async function seed(): Promise<void> {
@@ -447,18 +447,18 @@ export async function seed(): Promise<void> {
     [BUILDINGS],
   );
 
-  const superAdmin = await findUserByEmail(env.SUPER_ADMIN_EMAIL);
-  if (!superAdmin) {
-    const [firstName, ...rest] = env.SUPER_ADMIN_NAME.trim().split(/\s+/);
+  const primaryAdmin = await findUserByEmail(env.ADMIN_EMAIL);
+  if (!primaryAdmin) {
+    const [firstName, ...rest] = env.ADMIN_NAME.trim().split(/\s+/);
     await createUser({
       firstName,
       lastName: rest.join(' ') || 'Admin',
-      email: env.SUPER_ADMIN_EMAIL,
-      passwordHash: await hashPassword(env.SUPER_ADMIN_PASSWORD),
-      role: 'super_admin',
+      email: env.ADMIN_EMAIL,
+      passwordHash: await hashPassword(env.ADMIN_PASSWORD),
+      role: 'admin',
       isVerified: true,
     });
-    console.log(`Seeded super_admin: ${env.SUPER_ADMIN_EMAIL}`);
+    console.log(`Seeded admin: ${env.ADMIN_EMAIL}`);
   }
 
   // Demo accounts are strictly prohibited in production environments
@@ -469,9 +469,9 @@ export async function seed(): Promise<void> {
       email: string;
       schoolId?: string;
       password: string;
-      role: 'admin' | 'school_user';
+      role: 'staff' | 'school_user';
     }> = [
-      { firstName: 'Demo', lastName: 'Staff', email: 'admin@foundit.local', password: 'Admin123!', role: 'admin' },
+      { firstName: 'Demo', lastName: 'Staff', email: 'admin@foundit.local', password: 'Admin123!', role: 'staff' },
       { firstName: 'Demo', lastName: 'User', email: 'user@foundit.local', password: 'User12345!', role: 'school_user' },
       { firstName: 'Demo', lastName: 'User 2', email: 'user2@foundit.local', schoolId: '2022-00412', password: 'User12345!', role: 'school_user' },
     ];
@@ -491,20 +491,20 @@ export async function seed(): Promise<void> {
       }
     }
 
-    // Dev convenience: ensure all seeded demo and superadmin accounts in dev are verified
+    // Dev convenience: ensure all seeded demo and admin accounts in dev are verified
     await pool.query(`UPDATE "user" SET is_verified = TRUE WHERE email = ANY($1::text[])`, [
-      [env.SUPER_ADMIN_EMAIL.trim().toLowerCase(), ...demos.map((d) => d.email)],
+      [env.ADMIN_EMAIL.trim().toLowerCase(), ...demos.map((d) => d.email)],
     ]);
 
     await seedDemoItems();
     await seedDemoRequests();
   }
 
-  // Sanity check: abort boot if zero active super_admins exist
+  // Sanity check: abort boot if zero active admins exist
   const { rows } = await pool.query<{ count: number }>(
-    `SELECT COUNT(*)::int AS count FROM "user" WHERE role = 'super_admin' AND is_active = TRUE`,
+    `SELECT COUNT(*)::int AS count FROM "user" WHERE role = 'admin' AND is_active = TRUE`,
   );
   if (rows[0].count === 0) {
-    throw new Error('No active super_admin in database after seeding. Aborting boot.');
+    throw new Error('No active admin in database after seeding. Aborting boot.');
   }
 }

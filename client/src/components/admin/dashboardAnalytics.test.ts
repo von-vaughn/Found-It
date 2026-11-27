@@ -221,7 +221,7 @@ test("computeAccountSummary and buildDashboardSummaryCsv produce structured outp
       id: "u3",
       name: "Admin",
       email: "ad@wmsu.edu.ph",
-      role: "super_admin",
+      role: "admin",
       isActive: true,
       joined: "Nov 1",
       reportCount: 0,

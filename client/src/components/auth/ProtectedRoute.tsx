@@ -59,7 +59,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Enforce role authorization
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     const roleFallback =
-      user.role === "admin" || user.role === "super_admin"
+      user.role === "staff" || user.role === "admin"
         ? "/admin"
         : "/dashboard";
     return <Navigate to={roleFallback} replace />;

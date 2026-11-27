@@ -134,7 +134,7 @@ const ITEM_JOIN = `
 
 /**
  * Builds the public Item shape.
- * - Reporter email is gated to admins (super_admin, admin) only.
+ * - Reporter email is gated to OSA staff/admins ('staff', 'admin') only.
  * - importantDetails is gated to the report owner or admin+.
  * - For found items: admins see the original unblurred image; school users and
  *   public guests only receive the server-blurred image variant.

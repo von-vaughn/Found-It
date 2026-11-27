@@ -123,20 +123,20 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const passwordHash = await hashPassword(TEST_PASSWORD);
     const superUser = await createUser({
       firstName: 'Audit',
-      lastName: 'Super',
+      lastName: 'Admin',
       email: SUPER_EMAIL,
       passwordHash,
-      role: 'super_admin',
+      role: 'admin',
       isVerified: true,
     });
     superUserId = superUser.id;
 
     const adminUser = await createUser({
       firstName: 'Audit',
-      lastName: 'Admin',
+      lastName: 'Staff',
       email: ADMIN_EMAIL,
       passwordHash,
-      role: 'admin',
+      role: 'staff',
       isVerified: true,
     });
     adminUserId = adminUser.id;
@@ -290,7 +290,7 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(forbiddenPw.status, 403);
   });
 
-  it('logs ONLY super_admin actions in audit_log, revokes tokens on role change, and guards audit-log access', async () => {
+  it('logs ONLY admin actions in audit_log, revokes tokens on role change, and guards audit-log access', async () => {
     const adminAuth = await loginAs(ADMIN_EMAIL);
     const superAuth = await loginAs(SUPER_EMAIL);
     const schoolAuth = await loginAs(OWNER_EMAIL);
@@ -328,7 +328,7 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     );
     assert.equal(adminAuditRows.rowCount, 0, 'Regular admin actions must never write to audit_log');
 
-    // Super admin creates a building -> persists AND writes audit_log row
+    // Admin creates a building -> persists AND writes audit_log row
     const bldgRes = await api<{ building: { id: string; name: string } }>('POST', '/api/buildings', {
       token: superAuth.token,
       body: { name: TEST_BUILDING },
@@ -336,14 +336,14 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(bldgRes.status, 201);
     createdBuildingId = bldgRes.data.building.id;
 
-    // Super admin creates & changes role of a staff account -> revokes old refresh tokens & logs audit
+    // Admin creates & changes role of a staff account -> revokes old refresh tokens & logs audit
     const createTarget = await api<{ user: { id: string } }>('POST', '/api/users', {
       token: superAuth.token,
       body: {
         name: 'Role Target',
         email: TARGET_EMAIL,
         password: TEST_PASSWORD,
-        role: 'admin',
+        role: 'staff',
       },
     });
     assert.equal(createTarget.status, 201);
@@ -353,7 +353,7 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const targetRefresh = signRefreshToken({
       id: targetId,
       email: TARGET_EMAIL,
-      role: 'admin',
+      role: 'staff',
     });
     await storeRefreshToken(targetId, targetRefresh, new Date(Date.now() + 300_000));
 
@@ -379,13 +379,13 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     });
     assert.equal(reactivateCat.data.category.id, createdCategoryId);
 
-    // Audit-log endpoint restricted to super_admin
+    // Audit-log endpoint restricted to admin
     const deniedAdmin = await api('GET', '/api/audit-logs', { token: adminAuth.token });
     assert.equal(deniedAdmin.status, 403);
     const deniedUser = await api('GET', '/api/audit-logs', { token: schoolAuth.token });
     assert.equal(deniedUser.status, 403);
 
-    // User management is super_admin only: staff can read themselves but nothing else.
+    // User management is admin only: staff can read themselves but nothing else.
     const staffList = await api('GET', '/api/users', { token: adminAuth.token });
     assert.equal(staffList.status, 403, 'Staff must not list users');
     const staffReadOther = await api('GET', `/api/users/${ownerUserId}`, { token: adminAuth.token });
@@ -400,7 +400,7 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const staffDelete = await api('DELETE', `/api/users/${ownerUserId}`, { token: adminAuth.token });
     assert.equal(staffDelete.status, 403, 'Staff must not delete users');
     const superList = await api('GET', '/api/users', { token: superAuth.token });
-    assert.equal(superList.status, 200, 'Super admin still manages users');
+    assert.equal(superList.status, 200, 'Admin still manages users');
 
     const allowedSuper = await api<{ logs: Array<{ actorId: string; entityType: string }> }>(
       'GET',

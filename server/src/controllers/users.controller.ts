@@ -6,7 +6,7 @@ import {
   findUserByEmail,
   findUserById,
   listUsersPage,
-  runWithActiveSuperAdminGuard,
+  runWithActiveAdminGuard,
   setUserActive,
   updateUserRole,
 } from '../repositories/user.repository';
@@ -20,8 +20,8 @@ const roleSchema = z.object({ role: z.enum(ROLES) });
 const activeSchema = z.object({ isActive: z.boolean() });
 
 function roleDisplay(role: Role): string {
-  if (role === 'super_admin') return 'Admin';
-  if (role === 'admin') return 'Staff';
+  if (role === 'admin') return 'Admin';
+  if (role === 'staff') return 'Staff';
   return 'School user';
 }
 const createAdminSchema = z.object({
@@ -43,7 +43,7 @@ const createAdminSchema = z.object({
     .refine((password) => Buffer.byteLength(password, 'utf8') <= 72, {
       message: 'Password cannot exceed 72 bytes',
     }),
-  role: z.enum(['admin', 'super_admin']),
+  role: z.enum(['staff', 'admin']),
 }).strict();
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -61,7 +61,7 @@ function invalidId(res: Response, id: string): boolean {
   return false;
 }
 
-/** POST /api/users — super_admin only */
+/** POST /api/users — admin only */
 export async function createAdminUser(req: Request, res: Response): Promise<void> {
   const parsed = createAdminSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -122,7 +122,7 @@ export async function createAdminUser(req: Request, res: Response): Promise<void
   });
 }
 
-/** GET /api/users — admin + super_admin */
+/** GET /api/users — admin only */
 export async function getAllUsers(req: Request, res: Response): Promise<void> {
   const role = typeof req.query.role === 'string' ? (req.query.role as Role) : undefined;
   const search = typeof req.query.search === 'string' ? req.query.search : undefined;
@@ -135,7 +135,7 @@ export async function getAllUsers(req: Request, res: Response): Promise<void> {
   res.json({ users, count: users.length, hasMore });
 }
 
-/** GET /api/users/:id — self or super_admin */
+/** GET /api/users/:id — self or admin */
 export async function getUserById(req: Request, res: Response): Promise<void> {
   const id = getId(req);
   if (invalidId(res, id)) return;
@@ -145,8 +145,8 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
     return;
   }
   const isSelf = req.user!.sub === target.id;
-  const isSuperAdmin = req.user!.role === 'super_admin';
-  if (!isSelf && !isSuperAdmin) {
+  const isAdmin = req.user!.role === 'admin';
+  if (!isSelf && !isAdmin) {
     res.status(403).json({ message: 'Forbidden.' });
     return;
   }
@@ -154,8 +154,8 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * PATCH /api/users/:id/role — super_admin only.
- * Guards: cannot change own role; cannot demote the last super_admin.
+ * PATCH /api/users/:id/role — admin only.
+ * Guards: cannot change own role; cannot demote the last active admin.
  */
 export async function changeUserRole(req: Request, res: Response): Promise<void> {
   const id = getId(req);
@@ -174,8 +174,8 @@ export async function changeUserRole(req: Request, res: Response): Promise<void>
     res.status(400).json({ message: 'You cannot change your own role.' });
     return;
   }
-  if (target.role === 'super_admin' && parsed.data.role !== 'super_admin') {
-    const updated = await runWithActiveSuperAdminGuard(async (count) => {
+  if (target.role === 'admin' && parsed.data.role !== 'admin') {
+    const updated = await runWithActiveAdminGuard(async (count) => {
       if (target.isActive && count <= 1) return null;
       return updateUserRole(target.id, parsed.data.role);
     });
@@ -213,8 +213,8 @@ export async function changeUserRole(req: Request, res: Response): Promise<void>
 }
 
 /**
- * PATCH /api/users/:id/status — super_admin only.
- * Cannot deactivate the last active super_admin.
+ * PATCH /api/users/:id/status — admin only.
+ * Cannot deactivate the last active admin.
  */
 export async function changeUserStatus(req: Request, res: Response): Promise<void> {
   const id = getId(req);
@@ -233,13 +233,13 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
     res.status(400).json({ message: 'You cannot change your own status.' });
     return;
   }
-  const updated = !parsed.data.isActive && target.role === 'super_admin'
-    ? await runWithActiveSuperAdminGuard(async (count) => {
+  const updated = !parsed.data.isActive && target.role === 'admin'
+    ? await runWithActiveAdminGuard(async (count) => {
         if (target.isActive && count <= 1) return null;
         return setUserActive(target.id, false);
       })
     : await setUserActive(target.id, parsed.data.isActive);
-  if (!updated && !parsed.data.isActive && target.role === 'super_admin') {
+  if (!updated && !parsed.data.isActive && target.role === 'admin') {
     res.status(400).json({ message: 'Cannot deactivate the last active admin.' });
     return;
   }
@@ -257,7 +257,7 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
 }
 
 /**
- * DELETE /api/users/:id — super_admin only (anyone except self/last super_admin).
+ * DELETE /api/users/:id — admin only (anyone except self/last admin).
  */
 export async function removeUser(req: Request, res: Response): Promise<void> {
   const id = getId(req);
@@ -271,8 +271,8 @@ export async function removeUser(req: Request, res: Response): Promise<void> {
     res.status(400).json({ message: 'You cannot delete your own account.' });
     return;
   }
-  if (target.role === 'super_admin') {
-    const deleted = await runWithActiveSuperAdminGuard(async (count) => {
+  if (target.role === 'admin') {
+    const deleted = await runWithActiveAdminGuard(async (count) => {
       if (target.isActive && count <= 1) return false;
       return deleteUser(target.id);
     });

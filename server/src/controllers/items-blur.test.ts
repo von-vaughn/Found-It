@@ -68,7 +68,7 @@ describe('Secure Item Image Blurring & Role-Based Delivery', () => {
   });
 
   it('serves original, unblurred image to admins for found items', async () => {
-    // isAdmin = true (Admin or super_admin)
+    // isAdmin = true (Staff or Admin)
     const item = await findItemById(foundItemId, true, 'admin-user-id');
     assert.ok(item, 'Found item should be returned');
     assert.equal(item.image, CLEAR_FOUND_URL, 'image should be the original clear photo for admins');

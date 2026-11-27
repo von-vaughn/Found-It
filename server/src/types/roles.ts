@@ -1,11 +1,11 @@
-export const ROLES = ['school_user', 'admin', 'super_admin'] as const;
+export const ROLES = ['school_user', 'staff', 'admin'] as const;
 export type Role = (typeof ROLES)[number];
 
 /** Higher number = more privilege */
 export const ROLE_LEVEL: Record<Role, number> = {
   school_user: 1,
-  admin: 2,
-  super_admin: 3,
+  staff: 2,
+  admin: 3,
 };
 
 export interface SafeUser {

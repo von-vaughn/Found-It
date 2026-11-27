@@ -11,7 +11,7 @@ test("allows guests (undefined/null) to browse", () => {
   assert.equal(isSchoolUserRole(null), false);
 });
 
-test("does not restrict admin or super_admin", () => {
+test("does not restrict staff or admin", () => {
+  assert.equal(isSchoolUserRole("staff"), false);
   assert.equal(isSchoolUserRole("admin"), false);
-  assert.equal(isSchoolUserRole("super_admin"), false);
 });

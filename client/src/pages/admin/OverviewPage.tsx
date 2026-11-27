@@ -17,7 +17,7 @@ import { useSelectedReport } from "@/components/admin/useSelectedReport";
 export function OverviewPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin";
+  const isAdmin = user?.role === "admin";
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
   const { data: serverItems = [] } = useItems();
@@ -51,7 +51,7 @@ export function OverviewPage() {
         reports={reports}
         claims={claims}
         returnRequests={returnRequests}
-        isSuperAdmin={isSuperAdmin}
+        isAdmin={isAdmin}
         onNavigate={handleNavigate}
       />
       {selectedReport && (

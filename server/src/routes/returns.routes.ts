@@ -13,7 +13,7 @@ import {
   updateMyReturn,
 } from "../controllers/returns.controller";
 import { authenticate } from "../middleware/authenticate";
-import { requireAdmin } from "../middleware/authorize";
+import { requireStaff } from "../middleware/authorize";
 
 const router = Router();
 
@@ -23,11 +23,11 @@ router.get("/:id/evidence/blurred", getBlurredReturnEvidenceImage);
 router.use(authenticate);
 
 // Admin returns workspace
-router.get("/admin", requireAdmin, getAllReturns);
-router.post("/admin/:id/publish", requireAdmin, publishRejectedReturnItem);
-router.post("/admin/:id/remind-finder", requireAdmin, remindReturnFinder);
-router.patch("/admin/:id/status", requireAdmin, updateAdminReturnStatus);
-router.patch("/admin/:id/osa-receipt", requireAdmin, updateAdminReturnOsaReceipt);
+router.get("/admin", requireStaff, getAllReturns);
+router.post("/admin/:id/publish", requireStaff, publishRejectedReturnItem);
+router.post("/admin/:id/remind-finder", requireStaff, remindReturnFinder);
+router.patch("/admin/:id/status", requireStaff, updateAdminReturnStatus);
+router.patch("/admin/:id/osa-receipt", requireStaff, updateAdminReturnOsaReceipt);
 
 router.get("/item/:itemId", getItemReturns);
 router.get("/", getMyReturns);

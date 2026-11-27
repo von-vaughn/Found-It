@@ -210,17 +210,17 @@ export async function deleteUser(id: string): Promise<boolean> {
 }
 
 /**
- * Serializes mutations that could remove/deactivate an active super_admin so
- * concurrent requests can never leave the system with zero active super_admins.
+ * Serializes mutations that could remove/deactivate an active admin so
+ * concurrent requests can never leave the system with zero active admins.
  */
-export async function runWithActiveSuperAdminGuard<T>(
-  fn: (activeSuperAdminCount: number) => Promise<T>,
+export async function runWithActiveAdminGuard<T>(
+  fn: (activeAdminCount: number) => Promise<T>,
 ): Promise<T> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query<{ id: string }>(
-      `SELECT id FROM "user" WHERE role = 'super_admin' AND is_active = TRUE FOR UPDATE`,
+      `SELECT id FROM "user" WHERE role = 'admin' AND is_active = TRUE FOR UPDATE`,
     );
     const result = await fn(rows.length);
     await client.query('COMMIT');

@@ -24,7 +24,7 @@ export interface AuditLogEntry {
   id: string;
   actorId: string | null;
   actorName: string;
-  actorRole: 'super_admin';
+  actorRole: 'admin';
   action: AuditAction;
   entityType: AuditEntityType;
   entityId: string;
@@ -36,7 +36,7 @@ interface AuditLogRow {
   id: string;
   actor_id: string | null;
   actor_name: string;
-  actor_role: 'super_admin';
+  actor_role: 'admin';
   action: AuditAction;
   entity_type: AuditEntityType;
   entity_id: string;
@@ -59,8 +59,8 @@ function toAuditLogEntry(row: AuditLogRow): AuditLogEntry {
 }
 
 /**
- * Records a super_admin audit entry in PostgreSQL.
- * Non-super_admin actors (e.g. regular admins) are intentionally excluded.
+ * Records an admin audit entry in PostgreSQL.
+ * Non-admin actors (e.g. staff) are intentionally excluded.
  */
 export async function recordAuditLog(
   input: {
@@ -74,7 +74,7 @@ export async function recordAuditLog(
   },
   client?: PoolClient,
 ): Promise<AuditLogEntry | null> {
-  if (input.actorRole !== 'super_admin') return null;
+  if (input.actorRole !== 'admin') return null;
 
   const runner = client ?? pool;
   const { rows } = await runner.query<AuditLogRow>(
@@ -84,7 +84,7 @@ export async function recordAuditLog(
      VALUES (
        $1,
        COALESCE((SELECT first_name || ' ' || last_name FROM "user" WHERE id = $1), $2),
-       'super_admin',
+       'admin',
        $3, $4, $5, $6
      )
      RETURNING id, actor_id, actor_name, actor_role, action, entity_type, entity_id, summary, created_at`,

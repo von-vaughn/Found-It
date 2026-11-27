@@ -464,7 +464,7 @@ export async function getItemReturns(req: Request, res: Response): Promise<void>
     return;
   }
   const isOwner = owner.reporterId === req.user!.sub;
-  const isAdmin = req.user!.role === "admin" || req.user!.role === "super_admin";
+  const isAdmin = req.user!.role === "staff" || req.user!.role === "admin";
   if (!isOwner && !isAdmin) {
     res.status(403).json({
       message: "You are not authorized to view responses for this item.",

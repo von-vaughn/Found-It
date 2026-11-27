@@ -38,11 +38,11 @@ export interface Item {
   images: string[];
   /** Ownership-verification marker. Present for the report owner and admin+ only. */
   importantDetails?: string;
-  /** Reporter identity. Email and schoolId are included for admin/super_admin only. */
+  /** Reporter identity. Email and schoolId are included for staff/admin only. */
   user: { id: string; name: string; email?: string; schoolId?: string };
-  /** Claimant or finder who completed the claim/return (present for admin/super_admin only). */
+  /** Claimant or finder who completed the claim/return (present for staff/admin only). */
   resolvedBy?: { id: string; name: string; email?: string; schoolId?: string } | null;
-  /** Open flag count and details (present for admin/super_admin only). */
+  /** Open flag count and details (present for staff/admin only). */
   flagCount?: number;
   flags?: ItemFlag[];
   /** Whether the authenticated viewer has already flagged this post. */

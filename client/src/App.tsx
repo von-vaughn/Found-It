@@ -48,8 +48,7 @@ function AppContent() {
 
   const isDashboard =
     location.pathname.startsWith("/dashboard") ||
-    location.pathname.startsWith("/admin") ||
-    location.pathname.startsWith("/superadmin");
+    location.pathname.startsWith("/admin");
   const isHome = location.pathname === "/";
   const shouldShowHomeChrome = !isAuthenticated && !isAuthLoading;
 

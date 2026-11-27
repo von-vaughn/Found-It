@@ -14,7 +14,7 @@ import {
   verifyEmail,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requireAdmin } from '../middleware/authorize';
+import { requireStaff } from '../middleware/authorize';
 import { apiLimiter, authLimiter, resendOtpLimiter } from '../middleware/rate-limit';
 import { csrfProtection } from '../middleware/csrf';
 
@@ -35,6 +35,6 @@ router.post('/logout', csrfProtection, logout);
 // Authenticated
 router.get('/me', authenticate, me);
 router.patch('/tutorial-seen', authenticate, markTutorialSeen);
-router.post('/verify-password', authenticate, requireAdmin, verifyAdminPassword);
+router.post('/verify-password', authenticate, requireStaff, verifyAdminPassword);
 
 export default router;

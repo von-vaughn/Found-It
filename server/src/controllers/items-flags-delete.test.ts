@@ -89,7 +89,7 @@ describe('Item Flagging & Admin Deletion Reason Workflow', () => {
       lastName: 'Super',
       email: SUPER_EMAIL,
       passwordHash,
-      role: 'super_admin',
+      role: 'admin',
       isVerified: true,
     });
     superUserId = superUser.id;

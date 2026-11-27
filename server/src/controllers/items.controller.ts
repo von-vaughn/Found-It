@@ -136,14 +136,14 @@ function invalidId(res: Response, id: string): boolean {
   return false;
 }
 
-/** Admins see reporter email and unblurred found-item images. */
+/** Staff and admins see reporter email and unblurred found-item images. */
 function isAdminUser(req: Request): boolean {
-  return req.user?.role === 'admin' || req.user?.role === 'super_admin';
+  return req.user?.role === 'staff' || req.user?.role === 'admin';
 }
 
 function canManage(req: Request, reporterId: string): boolean {
   if (req.user!.sub === reporterId) return true;
-  return req.user!.role === 'admin' || req.user!.role === 'super_admin';
+  return req.user!.role === 'staff' || req.user!.role === 'admin';
 }
 
 const CUSTOM_CATEGORY_MIN = 2;

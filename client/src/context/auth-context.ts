@@ -7,7 +7,7 @@ export const isSchoolEmail = (email: string): boolean => {
   return parts.length === 2 && parts[1] === "wmsu.edu.ph";
 };
 
-export type Role = "school_user" | "admin" | "super_admin";
+export type Role = "school_user" | "staff" | "admin";
 
 export interface User {
   id: string;

@@ -292,7 +292,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       }
       onClose();
       const rolePath =
-        res.role === "admin" || res.role === "super_admin"
+        res.role === "staff" || res.role === "admin"
           ? paths.admin
           : paths.dashboard;
       navigate(getSafeRedirect(rolePath));
@@ -425,7 +425,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
       }
       onClose();
       const rolePath =
-        result.role === "admin" || result.role === "super_admin"
+        result.role === "staff" || result.role === "admin"
           ? paths.admin
           : paths.dashboard;
       navigate(getSafeRedirect(rolePath));

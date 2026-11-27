@@ -11,7 +11,7 @@ export type AdminSection =
 
 export type RecordStatus = "Lost" | "Found" | "Returned" | "Claimed";
 
-export type AdminUserRole = "school_user" | "admin" | "super_admin";
+export type AdminUserRole = "school_user" | "staff" | "admin";
 
 export interface AdminUser {
   id: string;

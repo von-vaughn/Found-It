@@ -39,8 +39,8 @@ const ADMIN_USERS_QUERY_KEY = ["admin-users"] as const;
 
 type RoleFilter = "school_user" | "staff" | "admin";
 
-function initialRoleFromParam(rawTab: string | null, isSuperAdmin: boolean): RoleFilter {
-  if (!isSuperAdmin) return "school_user";
+function initialRoleFromParam(rawTab: string | null, isAdmin: boolean): RoleFilter {
+  if (!isAdmin) return "school_user";
   if (rawTab === "staff") return "staff";
   if (rawTab === "admin" || rawTab === "admins") return "admin";
   return "school_user";
@@ -56,7 +56,7 @@ function errorMessage(error: unknown, fallback: string): string {
 export function UsersPage() {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
-  const isSuperAdmin = currentUser?.role === "super_admin";
+  const isAdmin = currentUser?.role === "admin";
   const [searchParams] = useSearchParams();
 
   const usersQuery = useInfiniteQuery({
@@ -103,7 +103,7 @@ export function UsersPage() {
   });
 
   const [roleFilter, setRoleFilter] = useState<RoleFilter>(() =>
-    initialRoleFromParam(searchParams.get("tab"), isSuperAdmin),
+    initialRoleFromParam(searchParams.get("tab"), isAdmin),
   );
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All statuses");
@@ -135,7 +135,7 @@ export function UsersPage() {
     };
   }, [openMenuUserId]);
 
-  const activeRole: RoleFilter = isSuperAdmin ? roleFilter : "school_user";
+  const activeRole: RoleFilter = isAdmin ? roleFilter : "school_user";
   const allUsers = useMemo(() => {
     const flattened: AdminUser[] = [];
     const seen = new Set<string>();
@@ -155,11 +155,11 @@ export function UsersPage() {
     [allUsers],
   );
   const staffUsers = useMemo(
-    () => allUsers.filter((u) => u.role === "admin"),
+    () => allUsers.filter((u) => u.role === "staff"),
     [allUsers],
   );
   const adminUsers = useMemo(
-    () => allUsers.filter((u) => u.role === "super_admin"),
+    () => allUsers.filter((u) => u.role === "admin"),
     [allUsers],
   );
   const allUserEmails = useMemo(() => allUsers.map((u) => u.email), [allUsers]);
@@ -210,9 +210,9 @@ export function UsersPage() {
   const confirmStatusChange = async () => {
     if (!pendingUser) return;
     if (
-      pendingUser.role === "super_admin" &&
+      pendingUser.role === "admin" &&
       pendingUser.isActive &&
-      allUsers.filter((u) => u.role === "super_admin" && u.isActive).length <= 1
+      allUsers.filter((u) => u.role === "admin" && u.isActive).length <= 1
     ) {
       toast.error("Cannot deactivate the last admin.");
       setPendingUser(null);
@@ -238,8 +238,8 @@ export function UsersPage() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     if (
-      deleteTarget.role === "super_admin" &&
-      allUsers.filter((u) => u.role === "super_admin").length <= 1
+      deleteTarget.role === "admin" &&
+      allUsers.filter((u) => u.role === "admin").length <= 1
     ) {
       toast.error("Cannot delete the last admin.");
       setDeleteTarget(null);
@@ -256,14 +256,14 @@ export function UsersPage() {
 
   const handleToggleRole = async (target: AdminUser) => {
     if (
-      target.role === "super_admin" &&
-      allUsers.filter((u) => u.role === "super_admin").length <= 1
+      target.role === "admin" &&
+      allUsers.filter((u) => u.role === "admin").length <= 1
     ) {
       toast.error("Cannot demote the last admin.");
       return;
     }
     const nextRole: AdminUserRole =
-      target.role === "admin" ? "super_admin" : "admin";
+      target.role === "staff" ? "admin" : "staff";
     try {
       await updateRoleMutation.mutateAsync({ id: target.id, role: nextRole });
       toast.success(
@@ -344,7 +344,7 @@ export function UsersPage() {
                 <span className="text-xs text-neutral-500 dark:text-neutral-400">
                   {countLabel}
                 </span>
-                {isSuperAdmin && (
+                {isAdmin && (
                   <button
                     type="button"
                     onClick={() => setCreateOpen(true)}
@@ -359,7 +359,7 @@ export function UsersPage() {
           >
             <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
               <div className="flex flex-wrap gap-2">
-                {isSuperAdmin && (
+                {isAdmin && (
                   <>
                     <label className="sr-only" htmlFor="user-group-select">
                       Filter by role
@@ -639,7 +639,7 @@ export function UsersPage() {
 
       <CreateAccountModal
         open={createOpen}
-        defaultRole={activeRole === "admin" ? "super_admin" : "admin"}
+        defaultRole={activeRole === "admin" ? "admin" : "staff"}
         existingEmails={allUserEmails}
         onClose={() => setCreateOpen(false)}
         onCreateAccount={handleCreateAccount}

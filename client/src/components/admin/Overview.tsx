@@ -16,13 +16,13 @@ export function Overview({
   reports,
   claims,
   returnRequests,
-  isSuperAdmin = false,
+  isAdmin = false,
   onNavigate,
 }: {
   reports: AdminReport[];
   claims: ClaimRequest[];
   returnRequests: ClaimRequest[];
-  isSuperAdmin?: boolean;
+  isAdmin?: boolean;
   onNavigate: (section: AdminSection | "returns") => void;
 }) {
   const summary = useMemo(
@@ -207,7 +207,7 @@ export function Overview({
                   Active found inventory and approved handovers
                 </p>
               </div>
-              {isSuperAdmin && (
+              {isAdmin && (
                 <button
                   type="button"
                   onClick={handleExportCsv}

@@ -31,7 +31,7 @@ export interface CreateAdminUserPayload {
   name: string;
   email: string;
   password: string;
-  role: Extract<AdminUserRole, "admin" | "super_admin">;
+  role: Extract<AdminUserRole, "staff" | "admin">;
 }
 
 function toAdminUser(user: ServerAdminUser): AdminUser {

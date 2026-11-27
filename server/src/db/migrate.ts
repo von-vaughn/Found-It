@@ -26,7 +26,7 @@ export async function migrate(): Promise<void> {
       school_id VARCHAR(30),
       password_hash TEXT NOT NULL,
       role VARCHAR(20) NOT NULL DEFAULT 'school_user'
-        CHECK (role IN ('school_user', 'admin', 'super_admin')),
+        CHECK (role IN ('school_user', 'staff', 'admin')),
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       is_verified BOOLEAN NOT NULL DEFAULT FALSE,
       is_student BOOLEAN NOT NULL DEFAULT TRUE,
@@ -191,7 +191,7 @@ export async function migrate(): Promise<void> {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       actor_id UUID REFERENCES "user"(id) ON DELETE SET NULL,
       actor_name VARCHAR(120) NOT NULL,
-      actor_role VARCHAR(20) NOT NULL CHECK (actor_role IN ('super_admin')),
+      actor_role VARCHAR(20) NOT NULL CHECK (actor_role IN ('admin')),
       action VARCHAR(20) NOT NULL
         CHECK (action IN ('approved', 'rejected', 'claimed', 'returned', 'published', 'deleted', 'created', 'updated')),
       entity_type VARCHAR(20) NOT NULL
@@ -221,6 +221,55 @@ export async function migrate(): Promise<void> {
       ON item_flag(item_id, reporter_id)
       WHERE dismissed_at IS NULL;
     CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
+  `);
+
+  // One-time idempotent role rename migration: admin -> staff, super_admin -> admin
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = '"user"'::regclass
+          AND contype = 'c'
+          AND pg_get_constraintdef(oid) LIKE '%super_admin%'
+      ) THEN
+        EXECUTE (
+          SELECT string_agg('ALTER TABLE "user" DROP CONSTRAINT ' || quote_ident(conname) || ';', ' ')
+          FROM pg_constraint
+          WHERE conrelid = '"user"'::regclass
+            AND contype = 'c'
+            AND pg_get_constraintdef(oid) LIKE '%super_admin%'
+        );
+
+        UPDATE "user" SET role = 'staff' WHERE role = 'admin';
+        UPDATE "user" SET role = 'admin' WHERE role = 'super_admin';
+
+        ALTER TABLE "user" ADD CONSTRAINT user_role_check
+          CHECK (role IN ('school_user', 'staff', 'admin'));
+      END IF;
+
+      IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'audit_log'::regclass
+          AND contype = 'c'
+          AND pg_get_constraintdef(oid) LIKE '%super_admin%'
+      ) THEN
+        EXECUTE (
+          SELECT string_agg('ALTER TABLE audit_log DROP CONSTRAINT ' || quote_ident(conname) || ';', ' ')
+          FROM pg_constraint
+          WHERE conrelid = 'audit_log'::regclass
+            AND contype = 'c'
+            AND pg_get_constraintdef(oid) LIKE '%super_admin%'
+        );
+
+        UPDATE audit_log SET actor_role = 'admin' WHERE actor_role = 'super_admin';
+
+        ALTER TABLE audit_log ADD CONSTRAINT audit_log_actor_role_check
+          CHECK (actor_role IN ('admin'));
+      END IF;
+    END $$;
   `);
 
   await pool.query(`

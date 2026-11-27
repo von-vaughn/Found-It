@@ -47,7 +47,7 @@ export function AdminLayout({
 }: AdminLayoutProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin";
+  const isAdmin = user?.role === "admin";
   const {
     notifications: serverNotifications,
     unreadCount,
@@ -75,7 +75,7 @@ export function AdminLayout({
     [serverNotifications],
   );
 
-  const copy = getPageCopy(activeSection, isSuperAdmin);
+  const copy = getPageCopy(activeSection, isAdmin);
 
   const handleNotificationSelect = (notification: AdminNotification) => {
     if (!notification.read) {
@@ -111,7 +111,7 @@ export function AdminLayout({
     <div className="min-h-screen bg-[#f7f7f8] dark:bg-neutral-950 font-open-sans text-neutral-900 dark:text-neutral-100 selection:bg-[#E5192D] selection:text-white">
       <AdminSidebar
         activeSection={activeSection}
-        navigation={navigationFor(isSuperAdmin)}
+        navigation={navigationFor(isAdmin)}
         notifications={notifications}
         unreadCount={unreadCount}
         hasMoreNotifications={Boolean(hasMoreNotifications)}

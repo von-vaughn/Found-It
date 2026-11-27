@@ -50,10 +50,10 @@ export function getAdminRoutes(): RouteObject[] {
       element: <ReturnItemDetailPage />,
     },
     {
-      // User management is super-admin only; plain admins bounce back to the dashboard.
+      // User management is admin only; staff bounce back to the dashboard.
       path: paths.adminUsers,
       element: (
-        <ProtectedRoute allowedRoles={["super_admin"]}>
+        <ProtectedRoute allowedRoles={["admin"]}>
           <UsersPage />
         </ProtectedRoute>
       ),
@@ -63,34 +63,13 @@ export function getAdminRoutes(): RouteObject[] {
       element: <Navigate to={paths.adminItems} replace />,
     },
     {
-      // Audit logs are super-admin only; plain admins bounce back to the dashboard.
+      // Audit logs are admin only; staff bounce back to the dashboard.
       path: paths.adminAudit,
       element: (
-        <ProtectedRoute allowedRoles={["super_admin"]}>
+        <ProtectedRoute allowedRoles={["admin"]}>
           <AuditLogsPage />
         </ProtectedRoute>
       ),
     },
-
-    // Legacy /superadmin/* URLs — old bookmarks land on the merged admin pages.
-    { path: paths.superadmin, element: <Navigate to={paths.admin} replace /> },
-    { path: paths.superadminItems, element: <Navigate to={paths.adminItems} replace /> },
-    { path: paths.superadminLost, element: <Navigate to={paths.adminItems} replace /> },
-    { path: paths.superadminFound, element: <Navigate to={paths.adminItems} replace /> },
-    { path: paths.superadminClaims, element: <Navigate to={paths.adminClaims} replace /> },
-    {
-      path: paths.superadminReturns,
-      element: <Navigate to={`${paths.adminClaims}?tab=returns`} replace />,
-    },
-    { path: paths.superadminUsers, element: <Navigate to={paths.adminUsers} replace /> },
-    {
-      path: paths.superadminFilterOptions,
-      element: <Navigate to={paths.adminItems} replace />,
-    },
-    {
-      path: paths.superadminAdmins,
-      element: <Navigate to={`${paths.adminUsers}?tab=admins`} replace />,
-    },
-    { path: paths.superadminAudit, element: <Navigate to={paths.adminAudit} replace /> },
   ];
 }
