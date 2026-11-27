@@ -17,9 +17,9 @@ import type { AdminSection } from "@/components/admin/types";
 import {
   useDeleteReadNotifications,
   useDeleteNotification,
+  useInfiniteNotifications,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
-  useNotifications,
 } from "@/hooks/useNotifications";
 import {
   formatNotificationTime,
@@ -48,7 +48,13 @@ export function AdminLayout({
   const navigate = useNavigate();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
-  const { data: serverNotifications = [] } = useNotifications();
+  const {
+    notifications: serverNotifications,
+    unreadCount,
+    hasNextPage: hasMoreNotifications,
+    isFetchingNextPage: isFetchingMoreNotifications,
+    fetchNextPage: fetchMoreNotifications,
+  } = useInfiniteNotifications(25);
   const deleteReadNotifications = useDeleteReadNotifications();
   const deleteNotification = useDeleteNotification();
   const markNotificationRead = useMarkNotificationRead();
@@ -107,6 +113,10 @@ export function AdminLayout({
         activeSection={activeSection}
         navigation={navigationFor(isSuperAdmin)}
         notifications={notifications}
+        unreadCount={unreadCount}
+        hasMoreNotifications={Boolean(hasMoreNotifications)}
+        isFetchingMoreNotifications={isFetchingMoreNotifications}
+        onLoadMoreNotifications={() => void fetchMoreNotifications()}
         onSectionChange={(newSection: AdminSection) => {
           navigate(adminSectionPaths[newSection]);
         }}

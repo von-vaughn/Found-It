@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Bell, LogOut, Moon, Sun, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { useAuth } from "@/context/useAuth";
 import { useTheme } from "@/context/useTheme";
 import type { NotificationKind } from "@/services/notificationService";
@@ -35,6 +36,10 @@ interface AdminSidebarProps<TSection extends string> {
   activeSection: TSection;
   navigation: AdminSidebarItem<TSection>[];
   notifications: AdminNotification[];
+  unreadCount?: number;
+  hasMoreNotifications?: boolean;
+  isFetchingMoreNotifications?: boolean;
+  onLoadMoreNotifications?: () => void;
   onSectionChange: (section: TSection) => void;
   onNotificationSelect: (notification: AdminNotification) => void;
   onClearNotification: (notificationId: string) => void;
@@ -176,6 +181,10 @@ export function AdminSidebar<TSection extends string>({
   activeSection,
   navigation,
   notifications,
+  unreadCount: unreadCountProp,
+  hasMoreNotifications = false,
+  isFetchingMoreNotifications = false,
+  onLoadMoreNotifications,
   onSectionChange,
   onNotificationSelect,
   onClearNotification,
@@ -193,7 +202,8 @@ export function AdminSidebar<TSection extends string>({
   const [collapsedWidth, setCollapsedWidth] = useState(() =>
     window.matchMedia("(min-width: 768px)").matches ? 80 : 64,
   );
-  const unreadCount = notifications.filter(({ read }) => !read).length;
+  const unreadCount =
+    unreadCountProp ?? notifications.filter(({ read }) => !read).length;
 
   const setPanelOpen = useCallback((open: boolean) => {
     if (open) {
@@ -502,6 +512,14 @@ export function AdminSidebar<TSection extends string>({
                 <p className="px-5 py-8 text-center text-xs text-neutral-500 dark:text-neutral-400">
                   You’re all caught up.
                 </p>
+              )}
+              {onLoadMoreNotifications && (
+                <LoadMoreButton
+                  hasMore={hasMoreNotifications}
+                  isLoading={isFetchingMoreNotifications}
+                  onLoadMore={onLoadMoreNotifications}
+                  compact
+                />
               )}
             </div>
           </motion.aside>
