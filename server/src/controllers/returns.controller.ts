@@ -495,6 +495,13 @@ export async function submitWalkInReturn(
     return;
   }
 
+  if (parsed.data.evidence?.some((url) => !isTrustedImageUrl(url))) {
+    res.status(400).json({
+      message: "Evidence images must be uploaded through FoundIt.",
+    });
+    return;
+  }
+
   const timing = await findItemEventTiming(parsed.data.itemId);
   if (
     timing &&

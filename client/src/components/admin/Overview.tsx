@@ -76,7 +76,7 @@ export function Overview({
           className="grid grid-cols-1 gap-4 lg:grid-cols-12"
         >
           {/* Left: Primary queues + Report volume strip */}
-          <div className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none lg:col-span-7">
+          <div className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:bg-neutral-900 dark:shadow-none lg:col-span-7">
             <div className="grid flex-1 grid-cols-1 divide-y divide-neutral-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 dark:divide-neutral-800">
               <button
                 type="button"
@@ -197,7 +197,7 @@ export function Overview({
           </div>
 
           {/* Right: OSA Custody & Handover Surface */}
-          <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none sm:p-6 lg:col-span-5">
+          <div className="flex flex-col justify-between rounded-2xl bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:bg-neutral-900 dark:shadow-none sm:p-6 lg:col-span-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-bold tracking-tight text-neutral-950 dark:text-white">

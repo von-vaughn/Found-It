@@ -32,6 +32,7 @@ type WalkInReturnCommonPayload = {
   location: string;
   details: string;
   importantDetails: string;
+  evidence?: string[];
   approvalInstructions: string;
 };
 

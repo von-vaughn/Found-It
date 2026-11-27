@@ -1,10 +1,8 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  CheckCircle2,
   HandHelping,
   MapPin,
-  PackageCheck,
   RotateCcw,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -12,6 +10,7 @@ import { FadeIn } from "@/components/FadeIn";
 import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { NoItemImage } from "@/components/NoItemImage";
 import { Panel } from "@/components/admin/Panel";
+import { OsaReceiptConfirmModal } from "@/components/admin/OsaReceiptConfirmModal";
 import { OsaReceiptStatus } from "@/components/admin/OsaReceiptStatus";
 import { WalkInClaimModal } from "@/components/admin/WalkInClaimModal";
 import { WalkInReturnModal } from "@/components/admin/WalkInReturnModal";
@@ -31,6 +30,7 @@ export function WalkInPage() {
   const [osaOnlyFilter, setOsaOnlyFilter] = useState<"all" | "received" | "pending">("all");
   const [claimTarget, setClaimTarget] = useState<AdminReport | null>(null);
   const [returnTarget, setReturnTarget] = useState<AdminReport | null>(null);
+  const [receiveTarget, setReceiveTarget] = useState<AdminReport | null>(null);
 
   const {
     items,
@@ -101,15 +101,26 @@ export function WalkInPage() {
     }
   };
 
-  const handleMarkReceived = (report: AdminReport) => {
+  const handleConfirmMarkReceived = () => {
+    if (!receiveTarget) return;
+    const target = receiveTarget;
+    const nextReceived = !target.receivedByOsa;
     updateOsaReceipt.mutate(
-      { id: report.id, receivedByOsa: true },
+      { id: target.id, receivedByOsa: nextReceived },
       {
         onSuccess: () => {
-          toast.success(`"${report.title}" marked as received by OSA.`);
+          toast.success(
+            nextReceived
+              ? `"${target.title}" marked as received by OSA.`
+              : `"${target.title}" marked as not yet received by OSA.`,
+          );
+          setReceiveTarget(null);
         },
-        onError: () => {
-          toast.error("Could not update OSA receipt status.");
+        onError: (err) => {
+          const msg = (err as { response?: { data?: { message?: string } } })
+            ?.response?.data?.message;
+          toast.error(msg || "Could not update OSA receipt status.");
+          setReceiveTarget(null);
         },
       },
     );
@@ -314,20 +325,20 @@ export function WalkInPage() {
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                       {activeTab === "claims" ? (
                         <>
-                          {!report.receivedByOsa && (
-                            <button
-                              type="button"
-                              disabled={updateOsaReceipt.isPending}
-                              onClick={() => handleMarkReceived(report)}
-                              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-xs font-semibold text-emerald-900 transition-colors hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
-                            >
-                              <PackageCheck
-                                className="h-3.5 w-3.5"
-                                aria-hidden="true"
-                              />
-                              Mark received
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            disabled={updateOsaReceipt.isPending}
+                            onClick={() => setReceiveTarget(report)}
+                            className={`inline-flex h-9 items-center rounded-lg border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                              report.receivedByOsa
+                                ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                                : "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                            }`}
+                          >
+                            {report.receivedByOsa
+                              ? "Mark not yet received"
+                              : "Mark received"}
+                          </button>
                           <button
                             type="button"
                             disabled={!report.receivedByOsa}
@@ -337,12 +348,8 @@ export function WalkInPage() {
                                 : "Record a walk-in claim at the OSA desk"
                             }
                             onClick={() => setClaimTarget(report)}
-                            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-45"
+                            className="inline-flex h-9 items-center rounded-lg bg-emerald-700 px-3.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-45"
                           >
-                            <CheckCircle2
-                              className="h-3.5 w-3.5"
-                              aria-hidden="true"
-                            />
                             Walk-in claim
                           </button>
                         </>
@@ -350,12 +357,8 @@ export function WalkInPage() {
                         <button
                           type="button"
                           onClick={() => setReturnTarget(report)}
-                          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424]"
+                          className="inline-flex h-9 items-center rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424]"
                         >
-                          <RotateCcw
-                            className="h-3.5 w-3.5"
-                            aria-hidden="true"
-                          />
                           Walk-in return
                         </button>
                       )}
@@ -399,6 +402,16 @@ export function WalkInPage() {
           onSuccess={() => setReturnTarget(null)}
         />
       )}
+
+      <OsaReceiptConfirmModal
+        open={Boolean(receiveTarget)}
+        itemName={receiveTarget?.title ?? ""}
+        nextReceived={!receiveTarget?.receivedByOsa}
+        context="item"
+        isUpdating={updateOsaReceipt.isPending}
+        onCancel={() => setReceiveTarget(null)}
+        onConfirm={handleConfirmMarkReceived}
+      />
     </AdminLayout>
   );
 }

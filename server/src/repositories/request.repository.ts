@@ -1507,6 +1507,7 @@ type WalkInReturnCommonFields = {
   location: string;
   details: string;
   importantDetails: string;
+  evidence?: string[];
   approvalInstructions: string;
 };
 
@@ -1624,6 +1625,10 @@ export async function createWalkInReturn(
     }
 
     const trimmedInstructions = input.approvalInstructions.trim();
+    const serializedEvidence =
+      input.evidence && input.evidence.length > 0
+        ? JSON.stringify(input.evidence)
+        : null;
 
     const { rows: insertedRows } = await client.query<{ id: string }>(
       `INSERT INTO request (
@@ -1632,14 +1637,14 @@ export async function createWalkInReturn(
          walkin_name, walkin_school_id, walkin_contact,
          claimant_title, primary_color, building,
          date_lost, time_lost, location_lost,
-         details, important_details, approval_instructions
+         details, important_details, evidence, approval_instructions
        ) VALUES (
          $1, $2, 'return', 'approved',
          TRUE, TRUE,
          $3, $4, $5,
          $6, $7, $8,
          $9, $10, $11,
-         $12, $13, $14
+         $12, $13, $14, $15
        )
        RETURNING id`,
       [
@@ -1656,6 +1661,7 @@ export async function createWalkInReturn(
         input.location.trim(),
         input.details.trim(),
         input.importantDetails.trim(),
+        serializedEvidence,
         trimmedInstructions,
       ],
     );

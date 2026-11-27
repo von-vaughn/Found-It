@@ -20,6 +20,10 @@ const walkInReturnItemFields = {
     .trim()
     .min(1, "Important details are required")
     .max(2000),
+  evidence: z
+    .array(z.string().url("Evidence must be an image URL").max(2048))
+    .max(4)
+    .optional(),
   approvalInstructions: z
     .string()
     .trim()

@@ -1,10 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Loader2, X } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Camera,
+  CameraOff,
+  CheckCircle2,
+  Loader2,
+  RotateCcw,
+  X,
+} from "lucide-react";
 import toast from "react-hot-toast";
+import { SelectDropdown } from "@/components/SelectDropdown";
 import { ITEM_BUILDINGS } from "@/data/itemBuildings";
 import { useBuildings } from "@/hooks/useBuildings";
+import { useIsMobileView } from "@/hooks/useIsMobileView";
 import { useCreateWalkInReturn } from "@/hooks/useReturns";
+import { localTodayDate } from "@/lib/date";
 import { checkSchoolUserBySchoolId } from "@/services/claimService";
+import { uploadImage } from "@/services/itemService";
 
 interface WalkInReturnModalProps {
   open: boolean;
@@ -14,21 +27,37 @@ interface WalkInReturnModalProps {
   onSuccess: () => void;
 }
 
+type WalkInStep = "camera" | "details" | "confirmation";
+type CameraState = "starting" | "ready" | "error";
 type WalkInMode = "account" | "guest";
 type LookupState = "idle" | "checking" | "found" | "not_found";
 
 const inputClass =
-  "mt-1 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800";
+  "w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 px-3.5 py-3 text-sm transition-colors focus:border-neutral-400 focus:bg-white dark:focus:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200 dark:focus-visible:ring-neutral-700";
 
 const labelClass =
-  "block text-xs font-semibold text-neutral-700 dark:text-neutral-300";
+  "mb-2 block text-xs font-bold text-neutral-700 dark:text-neutral-300";
 
-function getTodayDateString(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function stopCameraStream(stream: MediaStream | null) {
+  if (!stream) return;
+  for (const track of stream.getTracks()) {
+    track.stop();
+  }
+}
+
+function getCameraErrorMessage(error: unknown): string {
+  if (error instanceof DOMException) {
+    if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+      return "Camera permission was denied. Allow camera access in your browser to photograph the found item.";
+    }
+    if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+      return "No camera was found on this device. A live camera photo is required to record this found item.";
+    }
+    if (error.name === "NotReadableError" || error.name === "TrackStartError") {
+      return "Your camera is in use by another app. Close it and try again.";
+    }
+  }
+  return "We could not start your camera. Check browser permissions and try again.";
 }
 
 export function WalkInReturnModal({
@@ -38,33 +67,46 @@ export function WalkInReturnModal({
   onClose,
   onSuccess,
 }: WalkInReturnModalProps) {
+  const isMobileView = useIsMobileView();
+  const [step, setStep] = useState<WalkInStep>("camera");
+
+  // Exact live camera state from FoundReportFlow
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cameraState, setCameraState] = useState<CameraState>("starting");
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [capturedFile, setCapturedFile] = useState<Blob | null>(null);
+  const [captureError, setCaptureError] = useState<string | null>(null);
+
+  // Walk-in finder identity state
   const [mode, setMode] = useState<WalkInMode>("account");
   const [accountSchoolId, setAccountSchoolId] = useState("");
   const [lookupState, setLookupState] = useState<LookupState>("idle");
   const [matchedUserId, setMatchedUserId] = useState<string | null>(null);
-
   const [fullName, setFullName] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [contact, setContact] = useState("");
 
-  // Online Return Request matching fields (without photo)
-  const [claimantTitle, setClaimantTitle] = useState("");
+  // Exact return request fields from FoundReportFlow + required pickup instructions
+  const [claimantTitle, setClaimantTitle] = useState(itemTitle);
   const [color, setColor] = useState("");
-  const [building, setBuilding] = useState("");
-  const [dateFound, setDateFound] = useState(getTodayDateString);
+  const [dateFound, setDateFound] = useState("");
   const [timeFound, setTimeFound] = useState("");
-  const [location, setLocation] = useState("");
-  const [details, setDetails] = useState("");
+  const [description, setDescription] = useState("");
   const [importantDetails, setImportantDetails] = useState("");
+  const [location, setLocation] = useState("");
+  const [building, setBuilding] = useState("");
   const [approvalInstructions, setApprovalInstructions] = useState("");
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const createWalkInReturn = useCreateWalkInReturn();
   const { data: buildings } = useBuildings();
   const buildingOptions =
     buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
-  const todayStr = getTodayDateString();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -76,8 +118,70 @@ export function WalkInReturnModal({
     }
   }, [open]);
 
+  // Live camera preview (desktop only — mobile uses the native camera input instead).
   useEffect(() => {
-    if (!open || mode !== "account") return;
+    if (!open || step !== "camera" || capturedPhoto || isMobileView) return;
+
+    let cancelled = false;
+    let stream: MediaStream | null = null;
+    const videoElement = videoRef.current;
+
+    const startCamera = async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError(
+          "Camera access is unavailable. Use a secure connection and a browser that supports camera access.",
+        );
+        setCameraState("error");
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: "environment" } },
+        });
+        if (cancelled) {
+          stopCameraStream(stream);
+          return;
+        }
+
+        streamRef.current = stream;
+        if (!videoElement) {
+          throw new Error("Camera preview element is unavailable.");
+        }
+        videoElement.srcObject = stream;
+        await videoElement.play();
+        if (!cancelled) setCameraState("ready");
+      } catch (error) {
+        stopCameraStream(stream);
+        if (streamRef.current === stream) streamRef.current = null;
+        stream = null;
+        if (!cancelled) {
+          setCameraError(getCameraErrorMessage(error));
+          setCameraState("error");
+        }
+      }
+    };
+
+    void startCamera();
+    return () => {
+      cancelled = true;
+      const activeStream = streamRef.current;
+      streamRef.current = null;
+      stopCameraStream(activeStream);
+      if (stream !== activeStream) stopCameraStream(stream);
+      if (videoElement) videoElement.srcObject = null;
+    };
+  }, [open, step, capturedPhoto, isMobileView]);
+
+  useEffect(() => {
+    if (!capturedPhoto) return;
+    return () => URL.revokeObjectURL(capturedPhoto);
+  }, [capturedPhoto]);
+
+  // Privacy-safe School ID check for Has Account mode
+  useEffect(() => {
+    if (!open || step !== "details" || mode !== "account") return;
     const trimmed = accountSchoolId.trim();
     if (!trimmed) return;
 
@@ -107,27 +211,89 @@ export function WalkInReturnModal({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [open, mode, accountSchoolId]);
+  }, [open, step, mode, accountSchoolId]);
 
   if (!open) return null;
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const busy = isSubmitting || createWalkInReturn.isPending;
+
+  const handleCapture = () => {
+    const video = videoRef.current;
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+      setCaptureError("The camera preview is not ready. Try again in a moment.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      setCaptureError("Could not capture the photo. Please try again.");
+      return;
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setCaptureError("Could not capture the photo. Please try again.");
+          return;
+        }
+        setCaptureError(null);
+        setCapturedFile(blob);
+        setCapturedPhoto(URL.createObjectURL(blob));
+      },
+      "image/jpeg",
+      0.92,
+    );
+  };
+
+  const handleNativeFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setCaptureError("Please choose an image file.");
+      return;
+    }
+    if (capturedPhoto) URL.revokeObjectURL(capturedPhoto);
+    setCaptureError(null);
+    setCapturedFile(file);
+    setCapturedPhoto(URL.createObjectURL(file));
+    event.target.value = "";
+  };
+
+  const handleRetake = () => {
+    if (capturedPhoto) URL.revokeObjectURL(capturedPhoto);
+    setCameraState("starting");
+    setCameraError(null);
+    setCapturedFile(null);
+    setCapturedPhoto(null);
+    setCaptureError(null);
+    setStep("camera");
+  };
+
+  const handleDetailsSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
-    setError("");
+    setFormError(null);
 
     if (mode === "account") {
       if (!accountSchoolId.trim()) {
-        setError("Enter the School ID.");
+        setFormError("Enter the School ID.");
         return;
       }
       if (lookupState !== "found" || !matchedUserId) {
-        setError(
+        setFormError(
           'No registered account found for this School ID. Use "No Account" instead.',
         );
         return;
       }
     } else if (fullName.trim().length < 2) {
-      setError("Enter the finder's full name.");
+      setFormError("Enter the finder's full name.");
       return;
     }
 
@@ -138,41 +304,44 @@ export function WalkInReturnModal({
       !dateFound ||
       !timeFound
     ) {
-      setError(
-        "Enter what the item is, important details, location found, date found, and approximate time found.",
+      setFormError(
+        "Enter a title, important details, location found, date found, and approximate time found to continue.",
       );
       return;
     }
 
     const trimmedInstructions = approvalInstructions.trim();
     if (!trimmedInstructions) {
-      setError("Enter pickup instructions for the owner.");
+      setFormError("Enter pickup instructions for the owner.");
       return;
     }
 
-    const commonPayload = {
-      itemId,
-      claimantTitle: claimantTitle.trim(),
-      color: color.trim() || undefined,
-      building: building.trim() || undefined,
-      dateLost: dateFound,
-      timeLost: timeFound,
-      location: location.trim(),
-      details: details.trim(),
-      importantDetails: importantDetails.trim(),
-      approvalInstructions: trimmedInstructions,
-    };
-
+    setIsSubmitting(true);
     try {
+      const evidence = capturedFile
+        ? [await uploadImage(capturedFile, "found-item.jpg")]
+        : [];
+
+      const commonPayload = {
+        itemId,
+        claimantTitle: claimantTitle.trim(),
+        color: color.trim() || undefined,
+        building: building.trim() || undefined,
+        dateLost: dateFound,
+        timeLost: timeFound,
+        location: location.trim(),
+        details: description.trim(),
+        importantDetails: importantDetails.trim(),
+        evidence,
+        approvalInstructions: trimmedInstructions,
+      };
+
       if (mode === "account") {
         await createWalkInReturn.mutateAsync({
           ...commonPayload,
           mode: "account",
           userId: matchedUserId!,
         });
-        toast.success(
-          "Walk-in return recorded. Owner notified with Pickup QR Pass.",
-        );
       } else {
         await createWalkInReturn.mutateAsync({
           ...commonPayload,
@@ -181,17 +350,33 @@ export function WalkInReturnModal({
           schoolId: schoolId.trim() || undefined,
           contact: contact.trim() || undefined,
         });
-        toast.success(
-          `Walk-in return from ${fullName.trim()} recorded. Owner notified with Pickup QR Pass.`,
-        );
       }
-      onSuccess();
-    } catch (err) {
-      const msg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message;
-      setError(msg || "Could not record walk-in return. Please try again.");
+      toast.success("Walk-in return recorded.");
+      setStep("confirmation");
+    } catch (error) {
+      const data = (
+        error as {
+          response?: {
+            data?: { message?: string; errors?: { message?: string }[] };
+          };
+        }
+      )?.response?.data;
+      setFormError(
+        data?.errors?.[0]?.message ??
+          data?.message ??
+          "We couldn't record the walk-in return. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const title =
+    step === "camera"
+      ? "Photograph the found item"
+      : step === "details"
+        ? "Describe the item found"
+        : "Walk-In Return Recorded";
 
   return (
     <dialog
@@ -199,414 +384,606 @@ export function WalkInReturnModal({
       aria-modal="true"
       aria-labelledby="walkin-return-title"
       onCancel={(event) => {
-        if (createWalkInReturn.isPending) {
+        if (busy) {
           event.preventDefault();
           return;
         }
-        onClose();
-      }}
-      onClose={onClose}
-      onClick={(event) => {
-        if (
-          event.target === event.currentTarget &&
-          !createWalkInReturn.isPending
-        ) {
+        if (step === "confirmation") {
+          onSuccess();
+        } else {
           onClose();
         }
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 text-left text-neutral-900 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-xs dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+      onClose={() => {
+        if (step === "confirmation") {
+          onSuccess();
+        } else {
+          onClose();
+        }
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !busy) {
+          if (step === "confirmation") {
+            onSuccess();
+          } else {
+            onClose();
+          }
+        }
+      }}
+      className="m-auto w-[calc(100%-2rem)] max-w-2xl overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-0 text-left text-neutral-900 dark:text-neutral-100 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-xs"
     >
-      <div className="flex items-start justify-between gap-3 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
+      <header
+        className={`flex items-center justify-between gap-4 px-5 sm:px-6 ${
+          step === "confirmation"
+            ? "pt-5 pb-0"
+            : "border-b border-neutral-200 py-4 dark:border-neutral-800"
+        }`}
+      >
         <div className="min-w-0">
           <h2
             id="walkin-return-title"
             className="text-base font-bold text-neutral-900 dark:text-neutral-100"
           >
-            Record Walk-In Return
+            {title}
           </h2>
-          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-            {itemTitle}
-          </p>
+          {step === "camera" && (
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+              Take a photo of the item.
+            </p>
+          )}
         </div>
         <button
           type="button"
-          onClick={onClose}
-          disabled={createWalkInReturn.isPending}
-          aria-label="Close"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+          onClick={() => (step === "confirmation" ? onSuccess() : onClose())}
+          disabled={busy}
+          aria-label="Close walk-in return flow"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 dark:text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
-      </div>
+      </header>
 
-      <form
-        onSubmit={handleSubmit}
-        className="max-h-[82vh] space-y-4 overflow-y-auto px-5 py-4"
-      >
-        <p className="rounded-lg border border-emerald-200/80 bg-emerald-50/70 px-3 py-2 text-[11px] leading-relaxed text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-          The item will be marked as <strong>Received by OSA</strong> and{" "}
-          <strong>Approved</strong> immediately, sending the owner a Pickup QR
-          Pass.
-        </p>
-
-        {/* Mode segmented control */}
-        <div
-          role="tablist"
-          aria-label="Finder account type"
-          className="grid grid-cols-2 gap-1 rounded-xl bg-neutral-100 p-1 dark:bg-neutral-800"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "account"}
-            onClick={() => {
-              setMode("account");
-              setError("");
-            }}
-            className={`rounded-lg py-2 text-xs font-semibold transition-colors ${
-              mode === "account"
-                ? "bg-white text-neutral-900 shadow-xs dark:bg-neutral-900 dark:text-neutral-100"
-                : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
-            }`}
-          >
-            Has Account
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "guest"}
-            onClick={() => {
-              setMode("guest");
-              setError("");
-            }}
-            className={`rounded-lg py-2 text-xs font-semibold transition-colors ${
-              mode === "guest"
-                ? "bg-white text-neutral-900 shadow-xs dark:bg-neutral-900 dark:text-neutral-100"
-                : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
-            }`}
-          >
-            No Account
-          </button>
-        </div>
-
-        {/* Finder Identity */}
-        {mode === "account" ? (
-          <div className="space-y-2">
-            <label htmlFor="walkin-return-school-id" className={labelClass}>
-              School ID <span className="text-[#E5192D]">*</span>
-            </label>
-            <input
-              id="walkin-return-school-id"
-              type="text"
-              value={accountSchoolId}
-              onChange={(event) => {
-                const value = event.target.value;
-                setAccountSchoolId(value);
-                setError("");
-                if (!value.trim()) {
-                  setLookupState("idle");
-                  setMatchedUserId(null);
-                } else {
-                  setLookupState("checking");
-                  setMatchedUserId(null);
-                }
-              }}
-              placeholder="e.g. 2021-00318"
-              autoComplete="off"
-              className={inputClass}
-            />
-            {lookupState === "checking" && (
-              <p className="flex items-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400">
-                <Loader2
-                  className="h-3.5 w-3.5 animate-spin"
-                  aria-hidden="true"
-                />
-                Checking School ID…
-              </p>
-            )}
-            {lookupState === "found" && (
-              <p className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                Registered school user account found.
-              </p>
-            )}
-            {lookupState === "not_found" && (
-              <p className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
-                <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                No active account matches this School ID. Switch to &ldquo;No
-                Account&rdquo; to continue.
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div>
-              <label htmlFor="walkin-return-guest-name" className={labelClass}>
-                Full Name <span className="text-[#E5192D]">*</span>
-              </label>
+      {step === "camera" && (
+        <div className="space-y-4 p-5 sm:p-6">
+          {isMobileView ? (
+            <>
               <input
-                id="walkin-return-guest-name"
-                type="text"
-                value={fullName}
-                onChange={(event) => {
-                  setFullName(event.target.value);
-                  setError("");
-                }}
-                placeholder="e.g. Juan Dela Cruz"
-                className={inputClass}
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleNativeFileChange}
+                className="sr-only"
+                aria-label="Take a photo with your camera"
+                tabIndex={-1}
               />
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label htmlFor="walkin-return-guest-id" className={labelClass}>
-                  School ID{" "}
-                  <span className="font-normal text-neutral-400">
-                    (optional)
-                  </span>
-                </label>
-                <input
-                  id="walkin-return-guest-id"
-                  type="text"
-                  value={schoolId}
-                  onChange={(event) => setSchoolId(event.target.value)}
-                  placeholder="e.g. 2022-01420"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="walkin-return-guest-contact"
-                  className={labelClass}
+              {capturedPhoto ? (
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-neutral-950">
+                  <img
+                    src={capturedPhoto}
+                    alt="Captured photo of the found item"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-3 text-center transition-colors hover:border-neutral-400 hover:bg-neutral-100/60 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 cursor-pointer"
                 >
-                  Contact{" "}
-                  <span className="font-normal text-neutral-400">
-                    (optional)
+                  <Camera
+                    className="h-6 w-6 text-neutral-300"
+                    aria-hidden="true"
+                  />
+                  <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                    Take a photo
                   </span>
+                  <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                    Opens your camera
+                  </span>
+                </button>
+              )}
+
+              {captureError && (
+                <p
+                  role="alert"
+                  className="text-sm font-medium text-red-700 dark:text-red-400"
+                >
+                  {captureError}
+                </p>
+              )}
+
+              <div className="flex flex-wrap justify-end gap-2">
+                {capturedPhoto ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleRetake}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                    >
+                      <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                      Retake
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep("details")}
+                      className="inline-flex h-10 items-center rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                    >
+                      Continue
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-neutral-950">
+                {capturedPhoto ? (
+                  <img
+                    src={capturedPhoto}
+                    alt="Captured photo of the found item"
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    aria-label="Live camera preview"
+                    className={`h-full w-full object-cover ${
+                      cameraState === "error" ? "hidden" : ""
+                    }`}
+                  />
+                )}
+
+                {cameraState === "starting" && !capturedPhoto && (
+                  <div
+                    role="status"
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-neutral-950 text-sm font-medium text-white"
+                  >
+                    <Camera className="h-6 w-6" aria-hidden="true" />
+                    Starting camera…
+                  </div>
+                )}
+                {cameraState === "error" && !capturedPhoto && (
+                  <div
+                    role="alert"
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-neutral-950 px-6 text-center text-sm text-white"
+                  >
+                    <CameraOff
+                      className="h-7 w-7 text-neutral-300"
+                      aria-hidden="true"
+                    />
+                    <p>{cameraError}</p>
+                  </div>
+                )}
+              </div>
+
+              {captureError && (
+                <p
+                  role="alert"
+                  className="text-sm font-medium text-red-700 dark:text-red-400"
+                >
+                  {captureError}
+                </p>
+              )}
+
+              <div className="flex flex-wrap justify-end gap-2">
+                {capturedPhoto ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleRetake}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                    >
+                      <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                      Retake
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep("details")}
+                      className="inline-flex h-10 items-center rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2"
+                    >
+                      Continue
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleCapture}
+                    disabled={cameraState !== "ready"}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#E5192D] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-neutral-300"
+                  >
+                    <Camera className="h-4 w-4" aria-hidden="true" />
+                    Capture photo
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {step === "details" && (
+        <form
+          onSubmit={handleDetailsSubmit}
+          className="max-h-[80vh] space-y-5 overflow-y-auto p-5 sm:p-6"
+        >
+          <div className="min-w-0 space-y-5">
+            {/* Walk-In Finder Identity */}
+            <div className="space-y-3 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+              <div
+                role="tablist"
+                aria-label="Finder account type"
+                className="grid grid-cols-2 gap-1 rounded-xl bg-neutral-100 p-1 dark:bg-neutral-800"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === "account"}
+                  onClick={() => {
+                    setMode("account");
+                    setFormError(null);
+                  }}
+                  className={`rounded-lg py-2 text-xs font-semibold transition-colors ${
+                    mode === "account"
+                      ? "bg-white text-neutral-900 shadow-xs dark:bg-neutral-900 dark:text-neutral-100"
+                      : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  }`}
+                >
+                  Has Account
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === "guest"}
+                  onClick={() => {
+                    setMode("guest");
+                    setFormError(null);
+                  }}
+                  className={`rounded-lg py-2 text-xs font-semibold transition-colors ${
+                    mode === "guest"
+                      ? "bg-white text-neutral-900 shadow-xs dark:bg-neutral-900 dark:text-neutral-100"
+                      : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  }`}
+                >
+                  No Account
+                </button>
+              </div>
+
+              {mode === "account" ? (
+                <div className="space-y-2">
+                  <label htmlFor="walkin-return-school-id" className={labelClass}>
+                    School ID <span className="text-[#E5192D]" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="walkin-return-school-id"
+                    type="text"
+                    value={accountSchoolId}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setAccountSchoolId(value);
+                      setFormError(null);
+                      if (!value.trim()) {
+                        setLookupState("idle");
+                        setMatchedUserId(null);
+                      } else {
+                        setLookupState("checking");
+                        setMatchedUserId(null);
+                      }
+                    }}
+                    placeholder="e.g. 2021-00318"
+                    autoComplete="off"
+                    className={inputClass}
+                  />
+                  {lookupState === "checking" && (
+                    <p className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                      <Loader2
+                        className="h-3.5 w-3.5 animate-spin"
+                        aria-hidden="true"
+                      />
+                      Checking School ID…
+                    </p>
+                  )}
+                  {lookupState === "found" && (
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      Registered school user account found.
+                    </p>
+                  )}
+                  {lookupState === "not_found" && (
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                      No active account matches this School ID. Switch to &ldquo;No
+                      Account&rdquo; to continue.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label htmlFor="walkin-return-guest-name" className={labelClass}>
+                      Full Name <span className="text-[#E5192D]" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      id="walkin-return-guest-name"
+                      type="text"
+                      value={fullName}
+                      onChange={(event) => {
+                        setFullName(event.target.value);
+                        setFormError(null);
+                      }}
+                      placeholder="e.g. Juan Dela Cruz"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="walkin-return-guest-id" className={labelClass}>
+                        School ID{" "}
+                        <span className="font-normal text-neutral-400">(optional)</span>
+                      </label>
+                      <input
+                        id="walkin-return-guest-id"
+                        type="text"
+                        value={schoolId}
+                        onChange={(event) => setSchoolId(event.target.value)}
+                        placeholder="e.g. 2022-01420"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="walkin-return-guest-contact"
+                        className={labelClass}
+                      >
+                        Contact{" "}
+                        <span className="font-normal text-neutral-400">(optional)</span>
+                      </label>
+                      <input
+                        id="walkin-return-guest-contact"
+                        type="text"
+                        value={contact}
+                        onChange={(event) => setContact(event.target.value)}
+                        placeholder="Phone or email"
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="walkin-found-item-title" className={labelClass}>
+                What is it? <span className="text-[#E5192D]" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="walkin-found-item-title"
+                name="title"
+                type="text"
+                required
+                value={claimantTitle}
+                onChange={(event) => {
+                  setClaimantTitle(event.target.value);
+                  setFormError(null);
+                }}
+                placeholder="Black backpack, iPhone 13…"
+                autoComplete="off"
+                spellCheck={false}
+                className={inputClass}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="walkin-found-item-color" className={labelClass}>
+                  Primary color
                 </label>
                 <input
-                  id="walkin-return-guest-contact"
+                  id="walkin-found-item-color"
+                  name="color"
                   type="text"
-                  value={contact}
-                  onChange={(event) => setContact(event.target.value)}
-                  placeholder="Phone or email"
+                  value={color}
+                  onChange={(event) => {
+                    setColor(event.target.value);
+                    setFormError(null);
+                  }}
+                  placeholder="Black…"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="walkin-found-item-date" className={labelClass}>
+                  Date found <span className="text-[#E5192D]" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="walkin-found-item-date"
+                  name="dateFound"
+                  type="date"
+                  required
+                  value={dateFound}
+                  max={localTodayDate()}
+                  onChange={(event) => {
+                    setDateFound(event.target.value);
+                    setFormError(null);
+                  }}
+                  className={`${inputClass} dark:[color-scheme:dark]`}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="walkin-found-item-time" className={labelClass}>
+                  Approximate time found{" "}
+                  <span className="text-[#E5192D]" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="walkin-found-item-time"
+                  name="timeFound"
+                  type="time"
+                  required
+                  value={timeFound}
+                  onChange={(event) => {
+                    setTimeFound(event.target.value);
+                    setFormError(null);
+                  }}
+                  className={`${inputClass} dark:[color-scheme:dark]`}
+                />
+              </div>
+              <div>
+                <label htmlFor="walkin-found-item-location" className={labelClass}>
+                  Location found{" "}
+                  <span className="text-[#E5192D]" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="walkin-found-item-location"
+                  name="location"
+                  type="text"
+                  required
+                  value={location}
+                  onChange={(event) => {
+                    setLocation(event.target.value);
+                    setFormError(null);
+                  }}
+                  placeholder="Where did you find it?"
                   className={inputClass}
                 />
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Found Item Details (same fields as online return request, without photo) */}
-        <div className="space-y-3 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-          <div>
-            <label htmlFor="walkin-return-item-title" className={labelClass}>
-              What is it? <span className="text-[#E5192D]">*</span>
-            </label>
-            <input
-              id="walkin-return-item-title"
-              type="text"
-              required
-              maxLength={100}
-              value={claimantTitle}
-              onChange={(event) => {
-                setClaimantTitle(event.target.value);
-                setError("");
-              }}
-              placeholder="e.g. Black Casio Scientific Calculator"
-              className={inputClass}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label htmlFor="walkin-return-color" className={labelClass}>
-                Primary color{" "}
-                <span className="font-normal text-neutral-400">(optional)</span>
-              </label>
-              <input
-                id="walkin-return-color"
-                type="text"
-                maxLength={50}
-                value={color}
-                onChange={(event) => setColor(event.target.value)}
-                placeholder="e.g. Black, Navy Blue"
-                className={inputClass}
-              />
-            </div>
 
             <div>
-              <label htmlFor="walkin-return-building" className={labelClass}>
-                Building{" "}
-                <span className="font-normal text-neutral-400">(optional)</span>
+              <label htmlFor="walkin-found-item-building" className={labelClass}>
+                Building
               </label>
-              <select
-                id="walkin-return-building"
+              <SelectDropdown
+                id="walkin-found-item-building"
                 value={building}
-                onChange={(event) => setBuilding(event.target.value)}
+                onChange={setBuilding}
+                options={buildingOptions.map((buildingOption) => ({
+                  value: buildingOption,
+                  label: buildingOption,
+                }))}
+                placeholder="Select a building"
+                allowEmpty
                 className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="walkin-found-item-description" className={labelClass}>
+                Description
+              </label>
+              <textarea
+                id="walkin-found-item-description"
+                name="description"
+                rows={3}
+                value={description}
+                onChange={(event) => {
+                  setDescription(event.target.value);
+                  setFormError(null);
+                }}
+                placeholder="Describe the item's appearance"
+                className={`${inputClass} min-h-24 resize-y`}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="walkin-found-item-important-details"
+                className={labelClass}
               >
-                <option value="">Select a building</option>
-                {buildingOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label htmlFor="walkin-return-date" className={labelClass}>
-                Date found <span className="text-[#E5192D]">*</span>
+                Important details{" "}
+                <span className="text-[#E5192D]" aria-hidden="true">*</span>
               </label>
-              <input
-                id="walkin-return-date"
-                type="date"
+              <textarea
+                id="walkin-found-item-important-details"
+                name="importantDetails"
                 required
-                max={todayStr}
-                value={dateFound}
+                rows={3}
+                value={importantDetails}
                 onChange={(event) => {
-                  setDateFound(event.target.value);
-                  setError("");
+                  setImportantDetails(event.target.value);
+                  setFormError(null);
                 }}
-                className={inputClass}
+                placeholder="Unique mark only the owner would know…"
+                className={`${inputClass} min-h-24 resize-y`}
               />
             </div>
 
             <div>
-              <label htmlFor="walkin-return-time" className={labelClass}>
-                Approximate time found <span className="text-[#E5192D]">*</span>
+              <label htmlFor="walkin-return-instructions" className={labelClass}>
+                Pickup instructions for owner{" "}
+                <span className="text-[#E5192D]" aria-hidden="true">*</span>
               </label>
               <input
-                id="walkin-return-time"
-                type="time"
+                id="walkin-return-instructions"
+                type="text"
                 required
-                value={timeFound}
+                maxLength={500}
+                value={approvalInstructions}
                 onChange={(event) => {
-                  setTimeFound(event.target.value);
-                  setError("");
+                  setApprovalInstructions(event.target.value);
+                  setFormError(null);
                 }}
+                placeholder="e.g. Bring valid School ID to OSA Window 2, 8 AM–5 PM"
                 className={inputClass}
               />
             </div>
           </div>
 
-          <div>
-            <label htmlFor="walkin-return-location" className={labelClass}>
-              Location found <span className="text-[#E5192D]">*</span>
-            </label>
-            <input
-              id="walkin-return-location"
-              type="text"
-              required
-              maxLength={500}
-              value={location}
-              onChange={(event) => {
-                setLocation(event.target.value);
-                setError("");
-              }}
-              placeholder="e.g. Library 2nd floor study table"
-              className={inputClass}
-            />
-          </div>
+          {formError && (
+            <p
+              role="alert"
+              className="text-sm font-medium text-red-700 dark:text-red-400"
+            >
+              {formError}
+            </p>
+          )}
 
-          <div>
-            <label htmlFor="walkin-return-important" className={labelClass}>
-              Important details <span className="text-[#E5192D]">*</span>
-            </label>
-            <textarea
-              id="walkin-return-important"
-              rows={2}
-              required
-              maxLength={2000}
-              value={importantDetails}
-              onChange={(event) => {
-                setImportantDetails(event.target.value);
-                setError("");
-              }}
-              placeholder="Distinguishing marks, serial number, stickers, or contents…"
-              className={`${inputClass} resize-none`}
-            />
+          <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => setStep("camera")}
+              disabled={busy}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 text-sm font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Back
+            </button>
+            <button
+              type="submit"
+              disabled={busy || (mode === "account" && lookupState !== "found")}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#E5192D] px-5 text-sm font-bold text-white transition-colors hover:bg-[#c91424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+            >
+              {busy ? "Submitting..." : "Submit details"}
+            </button>
           </div>
+        </form>
+      )}
 
-          <div>
-            <label htmlFor="walkin-return-details" className={labelClass}>
-              Description{" "}
-              <span className="font-normal text-neutral-400">(optional)</span>
-            </label>
-            <textarea
-              id="walkin-return-details"
-              rows={2}
-              maxLength={2000}
-              value={details}
-              onChange={(event) => setDetails(event.target.value)}
-              placeholder="Any extra context about the item or how it was found…"
-              className={`${inputClass} resize-none`}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="walkin-return-instructions" className={labelClass}>
-              Pickup Instructions for Owner{" "}
-              <span className="text-[#E5192D]">*</span>
-            </label>
-            <input
-              id="walkin-return-instructions"
-              type="text"
-              required
-              value={approvalInstructions}
-              onChange={(event) => {
-                setApprovalInstructions(event.target.value);
-                setError("");
-              }}
-              placeholder="e.g. Bring valid School ID to OSA Window 2, 8 AM–5 PM"
-              maxLength={500}
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        {error && (
-          <p
-            role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300"
-          >
-            {error}
+      {step === "confirmation" && (
+        <div className="space-y-6 px-5 pt-2 pb-5 sm:px-6 sm:pb-6">
+          <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+            The item has been marked as received by OSA and approved. The owner
+            has been notified with their Pickup QR Pass.
           </p>
-        )}
 
-        <div className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={createWalkInReturn.isPending}
-            className="h-9 rounded-lg border border-neutral-200 px-3.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={
-              createWalkInReturn.isPending ||
-              (mode === "account" && lookupState !== "found")
-            }
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {createWalkInReturn.isPending ? (
-              <>
-                <Loader2
-                  className="h-3.5 w-3.5 animate-spin"
-                  aria-hidden="true"
-                />
-                Recording…
-              </>
-            ) : (
-              "Record Walk-In Return"
-            )}
-          </button>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={onSuccess}
+              className="inline-flex h-10 items-center rounded-xl bg-[#E5192D] px-5 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 cursor-pointer"
+            >
+              Done
+            </button>
+          </div>
         </div>
-      </form>
+      )}
     </dialog>
   );
 }
