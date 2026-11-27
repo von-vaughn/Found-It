@@ -1497,27 +1497,30 @@ export class WalkInReturnError extends Error {
   }
 }
 
+type WalkInReturnCommonFields = {
+  itemId: string;
+  claimantTitle: string;
+  color?: string;
+  building?: string;
+  dateLost: string;
+  timeLost: string;
+  location: string;
+  details: string;
+  importantDetails: string;
+  approvalInstructions: string;
+};
+
 export type CreateWalkInReturnRepoInput =
-  | {
-      itemId: string;
+  | (WalkInReturnCommonFields & {
       mode: "account";
       userId: string;
-      locationFound?: string;
-      details?: string;
-      evidence?: string[];
-      approvalInstructions: string;
-    }
-  | {
-      itemId: string;
+    })
+  | (WalkInReturnCommonFields & {
       mode: "guest";
       fullName: string;
       schoolId?: string;
       contact?: string;
-      locationFound?: string;
-      details?: string;
-      evidence?: string[];
-      approvalInstructions: string;
-    };
+    });
 
 /**
  * Records a walk-in return at the OSA desk for a Lost item.
@@ -1620,22 +1623,24 @@ export async function createWalkInReturn(
       );
     }
 
-    const trimmedLocation = input.locationFound?.trim() || null;
-    const trimmedDetails =
-      input.details?.trim() || "Walk-in return received and verified at OSA desk.";
-    const trimmedInstructions = input.approvalInstructions?.trim() || null;
-    const serializedEvidence =
-      input.evidence && input.evidence.length > 0
-        ? JSON.stringify(input.evidence)
-        : null;
+    const trimmedInstructions = input.approvalInstructions.trim();
 
     const { rows: insertedRows } = await client.query<{ id: string }>(
       `INSERT INTO request (
          item_id, user_id, kind, status,
          received_by_osa, is_walkin,
          walkin_name, walkin_school_id, walkin_contact,
-         location_lost, details, evidence, approval_instructions
-       ) VALUES ($1, $2, 'return', 'approved', TRUE, TRUE, $3, $4, $5, $6, $7, $8, $9)
+         claimant_title, primary_color, building,
+         date_lost, time_lost, location_lost,
+         details, important_details, approval_instructions
+       ) VALUES (
+         $1, $2, 'return', 'approved',
+         TRUE, TRUE,
+         $3, $4, $5,
+         $6, $7, $8,
+         $9, $10, $11,
+         $12, $13, $14
+       )
        RETURNING id`,
       [
         input.itemId,
@@ -1643,9 +1648,14 @@ export async function createWalkInReturn(
         input.mode === "guest" ? input.fullName.trim() : null,
         input.mode === "guest" ? (input.schoolId?.trim() || null) : null,
         input.mode === "guest" ? (input.contact?.trim() || null) : null,
-        trimmedLocation,
-        trimmedDetails,
-        serializedEvidence,
+        input.claimantTitle.trim(),
+        input.color?.trim() || null,
+        input.building?.trim() || null,
+        input.dateLost,
+        input.timeLost,
+        input.location.trim(),
+        input.details.trim(),
+        input.importantDetails.trim(),
         trimmedInstructions,
       ],
     );

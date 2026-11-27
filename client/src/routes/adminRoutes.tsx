@@ -7,6 +7,7 @@ import { AdminCreatePostPage } from "@/pages/admin/AdminCreatePostPage";
 import { ClaimsPage } from "@/pages/admin/ClaimsPage";
 import { ClaimDetailPage } from "@/pages/admin/ClaimDetailPage";
 import { ReturnItemDetailPage } from "@/pages/admin/ReturnItemDetailPage";
+import { WalkInPage } from "@/pages/admin/WalkInPage";
 import { UsersPage } from "@/pages/admin/UsersPage";
 import { AuditLogsPage } from "@/pages/admin/AuditLogsPage";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -48,6 +49,10 @@ export function getAdminRoutes(): RouteObject[] {
     {
       path: paths.adminReturnDetail,
       element: <ReturnItemDetailPage />,
+    },
+    {
+      path: paths.adminWalkIn,
+      element: <WalkInPage />,
     },
     {
       // User management is admin only; staff bounce back to the dashboard.

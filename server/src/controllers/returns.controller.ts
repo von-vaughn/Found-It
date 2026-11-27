@@ -495,9 +495,19 @@ export async function submitWalkInReturn(
     return;
   }
 
-  if (parsed.data.evidence?.some((url) => !isTrustedImageUrl(url))) {
+  const timing = await findItemEventTiming(parsed.data.itemId);
+  if (
+    timing &&
+    isLostAfterFound(
+      timing.itemDate,
+      timing.itemTime,
+      parsed.data.dateLost,
+      parsed.data.timeLost,
+    )
+  ) {
     res.status(400).json({
-      message: "Evidence images must be uploaded through FoundIt.",
+      message:
+        "The date and time found cannot be earlier than when the item was reported lost.",
     });
     return;
   }

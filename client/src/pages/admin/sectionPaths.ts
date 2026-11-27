@@ -7,6 +7,7 @@ export const adminSectionPaths: Record<AdminSection, string> = {
   post: paths.adminItemsNew,
   reported: paths.adminReported,
   claims: paths.adminClaims,
+  walkin: paths.adminWalkIn,
   users: paths.adminUsers,
   audit: paths.adminAudit,
 };

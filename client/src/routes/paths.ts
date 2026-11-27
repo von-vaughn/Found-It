@@ -21,6 +21,7 @@ export const paths = {
   adminClaimDetail: "/admin/claims/:claimId",
   adminReturns: "/admin/returns",
   adminReturnDetail: "/admin/returns/:returnId",
+  adminWalkIn: "/admin/walk-in",
   adminUsers: "/admin/users",
   adminFilterOptions: "/admin/filter-options",
   adminAudit: "/admin/audit",

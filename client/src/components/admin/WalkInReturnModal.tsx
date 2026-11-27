@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, X } from "lucide-react";
 import toast from "react-hot-toast";
-import { checkSchoolUserBySchoolId } from "@/services/claimService";
+import { ITEM_BUILDINGS } from "@/data/itemBuildings";
+import { useBuildings } from "@/hooks/useBuildings";
 import { useCreateWalkInReturn } from "@/hooks/useReturns";
+import { checkSchoolUserBySchoolId } from "@/services/claimService";
 
 interface WalkInReturnModalProps {
   open: boolean;
@@ -14,6 +16,20 @@ interface WalkInReturnModalProps {
 
 type WalkInMode = "account" | "guest";
 type LookupState = "idle" | "checking" | "found" | "not_found";
+
+const inputClass =
+  "mt-1 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800";
+
+const labelClass =
+  "block text-xs font-semibold text-neutral-700 dark:text-neutral-300";
+
+function getTodayDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export function WalkInReturnModal({
   open,
@@ -30,12 +46,25 @@ export function WalkInReturnModal({
   const [fullName, setFullName] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [contact, setContact] = useState("");
-  const [locationFound, setLocationFound] = useState("");
+
+  // Online Return Request matching fields (without photo)
+  const [claimantTitle, setClaimantTitle] = useState("");
+  const [color, setColor] = useState("");
+  const [building, setBuilding] = useState("");
+  const [dateFound, setDateFound] = useState(getTodayDateString);
+  const [timeFound, setTimeFound] = useState("");
+  const [location, setLocation] = useState("");
+  const [details, setDetails] = useState("");
+  const [importantDetails, setImportantDetails] = useState("");
   const [approvalInstructions, setApprovalInstructions] = useState("");
   const [error, setError] = useState("");
 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const createWalkInReturn = useCreateWalkInReturn();
+  const { data: buildings } = useBuildings();
+  const buildingOptions =
+    buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
+  const todayStr = getTodayDateString();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -86,6 +115,35 @@ export function WalkInReturnModal({
     event.preventDefault();
     setError("");
 
+    if (mode === "account") {
+      if (!accountSchoolId.trim()) {
+        setError("Enter the School ID.");
+        return;
+      }
+      if (lookupState !== "found" || !matchedUserId) {
+        setError(
+          'No registered account found for this School ID. Use "No Account" instead.',
+        );
+        return;
+      }
+    } else if (fullName.trim().length < 2) {
+      setError("Enter the finder's full name.");
+      return;
+    }
+
+    if (
+      !claimantTitle.trim() ||
+      !importantDetails.trim() ||
+      !location.trim() ||
+      !dateFound ||
+      !timeFound
+    ) {
+      setError(
+        "Enter what the item is, important details, location found, date found, and approximate time found.",
+      );
+      return;
+    }
+
     const trimmedInstructions = approvalInstructions.trim();
     if (!trimmedInstructions) {
       setError("Enter pickup instructions for the owner.");
@@ -93,57 +151,40 @@ export function WalkInReturnModal({
     }
 
     const commonPayload = {
-      locationFound: locationFound.trim() || undefined,
+      itemId,
+      claimantTitle: claimantTitle.trim(),
+      color: color.trim() || undefined,
+      building: building.trim() || undefined,
+      dateLost: dateFound,
+      timeLost: timeFound,
+      location: location.trim(),
+      details: details.trim(),
+      importantDetails: importantDetails.trim(),
       approvalInstructions: trimmedInstructions,
     };
 
-    if (mode === "account") {
-      if (!accountSchoolId.trim()) {
-        setError("Enter the finder's School ID.");
-        return;
-      }
-      if (lookupState !== "found" || !matchedUserId) {
-        setError(
-          'No registered account found for this School ID. Use "No account" instead.',
-        );
-        return;
-      }
-      try {
+    try {
+      if (mode === "account") {
         await createWalkInReturn.mutateAsync({
-          itemId,
-          mode: "account",
-          userId: matchedUserId,
           ...commonPayload,
+          mode: "account",
+          userId: matchedUserId!,
         });
         toast.success(
           "Walk-in return recorded. Owner notified with Pickup QR Pass.",
         );
-        onSuccess();
-      } catch (err) {
-        const msg = (err as { response?: { data?: { message?: string } } })
-          ?.response?.data?.message;
-        setError(msg || "Could not record walk-in return. Please try again.");
+      } else {
+        await createWalkInReturn.mutateAsync({
+          ...commonPayload,
+          mode: "guest",
+          fullName: fullName.trim(),
+          schoolId: schoolId.trim() || undefined,
+          contact: contact.trim() || undefined,
+        });
+        toast.success(
+          `Walk-in return from ${fullName.trim()} recorded. Owner notified with Pickup QR Pass.`,
+        );
       }
-      return;
-    }
-
-    if (fullName.trim().length < 2) {
-      setError("Enter the finder's full name.");
-      return;
-    }
-
-    try {
-      await createWalkInReturn.mutateAsync({
-        itemId,
-        mode: "guest",
-        fullName: fullName.trim(),
-        schoolId: schoolId.trim() || undefined,
-        contact: contact.trim() || undefined,
-        ...commonPayload,
-      });
-      toast.success(
-        `Walk-in return from ${fullName.trim()} recorded. Owner notified with Pickup QR Pass.`,
-      );
       onSuccess();
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })
@@ -173,7 +214,7 @@ export function WalkInReturnModal({
           onClose();
         }
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 text-left text-neutral-900 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-xs dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+      className="m-auto w-[calc(100%-2rem)] max-w-lg overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 text-left text-neutral-900 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-xs dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
     >
       <div className="flex items-start justify-between gap-3 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
         <div className="min-w-0">
@@ -200,7 +241,7 @@ export function WalkInReturnModal({
 
       <form
         onSubmit={handleSubmit}
-        className="max-h-[80vh] space-y-4 overflow-y-auto px-5 py-4"
+        className="max-h-[82vh] space-y-4 overflow-y-auto px-5 py-4"
       >
         <p className="rounded-lg border border-emerald-200/80 bg-emerald-50/70 px-3 py-2 text-[11px] leading-relaxed text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
           The item will be marked as <strong>Received by OSA</strong> and{" "}
@@ -248,12 +289,10 @@ export function WalkInReturnModal({
           </button>
         </div>
 
+        {/* Finder Identity */}
         {mode === "account" ? (
           <div className="space-y-2">
-            <label
-              htmlFor="walkin-return-school-id"
-              className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
-            >
+            <label htmlFor="walkin-return-school-id" className={labelClass}>
               School ID <span className="text-[#E5192D]">*</span>
             </label>
             <input
@@ -274,7 +313,7 @@ export function WalkInReturnModal({
               }}
               placeholder="e.g. 2021-00318"
               autoComplete="off"
-              className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
+              className={inputClass}
             />
             {lookupState === "checking" && (
               <p className="flex items-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400">
@@ -302,10 +341,7 @@ export function WalkInReturnModal({
         ) : (
           <div className="space-y-3">
             <div>
-              <label
-                htmlFor="walkin-return-guest-name"
-                className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
-              >
+              <label htmlFor="walkin-return-guest-name" className={labelClass}>
                 Full Name <span className="text-[#E5192D]">*</span>
               </label>
               <input
@@ -317,17 +353,16 @@ export function WalkInReturnModal({
                   setError("");
                 }}
                 placeholder="e.g. Juan Dela Cruz"
-                className="mt-1 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
+                className={inputClass}
               />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label
-                  htmlFor="walkin-return-guest-id"
-                  className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
-                >
+                <label htmlFor="walkin-return-guest-id" className={labelClass}>
                   School ID{" "}
-                  <span className="font-normal text-neutral-400">(optional)</span>
+                  <span className="font-normal text-neutral-400">
+                    (optional)
+                  </span>
                 </label>
                 <input
                   id="walkin-return-guest-id"
@@ -335,16 +370,18 @@ export function WalkInReturnModal({
                   value={schoolId}
                   onChange={(event) => setSchoolId(event.target.value)}
                   placeholder="e.g. 2022-01420"
-                  className="mt-1 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
+                  className={inputClass}
                 />
               </div>
               <div>
                 <label
                   htmlFor="walkin-return-guest-contact"
-                  className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                  className={labelClass}
                 >
                   Contact{" "}
-                  <span className="font-normal text-neutral-400">(optional)</span>
+                  <span className="font-normal text-neutral-400">
+                    (optional)
+                  </span>
                 </label>
                 <input
                   id="walkin-return-guest-contact"
@@ -352,39 +389,165 @@ export function WalkInReturnModal({
                   value={contact}
                   onChange={(event) => setContact(event.target.value)}
                   placeholder="Phone or email"
-                  className="mt-1 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
+                  className={inputClass}
                 />
               </div>
             </div>
           </div>
         )}
 
-        {/* Optional return & pickup context */}
+        {/* Found Item Details (same fields as online return request, without photo) */}
         <div className="space-y-3 border-t border-neutral-100 pt-3 dark:border-neutral-800">
           <div>
-            <label
-              htmlFor="walkin-return-location"
-              className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
-            >
-              Where Found{" "}
-              <span className="font-normal text-neutral-400">(optional)</span>
+            <label htmlFor="walkin-return-item-title" className={labelClass}>
+              What is it? <span className="text-[#E5192D]">*</span>
+            </label>
+            <input
+              id="walkin-return-item-title"
+              type="text"
+              required
+              maxLength={100}
+              value={claimantTitle}
+              onChange={(event) => {
+                setClaimantTitle(event.target.value);
+                setError("");
+              }}
+              placeholder="e.g. Black Casio Scientific Calculator"
+              className={inputClass}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="walkin-return-color" className={labelClass}>
+                Primary color{" "}
+                <span className="font-normal text-neutral-400">(optional)</span>
+              </label>
+              <input
+                id="walkin-return-color"
+                type="text"
+                maxLength={50}
+                value={color}
+                onChange={(event) => setColor(event.target.value)}
+                placeholder="e.g. Black, Navy Blue"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="walkin-return-building" className={labelClass}>
+                Building{" "}
+                <span className="font-normal text-neutral-400">(optional)</span>
+              </label>
+              <select
+                id="walkin-return-building"
+                value={building}
+                onChange={(event) => setBuilding(event.target.value)}
+                className={inputClass}
+              >
+                <option value="">Select a building</option>
+                {buildingOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="walkin-return-date" className={labelClass}>
+                Date found <span className="text-[#E5192D]">*</span>
+              </label>
+              <input
+                id="walkin-return-date"
+                type="date"
+                required
+                max={todayStr}
+                value={dateFound}
+                onChange={(event) => {
+                  setDateFound(event.target.value);
+                  setError("");
+                }}
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="walkin-return-time" className={labelClass}>
+                Approximate time found <span className="text-[#E5192D]">*</span>
+              </label>
+              <input
+                id="walkin-return-time"
+                type="time"
+                required
+                value={timeFound}
+                onChange={(event) => {
+                  setTimeFound(event.target.value);
+                  setError("");
+                }}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="walkin-return-location" className={labelClass}>
+              Location found <span className="text-[#E5192D]">*</span>
             </label>
             <input
               id="walkin-return-location"
               type="text"
-              value={locationFound}
-              onChange={(event) => setLocationFound(event.target.value)}
+              required
+              maxLength={500}
+              value={location}
+              onChange={(event) => {
+                setLocation(event.target.value);
+                setError("");
+              }}
               placeholder="e.g. Library 2nd floor study table"
-              maxLength={200}
-              className="mt-1 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="walkin-return-instructions"
-              className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
-            >
+            <label htmlFor="walkin-return-important" className={labelClass}>
+              Important details <span className="text-[#E5192D]">*</span>
+            </label>
+            <textarea
+              id="walkin-return-important"
+              rows={2}
+              required
+              maxLength={2000}
+              value={importantDetails}
+              onChange={(event) => {
+                setImportantDetails(event.target.value);
+                setError("");
+              }}
+              placeholder="Distinguishing marks, serial number, stickers, or contents…"
+              className={`${inputClass} resize-none`}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="walkin-return-details" className={labelClass}>
+              Description{" "}
+              <span className="font-normal text-neutral-400">(optional)</span>
+            </label>
+            <textarea
+              id="walkin-return-details"
+              rows={2}
+              maxLength={2000}
+              value={details}
+              onChange={(event) => setDetails(event.target.value)}
+              placeholder="Any extra context about the item or how it was found…"
+              className={`${inputClass} resize-none`}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="walkin-return-instructions" className={labelClass}>
               Pickup Instructions for Owner{" "}
               <span className="text-[#E5192D]">*</span>
             </label>
@@ -399,7 +562,7 @@ export function WalkInReturnModal({
               }}
               placeholder="e.g. Bring valid School ID to OSA Window 2, 8 AM–5 PM"
               maxLength={500}
-              className="mt-1 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:bg-white focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
+              className={inputClass}
             />
           </div>
         </div>
@@ -432,7 +595,10 @@ export function WalkInReturnModal({
           >
             {createWalkInReturn.isPending ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                <Loader2
+                  className="h-3.5 w-3.5 animate-spin"
+                  aria-hidden="true"
+                />
                 Recording…
               </>
             ) : (

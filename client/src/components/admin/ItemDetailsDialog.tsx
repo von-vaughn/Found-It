@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useEffect, useRef, type RefObject } from "react";
 import {
   Flag,
-  HandHelping,
   Mail,
   Trash2,
   UserRound,
@@ -10,8 +9,6 @@ import {
 } from "lucide-react";
 import { OsaReceiptConfirmModal } from "./OsaReceiptConfirmModal";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
-import { WalkInClaimModal } from "./WalkInClaimModal";
-import { WalkInReturnModal } from "./WalkInReturnModal";
 import { NoItemImage } from "@/components/NoItemImage";
 import type { AdminReport } from "./types";
 import { resolveIdNumber } from "@/lib/idNumber";
@@ -68,8 +65,6 @@ export function ItemDetailsDialog({
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingOsaReceipt, setConfirmingOsaReceipt] = useState(false);
-  const [walkInOpen, setWalkInOpen] = useState(false);
-  const [walkInReturnOpen, setWalkInReturnOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [imageFailed, setImageFailed] = useState(false);
@@ -331,43 +326,8 @@ export function ItemDetailsDialog({
             </ul>
           </div>
         )}
-        {(onDelete ||
-          (report.type === "Found" && onOsaReceiptChange) ||
-          (report.type === "Lost" &&
-            report.status !== "Claimed" &&
-            report.status !== "Returned")) && (
+        {(onDelete || (report.type === "Found" && onOsaReceiptChange)) && (
           <div className="flex flex-wrap justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
-            {report.type === "Lost" &&
-              report.status !== "Claimed" &&
-              report.status !== "Returned" && (
-                <button
-                  type="button"
-                  title="Record a walk-in return at the OSA desk"
-                  onClick={() => setWalkInReturnOpen(true)}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
-                >
-                  <HandHelping className="h-3.5 w-3.5" aria-hidden="true" />
-                  Walk-in return
-                </button>
-              )}
-            {report.type === "Found" &&
-              report.status !== "Claimed" &&
-              report.status !== "Returned" && (
-                <button
-                  type="button"
-                  disabled={!report.receivedByOsa}
-                  title={
-                    !report.receivedByOsa
-                      ? "Mark the physical item as received by OSA before recording a walk-in claim."
-                      : "Record a walk-in claim at the OSA desk"
-                  }
-                  onClick={() => setWalkInOpen(true)}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  <HandHelping className="h-3.5 w-3.5" aria-hidden="true" />
-                  Walk-in claim
-                </button>
-              )}
             {report.type === "Found" && onOsaReceiptChange && (() => {
               const cannotRevokeOsa =
                 Boolean(report.receivedByOsa) &&
@@ -526,26 +486,6 @@ export function ItemDetailsDialog({
           }}
         />
       )}
-      <WalkInClaimModal
-        open={walkInOpen}
-        itemId={report.id}
-        itemTitle={report.title}
-        onClose={() => setWalkInOpen(false)}
-        onSuccess={() => {
-          setWalkInOpen(false);
-          onClose();
-        }}
-      />
-      <WalkInReturnModal
-        open={walkInReturnOpen}
-        itemId={report.id}
-        itemTitle={report.title}
-        onClose={() => setWalkInReturnOpen(false)}
-        onSuccess={() => {
-          setWalkInReturnOpen(false);
-          onClose();
-        }}
-      />
     </dialog>
   );
 }

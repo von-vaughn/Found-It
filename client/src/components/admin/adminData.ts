@@ -1,6 +1,7 @@
 import {
   BadgeCheck,
   Flag,
+  HandHelping,
   History,
   LayoutDashboard,
   PackageSearch,
@@ -78,6 +79,12 @@ export const navigation: AdminSidebarItem<AdminSection>[] = [
     icon: BadgeCheck,
   },
   {
+    id: "walkin",
+    label: "Walk-In",
+    compactLabel: "Walk-In",
+    icon: HandHelping,
+  },
+  {
     id: "reported",
     label: "Reported Items",
     compactLabel: "Reported",
@@ -128,6 +135,10 @@ export const pageCopy: Record<AdminSection, { title: string; description: string
     title: "Claims & Return Requests",
     description: "",
   },
+  walkin: {
+    title: "Walk-In Claims & Returns",
+    description: "",
+  },
   reported: {
     title: "Reported items",
     description: "",
@@ -152,6 +163,10 @@ export const adminPageCopy: Partial<
   },
   claims: {
     title: "Claims & Return Requests",
+    description: "",
+  },
+  walkin: {
+    title: "Walk-In Claims & Returns",
     description: "",
   },
   reported: {

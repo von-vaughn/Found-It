@@ -1758,13 +1758,25 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const foundItemId = foundRes.data.item.id;
     createdItemIds.push(foundItemId);
 
+    const baseReturnFields = {
+      claimantTitle: 'Black Casio Scientific Calculator',
+      color: 'Black',
+      building: 'Library',
+      dateLost: today,
+      timeLost: '11:00',
+      location: 'Library 2nd floor',
+      details: 'Found near study cubicles',
+      importantDetails: 'Initials J.D. scratched on back cover',
+      approvalInstructions: 'Claim at OSA Window 1.',
+    };
+
     const wrongTypeRes = await api('POST', '/api/returns/admin/walk-in', {
       token: staffAuth.token,
       body: {
+        ...baseReturnFields,
         itemId: foundItemId,
         mode: 'guest',
         fullName: 'Walk In Finder',
-        approvalInstructions: 'Claim at OSA Window 1.',
       },
     });
     assert.equal(wrongTypeRes.status, 409);
@@ -1790,18 +1802,33 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const selfReturnRes = await api('POST', '/api/returns/admin/walk-in', {
       token: staffAuth.token,
       body: {
+        ...baseReturnFields,
         itemId: lost1Id,
         mode: 'account',
         userId: ownerAuth.user.id,
-        approvalInstructions: 'Claim at OSA Window 1.',
       },
     });
     assert.equal(selfReturnRes.status, 400);
+
+    // Found time earlier than lost time MUST be rejected (400)
+    const earlierTimeRes = await api('POST', '/api/returns/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        ...baseReturnFields,
+        itemId: lost1Id,
+        mode: 'account',
+        userId: finderAuth.user.id,
+        timeLost: '08:00',
+      },
+    });
+    assert.equal(earlierTimeRes.status, 400);
 
     // Missing pickup instructions MUST be rejected (400)
     const missingInstructionsRes = await api('POST', '/api/returns/admin/walk-in', {
       token: staffAuth.token,
       body: {
+        ...baseReturnFields,
+        approvalInstructions: '',
         itemId: lost1Id,
         mode: 'account',
         userId: finderAuth.user.id,
@@ -1816,16 +1843,19 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
         status: string;
         isWalkIn?: boolean;
         receivedByOsa?: boolean;
+        claimantTitle?: string | null;
+        color?: string | null;
+        building?: string | null;
+        importantDetails?: string | null;
         approvalInstructions?: string | null;
       };
     }>('POST', '/api/returns/admin/walk-in', {
       token: staffAuth.token,
       body: {
+        ...baseReturnFields,
         itemId: lost1Id,
         mode: 'account',
         userId: finderAuth.user.id,
-        locationFound: 'Library 2nd floor',
-        details: 'Found near study cubicles',
         approvalInstructions: 'Bring School ID to OSA desk.',
       },
     });
@@ -1833,6 +1863,16 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(accountReturnRes.data.returnRequest.status, 'approved');
     assert.equal(accountReturnRes.data.returnRequest.isWalkIn, true);
     assert.equal(accountReturnRes.data.returnRequest.receivedByOsa, true);
+    assert.equal(
+      accountReturnRes.data.returnRequest.claimantTitle,
+      'Black Casio Scientific Calculator',
+    );
+    assert.equal(accountReturnRes.data.returnRequest.color, 'Black');
+    assert.equal(accountReturnRes.data.returnRequest.building, 'Library');
+    assert.equal(
+      accountReturnRes.data.returnRequest.importantDetails,
+      'Initials J.D. scratched on back cover',
+    );
     assert.equal(
       accountReturnRes.data.returnRequest.approvalInstructions,
       'Bring School ID to OSA desk.',
@@ -1842,10 +1882,10 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const duplicateReturnRes = await api('POST', '/api/returns/admin/walk-in', {
       token: staffAuth.token,
       body: {
+        ...baseReturnFields,
         itemId: lost1Id,
         mode: 'guest',
         fullName: 'Second Finder',
-        approvalInstructions: 'Claim at OSA Window 1.',
       },
     });
     assert.equal(duplicateReturnRes.status, 409);
@@ -1892,12 +1932,16 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     }>('POST', '/api/returns/admin/walk-in', {
       token: staffAuth.token,
       body: {
+        ...baseReturnFields,
+        claimantTitle: 'Blue Insulated Tumbler',
+        color: 'Blue',
+        location: 'Canteen table 4',
+        importantDetails: 'Small dent near the cap',
         itemId: lost2Id,
         mode: 'guest',
         fullName: 'Maria Santos',
         schoolId: '2024-88991',
         contact: '09171234567',
-        locationFound: 'Canteen table 4',
         approvalInstructions: 'Claim at OSA desk between 8 AM and 5 PM.',
       },
     });

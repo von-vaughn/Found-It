@@ -6,6 +6,7 @@ export type AdminSection =
   | "post"
   | "reported"
   | "claims"
+  | "walkin"
   | "users"
   | "audit";
 

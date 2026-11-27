@@ -22,27 +22,30 @@ export interface PublishReturnResponse {
 
 export type UpdateReturnPayload = Omit<CreateReturnPayload, "itemId">;
 
+type WalkInReturnCommonPayload = {
+  itemId: string;
+  claimantTitle: string;
+  color?: string;
+  building?: string;
+  dateLost: string;
+  timeLost: string;
+  location: string;
+  details: string;
+  importantDetails: string;
+  approvalInstructions: string;
+};
+
 export type CreateWalkInReturnPayload =
-  | {
-      itemId: string;
+  | (WalkInReturnCommonPayload & {
       mode: "account";
       userId: string;
-      locationFound?: string;
-      details?: string;
-      evidence?: string[];
-      approvalInstructions: string;
-    }
-  | {
-      itemId: string;
+    })
+  | (WalkInReturnCommonPayload & {
       mode: "guest";
       fullName: string;
       schoolId?: string;
       contact?: string;
-      locationFound?: string;
-      details?: string;
-      evidence?: string[];
-      approvalInstructions: string;
-    };
+    });
 
 interface CreateReturnResponse {
   message: string;
