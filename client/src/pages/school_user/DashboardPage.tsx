@@ -1,4 +1,5 @@
-import { useItems } from "@/hooks/useItems";
+import { useInfiniteItems } from "@/hooks/useItems";
+import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { formatCategoryLabel, useCategories } from "@/hooks/useCategories";
 import { toClientItems } from "@/lib/itemAdapter";
 import React, {
@@ -41,15 +42,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 }) => {
   // Only backend items are rendered; example JSON must never reach the grid.
   // Until the query settles, the skeleton below stands in for the feed.
-  const { data: serverItems, isLoading: isItemsLoading } = useItems(
-    undefined,
-    {
-      staleTime: 30_000,
-      retry: 1,
-    },
-  );
-  const apiItems = serverItems ? toClientItems(serverItems) : null;
-  const items = apiItems ?? EMPTY_ITEMS;
+  const {
+    items: serverItems,
+    isLoading: isItemsLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteItems(undefined, 24);
+  const items = serverItems.length > 0 ? toClientItems(serverItems) : EMPTY_ITEMS;
 
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -391,9 +391,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             // Key includes the result-shaping state and data identity so
             // newly published cards remount instead of inheriting the
             // one-shot animation's finished hidden state.
+            <>
             <StaggerGrid
               key={`${activeNavTab}-${selectedCategory}-${JSON.stringify(filters)}-${filteredItems.length}-${filteredItems[0]?.id ?? ""}`}
-              className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @5xl:grid-cols-4 gap-6 pb-12"
+              className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @5xl:grid-cols-4 gap-6 pb-6"
             >
               {filteredItems.map((item) => (
                 <StaggerItem
@@ -409,6 +410,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </StaggerItem>
               ))}
             </StaggerGrid>
+            <LoadMoreButton
+              hasMore={Boolean(hasNextPage)}
+              isLoading={isFetchingNextPage}
+              onLoadMore={() => void fetchNextPage()}
+              label="Load more items"
+              className="pb-10"
+            />
+            </>
           ) : (
             <div className="flex-1 py-12 text-center flex flex-col items-center justify-center">
               <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 dark:text-neutral-500 mb-4">
@@ -420,16 +429,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mb-4">
                 Try another search or reset filters.
               </p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("all");
-                  setFilters(defaultFilters);
-                }}
-                className="px-4 py-2 bg-[#E5192D] text-white rounded-xl text-xs font-semibold hover:bg-[#c81424] transition-colors cursor-pointer"
-              >
-                Reset Filters
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("all");
+                    setFilters(defaultFilters);
+                  }}
+                  className="px-4 py-2 bg-[#E5192D] text-white rounded-xl text-xs font-semibold hover:bg-[#c81424] transition-colors cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+                {hasNextPage && (
+                  <LoadMoreButton
+                    hasMore={Boolean(hasNextPage)}
+                    isLoading={isFetchingNextPage}
+                    onLoadMore={() => void fetchNextPage()}
+                    label="Load more items"
+                    compact
+                    className="py-0"
+                  />
+                )}
+              </div>
             </div>
           )}
           </div>

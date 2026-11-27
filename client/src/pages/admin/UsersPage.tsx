@@ -10,8 +10,13 @@ import {
   Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { FadeIn } from "@/components/FadeIn";
+import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { AdminUser, AdminUserRole } from "@/components/admin/types";
@@ -19,7 +24,7 @@ import { useAuth } from "@/context/useAuth";
 import {
   createAdminUser,
   deleteAdminUser,
-  listAdminUsers,
+  listAdminUsersPage,
   updateAdminUserRole,
   updateAdminUserStatus,
 } from "@/services/adminUserService";
@@ -54,9 +59,15 @@ export function UsersPage() {
   const isSuperAdmin = currentUser?.role === "super_admin";
   const [searchParams] = useSearchParams();
 
-  const usersQuery = useQuery({
+  const usersQuery = useInfiniteQuery({
     queryKey: ADMIN_USERS_QUERY_KEY,
-    queryFn: listAdminUsers,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listAdminUsersPage({ limit: 50, offset: pageParam }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.reduce((sum, page) => sum + page.users.length, 0);
+    },
     staleTime: 30_000,
     retry: 1,
   });
@@ -125,7 +136,19 @@ export function UsersPage() {
   }, [openMenuUserId]);
 
   const activeRole: RoleFilter = isSuperAdmin ? roleFilter : "school_user";
-  const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
+  const allUsers = useMemo(() => {
+    const flattened: AdminUser[] = [];
+    const seen = new Set<string>();
+    for (const page of usersQuery.data?.pages ?? []) {
+      for (const user of page.users) {
+        if (!seen.has(user.id)) {
+          seen.add(user.id);
+          flattened.push(user);
+        }
+      }
+    }
+    return flattened;
+  }, [usersQuery.data]);
 
   const schoolUsers = useMemo(
     () => allUsers.filter((u) => u.role === "school_user"),
@@ -555,7 +578,17 @@ export function UsersPage() {
                 aria-live="polite"
               >
                 Showing {rangeStart}–{rangeEnd} of {filteredUsers.length}
+                {usersQuery.hasNextPage ? "+" : ""}
               </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <LoadMoreButton
+                  hasMore={Boolean(usersQuery.hasNextPage)}
+                  isLoading={usersQuery.isFetchingNextPage}
+                  onLoadMore={() => void usersQuery.fetchNextPage()}
+                  label="Load more users"
+                  compact
+                  className="py-0"
+                />
               {pageCount > 1 && (
                 <div className="flex items-center gap-1">
                   <button
@@ -598,6 +631,7 @@ export function UsersPage() {
                   </button>
                 </div>
               )}
+              </div>
             </div>
           </Panel>
         </FadeIn>

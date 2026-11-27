@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { ScanLine } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
+import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { AdminQrScannerModal } from "@/components/admin/AdminQrScannerModal";
 import { ClaimsListPanel } from "@/components/admin/ClaimsView";
 import { ReturnsListPanel } from "@/components/admin/ReturnsView";
@@ -174,19 +175,35 @@ export function ClaimsPage() {
           </button>
         </div>
       ) : activeTab === "claims" ? (
-        <ClaimsListPanel
-          claims={claimsWorkflow.foundItemClaims}
-          reports={claimsWorkflow.reports}
-          query={query.trim().toLowerCase()}
-          onSelectClaim={handleSelectClaim}
-        />
+        <>
+          <ClaimsListPanel
+            claims={claimsWorkflow.foundItemClaims}
+            reports={claimsWorkflow.reports}
+            query={query.trim().toLowerCase()}
+            onSelectClaim={handleSelectClaim}
+          />
+          <LoadMoreButton
+            hasMore={claimsWorkflow.hasMore}
+            isLoading={claimsWorkflow.isFetchingMore}
+            onLoadMore={claimsWorkflow.fetchMore}
+            label="Load more claims"
+          />
+        </>
       ) : (
-        <ReturnsListPanel
-          visibleRequests={returnsWorkflow.visibleRequests}
-          reports={returnsWorkflow.reports}
-          query={query}
-          onSelectReturn={handleSelectReturn}
-        />
+        <>
+          <ReturnsListPanel
+            visibleRequests={returnsWorkflow.visibleRequests}
+            reports={returnsWorkflow.reports}
+            query={query}
+            onSelectReturn={handleSelectReturn}
+          />
+          <LoadMoreButton
+            hasMore={returnsWorkflow.hasMore}
+            isLoading={returnsWorkflow.isFetchingMore}
+            onLoadMore={returnsWorkflow.fetchMore}
+            label="Load more returns"
+          />
+        </>
       )}
       {!isMobileView && (
         <AdminQrScannerModal

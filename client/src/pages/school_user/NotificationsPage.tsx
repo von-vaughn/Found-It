@@ -7,10 +7,11 @@ import { Sidebar } from "@/components/school_user/Sidebar";
 import {
   useDeleteNotification,
   useDeleteReadNotifications,
+  useInfiniteNotifications,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
-  useNotifications,
 } from "@/hooks/useNotifications";
+import { LoadMoreButton } from "@/components/LoadMoreButton";
 import {
   formatNotificationTime,
   notificationStatusLabel,
@@ -37,18 +38,21 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const {
-    data: notifications = [],
+    notifications,
+    unreadCount,
     isLoading,
     isError,
-  } = useNotifications();
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteNotifications(25);
   const markNotificationRead = useMarkNotificationRead();
   const markAllNotificationsRead = useMarkAllNotificationsRead();
   const deleteNotification = useDeleteNotification();
   const deleteReadNotifications = useDeleteReadNotifications();
-  const unreadCount = notifications.filter(
-    (notification) => !notification.isRead,
+  const readCount = notifications.filter(
+    (notification) => notification.isRead,
   ).length;
-  const readCount = notifications.length - unreadCount;
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -211,6 +215,12 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
                 ))}
               </ul>
             )}
+            <LoadMoreButton
+              hasMore={Boolean(hasNextPage)}
+              isLoading={isFetchingNextPage}
+              onLoadMore={() => void fetchNextPage()}
+              label="Load more notifications"
+            />
           </main>
         </div>
       </div>

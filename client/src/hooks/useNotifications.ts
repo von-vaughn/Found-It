@@ -1,7 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useAuth } from "@/context/useAuth";
 import {
   listNotifications,
+  listNotificationsPage,
   deleteNotification,
   deleteReadNotifications,
   markAllNotificationsRead,
@@ -13,6 +19,8 @@ export const notificationKeys = {
   all: ["notifications"] as const,
   user: (userId?: string) =>
     [...notificationKeys.all, userId ?? "anonymous"] as const,
+  infinite: (userId?: string, pageSize?: number) =>
+    [...notificationKeys.all, "infinite", userId ?? "anonymous", pageSize ?? 25] as const,
 };
 
 export function useNotifications() {
@@ -25,6 +33,44 @@ export function useNotifications() {
     refetchInterval: 10_000,
     refetchIntervalInBackground: false,
   });
+}
+
+export function useInfiniteNotifications(pageSize = 25) {
+  const { user } = useAuth();
+  const query = useInfiniteQuery({
+    queryKey: notificationKeys.infinite(user?.id, pageSize),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listNotificationsPage({ limit: pageSize, offset: pageParam }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.reduce((sum, page) => sum + page.notifications.length, 0);
+    },
+    enabled: Boolean(user),
+    staleTime: 0,
+    refetchInterval: 10_000,
+    refetchIntervalInBackground: false,
+  });
+
+  const notifications: ServerNotification[] = [];
+  const seen = new Set<string>();
+  for (const page of query.data?.pages ?? []) {
+    for (const notification of page.notifications) {
+      if (!seen.has(notification.id)) {
+        seen.add(notification.id);
+        notifications.push(notification);
+      }
+    }
+  }
+  const unreadCount =
+    query.data?.pages[0]?.unreadCount ??
+    notifications.filter((notification) => !notification.isRead).length;
+
+  return {
+    ...query,
+    notifications,
+    unreadCount,
+  };
 }
 
 export function useMarkNotificationRead() {
@@ -52,7 +98,7 @@ export function useMarkNotificationRead() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 }
@@ -78,7 +124,7 @@ export function useMarkAllNotificationsRead() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 }
@@ -104,7 +150,7 @@ export function useDeleteNotification() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 }
@@ -130,7 +176,7 @@ export function useDeleteReadNotifications() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 }

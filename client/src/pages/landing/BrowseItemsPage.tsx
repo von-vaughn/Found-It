@@ -16,7 +16,8 @@ import {
   defaultFilters,
 } from "@/components/school_user/itemFilters";
 import { useBrowseFilters } from "./useBrowseFilters";
-import { useItems } from "@/hooks/useItems";
+import { useInfiniteItems } from "@/hooks/useItems";
+import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { toClientItems } from "@/lib/itemAdapter";
 import { useAuth } from "@/context/useAuth";
 import { paths } from "@/routes/paths";
@@ -63,10 +64,14 @@ export const BrowseItemsPage: React.FC = () => {
       : "all";
 
   // Fetch real items from the API (works for both guests and authenticated users)
-  const { data: serverItems, isLoading } = useItems(undefined, {
-    staleTime: 30_000,
-  });
-  const items = serverItems ? toClientItems(serverItems) : EMPTY_ITEMS;
+  const {
+    items: serverItems,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteItems(undefined, 24);
+  const items = serverItems.length > 0 ? toClientItems(serverItems) : EMPTY_ITEMS;
 
   const updateParams = (patch: { type?: BrowseTab; q?: string }) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -346,6 +351,7 @@ export const BrowseItemsPage: React.FC = () => {
             <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading items…</p>
           </div>
         ) : filteredItems.length > 0 ? (
+          <>
           <StaggerGrid
             key={`${activeTab}-${selectedCategory}-${JSON.stringify(filters)}-${filteredItems.length}-${filteredItems[0]?.id ?? ""}`}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
@@ -363,6 +369,14 @@ export const BrowseItemsPage: React.FC = () => {
               </StaggerItem>
             ))}
           </StaggerGrid>
+          <LoadMoreButton
+            hasMore={Boolean(hasNextPage)}
+            isLoading={isFetchingNextPage}
+            onLoadMore={() => void fetchNextPage()}
+            label="Load more items"
+            className="mt-4"
+          />
+          </>
         ) : (
           <div className="flex-1 py-12 text-center flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-neutral-400 mb-4">
@@ -374,17 +388,29 @@ export const BrowseItemsPage: React.FC = () => {
             <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mb-4">
               Try another search or reset filters.
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                handleSearchQueryChange("");
-                setSelectedCategory("all");
-                setFilters(defaultFilters);
-              }}
-              className="px-4 py-2 bg-[#E5192D] text-white rounded-xl text-xs font-semibold hover:bg-[#c81424] transition-colors cursor-pointer"
-            >
-              Reset Filters
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleSearchQueryChange("");
+                  setSelectedCategory("all");
+                  setFilters(defaultFilters);
+                }}
+                className="px-4 py-2 bg-[#E5192D] text-white rounded-xl text-xs font-semibold hover:bg-[#c81424] transition-colors cursor-pointer"
+              >
+                Reset Filters
+              </button>
+              {hasNextPage && (
+                <LoadMoreButton
+                  hasMore={Boolean(hasNextPage)}
+                  isLoading={isFetchingNextPage}
+                  onLoadMore={() => void fetchNextPage()}
+                  label="Load more items"
+                  compact
+                  className="py-0"
+                />
+              )}
+            </div>
           </div>
         )}
       </div>

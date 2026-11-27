@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { toFoundReportClaims } from "@/lib/claimAdapter";
 import {
-  useAdminReturns,
+  useInfiniteAdminReturns,
   usePublishRejectedReturn,
   useRemindReturnFinder,
   useUpdateAdminReturnOsaReceipt,
@@ -17,11 +17,14 @@ const RESOLVED_RETURN_STATUSES: ClaimRequest["status"][] = ["Returned"];
 /** Shared data and mutations for the admin return items list and detail pages. */
 export function useAdminReturnsWorkflow() {
   const {
-    data: serverReturns = [],
+    returns: serverReturns,
     isLoading: returnsLoading,
     isError: returnsError,
     refetch: refetchReturns,
-  } = useAdminReturns();
+    hasNextPage: hasMoreReturns,
+    isFetchingNextPage: isFetchingMoreReturns,
+    fetchNextPage: fetchMoreReturns,
+  } = useInfiniteAdminReturns(50);
   const {
     data: serverItems = [],
     isLoading: itemsLoading,
@@ -92,6 +95,9 @@ export function useAdminReturnsWorkflow() {
     isLoading: returnsLoading || itemsLoading,
     isError: returnsError || itemsError,
     refetch,
+    hasMore: Boolean(hasMoreReturns),
+    isFetchingMore: isFetchingMoreReturns,
+    fetchMore: () => void fetchMoreReturns(),
     physicalItemReceived,
     updateReturnStatus,
     updateOsaReceipt,

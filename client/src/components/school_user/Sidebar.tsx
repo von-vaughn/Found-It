@@ -24,6 +24,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "@/context/useAuth";
 import { useTheme } from "@/context/useTheme";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { LoadMoreButton } from "@/components/LoadMoreButton";
 import {
   rememberSchoolSidebarExpanded,
   takeSchoolSidebarExpanded,
@@ -31,9 +32,9 @@ import {
 import {
   useDeleteReadNotifications,
   useDeleteNotification,
+  useInfiniteNotifications,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
-  useNotifications,
 } from "@/hooks/useNotifications";
 import {
   formatNotificationTime,
@@ -232,7 +233,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: notifications = [] } = useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    hasNextPage: hasMoreNotifications,
+    isFetchingNextPage: isFetchingMoreNotifications,
+    fetchNextPage: fetchMoreNotifications,
+  } = useInfiniteNotifications(25);
   const deleteReadNotifications = useDeleteReadNotifications();
   const deleteNotification = useDeleteNotification();
   const markAllNotificationsRead = useMarkAllNotificationsRead();
@@ -252,10 +259,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isDesktop, setIsDesktop] = useState(() =>
     window.matchMedia("(min-width: 768px)").matches,
   );
-
-  const unreadCount = notifications.filter(
-    (notification) => !notification.isRead,
-  ).length;
 
   const selectNotification = (notification: (typeof notifications)[number]) => {
     if (!notification.isRead) {
@@ -728,6 +731,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 You’re all caught up.
               </p>
             )}
+            <LoadMoreButton
+              hasMore={Boolean(hasMoreNotifications)}
+              isLoading={isFetchingMoreNotifications}
+              onLoadMore={() => void fetchMoreNotifications()}
+              compact
+            />
           </div>
         </motion.aside>
       )}

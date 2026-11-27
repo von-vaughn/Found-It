@@ -4,7 +4,10 @@ import type { ClaimRequest } from "@/types/claim";
 import type { ServerClaimStatus } from "@/services/claimService";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
 import { toClaimRequests } from "@/lib/claimAdapter";
-import { useAdminClaims, useUpdateAdminClaimStatus } from "@/hooks/useClaims";
+import {
+  useInfiniteAdminClaims,
+  useUpdateAdminClaimStatus,
+} from "@/hooks/useClaims";
 import {
   useItems,
   useRemindFinder,
@@ -25,11 +28,14 @@ const RESOLVED_CLAIM_STATUSES = new Set(["Claimed", "Returned"]);
 /** Shared data and mutations for the admin claims list and claim detail pages. */
 export function useFoundClaimsWorkflow() {
   const {
-    data: serverClaims = [],
+    claims: serverClaims,
     isLoading: claimsLoading,
     isError: claimsError,
     refetch: refetchClaims,
-  } = useAdminClaims();
+    hasNextPage: hasMoreClaims,
+    isFetchingNextPage: isFetchingMoreClaims,
+    fetchNextPage: fetchMoreClaims,
+  } = useInfiniteAdminClaims(50);
   const {
     data: serverItems = [],
     isLoading: itemsLoading,
@@ -138,6 +144,9 @@ export function useFoundClaimsWorkflow() {
     isLoading: claimsLoading || itemsLoading,
     isError: claimsError || itemsError,
     refetch,
+    hasMore: Boolean(hasMoreClaims),
+    isFetchingMore: isFetchingMoreClaims,
+    fetchMore: () => void fetchMoreClaims(),
     handleClaimStatusChange,
     handleOsaReceiptChange,
     isUpdatingOsaReceipt: updateOsaReceipt.isPending,

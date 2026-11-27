@@ -18,9 +18,10 @@ import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import {
   useDeleteItem,
   useDismissItemFlags,
-  useItems,
+  useInfiniteItems,
   useUpdateOsaReceipt,
 } from "@/hooks/useItems";
+import { LoadMoreButton } from "@/components/LoadMoreButton";
 
 export function ReportsPage() {
   const navigate = useNavigate();
@@ -34,7 +35,15 @@ export function ReportsPage() {
   const [filterOptionsOpen, setFilterOptionsOpen] = useState(false);
   const { selectedReport, setSelectedReport, dialogRef } =
     useSelectedReport();
-  const { data: items = [], isLoading, isError, refetch } = useItems();
+  const {
+    items,
+    isLoading,
+    isError,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteItems(undefined, 50);
   const { data: buildings } = useBuildings();
   const { data: categories } = useCategories();
   const buildingOptions = buildings?.map((entry) => entry.name) ?? ITEM_BUILDINGS;
@@ -343,7 +352,17 @@ export function ReportsPage() {
         <div className="flex shrink-0 flex-col gap-3 border-t border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <p className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">
             Showing {rangeStart}–{rangeEnd} of {filteredRows.length}
+            {hasNextPage ? "+" : ""}
           </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <LoadMoreButton
+              hasMore={Boolean(hasNextPage)}
+              isLoading={isFetchingNextPage}
+              onLoadMore={() => void fetchNextPage()}
+              label="Load more items"
+              compact
+              className="py-0"
+            />
           {pageCount > 1 && (
             <div className="flex items-center gap-1">
               <button
@@ -384,6 +403,7 @@ export function ReportsPage() {
               </button>
             </div>
           )}
+          </div>
         </div>
       </Panel>
       </FadeIn>
