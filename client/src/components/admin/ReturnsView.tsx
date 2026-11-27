@@ -677,6 +677,32 @@ export function ReturnDetailPanel({
           ? undefined
           : "Protected detail. Enter your staff or admin password to reveal.",
       },
+      ...(entry.releasedBy
+        ? [
+            {
+              id: "released-by",
+              label: "Released by",
+              value: (
+                <span>
+                  {entry.releasedBy.name}
+                  <span className="ml-1.5 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                    ({entry.releasedBy.role === "admin" ? "Admin" : "Staff"}
+                    {entry.releasedAt
+                      ? ` · ${new Intl.DateTimeFormat("en", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        }).format(new Date(entry.releasedAt))}`
+                      : ""}
+                    )
+                  </span>
+                </span>
+              ),
+            },
+          ]
+        : []),
     ];
   };
 

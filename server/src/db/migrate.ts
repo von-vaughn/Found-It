@@ -191,7 +191,7 @@ export async function migrate(): Promise<void> {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       actor_id UUID REFERENCES "user"(id) ON DELETE SET NULL,
       actor_name VARCHAR(120) NOT NULL,
-      actor_role VARCHAR(20) NOT NULL CHECK (actor_role IN ('admin')),
+      actor_role VARCHAR(20) NOT NULL CHECK (actor_role IN ('staff', 'admin')),
       action VARCHAR(20) NOT NULL
         CHECK (action IN ('approved', 'rejected', 'claimed', 'returned', 'published', 'deleted', 'created', 'updated')),
       entity_type VARCHAR(20) NOT NULL
@@ -267,9 +267,34 @@ export async function migrate(): Promise<void> {
         UPDATE audit_log SET actor_role = 'admin' WHERE actor_role = 'super_admin';
 
         ALTER TABLE audit_log ADD CONSTRAINT audit_log_actor_role_check
-          CHECK (actor_role IN ('admin'));
+          CHECK (actor_role IN ('staff', 'admin'));
+      END IF;
+
+      -- Ensure audit_log allows both 'staff' and 'admin' actor_role
+      IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'audit_log'::regclass
+          AND contype = 'c'
+          AND pg_get_constraintdef(oid) LIKE '%actor_role%'
+          AND pg_get_constraintdef(oid) NOT LIKE '%staff%'
+      ) THEN
+        EXECUTE (
+          SELECT string_agg('ALTER TABLE audit_log DROP CONSTRAINT ' || quote_ident(conname) || ';', ' ')
+          FROM pg_constraint
+          WHERE conrelid = 'audit_log'::regclass
+            AND contype = 'c'
+            AND pg_get_constraintdef(oid) LIKE '%actor_role%'
+            AND pg_get_constraintdef(oid) NOT LIKE '%staff%'
+        );
+
+        ALTER TABLE audit_log ADD CONSTRAINT audit_log_actor_role_check
+          CHECK (actor_role IN ('staff', 'admin'));
       END IF;
     END $$;
+
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS released_by UUID REFERENCES "user"(id) ON DELETE SET NULL;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS released_at TIMESTAMPTZ;
   `);
 
   await pool.query(`

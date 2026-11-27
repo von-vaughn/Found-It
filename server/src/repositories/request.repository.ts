@@ -39,6 +39,11 @@ interface ClaimRow {
   rejection_reason: string | null;
   approval_instructions: string | null;
   last_finder_reminder_at: Date | string | null;
+  released_by_id: string | null;
+  released_by_name: string | null;
+  released_by_email: string | null;
+  released_by_role: "staff" | "admin" | null;
+  released_at: Date | string | null;
   status: ClaimStatus;
   created_at: Date | string;
 }
@@ -50,12 +55,18 @@ const CLAIM_COLUMNS = `
   rq.important_details, rq.evidence, rq.claimant_title,
   rq.primary_color, rq.building, rq.received_by_osa, rq.published_item_id,
   rq.rejection_reason, rq.approval_instructions, rq.last_finder_reminder_at,
+  rb.id AS released_by_id,
+  CASE WHEN rb.id IS NOT NULL THEN rb.first_name || ' ' || rb.last_name ELSE NULL END AS released_by_name,
+  rb.email AS released_by_email,
+  rb.role AS released_by_role,
+  rq.released_at,
   rq.status, rq.created_at
 `;
 const CLAIM_JOIN = `
   FROM request rq
   JOIN item i ON i.id = rq.item_id
   JOIN "user" u ON u.id = rq.user_id
+  LEFT JOIN "user" rb ON rb.id = rq.released_by
 `;
 
 function toDateOnly(value: Date | string | null): string | null {
@@ -110,6 +121,23 @@ function toClaim(
       ? {
           lastFinderReminderAt: row.last_finder_reminder_at
             ? new Date(row.last_finder_reminder_at).toISOString()
+            : null,
+          releasedBy:
+            row.released_by_id && row.released_by_name
+              ? {
+                  id: row.released_by_id,
+                  name: row.released_by_name,
+                  ...(row.released_by_email
+                    ? { email: row.released_by_email }
+                    : {}),
+                  ...(row.released_by_role === "staff" ||
+                  row.released_by_role === "admin"
+                    ? { role: row.released_by_role }
+                    : {}),
+                }
+              : null,
+          releasedAt: row.released_at
+            ? new Date(row.released_at).toISOString()
             : null,
         }
       : {}),
@@ -410,10 +438,11 @@ export async function listReturnsByItem(
     [itemId],
   );
   return rows.map((row) => {
-    const claim = toClaim(row, true);
+    const claim = toClaim(row, isAdmin);
     if (isAdmin) return claim;
     return {
       ...claim,
+      receivedByOsa: row.received_by_osa,
       evidence: claim.evidence.map(
         (_, index) => `/api/returns/${claim.id}/evidence/blurred?index=${index}`,
       ),
@@ -694,6 +723,7 @@ async function updateRequestStatusById(
   status: ClaimStatus,
   rejectionReason?: string,
   approvalInstructions?: string,
+  releasedByUserId?: string,
 ): Promise<Claim | null> {
   const autoPublishedItemIds: string[] = [];
   const client = await pool.connect();
@@ -779,6 +809,7 @@ async function updateRequestStatusById(
 
     const trimmedReason = rejectionReason?.trim() || null;
     const trimmedInstructions = approvalInstructions?.trim() || null;
+    const isReleaseTransition = status === "claimed" || status === "returned";
     const { rowCount } = await client.query(
       status === "rejected"
         ? `UPDATE request
@@ -788,14 +819,20 @@ async function updateRequestStatusById(
           ? `UPDATE request
              SET status = $2, approval_instructions = $5
              WHERE id = $1 AND kind = $3 AND status = $4`
-          : `UPDATE request
-             SET status = $2
-             WHERE id = $1 AND kind = $3 AND status = $4`,
+          : isReleaseTransition
+            ? `UPDATE request
+               SET status = $2, released_by = $5, released_at = NOW()
+               WHERE id = $1 AND kind = $3 AND status = $4`
+            : `UPDATE request
+               SET status = $2
+               WHERE id = $1 AND kind = $3 AND status = $4`,
       status === "rejected"
         ? [id, status, kind, current.status, trimmedReason]
         : status === "approved"
           ? [id, status, kind, current.status, trimmedInstructions]
-          : [id, status, kind, current.status],
+          : isReleaseTransition
+            ? [id, status, kind, current.status, releasedByUserId ?? null]
+            : [id, status, kind, current.status],
     );
     if (rowCount !== 1) {
       await client.query("ROLLBACK");
@@ -1003,6 +1040,7 @@ export function updateClaimStatusById(
   status: Exclude<ClaimStatus, "pending">,
   rejectionReason?: string,
   approvalInstructions?: string,
+  releasedByUserId?: string,
 ): Promise<Claim | null> {
   return updateRequestStatusById(
     "claim",
@@ -1010,6 +1048,7 @@ export function updateClaimStatusById(
     status,
     rejectionReason,
     approvalInstructions,
+    releasedByUserId,
   );
 }
 
@@ -1017,6 +1056,7 @@ export function updateReturnStatusById(
   id: string,
   status: Exclude<ClaimStatus, "pending" | "claimed">,
   approvalInstructions?: string,
+  releasedByUserId?: string,
 ): Promise<Claim | null> {
   return updateRequestStatusById(
     "return",
@@ -1024,6 +1064,7 @@ export function updateReturnStatusById(
     status,
     undefined,
     approvalInstructions,
+    releasedByUserId,
   );
 }
 

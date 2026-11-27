@@ -606,6 +606,32 @@ export function ClaimDetailPanel({
         ? undefined
         : "Protected detail. Enter your staff or admin password to reveal.",
     },
+    ...(requestItem.releasedBy
+      ? [
+          {
+            id: "released-by",
+            label: "Released by",
+            value: (
+              <span>
+                {requestItem.releasedBy.name}
+                <span className="ml-1.5 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                  ({requestItem.releasedBy.role === "admin" ? "Admin" : "Staff"}
+                  {requestItem.releasedAt
+                    ? ` · ${new Intl.DateTimeFormat("en", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      }).format(new Date(requestItem.releasedAt))}`
+                    : ""}
+                  )
+                </span>
+              </span>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (

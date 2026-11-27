@@ -31,6 +31,13 @@ interface ItemRow {
     email: string;
     schoolId: string | null;
   } | null;
+  released_by: {
+    id: string;
+    name: string;
+    email: string;
+    role: 'staff' | 'admin';
+    releasedAt: string | null;
+  } | null;
   images: Array<{ url: string; blurred_url: string | null }> | null;
   flags: ItemFlag[] | null;
   flag_reporter_ids: string[] | null;
@@ -92,6 +99,30 @@ const ITEM_COLUMNS = `
     ORDER BY completed_request.created_at DESC
     LIMIT 1
   ) AS resolved_by,
+  (
+    SELECT json_build_object(
+      'id', rb.id,
+      'name', rb.first_name || ' ' || rb.last_name,
+      'email', rb.email,
+      'role', rb.role,
+      'releasedAt', CASE
+        WHEN completed_request.released_at IS NOT NULL
+        THEN to_char(completed_request.released_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+        ELSE NULL
+      END
+    )
+    FROM request completed_request
+    JOIN "user" rb ON rb.id = completed_request.released_by
+    WHERE completed_request.item_id = i.id
+      AND (
+        (completed_request.kind = 'claim'
+          AND completed_request.status IN ('claimed', 'returned'))
+        OR (completed_request.kind = 'return'
+          AND completed_request.status = 'returned')
+      )
+    ORDER BY completed_request.released_at DESC NULLS LAST, completed_request.created_at DESC
+    LIMIT 1
+  ) AS released_by,
   COALESCE(
     (SELECT json_agg(
       json_build_object('url', img.image_url, 'blurred_url', img.blurred_image_url)
@@ -211,6 +242,15 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
                   : {}),
               }
             : null,
+          releasedBy: row.released_by
+            ? {
+                id: row.released_by.id,
+                name: row.released_by.name,
+                email: row.released_by.email,
+                role: row.released_by.role,
+              }
+            : null,
+          releasedAt: row.released_by?.releasedAt ?? null,
           flagCount: Array.isArray(row.flags) ? row.flags.length : 0,
           flags: Array.isArray(row.flags) ? row.flags : [],
         }

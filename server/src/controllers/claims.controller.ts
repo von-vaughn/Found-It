@@ -188,6 +188,7 @@ export async function updateAdminClaimStatus(
       parsed.data.status,
       parsed.data.reason,
       parsed.data.instructions,
+      req.user!.sub,
     );
   } catch (error) {
     if (

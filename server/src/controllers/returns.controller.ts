@@ -227,6 +227,7 @@ export async function updateAdminReturnStatus(
       requestId,
       parsed.data.status,
       parsed.data.instructions,
+      req.user!.sub,
     );
   } catch (error) {
     if (

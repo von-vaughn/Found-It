@@ -93,11 +93,11 @@ export function AuditLogsPage() {
         setQuery(value);
         setCurrentPage(1);
       }}
-      searchPlaceholder="Search by admin, ID, or summary…"
+      searchPlaceholder="Search by staff, admin, ID, or summary…"
     >
       <FadeIn delay={0.05}>
       <Panel
-        title="Admin audit trail"
+        title="Audit trail"
         action={
           <div className="flex items-center gap-2">
             <span className="text-xs text-neutral-500 dark:text-neutral-400">{filtered.length} events</span>
@@ -187,7 +187,7 @@ export function AuditLogsPage() {
             <table className="w-full min-w-[1020px] text-left text-xs">
               <thead className="bg-neutral-50 dark:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 <tr>
-                  <th scope="col" className="px-5 py-3">Admin</th>
+                  <th scope="col" className="px-5 py-3">Staff / Admin</th>
                   <th scope="col" className="px-4 py-3">Action</th>
                   <th scope="col" className="px-4 py-3">Target</th>
                   <th scope="col" className="px-4 py-3">Summary</th>

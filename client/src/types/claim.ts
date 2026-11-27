@@ -23,6 +23,13 @@ export interface ClaimRequest {
   rejectionReason?: string | null;
   approvalInstructions?: string | null;
   lastFinderReminderAt?: string | null;
+  releasedBy?: {
+    id: string;
+    name: string;
+    email?: string;
+    role?: "staff" | "admin";
+  } | null;
+  releasedAt?: string | null;
 }
 
 export type NewClaimRequest = Omit<

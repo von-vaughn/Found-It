@@ -42,6 +42,9 @@ export interface AdminReport {
   resolvedBy?: string;
   resolvedByEmail?: string;
   resolvedBySchoolId?: string;
+  releasedBy?: string;
+  releasedByRole?: "staff" | "admin";
+  releasedAt?: string | null;
   status: RecordStatus;
   date: string;
   eventDateTime?: string;

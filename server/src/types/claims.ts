@@ -8,6 +8,13 @@ export const CLAIM_STATUSES = [
 
 export type ClaimStatus = (typeof CLAIM_STATUSES)[number];
 
+export interface ClaimReleasedBy {
+  id: string;
+  name: string;
+  email?: string;
+  role?: "staff" | "admin";
+}
+
 export interface Claim {
   id: string;
   itemId: string;
@@ -29,6 +36,8 @@ export interface Claim {
   rejectionReason?: string | null;
   approvalInstructions?: string | null;
   lastFinderReminderAt?: string | null;
+  releasedBy?: ClaimReleasedBy | null;
+  releasedAt?: string | null;
   status: ClaimStatus;
   submitted: string;
 }

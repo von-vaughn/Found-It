@@ -255,6 +255,29 @@ export function ItemDetailsDialog({
                 </dd>
               </div>
             )}
+          {report.releasedBy &&
+            (report.status === "Claimed" || report.status === "Returned") && (
+              <div>
+                <dt className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                  Released by
+                </dt>
+                <dd className="mt-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                  <span>{report.releasedBy}</span>
+                  <span className="block text-[11px] font-normal text-neutral-500 dark:text-neutral-400">
+                    {report.releasedByRole === "admin" ? "Admin" : "Staff"}
+                    {report.releasedAt
+                      ? ` · ${new Intl.DateTimeFormat("en", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        }).format(new Date(report.releasedAt))}`
+                      : ""}
+                  </span>
+                </dd>
+              </div>
+            )}
         </dl>
         {(report.flags?.length ?? 0) > 0 && (
           <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 p-3.5 space-y-2.5">

@@ -28,6 +28,13 @@ export interface ServerClaim {
   rejectionReason?: string | null;
   approvalInstructions?: string | null;
   lastFinderReminderAt?: string | null;
+  releasedBy?: {
+    id: string;
+    name: string;
+    email?: string;
+    role?: "staff" | "admin";
+  } | null;
+  releasedAt?: string | null;
   status: ServerClaimStatus;
   submitted: string;
 }

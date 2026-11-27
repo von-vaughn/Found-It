@@ -290,7 +290,7 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(forbiddenPw.status, 403);
   });
 
-  it('logs ONLY admin actions in audit_log, revokes tokens on role change, and guards audit-log access', async () => {
+  it('logs both staff and admin actions in audit_log, revokes tokens on role change, and guards audit-log access', async () => {
     const adminAuth = await loginAs(ADMIN_EMAIL);
     const superAuth = await loginAs(SUPER_EMAIL);
     const schoolAuth = await loginAs(OWNER_EMAIL);
@@ -313,7 +313,7 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(afterTutorialRes.status, 200);
     assert.equal(afterTutorialRes.data.user.hasSeenTutorial, true);
 
-    // Admin creates a category -> should persist, NOT create audit_log row
+    // Staff creates a category -> persists AND writes a staff audit_log row
     const catRes = await api<{ category: { id: string; name: string } }>('POST', '/api/categories', {
       token: adminAuth.token,
       body: { name: TEST_CATEGORY },
@@ -322,11 +322,12 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     createdCategoryId = catRes.data.category.id;
     assert.equal(catRes.data.category.name, TEST_CATEGORY);
 
-    const adminAuditRows = await pool.query(
-      'SELECT id FROM audit_log WHERE actor_id = $1',
+    const staffAuditRows = await pool.query<{ actor_role: string }>(
+      'SELECT actor_role FROM audit_log WHERE actor_id = $1',
       [adminUserId],
     );
-    assert.equal(adminAuditRows.rowCount, 0, 'Regular admin actions must never write to audit_log');
+    assert.ok((staffAuditRows.rowCount ?? 0) >= 1, 'Staff actions must write to audit_log');
+    assert.equal(staffAuditRows.rows[0].actor_role, 'staff');
 
     // Admin creates a building -> persists AND writes audit_log row
     const bldgRes = await api<{ building: { id: string; name: string } }>('POST', '/api/buildings', {
@@ -402,18 +403,29 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     const superList = await api('GET', '/api/users', { token: superAuth.token });
     assert.equal(superList.status, 200, 'Admin still manages users');
 
-    const allowedSuper = await api<{ logs: Array<{ actorId: string; entityType: string }> }>(
+    const allowedSuper = await api<{
+      logs: Array<{ actorId: string; actorRole: string; entityType: string }>;
+    }>(
       'GET',
       '/api/audit-logs?limit=50',
       { token: superAuth.token },
     );
     assert.equal(allowedSuper.status, 200);
-    assert.ok(allowedSuper.data.logs.some((log) => log.actorId === superUserId && log.entityType === 'building'));
-    assert.ok(allowedSuper.data.logs.some((log) => log.actorId === superUserId && log.entityType === 'user'));
-    assert.equal(
-      allowedSuper.data.logs.some((log) => log.actorId === adminUserId),
-      false,
-      'audit_log feed must exclude plain admin actions',
+    assert.ok(
+      allowedSuper.data.logs.some(
+        (log) => log.actorId === superUserId && log.actorRole === 'admin' && log.entityType === 'building',
+      ),
+    );
+    assert.ok(
+      allowedSuper.data.logs.some(
+        (log) => log.actorId === superUserId && log.actorRole === 'admin' && log.entityType === 'user',
+      ),
+    );
+    assert.ok(
+      allowedSuper.data.logs.some(
+        (log) => log.actorId === adminUserId && log.actorRole === 'staff' && log.entityType === 'category',
+      ),
+      'audit_log feed must include staff actions with actorRole=staff',
     );
   });
 

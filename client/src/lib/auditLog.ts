@@ -23,7 +23,7 @@ export interface AuditLogEntry {
   id: string;
   actorId: string | null;
   actorName: string;
-  actorRole: "admin";
+  actorRole: "staff" | "admin";
   action: AuditAction;
   entityType: AuditEntityType;
   entityId: string;

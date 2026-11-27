@@ -53,6 +53,8 @@ export function toClaimRequest(claim: ServerClaim): ClaimRequest {
     rejectionReason: claim.rejectionReason ?? null,
     approvalInstructions: claim.approvalInstructions ?? null,
     lastFinderReminderAt: claim.lastFinderReminderAt ?? null,
+    releasedBy: claim.releasedBy ?? null,
+    releasedAt: claim.releasedAt ?? null,
     status: statusMap[claim.status],
     submitted: formatSubmitted(claim.submitted),
   };
