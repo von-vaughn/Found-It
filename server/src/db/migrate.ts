@@ -385,6 +385,7 @@ export async function migrate(): Promise<void> {
     ALTER TABLE request ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS approval_instructions TEXT;
     ALTER TABLE request ADD COLUMN IF NOT EXISTS last_finder_reminder_at TIMESTAMPTZ;
+    ALTER TABLE request ADD COLUMN IF NOT EXISTS recorded_by UUID REFERENCES "user"(id) ON DELETE SET NULL;
   `);
 
   // Backfill blurred_image_url for found items that don't have one yet

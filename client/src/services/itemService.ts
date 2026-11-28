@@ -38,6 +38,8 @@ export interface ServerItem {
   flagCount?: number;
   flags?: ItemFlag[];
   hasReported?: boolean;
+  returnResponseCount?: number;
+  hasApprovedReturn?: boolean;
   createdAt: string;
   updatedAt: string;
 }

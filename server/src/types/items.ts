@@ -51,6 +51,10 @@ export interface Item {
   flags?: ItemFlag[];
   /** Whether the authenticated viewer has already flagged this post. */
   hasReported?: boolean;
+  /** Number of active return responses on a lost item (owner and staff/admin only). */
+  returnResponseCount?: number;
+  /** Whether a lost item currently has an approved return ready for pickup (owner and staff/admin only). */
+  hasApprovedReturn?: boolean;
   createdAt: string;
   updatedAt: string;
 }

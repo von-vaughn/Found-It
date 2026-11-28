@@ -43,9 +43,22 @@ export function ReportedItemsPage() {
   const queryMatched = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return flaggedReports;
-    return flaggedReports.filter((report) =>
-      report.title.toLowerCase().includes(normalized),
-    );
+    return flaggedReports.filter((report) => {
+      const haystack = [
+        report.title,
+        report.reportedBy,
+        report.category,
+        ...(report.flags ?? []).flatMap((flag) => [
+          flag.reason,
+          flag.reporterName,
+          flag.reporterEmail,
+        ]),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(normalized);
+    });
   }, [flaggedReports, query]);
 
   const typeCounts = useMemo(
@@ -108,19 +121,19 @@ export function ReportedItemsPage() {
       showSearch
       query={query}
       onQueryChange={setQuery}
-      searchPlaceholder="Search reported items, reasons, or flaggers…"
+      searchPlaceholder="Search flagged posts, reasons, or flaggers"
     >
       {isLoading ? (
         <ReportedItemsSkeleton />
       ) : isError ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center dark:border-neutral-800 dark:bg-neutral-900">
-          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Could not load reported items.
+        <div className="flex flex-col items-center justify-center rounded-xl border border-neutral-200 bg-white px-6 py-16 text-center dark:border-neutral-800 dark:bg-neutral-900">
+          <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            Could not load reported items
           </p>
           <button
             type="button"
             onClick={() => void refetch()}
-            className="mt-4 inline-flex h-9 items-center rounded-lg border border-neutral-200 px-4 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            className="mt-4 inline-flex h-9 items-center rounded-lg bg-[#E5192D] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
           >
             Retry
           </button>

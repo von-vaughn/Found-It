@@ -14,12 +14,14 @@ interface ItemCardProps {
   item: Item;
   onItemClick?: (item: Item) => void;
   showActionLabel?: boolean;
+  showResponseIndicator?: boolean;
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({
   item,
   onItemClick,
   showActionLabel = true,
+  showResponseIndicator = false,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -61,18 +63,40 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   const category = ITEM_CATEGORIES.find(({ id }) => id === item.category);
   const CategoryIcon = category?.icon ?? Package;
 
+  const responseCount = item.returnResponseCount ?? 0;
+  const responseBadge =
+    showResponseIndicator && isLost && (item.isReturned || item.hasApprovedReturn || responseCount > 0) ? (
+      item.isReturned ? (
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+          Claimed
+        </span>
+      ) : item.hasApprovedReturn ? (
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+          Pickup ready
+        </span>
+      ) : (
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#E5192D]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#E5192D] dark:bg-[#E5192D]/20 dark:text-red-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#E5192D]" aria-hidden="true" />
+          {responseCount} {responseCount === 1 ? "response" : "responses"}
+        </span>
+      )
+    ) : null;
+
   const footerRow = (
-    <div className="pt-3 mt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+    <div className="pt-3 mt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
         <CategoryIcon className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
         <span className="truncate">{formatCategoryLabel(item.category, item.customCategory)}</span>
       </div>
 
-      {!isOwnPost && showActionLabel && (
-        <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-          {isLost ? "I Found This" : "This Is Mine"}
-        </span>
-      )}
+      {responseBadge ??
+        (!isOwnPost && showActionLabel && (
+          <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+            {isLost ? "I Found This" : "This Is Mine"}
+          </span>
+        ))}
     </div>
   );
 

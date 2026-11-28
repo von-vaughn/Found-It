@@ -1,27 +1,15 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  AlertTriangle,
-  Check,
-  Flag,
-  ShieldCheck,
-  Trash2,
-} from "lucide-react";
+import { Check, Flag, Trash2 } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
 import { resolveIdNumber } from "@/lib/idNumber";
 import type { ItemFlag } from "@/services/itemService";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
+import { Panel } from "./Panel";
 import { formatAdminEventDate, formatAdminEventTime } from "./requestComparison";
-import { FilterChips, type ReviewFactRow } from "./ReviewLayout";
+import type { ReviewFactRow } from "./ReviewLayout";
 import type { AdminReport } from "./types";
-
-const DELETE_REASON_PRESETS = [
-  "Spam",
-  "Duplicate report",
-  "Inappropriate content",
-  "False information",
-];
 
 const DELETE_REASON_MAX_LENGTH = 500;
 
@@ -53,32 +41,32 @@ function initialsForName(name: string): string {
 
 function FlagReasonRow({ flag }: { flag: ItemFlag }) {
   return (
-    <li className="py-4 first:pt-2 last:pb-0">
+    <li className="py-4 first:pt-0 last:pb-0">
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-neutral-100 text-[11px] font-bold tracking-tight text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 text-xs font-medium text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-300"
         >
           {initialsForName(flag.reporterName)}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+              <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                 {flag.reporterName}
               </span>
-              <span className="ml-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+              <span className="truncate text-xs text-neutral-500 dark:text-neutral-400">
                 {flag.reporterEmail}
               </span>
             </div>
             <time
               dateTime={flag.createdAt}
-              className="font-mono text-[11px] text-neutral-500 tabular-nums dark:text-neutral-400"
+              className="font-mono text-xs text-neutral-500 tabular-nums dark:text-neutral-400"
             >
               {formatFlagTimestamp(flag.createdAt)}
             </time>
           </div>
-          <p className="mt-1.5 text-sm leading-relaxed text-neutral-700 break-words dark:text-neutral-300">
+          <p className="mt-1 break-words text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
             {flag.reason}
           </p>
         </div>
@@ -94,39 +82,33 @@ export function ReportedItemsSkeleton() {
       aria-label="Loading reported items"
       className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)] lg:items-start"
     >
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white divide-y divide-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:divide-neutral-800">
+      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white divide-y divide-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:divide-neutral-800">
+        <div className="h-14 border-b border-neutral-100 px-5 dark:border-neutral-800" />
         {Array.from({ length: 4 }, (_, index) => (
-          <div key={index} className="flex items-start gap-3.5 p-4 animate-pulse">
-            <div className="h-14 w-14 shrink-0 rounded-xl bg-neutral-200 dark:bg-neutral-800" />
+          <div key={index} className="flex items-start gap-3 p-4">
+            <div className="h-12 w-12 shrink-0 rounded-lg bg-neutral-100 dark:bg-neutral-800" />
             <div className="min-w-0 flex-1 space-y-2">
-              <div className="h-4 w-3/4 rounded bg-neutral-200 dark:bg-neutral-800" />
+              <div className="h-4 w-3/4 rounded bg-neutral-100 dark:bg-neutral-800" />
               <div className="h-3 w-1/2 rounded bg-neutral-100 dark:bg-neutral-800/70" />
-              <div className="h-3 w-5/6 rounded bg-neutral-100 dark:bg-neutral-800/70" />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-neutral-200 bg-white p-6 animate-pulse dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-100 pb-5 dark:border-neutral-800">
-          <div className="h-6 w-48 rounded bg-neutral-200 dark:bg-neutral-800" />
+      <div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-100 pb-4 dark:border-neutral-800">
+          <div className="h-5 w-40 rounded bg-neutral-100 dark:bg-neutral-800" />
           <div className="flex gap-2">
-            <div className="h-9 w-28 rounded-lg bg-neutral-200 dark:bg-neutral-800" />
-            <div className="h-9 w-28 rounded-lg bg-neutral-200 dark:bg-neutral-800" />
+            <div className="h-9 w-28 rounded-lg bg-neutral-100 dark:bg-neutral-800" />
+            <div className="h-9 w-24 rounded-lg bg-neutral-100 dark:bg-neutral-800" />
           </div>
         </div>
-        <div className="mt-6 grid gap-6 md:grid-cols-[260px_minmax(0,1fr)]">
-          <div className="aspect-[4/3] w-full rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
+        <div className="mt-6 grid gap-6 md:grid-cols-[240px_minmax(0,1fr)]">
+          <div className="aspect-[4/3] w-full rounded-lg bg-neutral-100 dark:bg-neutral-800" />
           <div className="space-y-4">
-            <div className="h-6 w-2/3 rounded bg-neutral-200 dark:bg-neutral-800" />
+            <div className="h-6 w-2/3 rounded bg-neutral-100 dark:bg-neutral-800" />
             <div className="h-4 w-1/2 rounded bg-neutral-100 dark:bg-neutral-800/70" />
             <div className="h-16 w-full rounded bg-neutral-100 dark:bg-neutral-800/70" />
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="h-10 rounded bg-neutral-100 dark:bg-neutral-800/70" />
-              <div className="h-10 rounded bg-neutral-100 dark:bg-neutral-800/70" />
-              <div className="h-10 rounded bg-neutral-100 dark:bg-neutral-800/70" />
-              <div className="h-10 rounded bg-neutral-100 dark:bg-neutral-800/70" />
-            </div>
           </div>
         </div>
       </div>
@@ -150,7 +132,8 @@ function buildCanonicalFacts(report: AdminReport): ReviewFactRow[] {
     {
       id: "building",
       label: "Building",
-      value: report.buildingName?.trim() || report.building?.trim() || "Not provided",
+      value:
+        report.buildingName?.trim() || report.building?.trim() || "Not provided",
     },
     {
       id: "event-date",
@@ -200,10 +183,12 @@ function ReportedItemDossier({
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteError, setDeleteError] = useState("");
 
+  const flagCount = activeReport.flags?.length ?? activeReport.flagCount ?? 0;
+
   const handleConfirmDelete = () => {
     const trimmed = deleteReason.trim();
     if (!trimmed) {
-      setDeleteError("Please provide a reason for deleting this reported post.");
+      setDeleteError("Enter a reason for removing this post");
       return;
     }
     onDeleteReport(activeReport.id, trimmed, () => {
@@ -215,216 +200,191 @@ function ReportedItemDossier({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      transition={{ type: "spring", stiffness: 260, damping: 24 }}
-      className="rounded-[20px] bg-white p-5 sm:p-6 dark:bg-neutral-900"
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/80 pb-4 dark:border-neutral-800">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-[#E5192D] tabular-nums dark:bg-red-950/40">
-            <Flag className="h-3.5 w-3.5" aria-hidden="true" />
-            {(activeReport.flags?.length ?? activeReport.flagCount ?? 0)}{" "}
-            {(activeReport.flags?.length ?? activeReport.flagCount ?? 0) === 1
-              ? "user report"
-              : "user reports"}
+      <Panel
+        title={activeReport.type === "Lost" ? "Lost item post" : "Found item post"}
+        titleAdornment={
+          <span className="font-mono text-xs font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
+            · {flagCount} {flagCount === 1 ? "flag" : "flags"}
           </span>
-        </div>
+        }
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={isDismissingFlags || isDeletingReport}
+              onClick={() => onDismissFlags(activeReport.id)}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+            >
+              <Check className="h-4 w-4 text-neutral-500 dark:text-neutral-400" strokeWidth={1.75} aria-hidden="true" />
+              {isDismissingFlags ? "Dismissing…" : "Dismiss flags"}
+            </button>
+            <button
+              type="button"
+              disabled={isDeletingReport || isDismissingFlags}
+              onClick={() => {
+                setDeleteError("");
+                setConfirmingDelete((prev) => !prev);
+              }}
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+              Delete post
+            </button>
+          </div>
+        }
+      >
+        <div className="p-5 sm:p-6">
+          {confirmingDelete && (
+            <div className="mb-6 rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-800/50">
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                Remove &ldquo;{activeReport.title}&rdquo;?
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                The original reporter will receive this reason in their
+                notifications, and the listing will be permanently deleted.
+              </p>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            disabled={isDismissingFlags || isDeletingReport}
-            onClick={() => onDismissFlags(activeReport.id)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3.5 text-xs font-semibold text-neutral-800 transition-all hover:border-neutral-400 hover:bg-neutral-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-500 dark:hover:bg-neutral-800"
-          >
-            <Check className="h-3.5 w-3.5" aria-hidden="true" />
-            {isDismissingFlags ? "Dismissing…" : "Dismiss flags"}
-          </button>
-          <button
-            type="button"
-            disabled={isDeletingReport || isDismissingFlags}
-            onClick={() => {
-              setDeleteError("");
-              setConfirmingDelete((prev) => !prev);
-            }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-all hover:bg-red-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-            Delete post
-          </button>
-        </div>
-      </div>
-
-      <AnimatePresence initial={false}>
-        {confirmingDelete && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 26 }}
-            className="overflow-hidden"
-          >
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50/60 p-4 dark:border-red-500/30 dark:bg-red-950/20">
-              <div className="flex items-start gap-2.5">
-                <AlertTriangle
-                  className="mt-0.5 h-4 w-4 shrink-0 text-[#E5192D]"
-                  aria-hidden="true"
-                />
-                <div className="min-w-0 flex-1 space-y-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      Remove &ldquo;{activeReport.title}&rdquo;?
-                    </h3>
-                    <p className="mt-0.5 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-                      The original reporter will receive this reason in their notifications and this post will be permanently deleted.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {DELETE_REASON_PRESETS.map((preset) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => {
-                          setDeleteReason(preset);
-                          setDeleteError("");
-                        }}
-                        className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors active:scale-[0.98] ${
-                          deleteReason === preset
-                            ? "border-[#E5192D] bg-[#E5192D] text-white"
-                            : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
-                        }`}
-                      >
-                        {preset}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="grid gap-1.5">
-                    <label
-                      htmlFor="reported-delete-reason"
-                      className="text-xs font-semibold text-neutral-800 dark:text-neutral-200"
-                    >
-                      Deletion reason <span className="text-[#E5192D]">*</span>
-                    </label>
-                    <textarea
-                      id="reported-delete-reason"
-                      rows={2}
-                      maxLength={DELETE_REASON_MAX_LENGTH}
-                      value={deleteReason}
-                      onChange={(event) => {
-                        setDeleteReason(event.target.value);
-                        if (deleteError) setDeleteError("");
-                      }}
-                      placeholder="Explain why this listing is being removed…"
-                      className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                    />
-                    {deleteError && (
-                      <p className="text-xs font-medium text-[#E5192D]" role="alert">
-                        {deleteError}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <button
-                      type="button"
-                      disabled={isDeletingReport}
-                      onClick={() => {
-                        setConfirmingDelete(false);
-                        setDeleteError("");
-                      }}
-                      className="inline-flex h-8 items-center rounded-lg border border-neutral-200 bg-white px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 active:scale-[0.98] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isDeletingReport}
-                      onClick={handleConfirmDelete}
-                      className="inline-flex h-8 items-center rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-red-700 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
-                    >
-                      {isDeletingReport ? "Deleting…" : "Confirm delete"}
-                    </button>
-                  </div>
+              <div className="mt-4 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <label
+                    htmlFor="reported-delete-reason"
+                    className="text-xs font-medium text-neutral-700 dark:text-neutral-300"
+                  >
+                    Deletion reason <span className="text-[#E5192D]">*</span>
+                  </label>
+                  <span className="font-mono text-[11px] text-neutral-400 tabular-nums dark:text-neutral-500">
+                    {deleteReason.length}/{DELETE_REASON_MAX_LENGTH}
+                  </span>
                 </div>
+                <textarea
+                  id="reported-delete-reason"
+                  rows={2}
+                  maxLength={DELETE_REASON_MAX_LENGTH}
+                  value={deleteReason}
+                  onChange={(event) => {
+                    setDeleteReason(event.target.value);
+                    if (deleteError) setDeleteError("");
+                  }}
+                  placeholder="Explain why this listing is being removed"
+                  className="w-full resize-none rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                />
+                {deleteError && (
+                  <p className="text-xs font-medium text-[#E5192D]" role="alert">
+                    {deleteError}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={isDeletingReport}
+                  onClick={() => {
+                    setConfirmingDelete(false);
+                    setDeleteError("");
+                  }}
+                  className="inline-flex h-8 items-center rounded-lg border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingReport}
+                  onClick={handleConfirmDelete}
+                  className="inline-flex h-8 items-center rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] disabled:cursor-wait disabled:opacity-60"
+                >
+                  {isDeletingReport ? "Deleting…" : "Confirm delete"}
+                </button>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="mt-6 grid gap-6 md:grid-cols-[260px_minmax(0,1fr)] md:items-start">
-        <div className="min-w-0">
-          {activeReport.image ? (
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
-              <img
-                src={activeReport.image}
-                alt={`${activeReport.title} photo`}
-                className="h-full w-full object-contain"
-              />
-            </div>
-          ) : (
-            <NoItemImage
-              title="No image attached to this report."
-              className="aspect-[4/3] w-full rounded-2xl"
-            />
           )}
-        </div>
 
-        <article className="min-w-0">
-          <h2 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-            {activeReport.title}
-          </h2>
-          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-            Posted by {activeReport.reportedBy} · ID{" "}
-            {resolveIdNumber(
-              activeReport.reporterSchoolId,
-              activeReport.reporterEmail,
-            ) || "N/A"}{" "}
-            · {activeReport.date}
-          </p>
+          {/* Item Dossier */}
+          <div className="grid gap-6 md:grid-cols-[240px_minmax(0,1fr)] md:items-start">
+            <div className="min-w-0">
+              {activeReport.image ? (
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
+                  <img
+                    src={activeReport.image}
+                    alt={`${activeReport.title} photo`}
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <NoItemImage
+                  title="No image attached"
+                  className="aspect-[4/3] w-full rounded-lg"
+                />
+              )}
+            </div>
 
-          <p className="mt-5 text-[11px] font-extrabold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-            {activeReport.type === "Lost"
-              ? "Lost item report"
-              : "Found item report"}
-          </p>
-          <p className="mt-3 text-xs font-bold text-neutral-900 dark:text-neutral-100">
-            Description
-          </p>
-          <p className="mt-1 break-words text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-            {activeReport.description?.trim() ||
-              "No additional description provided."}
-          </p>
+            <article className="min-w-0">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                {activeReport.title}
+              </h2>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                Posted by{" "}
+                <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                  {activeReport.reportedBy}
+                </span>{" "}
+                · ID{" "}
+                <span className="font-mono tabular-nums">
+                  {resolveIdNumber(
+                    activeReport.reporterSchoolId,
+                    activeReport.reporterEmail,
+                  ) || "N/A"}
+                </span>{" "}
+                · {activeReport.date}
+              </p>
 
-          <dl className="mt-5 grid grid-cols-1 gap-x-6 border-y border-neutral-200/80 text-xs sm:grid-cols-2 dark:border-neutral-800">
-            {buildCanonicalFacts(activeReport).map((fact) => (
-              <div key={fact.id} className="min-w-0 py-3">
-                <dt className="font-bold text-neutral-900 dark:text-neutral-100">
-                  {fact.label}
-                </dt>
-                <dd className="mt-1 break-words text-neutral-500 dark:text-neutral-400">
-                  {fact.value}
-                </dd>
+              <div className="mt-4">
+                <h3 className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  Description
+                </h3>
+                <p className="mt-1 break-words text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+                  {activeReport.description?.trim() ||
+                    "No additional description provided"}
+                </p>
               </div>
-            ))}
-          </dl>
-        </article>
-      </div>
 
-      <div className="mt-6 border-t border-neutral-200/80 pt-5 dark:border-neutral-800">
-        <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-          Submitted flag reasons ({activeReport.flags?.length ?? 0})
-        </h3>
-        <ul className="mt-2 divide-y divide-neutral-100 dark:divide-neutral-800">
-          {(activeReport.flags ?? []).map((flag) => (
-            <FlagReasonRow key={flag.id} flag={flag} />
-          ))}
-        </ul>
-      </div>
+              <dl className="mt-5 grid grid-cols-1 gap-x-6 border-t border-neutral-100 pt-2 text-xs sm:grid-cols-2 dark:border-neutral-800">
+                {buildCanonicalFacts(activeReport).map((fact) => (
+                  <div key={fact.id} className="min-w-0 py-2.5">
+                    <dt className="font-medium text-neutral-500 dark:text-neutral-400">
+                      {fact.label}
+                    </dt>
+                    <dd className="mt-0.5 break-words font-medium text-neutral-900 dark:text-neutral-100">
+                      {fact.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          </div>
+
+          {/* Chronological Flag Reasons Log */}
+          <div className="mt-6 border-t border-neutral-100 pt-5 dark:border-neutral-800">
+            <div className="flex items-baseline justify-between gap-2">
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                Flag reasons
+              </h3>
+              <span className="font-mono text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
+                {flagCount} {flagCount === 1 ? "report" : "reports"}
+              </span>
+            </div>
+            <ul className="mt-4 divide-y divide-neutral-100 dark:divide-neutral-800">
+              {(activeReport.flags ?? []).map((flag) => (
+                <FlagReasonRow key={flag.id} flag={flag} />
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Panel>
     </motion.div>
   );
 }
@@ -461,114 +421,156 @@ export function ReportedItemsView({
   const activeReport =
     reports.find((entry) => entry.id === selectedId) ?? reports[0] ?? null;
 
-  const filterChips = [
+  const filterTabs = [
     { key: "All" as const, label: "All reported", count: typeCounts.All },
     { key: "Lost" as const, label: "Lost", count: typeCounts.Lost },
     { key: "Found" as const, label: "Found", count: typeCounts.Found },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <FadeIn>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <FilterChips
-            options={filterChips}
-            value={typeFilter}
-            onChange={onTypeFilterChange}
-            ariaLabel="Filter reported items by post type"
-          />
+        <div
+          role="tablist"
+          aria-label="Filter reported items by post type"
+          className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-neutral-200 bg-white p-1 dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          {filterTabs.map((tab) => {
+            const active = typeFilter === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => onTypeFilterChange(tab.key)}
+                className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                  active
+                    ? "bg-[#E5192D] text-white"
+                    : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums ${
+                    active
+                      ? "bg-white/20 text-white"
+                      : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </FadeIn>
 
       {reports.length === 0 ? (
         <FadeIn delay={0.05}>
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/50 px-6 py-14 text-center dark:border-neutral-800 dark:bg-neutral-900/30">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
-            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <h2 className="mt-4 text-base font-bold text-neutral-900 dark:text-neutral-100">
-            {allFlaggedCount === 0
-              ? "No reported items right now"
-              : "No reported items match your filters"}
-          </h2>
-          <p className="mt-1.5 max-w-md text-xs leading-relaxed text-neutral-600 dark:text-neutral-400 sm:text-sm">
-            {allFlaggedCount === 0
-              ? "When campus users flag a lost or found listing for review, it appears here with every submitted reason."
-              : "Try clearing the search query or switching post type filters to inspect all flagged reports."}
-          </p>
-          <button
-            type="button"
-            onClick={allFlaggedCount === 0 ? onBrowseAllItems : onResetFilters}
-            className="mt-5 inline-flex h-9 items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 text-xs font-semibold text-neutral-800 transition-all hover:border-neutral-400 hover:bg-neutral-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-500"
+          <Panel
+            title="Flagged queue"
+            action={
+              <span className="font-mono text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
+                0 items
+              </span>
+            }
           >
-            {allFlaggedCount === 0 ? "View all item reports" : "Reset filters"}
-          </button>
-        </div>
+            <div className="flex min-h-[320px] flex-col items-center justify-center px-6 py-12 text-center">
+              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                {allFlaggedCount === 0
+                  ? "No reported items right now"
+                  : "No reported items match your filters"}
+              </h2>
+              <p className="mt-1.5 max-w-md text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+                {allFlaggedCount === 0
+                  ? "When campus users flag a lost or found listing for review, it appears here with every submitted reason."
+                  : "Try clearing the search query or switching post type filters to inspect all flagged reports."}
+              </p>
+              <button
+                type="button"
+                onClick={allFlaggedCount === 0 ? onBrowseAllItems : onResetFilters}
+                className="mt-5 inline-flex h-9 items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              >
+                {allFlaggedCount === 0 ? "View all item reports" : "Reset filters"}
+              </button>
+            </div>
+          </Panel>
         </FadeIn>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)] lg:items-start">
           <FadeIn delay={0.05} className="min-w-0">
-          <section aria-label="Flagged items queue" className="min-w-0">
-            <div className="space-y-2.5">
-              {reports.map((report) => {
-                const isSelected = activeReport?.id === report.id;
-                const flagCount = report.flags?.length ?? report.flagCount ?? 0;
-                const latestFlag = report.flags?.[0];
-                return (
-                  <button
-                    key={report.id}
-                    type="button"
-                    aria-current={isSelected ? "true" : undefined}
-                    onClick={() => onSelectId(report.id)}
-                    className={`flex w-full items-start gap-3.5 rounded-2xl border bg-white p-4 text-left transition-colors active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 ${
-                      isSelected
-                        ? "border-[#E5192D] ring-1 ring-[#E5192D]/20"
-                        : "border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50/60 dark:border-neutral-800 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/50"
-                    }`}
-                  >
-                    {report.image ? (
-                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
-                        <img
-                          src={report.image}
-                          alt=""
-                          loading="lazy"
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-neutral-200/80 bg-neutral-50 text-neutral-400 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-500">
-                        <Flag className="h-4 w-4" aria-hidden="true" />
-                      </div>
-                    )}
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                          {report.title}
-                        </p>
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 font-mono text-[10px] font-bold text-[#E5192D] tabular-nums dark:bg-red-950/40">
-                          <Flag className="h-2.5 w-2.5" aria-hidden="true" />
-                          {flagCount}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                        {report.type} · {report.reportedBy} · {report.date}
-                      </p>
-                      {latestFlag?.reason && (
-                        <p className="mt-1.5 line-clamp-1 text-xs text-neutral-600 dark:text-neutral-300">
-                          {latestFlag.reason}
-                        </p>
+            <Panel
+              title="Flagged queue"
+              action={
+                <span className="font-mono text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
+                  {reports.length} {reports.length === 1 ? "item" : "items"}
+                </span>
+              }
+            >
+              <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                {reports.map((report) => {
+                  const isSelected = activeReport?.id === report.id;
+                  const flagCount =
+                    report.flags?.length ?? report.flagCount ?? 0;
+                  const latestFlag = report.flags?.[0];
+                  return (
+                    <button
+                      key={report.id}
+                      type="button"
+                      aria-current={isSelected ? "true" : undefined}
+                      onClick={() => onSelectId(report.id)}
+                      className={`relative flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] ${
+                        isSelected
+                          ? "bg-neutral-50 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-[#E5192D] dark:bg-neutral-800/60"
+                          : "hover:bg-neutral-50/70 dark:hover:bg-neutral-800/40"
+                      }`}
+                    >
+                      {report.image ? (
+                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
+                          <img
+                            src={report.image}
+                            alt=""
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-neutral-200/80 bg-neutral-50 text-neutral-400 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-500">
+                          <Flag className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+                        </div>
                       )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                            {report.title}
+                          </p>
+                          <span className="shrink-0 font-mono text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
+                            {flagCount} {flagCount === 1 ? "flag" : "flags"}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
+                          {report.type} · {report.reportedBy} · {report.date}
+                        </p>
+                        {latestFlag?.reason && (
+                          <p className="mt-1 line-clamp-1 text-xs text-neutral-600 dark:text-neutral-300">
+                            {latestFlag.reason}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </Panel>
           </FadeIn>
 
           {activeReport && (
-            <section aria-label="Selected reported item details" className="min-w-0">
+            <section
+              aria-label="Selected reported item details"
+              className="min-w-0"
+            >
               <AnimatePresence mode="wait">
                 <ReportedItemDossier
                   key={activeReport.id}

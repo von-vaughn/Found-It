@@ -9,6 +9,8 @@ interface ItemRow {
   report_type: ReportType;
   is_claimed: boolean;
   is_returned: boolean;
+  return_response_count: number;
+  has_approved_return: boolean;
   received_by_osa: boolean;
   last_finder_reminder_at: Date | string | null;
   name: string;
@@ -75,6 +77,18 @@ const ITEM_COLUMNS = `
           AND completed_request.status = 'returned')
       )
   ) AS is_returned,
+  (
+    SELECT COUNT(*)::int FROM request rr
+    WHERE rr.item_id = i.id
+      AND rr.kind = 'return'
+      AND rr.status IN ('pending', 'approved', 'returned')
+  ) AS return_response_count,
+  EXISTS (
+    SELECT 1 FROM request rr
+    WHERE rr.item_id = i.id
+      AND rr.kind = 'return'
+      AND rr.status = 'approved'
+  ) AS has_approved_return,
   i.name, i.description, r.date AS item_date,
   r.time AS item_time, i.primary_color AS color,
   r.important_details,
@@ -223,6 +237,12 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
     images: imageList,
     ...(canSeeMarker && row.important_details
       ? { importantDetails: row.important_details }
+      : {}),
+    ...(canSeeMarker && row.report_type === 'lost'
+      ? {
+          returnResponseCount: Number(row.return_response_count) || 0,
+          hasApprovedReturn: Boolean(row.has_approved_return),
+        }
       : {}),
     user: isAdmin
       ? {

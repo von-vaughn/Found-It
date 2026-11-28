@@ -568,6 +568,7 @@ export async function publishRejectedReturn(
     await client.query("BEGIN");
     const { rows } = await client.query<{
       user_id: string | null;
+      recorded_by: string | null;
       status: ClaimStatus;
       received_by_osa: boolean;
       published_item_id: string | null;
@@ -584,7 +585,7 @@ export async function publishRejectedReturn(
       custom_category: string | null;
       item_name: string;
     }>(
-      `SELECT rq.user_id, rq.status, rq.received_by_osa, rq.published_item_id,
+      `SELECT rq.user_id, rq.recorded_by, rq.status, rq.received_by_osa, rq.published_item_id,
               rq.claimant_title, rq.primary_color, rq.building, rq.date_lost,
               rq.time_lost, rq.location_lost, rq.details, rq.important_details,
               rq.evidence, item.category_id, item.custom_category,
@@ -629,7 +630,8 @@ export async function publishRejectedReturn(
       };
     }
 
-    const reporterId = request.user_id ?? fallbackReporterId;
+    const reporterId =
+      request.user_id ?? request.recorded_by ?? fallbackReporterId;
     if (!reporterId) {
       await client.query("ROLLBACK");
       return {
@@ -759,6 +761,7 @@ async function updateRequestStatusById(
     const predecessors = allowedStatusPredecessors(kind, status);
     const { rows } = await client.query<{
       user_id: string | null;
+      recorded_by: string | null;
       item_id: string;
       item_name: string;
       category_id: string;
@@ -778,7 +781,7 @@ async function updateRequestStatusById(
       important_details: string | null;
       evidence: string | null;
     }>(
-      `SELECT rq.user_id, rq.item_id, item.name AS item_name,
+      `SELECT rq.user_id, rq.recorded_by, rq.item_id, item.name AS item_name,
               item.category_id, item.custom_category,
               report.user_id AS item_owner_id, rq.status,
               item.received_by_osa AS item_received_by_osa,
@@ -873,7 +876,11 @@ async function updateRequestStatusById(
           toDateOnly(current.date_lost) ??
           new Date().toISOString().slice(0, 10);
         const created = await createItemWithClient(client, {
-          reporterId: current.user_id ?? releasedByUserId ?? current.item_owner_id,
+          reporterId:
+            current.user_id ??
+            current.recorded_by ??
+            releasedByUserId ??
+            current.item_owner_id,
           reportType: "found",
           name: publishedName,
           description: publishedDescription,
@@ -1489,6 +1496,7 @@ type WalkInReturnCommonFields = {
   importantDetails: string;
   evidence?: string[];
   approvalInstructions: string;
+  recordedByUserId: string;
 };
 
 export type CreateWalkInReturnRepoInput =
@@ -1613,23 +1621,24 @@ export async function createWalkInReturn(
     const { rows: insertedRows } = await client.query<{ id: string }>(
       `INSERT INTO request (
          item_id, user_id, kind, status,
-         received_by_osa, is_walkin,
+         received_by_osa, is_walkin, recorded_by,
          walkin_name, walkin_school_id, walkin_contact,
          claimant_title, primary_color, building,
          date_lost, time_lost, location_lost,
          details, important_details, evidence, approval_instructions
        ) VALUES (
          $1, $2, 'return', 'approved',
-         TRUE, TRUE,
-         $3, $4, $5,
-         $6, $7, $8,
-         $9, $10, $11,
-         $12, $13, $14, $15
+         TRUE, TRUE, $3,
+         $4, $5, $6,
+         $7, $8, $9,
+         $10, $11, $12,
+         $13, $14, $15, $16
        )
        RETURNING id`,
       [
         input.itemId,
         linkedUserId,
+        input.recordedByUserId,
         input.mode === "guest" ? input.fullName.trim() : null,
         input.mode === "guest" ? input.schoolId.trim() : null,
         input.mode === "guest" ? (input.email?.trim() || null) : null,

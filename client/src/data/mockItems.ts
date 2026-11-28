@@ -8,6 +8,8 @@ export interface Item {
   isClaimed?: boolean;
   isReturned?: boolean;
   hasReported?: boolean;
+  returnResponseCount?: number;
+  hasApprovedReturn?: boolean;
   category: ItemCategory;
   customCategory?: string;
   building?: string;

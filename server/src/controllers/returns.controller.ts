@@ -520,7 +520,10 @@ export async function submitWalkInReturn(
   }
 
   try {
-    const returnRequest = await createWalkInReturn(parsed.data);
+    const returnRequest = await createWalkInReturn({
+      ...parsed.data,
+      recordedByUserId: req.user!.sub,
+    });
     await recordAuditLog({
       actorId: req.user!.sub,
       actorEmail: req.user!.email,

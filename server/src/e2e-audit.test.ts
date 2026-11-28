@@ -2006,6 +2006,64 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
           log.summary.includes('walk-in return'),
       ),
     );
+
+    // D) Rejecting a guest walk-in return auto-publishes the Found item under the Staff/Admin who recorded it
+    const lost3Res = await api<{ item: { id: string } }>('POST', '/api/items', {
+      token: ownerAuth.token,
+      body: {
+        reportType: 'lost',
+        name: 'Lost Silver Watch',
+        description: 'Analog watch lost near Gym',
+        itemDate: today,
+        itemTime: '10:00',
+        categoryId: baselineCategoryId,
+        building: 'Library',
+      },
+    });
+    assert.equal(lost3Res.status, 201);
+    const lost3Id = lost3Res.data.item.id;
+    createdItemIds.push(lost3Id);
+
+    const guestReturn3 = await api<{ returnRequest: { id: string } }>(
+      'POST',
+      '/api/returns/admin/walk-in',
+      {
+        token: staffAuth.token,
+        body: {
+          ...baseReturnFields,
+          claimantTitle: 'Silver Analog Watch',
+          color: 'Silver',
+          location: 'Gym bleacher',
+          importantDetails: 'Scratched clasp',
+          itemId: lost3Id,
+          mode: 'guest',
+          fullName: 'Guest Finder',
+          schoolId: '2024-77123',
+          approvalInstructions: 'Claim at OSA desk.',
+        },
+      },
+    );
+    assert.equal(guestReturn3.status, 201);
+
+    const rejectGuestReturn = await api<{
+      returnRequest: { status: string; publishedItemId: string | null };
+    }>('PATCH', `/api/returns/admin/${guestReturn3.data.returnRequest.id}/status`, {
+      token: superAuth.token,
+      body: { status: 'rejected' },
+    });
+    assert.equal(rejectGuestReturn.status, 200);
+    assert.equal(rejectGuestReturn.data.returnRequest.status, 'rejected');
+    const publishedFoundId = rejectGuestReturn.data.returnRequest.publishedItemId;
+    assert.ok(publishedFoundId);
+    createdItemIds.push(publishedFoundId);
+
+    const publishedItemRes = await api<{
+      item: { reportType: string; user: { id: string } };
+    }>('GET', `/api/items/${publishedFoundId}`, { token: staffAuth.token });
+    assert.equal(publishedItemRes.status, 200);
+    assert.equal(publishedItemRes.data.item.reportType, 'found');
+    assert.equal(publishedItemRes.data.item.user.id, staffAuth.user.id);
+    assert.notEqual(publishedItemRes.data.item.user.id, ownerAuth.user.id);
   });
 
   it('11. allows Admin to suspend and lift suspension on School User and Staff accounts with auth blocking, auto-expiry, and audit logging', async () => {

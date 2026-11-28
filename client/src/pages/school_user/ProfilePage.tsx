@@ -143,7 +143,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   });
   const apiMyItems = serverMyItems ? toClientItems(serverMyItems) : null;
   const userItems = (apiMyItems ?? EMPTY_ITEMS).filter(
-    (item) => item.type !== "found" || !item.isReturned,
+    (item) => !item.isReturned && !item.isClaimed,
   );
   const lostItems = userItems.filter((item) => item.type === "lost").length;
   const foundItems = userItems.length - lostItems;
@@ -453,6 +453,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                       >
                         <ItemCard
                           item={item}
+                          showResponseIndicator
                           onItemClick={(selected) =>
                             navigate(`/dashboard/items/${selected.id}`, {
                               state: { from: "/dashboard/profile" },
