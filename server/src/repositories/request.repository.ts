@@ -1519,8 +1519,8 @@ export type CreateWalkInReturnRepoInput =
   | (WalkInReturnCommonFields & {
       mode: "guest";
       fullName: string;
-      schoolId?: string;
-      contact?: string;
+      schoolId: string;
+      email?: string;
     });
 
 /**
@@ -1651,8 +1651,8 @@ export async function createWalkInReturn(
         input.itemId,
         linkedUserId,
         input.mode === "guest" ? input.fullName.trim() : null,
-        input.mode === "guest" ? (input.schoolId?.trim() || null) : null,
-        input.mode === "guest" ? (input.contact?.trim() || null) : null,
+        input.mode === "guest" ? input.schoolId.trim() : null,
+        input.mode === "guest" ? (input.email?.trim() || null) : null,
         input.claimantTitle.trim(),
         input.color?.trim() || null,
         input.building?.trim() || null,

@@ -87,7 +87,7 @@ export function WalkInReturnModal({
   const [matchedUserId, setMatchedUserId] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [schoolId, setSchoolId] = useState("");
-  const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
 
   // Exact return request fields from FoundReportFlow + required pickup instructions
   const [claimantTitle, setClaimantTitle] = useState(itemTitle);
@@ -292,9 +292,15 @@ export function WalkInReturnModal({
         );
         return;
       }
-    } else if (fullName.trim().length < 2) {
-      setFormError("Enter the finder's full name.");
-      return;
+    } else {
+      if (fullName.trim().length < 2) {
+        setFormError("Enter the finder's full name.");
+        return;
+      }
+      if (schoolId.trim().length < 2) {
+        setFormError("Enter the finder's School ID.");
+        return;
+      }
     }
 
     if (
@@ -347,8 +353,8 @@ export function WalkInReturnModal({
           ...commonPayload,
           mode: "guest",
           fullName: fullName.trim(),
-          schoolId: schoolId.trim() || undefined,
-          contact: contact.trim() || undefined,
+          schoolId: schoolId.trim(),
+          email: email.trim() || undefined,
         });
       }
       toast.success("Walk-in return recorded.");
@@ -721,32 +727,38 @@ export function WalkInReturnModal({
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label htmlFor="walkin-return-guest-id" className={labelClass}>
-                        School ID{" "}
-                        <span className="font-normal text-neutral-400">(optional)</span>
+                        School ID <span className="text-[#E5192D]" aria-hidden="true">*</span>
                       </label>
                       <input
                         id="walkin-return-guest-id"
                         type="text"
+                        required
                         value={schoolId}
-                        onChange={(event) => setSchoolId(event.target.value)}
+                        onChange={(event) => {
+                          setSchoolId(event.target.value);
+                          setFormError(null);
+                        }}
                         placeholder="e.g. 2022-01420"
                         className={inputClass}
                       />
                     </div>
                     <div>
                       <label
-                        htmlFor="walkin-return-guest-contact"
+                        htmlFor="walkin-return-guest-email"
                         className={labelClass}
                       >
-                        Contact{" "}
+                        Email{" "}
                         <span className="font-normal text-neutral-400">(optional)</span>
                       </label>
                       <input
-                        id="walkin-return-guest-contact"
-                        type="text"
-                        value={contact}
-                        onChange={(event) => setContact(event.target.value)}
-                        placeholder="Phone or email"
+                        id="walkin-return-guest-email"
+                        type="email"
+                        value={email}
+                        onChange={(event) => {
+                          setEmail(event.target.value);
+                          setFormError(null);
+                        }}
+                        placeholder="e.g. juan@wmsu.edu.ph"
                         className={inputClass}
                       />
                     </div>

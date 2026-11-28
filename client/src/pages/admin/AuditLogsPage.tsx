@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
-import { FadeIn } from "@/components/FadeIn";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { AdminLayout } from "./AdminLayout";
@@ -94,7 +93,6 @@ export function AuditLogsPage() {
       }}
       searchPlaceholder="Search by staff, admin, ID, or summary…"
     >
-      <FadeIn delay={0.05}>
       <Panel
         title="Audit trail"
         action={
@@ -275,7 +273,6 @@ export function AuditLogsPage() {
           )}
         </div>
       </Panel>
-      </FadeIn>
     </AdminLayout>
   );
 }

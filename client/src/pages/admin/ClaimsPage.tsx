@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { ScanLine } from "lucide-react";
-import { FadeIn } from "@/components/FadeIn";
 import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { AdminQrScannerModal } from "@/components/admin/AdminQrScannerModal";
 import { ClaimsListPanel } from "@/components/admin/ClaimsView";
@@ -72,8 +71,7 @@ export function ClaimsPage() {
     activeTab === "claims" ? claimsWorkflow.refetch : returnsWorkflow.refetch;
 
   const tabSwitcher = (
-    <FadeIn y={4}>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div
           className="inline-flex flex-wrap items-center gap-1 rounded-xl bg-white p-1 dark:bg-neutral-900"
           role="tablist"
@@ -136,7 +134,6 @@ export function ClaimsPage() {
           </button>
         )}
       </div>
-    </FadeIn>
   );
 
   return (

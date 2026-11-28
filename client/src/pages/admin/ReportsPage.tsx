@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ListFilter, Plus } from "lucide-react";
 import toast from "react-hot-toast";
-import { FadeIn } from "@/components/FadeIn";
 import { FilterOptionsModal } from "@/components/admin/FilterOptionsModal";
 import { ItemTable } from "@/components/admin/ItemTable";
 import { Panel } from "@/components/admin/Panel";
@@ -211,7 +210,6 @@ export function ReportsPage() {
       onQueryChange={updateQuery}
       searchPlaceholder="Search items by name…"
     >
-      <FadeIn>
       <Panel
         title="Item reports"
         borderless
@@ -397,7 +395,6 @@ export function ReportsPage() {
           </div>
         </div>
       </Panel>
-      </FadeIn>
 
       {selectedReport && (
         <ItemDetailsDialog

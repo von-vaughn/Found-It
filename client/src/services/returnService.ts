@@ -44,8 +44,8 @@ export type CreateWalkInReturnPayload =
   | (WalkInReturnCommonPayload & {
       mode: "guest";
       fullName: string;
-      schoolId?: string;
-      contact?: string;
+      schoolId: string;
+      email?: string;
     });
 
 interface CreateReturnResponse {

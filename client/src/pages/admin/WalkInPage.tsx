@@ -127,8 +127,7 @@ export function WalkInPage() {
           : "Search lost items by name…"
       }
     >
-      <FadeIn delay={0.05}>
-        <div className="space-y-4">
+      <div className="space-y-4">
           {/* Tab switcher */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div
@@ -210,19 +209,20 @@ export function WalkInPage() {
             )}
           </div>
 
-          <Panel
-            title={
-              activeTab === "claims"
-                ? "Eligible Found Items for Walk-In Claim"
-                : "Active Lost Items for Walk-In Return"
-            }
-            action={
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                {filteredList.length}{" "}
-                {filteredList.length === 1 ? "item" : "items"}
-              </span>
-            }
-          >
+          <FadeIn key={activeTab} y={6} duration={0.25}>
+            <Panel
+              title={
+                activeTab === "claims"
+                  ? "Eligible Found Items for Walk-In Claim"
+                  : "Active Lost Items for Walk-In Return"
+              }
+              action={
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {filteredList.length}{" "}
+                  {filteredList.length === 1 ? "item" : "items"}
+                </span>
+              }
+            >
             {isLoading ? (
               <div className="flex min-h-[320px] items-center justify-center px-5 py-10">
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -368,9 +368,9 @@ export function WalkInPage() {
                 />
               </div>
             )}
-          </Panel>
+            </Panel>
+          </FadeIn>
         </div>
-      </FadeIn>
 
       {claimTarget && (
         <WalkInClaimModal

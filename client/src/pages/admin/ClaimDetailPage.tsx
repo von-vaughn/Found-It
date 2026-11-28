@@ -1,6 +1,5 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FadeIn } from "@/components/FadeIn";
 import { ClaimDetailPanel } from "@/components/admin/ClaimsView";
 import { paths } from "@/routes/paths";
 import { AdminLayout } from "./AdminLayout";
@@ -37,7 +36,6 @@ export function ClaimDetailPage() {
     : [];
 
   const backButton = (
-    <FadeIn y={4}>
     <button
       type="button"
       onClick={() => navigate(paths.adminClaims)}
@@ -46,7 +44,6 @@ export function ClaimDetailPage() {
       <ArrowLeft className="h-4 w-4" aria-hidden="true" />
       Back to claims
     </button>
-    </FadeIn>
   );
 
   if (isLoading) {

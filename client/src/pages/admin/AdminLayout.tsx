@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import toast from "react-hot-toast";
 import { FadeIn } from "@/components/FadeIn";
@@ -46,6 +46,7 @@ export function AdminLayout({
   children,
 }: AdminLayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const {
@@ -211,7 +212,9 @@ export function AdminLayout({
             </div>
           )}
 
-          {children}
+          <FadeIn key={location.pathname} y={8} duration={0.3} delay={0}>
+            {children}
+          </FadeIn>
         </main>
       </div>
     </div>

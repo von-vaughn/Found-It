@@ -4,7 +4,6 @@ import toast from "react-hot-toast";
 import { Bell, Check, ChevronRight, X } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
-import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { resolveIdNumber } from "@/lib/idNumber";
 import { getClaimantEmail, type ClaimRequest } from "@/types/claim";
 import { OsaReceiptConfirmModal } from "./OsaReceiptConfirmModal";
@@ -181,10 +180,7 @@ export function ClaimsListPanel({
           </div>
         ) : (
           <>
-            <StaggerGrid
-              key={`${safePage}-${claimGroups.length}-${pagedClaims[0]?.representative.itemId ?? ""}`}
-              className="divide-y divide-neutral-100 dark:divide-neutral-800"
-            >
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {pagedClaims.map((group) => {
                 const claim = group.representative;
                 const itemImage =
@@ -195,7 +191,7 @@ export function ClaimsListPanel({
                   .filter((name, index, names) => names.indexOf(name) === index);
 
                 return (
-                  <StaggerItem key={claim.itemId}>
+                  <div key={claim.itemId}>
                     <button
                       type="button"
                       onClick={() => onSelectClaim(claim.id)}
@@ -239,10 +235,10 @@ export function ClaimsListPanel({
                         />
                       </span>
                     </button>
-                  </StaggerItem>
+                  </div>
                 );
               })}
-            </StaggerGrid>
+            </div>
 
             {totalPages > 1 && (
               <div className="border-t border-neutral-100 px-5 py-3 dark:border-neutral-800">

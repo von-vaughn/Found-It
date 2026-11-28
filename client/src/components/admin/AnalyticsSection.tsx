@@ -1,6 +1,4 @@
 import { useMemo, useState } from "react";
-import { MapPin, Tag } from "lucide-react";
-import { FadeIn } from "@/components/FadeIn";
 import type { ClaimRequest } from "@/types/claim";
 import {
   computeMonthlyReportsTrend,
@@ -32,118 +30,18 @@ const FUNNEL_STYLES = {
     dot: "bg-amber-500",
   },
   blue: {
-    bar: "bg-blue-500",
-    dot: "bg-blue-500",
+    bar: "bg-neutral-500 dark:bg-neutral-400",
+    dot: "bg-neutral-500 dark:bg-neutral-400",
   },
   emerald: {
-    bar: "bg-emerald-500",
-    dot: "bg-emerald-500",
+    bar: "bg-emerald-600 dark:bg-emerald-500",
+    dot: "bg-emerald-600 dark:bg-emerald-500",
   },
   red: {
     bar: "bg-[#E5192D]",
     dot: "bg-[#E5192D]",
   },
 } as const;
-
-function RankedDistribution({
-  title,
-  subtitle,
-  rows,
-  emptyTitle,
-  emptyDescription,
-  accentTone,
-  icon,
-}: {
-  title: string;
-  subtitle: string;
-  rows: RankedCount[];
-  emptyTitle: string;
-  emptyDescription: string;
-  accentTone: "crimson" | "ink";
-  icon: "category" | "building";
-}) {
-  const maxCount = Math.max(...rows.map((row) => row.count), 1);
-  const Icon = icon === "category" ? Tag : MapPin;
-
-  return (
-    <section className="flex flex-col rounded-2xl bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:bg-neutral-900 dark:shadow-none sm:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-bold tracking-tight text-neutral-950 dark:text-white">
-            {title}
-          </h3>
-          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-            {subtitle}
-          </p>
-        </div>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-          <Icon className="h-4 w-4" aria-hidden="true" />
-        </span>
-      </div>
-
-      {rows.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-          <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-            {emptyTitle}
-          </p>
-          <p className="mt-1 max-w-xs text-xs text-neutral-500 dark:text-neutral-400">
-            {emptyDescription}
-          </p>
-        </div>
-      ) : (
-        <ol className="mt-5 space-y-3.5">
-          {rows.map((row, index) => {
-            const isLeader = index === 0;
-            const fillClass =
-              accentTone === "crimson"
-                ? isLeader
-                  ? "bg-[#E5192D]"
-                  : "bg-neutral-800/80 dark:bg-neutral-300/80"
-                : isLeader
-                  ? "bg-neutral-950 dark:bg-white"
-                  : "bg-neutral-400 dark:bg-neutral-600";
-            return (
-              <li key={row.label} className="group">
-                <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                  <div className="flex min-w-0 items-baseline gap-2.5">
-                    <span className="w-4 shrink-0 text-[11px] font-semibold text-neutral-400 tabular-nums dark:text-neutral-500">
-                      {index + 1}
-                    </span>
-                    <span
-                      className={`truncate text-xs ${
-                        isLeader
-                          ? "font-bold text-neutral-950 dark:text-white"
-                          : "font-medium text-neutral-700 dark:text-neutral-300"
-                      }`}
-                    >
-                      {row.label}
-                    </span>
-                  </div>
-                  <div className="flex shrink-0 items-baseline gap-2 text-xs tabular-nums">
-                    <span className="font-bold text-neutral-900 dark:text-neutral-100">
-                      {row.count}
-                    </span>
-                    <span className="w-9 text-right text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {row.share}%
-                    </span>
-                  </div>
-                </div>
-                <div className="ml-6 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${fillClass}`}
-                    style={{
-                      width: `${Math.max(4, Math.round((row.count / maxCount) * 100))}%`,
-                    }}
-                  />
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-    </section>
-  );
-}
 
 export function AnalyticsSection({
   reports,
@@ -202,7 +100,7 @@ export function AnalyticsSection({
     ...trendBuckets.map((bucket) => Math.max(bucket.lost, bucket.found)),
     0,
   );
-  // Round Y-axis ceiling to an even step so ticks are clean integers.
+  // Round Y-axis ceiling to an even step so ticks stay clean integers.
   const yAxisMax = rawMax <= 2 ? 2 : Math.ceil(rawMax / 2) * 2;
   const yTicks = [yAxisMax, Math.round(yAxisMax / 2), 0];
 
@@ -211,40 +109,43 @@ export function AnalyticsSection({
     : null;
 
   const totalRequests = claims.length + returnRequests.length;
+  const maxCategoryCount = Math.max(
+    ...topCategories.map((row) => row.count),
+    1,
+  );
 
   return (
-    <div className="space-y-4">
-      {/* Row 1: Reports Trend (8 cols) + Request Funnel (4 cols) */}
-      <FadeIn delay={0.06}>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+    <div className="space-y-6">
+      {/* Row 3: Primary chart (8 cols) + Request lifecycle ledger (4 cols) */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <section
             aria-labelledby="reports-trend-heading"
-            className="flex flex-col rounded-2xl bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:bg-neutral-900 dark:shadow-none sm:p-6 lg:col-span-8"
+            className="flex flex-col rounded-2xl bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:bg-neutral-900 dark:shadow-none lg:col-span-8"
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h2
                   id="reports-trend-heading"
-                  className="text-sm font-bold tracking-tight text-neutral-950 dark:text-white"
+                  className="text-sm font-medium text-neutral-900 dark:text-neutral-100"
                 >
                   Reports over time
                 </h2>
-                <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="mt-1 text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
                   {hoveredBucket ? (
-                    <span className="font-medium text-neutral-800 tabular-nums dark:text-neutral-200">
-                      {hoveredBucket.label}: {hoveredBucket.lost} lost ·{" "}
-                      {hoveredBucket.found} found
+                    <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                      {hoveredBucket.label} · {hoveredBucket.found} found ·{" "}
+                      {hoveredBucket.lost} lost
                     </span>
                   ) : (
-                    <span className="tabular-nums">
-                      {activePeriodLabel} · {periodTotals.lost} lost ·{" "}
-                      {periodTotals.found} found
+                    <span>
+                      {activePeriodLabel} · {periodTotals.found} found ·{" "}
+                      {periodTotals.lost} lost
                     </span>
                   )}
                 </p>
               </div>
 
-              <div className="inline-flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="sr-only" htmlFor="trend-month-filter">
                   Filter trend by month
                 </label>
@@ -258,7 +159,7 @@ export function AnalyticsSection({
                     setSelectedMonth(val === "all" ? "all" : Number(val));
                     setHoveredBucketKey(null);
                   }}
-                  className="h-9 rounded-xl border border-neutral-200 bg-white px-2.5 text-[11px] font-semibold text-neutral-700 transition-colors hover:border-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200"
+                  className="h-9 rounded-lg border border-neutral-200 bg-neutral-50 px-3 text-xs font-medium text-neutral-700 transition-colors duration-150 hover:border-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200"
                 >
                   {MONTH_OPTIONS.map((month) => (
                     <option key={month.value} value={month.value}>
@@ -277,7 +178,7 @@ export function AnalyticsSection({
                     setSelectedYear(Number(event.target.value));
                     setHoveredBucketKey(null);
                   }}
-                  className="h-9 rounded-xl border border-neutral-200 bg-white px-2.5 text-[11px] font-semibold tabular-nums text-neutral-700 transition-colors hover:border-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200"
+                  className="h-9 rounded-lg border border-neutral-200 bg-neutral-50 px-3 text-xs font-medium tabular-nums text-neutral-700 transition-colors duration-150 hover:border-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200"
                 >
                   {availableYears.map((year) => (
                     <option key={year} value={String(year)}>
@@ -288,22 +189,22 @@ export function AnalyticsSection({
               </div>
             </div>
 
-            {/* Legend */}
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" />
-                Lost
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm bg-neutral-900 dark:bg-neutral-200" />
+            {/* Series legend */}
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-neutral-600 dark:text-neutral-400">
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-[3px] bg-[#E5192D]" />
                 Found
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-[3px] bg-neutral-300 dark:bg-neutral-600" />
+                Lost
               </span>
             </div>
 
-            {/* Chart body with Y-axis scale + dashed gridlines */}
-            <div className="mt-4 flex flex-1 gap-3">
+            {/* Primary chart body (288px plot height) */}
+            <div className="mt-6 flex flex-1 gap-3">
               <div
-                className="flex h-48 flex-col justify-between pb-6 text-right text-[10px] font-medium text-neutral-400 tabular-nums dark:text-neutral-500"
+                className="flex h-72 flex-col justify-between pb-7 text-right font-mono text-xs text-neutral-400 tabular-nums dark:text-neutral-500"
                 aria-hidden="true"
               >
                 {yTicks.map((tick) => (
@@ -312,14 +213,14 @@ export function AnalyticsSection({
               </div>
 
               <div className="relative flex flex-1 flex-col">
-                <div className="relative h-48 pb-6">
-                  {/* Horizontal dashed gridlines */}
+                <div className="relative h-72 pb-7">
+                  {/* Muted horizontal gridlines */}
                   <div
-                    className="pointer-events-none absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between"
+                    className="pointer-events-none absolute inset-x-0 top-0 bottom-7 flex flex-col justify-between"
                     aria-hidden="true"
                   >
-                    <div className="border-t border-dashed border-neutral-200/80 dark:border-neutral-800" />
-                    <div className="border-t border-dashed border-neutral-200/80 dark:border-neutral-800" />
+                    <div className="border-t border-neutral-100 dark:border-neutral-800" />
+                    <div className="border-t border-neutral-100 dark:border-neutral-800" />
                     <div className="border-t border-neutral-200 dark:border-neutral-800" />
                   </div>
 
@@ -335,7 +236,7 @@ export function AnalyticsSection({
                       const barHeight = (value: number) =>
                         value === 0
                           ? 0
-                          : Math.max(6, Math.round((value / yAxisMax) * 100));
+                          : Math.max(4, Math.round((value / yAxisMax) * 100));
                       return (
                         <button
                           key={bucket.key}
@@ -344,7 +245,7 @@ export function AnalyticsSection({
                           onMouseLeave={() => setHoveredBucketKey(null)}
                           onFocus={() => setHoveredBucketKey(bucket.key)}
                           onBlur={() => setHoveredBucketKey(null)}
-                          aria-label={`${bucket.label}: ${bucket.lost} lost, ${bucket.found} found`}
+                          aria-label={`${bucket.label}: ${bucket.found} found, ${bucket.lost} lost`}
                           className={`group flex h-full flex-col justify-end rounded-lg px-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                             isHovered
                               ? "bg-neutral-100/80 dark:bg-neutral-800/60"
@@ -353,12 +254,12 @@ export function AnalyticsSection({
                         >
                           <div className="flex h-full w-full items-end justify-center gap-1">
                             <span
-                              className="w-2.5 rounded-t-sm bg-amber-500 transition-all duration-200 sm:w-3"
-                              style={{ height: `${barHeight(bucket.lost)}%` }}
+                              className="w-3 rounded-t-[4px] bg-[#E5192D] transition-opacity duration-150 sm:w-3.5"
+                              style={{ height: `${barHeight(bucket.found)}%` }}
                             />
                             <span
-                              className="w-2.5 rounded-t-sm bg-neutral-900 transition-all duration-200 dark:bg-neutral-200 sm:w-3"
-                              style={{ height: `${barHeight(bucket.found)}%` }}
+                              className="w-3 rounded-t-[4px] bg-neutral-300 transition-colors duration-150 dark:bg-neutral-600 sm:w-3.5"
+                              style={{ height: `${barHeight(bucket.lost)}%` }}
                             />
                           </div>
                         </button>
@@ -376,9 +277,9 @@ export function AnalyticsSection({
                     {trendBuckets.map((bucket) => (
                       <span
                         key={bucket.key}
-                        className={`truncate text-[10px] font-medium transition-colors ${
+                        className={`truncate font-mono text-xs transition-colors duration-150 ${
                           hoveredBucketKey === bucket.key
-                            ? "text-neutral-950 dark:text-white"
+                            ? "text-neutral-900 dark:text-neutral-100"
                             : "text-neutral-500 dark:text-neutral-400"
                         }`}
                       >
@@ -391,41 +292,40 @@ export function AnalyticsSection({
             </div>
           </section>
 
-          {/* Right: Request Status Funnel */}
+          {/* Right: Request lifecycle breakdown */}
           <section
             aria-labelledby="request-funnel-heading"
-            className="flex flex-col justify-between rounded-2xl bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:bg-neutral-900 dark:shadow-none sm:p-6 lg:col-span-4"
+            className="flex flex-col justify-between rounded-2xl bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:bg-neutral-900 dark:shadow-none lg:col-span-4"
           >
             <div>
               <div className="flex items-baseline justify-between gap-2">
                 <h2
                   id="request-funnel-heading"
-                  className="text-sm font-bold tracking-tight text-neutral-950 dark:text-white"
+                  className="text-sm font-medium text-neutral-900 dark:text-neutral-100"
                 >
                   Request lifecycle
                 </h2>
-                <span className="text-xs font-semibold text-neutral-500 tabular-nums dark:text-neutral-400">
+                <span className="font-mono text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
                   {totalRequests} total
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                Combined claim &amp; return outcomes
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                Claim and return outcomes
               </p>
 
               {totalRequests === 0 ? (
-                <div className="mt-10 flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 px-4 py-8 text-center dark:border-neutral-800">
-                  <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                <div className="mt-12 flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-200 px-4 py-8 text-center dark:border-neutral-800">
+                  <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
                     No active requests yet
                   </p>
                   <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                    Lifecycle distribution will populate as students submit
-                    claims and return reports.
+                    Outcomes appear as students submit claims and returns
                   </p>
                 </div>
               ) : (
                 <>
                   <div
-                    className="mt-5 flex h-2.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800"
+                    className="mt-6 flex h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800"
                     role="img"
                     aria-label="Request lifecycle distribution"
                   >
@@ -433,7 +333,7 @@ export function AnalyticsSection({
                       row.count > 0 ? (
                         <div
                           key={row.label}
-                          className={`h-full ${FUNNEL_STYLES[row.tone].bar} transition-all duration-300`}
+                          className={`h-full ${FUNNEL_STYLES[row.tone].bar}`}
                           style={{
                             width: `${Math.max(4, Math.round((row.count / totalRequests) * 100))}%`,
                           }}
@@ -443,23 +343,24 @@ export function AnalyticsSection({
                     )}
                   </div>
 
-                  <ul className="mt-5 divide-y divide-neutral-100 dark:divide-neutral-800">
+                  <ul className="mt-6 divide-y divide-neutral-100 dark:divide-neutral-800">
                     {requestFunnel.map((row) => (
                       <li
                         key={row.label}
                         className="flex items-center justify-between gap-3 py-3 text-xs first:pt-0 last:pb-0"
                       >
-                        <span className="inline-flex items-center gap-2.5 font-medium text-neutral-700 dark:text-neutral-300">
+                        <span className="inline-flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                           <span
-                            className={`h-2 w-2 rounded-full ${FUNNEL_STYLES[row.tone].dot}`}
+                            className={`h-1.5 w-1.5 shrink-0 rounded-full ${FUNNEL_STYLES[row.tone].dot}`}
+                            aria-hidden="true"
                           />
                           {row.label}
                         </span>
-                        <span className="flex items-baseline gap-2 tabular-nums">
-                          <strong className="font-bold text-neutral-950 dark:text-white">
+                        <span className="flex items-baseline gap-3 tabular-nums">
+                          <span className="font-medium text-neutral-900 dark:text-neutral-100">
                             {row.count}
-                          </strong>
-                          <span className="w-9 text-right text-[11px] text-neutral-500 dark:text-neutral-400">
+                          </span>
+                          <span className="w-10 text-right font-mono text-xs text-neutral-500 dark:text-neutral-400">
                             {row.share}%
                           </span>
                         </span>
@@ -471,39 +372,156 @@ export function AnalyticsSection({
             </div>
 
             {totalRequests > 0 && (
-              <div className="mt-5 flex items-center justify-between border-t border-neutral-100 pt-3.5 text-[11px] text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+              <div className="mt-6 flex items-center justify-between border-t border-neutral-100 pt-4 font-mono text-xs text-neutral-500 tabular-nums dark:border-neutral-800 dark:text-neutral-400">
                 <span>Claims: {claims.length}</span>
                 <span>Returns: {returnRequests.length}</span>
               </div>
             )}
           </section>
         </div>
-      </FadeIn>
 
-      {/* Row 2: Top Categories + Campus Hotspots */}
-      <FadeIn delay={0.09}>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <RankedDistribution
-            title="Top categories"
-            subtitle={`Most reported item types across ${reports.length} reports`}
-            rows={topCategories}
-            emptyTitle="No categorized reports yet"
-            emptyDescription="Category distribution will appear once lost or found reports are submitted."
-            accentTone="crimson"
-            icon="category"
-          />
+      {/* Row 4: Asymmetric breakdown — Top categories (7 cols bars) + Campus hotspots (5 cols table) */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <section
+            aria-labelledby="top-categories-heading"
+            className="flex flex-col rounded-2xl bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:bg-neutral-900 dark:shadow-none lg:col-span-7"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <div>
+                <h2
+                  id="top-categories-heading"
+                  className="text-sm font-medium text-neutral-900 dark:text-neutral-100"
+                >
+                  Top categories
+                </h2>
+                <p className="mt-1 text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
+                  Most reported item types across {reports.length} reports
+                </p>
+              </div>
+            </div>
 
-          <RankedDistribution
-            title="Campus hotspots"
-            subtitle="Buildings with the highest lost & found activity"
-            rows={topBuildings}
-            emptyTitle="No building hotspots yet"
-            emptyDescription="Reports tagged with campus buildings will rank here automatically."
-            accentTone="ink"
-            icon="building"
-          />
+            {topCategories.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
+                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                  No categorized reports yet
+                </p>
+                <p className="mt-1 max-w-xs text-xs text-neutral-500 dark:text-neutral-400">
+                  Category distribution appears once reports are submitted
+                </p>
+              </div>
+            ) : (
+              <ol className="mt-6 space-y-4">
+                {topCategories.map((row, index) => {
+                  const isLeader = index === 0;
+                  return (
+                    <li key={row.label}>
+                      <div className="mb-2 flex items-baseline justify-between gap-3">
+                        <div className="flex min-w-0 items-baseline gap-3">
+                          <span className="w-4 shrink-0 font-mono text-xs text-neutral-400 tabular-nums dark:text-neutral-500">
+                            {index + 1}
+                          </span>
+                          <span
+                            className={`truncate text-xs ${
+                              isLeader
+                                ? "font-medium text-neutral-900 dark:text-neutral-100"
+                                : "text-neutral-700 dark:text-neutral-300"
+                            }`}
+                          >
+                            {row.label}
+                          </span>
+                        </div>
+                        <div className="flex shrink-0 items-baseline gap-3 text-xs tabular-nums">
+                          <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                            {row.count}
+                          </span>
+                          <span className="w-10 text-right font-mono text-neutral-500 dark:text-neutral-400">
+                            {row.share}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-7 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+                        <div
+                          className={`h-full origin-left rounded-full transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                            isLeader
+                              ? "bg-[#E5192D]"
+                              : "bg-neutral-400 dark:bg-neutral-600"
+                          }`}
+                          style={{
+                            transform: `scaleX(${Math.max(0.04, row.count / maxCategoryCount)})`,
+                          }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </section>
+
+          <section
+            aria-labelledby="campus-hotspots-heading"
+            className="flex flex-col rounded-2xl bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:bg-neutral-900 dark:shadow-none lg:col-span-5"
+          >
+            <div>
+              <h2
+                id="campus-hotspots-heading"
+                className="text-sm font-medium text-neutral-900 dark:text-neutral-100"
+              >
+                Campus hotspots
+              </h2>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                Buildings with the most lost and found activity
+              </p>
+            </div>
+
+            {topBuildings.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
+                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                  No building hotspots yet
+                </p>
+                <p className="mt-1 max-w-xs text-xs text-neutral-500 dark:text-neutral-400">
+                  Reports tagged with campus buildings rank here automatically
+                </p>
+              </div>
+            ) : (
+              <table className="mt-6 w-full border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-neutral-100 text-left text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+                    <th scope="col" className="pb-2 font-normal">
+                      Building
+                    </th>
+                    <th scope="col" className="pb-2 text-right font-normal">
+                      Reports
+                    </th>
+                    <th scope="col" className="pb-2 text-right font-normal">
+                      Share
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                  {topBuildings.map((row, index) => (
+                    <tr key={row.label} className="h-10">
+                      <td className="max-w-[200px] truncate pr-3 text-neutral-800 dark:text-neutral-200">
+                        <span className="mr-2 font-mono text-neutral-400 tabular-nums dark:text-neutral-500">
+                          {index + 1}
+                        </span>
+                        <span className={index === 0 ? "font-medium text-neutral-900 dark:text-neutral-100" : ""}>
+                          {row.label}
+                        </span>
+                      </td>
+                      <td className="text-right font-medium text-neutral-900 tabular-nums dark:text-neutral-100">
+                        {row.count}
+                      </td>
+                      <td className="w-14 text-right font-mono text-neutral-500 tabular-nums dark:text-neutral-400">
+                        {row.share}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
         </div>
-      </FadeIn>
     </div>
   );
 }

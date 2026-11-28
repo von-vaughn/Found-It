@@ -45,12 +45,13 @@ export const createWalkInReturnSchema = z.discriminatedUnion("mode", [
     schoolId: z
       .string()
       .trim()
-      .max(30, "School ID must be at most 30 characters")
-      .optional(),
-    contact: z
+      .min(2, "School ID is required")
+      .max(30, "School ID must be at most 30 characters"),
+    email: z
       .string()
       .trim()
-      .max(120, "Contact must be at most 120 characters")
+      .email("Enter a valid email address")
+      .max(120, "Email must be at most 120 characters")
       .optional(),
     ...walkInReturnItemFields,
   }),

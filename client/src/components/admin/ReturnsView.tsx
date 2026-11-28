@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { Bell, Check, ChevronRight, Send, X } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
-import { StaggerGrid, StaggerItem } from "@/components/StaggerGridItem";
 import { resolveIdNumber } from "@/lib/idNumber";
 import type { ServerClaimStatus } from "@/services/claimService";
 import type { ClaimRequest } from "@/types/claim";
@@ -202,10 +201,7 @@ export function ReturnsListPanel({
           </div>
         ) : (
           <>
-            <StaggerGrid
-              key={`${safePage}-${requestGroups.length}-${pageGroups[0]?.representative.itemId ?? ""}`}
-              className="divide-y divide-neutral-100 dark:divide-neutral-800"
-            >
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {pageGroups.map((group) => {
                 const request = group.representative;
                 const lostReport = reports.find(
@@ -216,7 +212,7 @@ export function ReturnsListPanel({
                   .map((entry) => entry.claimant)
                   .filter((name, index, names) => names.indexOf(name) === index);
                 return (
-                  <StaggerItem key={request.itemId}>
+                  <div key={request.itemId}>
                     <button
                       type="button"
                       onClick={() => onSelectReturn(request.id)}
@@ -260,10 +256,10 @@ export function ReturnsListPanel({
                         />
                       </span>
                     </button>
-                  </StaggerItem>
+                  </div>
                 );
               })}
-            </StaggerGrid>
+            </div>
 
             {totalPages > 1 && (
               <div className="border-t border-neutral-100 px-5 py-3 dark:border-neutral-800">

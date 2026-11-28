@@ -11,7 +11,6 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { FadeIn } from "@/components/FadeIn";
 import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -371,25 +370,22 @@ export function UsersPage() {
           </div>
         </Panel>
       ) : usersQuery.isError ? (
-        <FadeIn delay={0.05}>
-          <Panel title="Unable to load accounts">
-            <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-5 py-10 text-center">
-              <p className="text-sm text-red-700 dark:text-red-400" role="alert">
-                {errorMessage(usersQuery.error, "We couldn't load accounts.")}
-              </p>
-              <button
-                type="button"
-                onClick={() => void usersQuery.refetch()}
-                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
-              >
-                Try again
-              </button>
-            </div>
-          </Panel>
-        </FadeIn>
+        <Panel title="Unable to load accounts">
+          <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-5 py-10 text-center">
+            <p className="text-sm text-red-700 dark:text-red-400" role="alert">
+              {errorMessage(usersQuery.error, "We couldn't load accounts.")}
+            </p>
+            <button
+              type="button"
+              onClick={() => void usersQuery.refetch()}
+              className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+            >
+              Try again
+            </button>
+          </div>
+        </Panel>
       ) : (
-        <FadeIn delay={0.05}>
-          <Panel
+        <Panel
             title="User Management"
             action={
               <span className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -748,7 +744,6 @@ export function UsersPage() {
               </div>
             </div>
           </Panel>
-        </FadeIn>
       )}
 
       {pendingUser && (

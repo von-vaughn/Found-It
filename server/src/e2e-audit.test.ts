@@ -1777,6 +1777,7 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
         itemId: foundItemId,
         mode: 'guest',
         fullName: 'Walk In Finder',
+        schoolId: '2024-10001',
       },
     });
     assert.equal(wrongTypeRes.status, 409);
@@ -1836,6 +1837,18 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     });
     assert.equal(missingInstructionsRes.status, 400);
 
+    // Missing guest School ID MUST be rejected (400)
+    const missingGuestSchoolIdRes = await api('POST', '/api/returns/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        ...baseReturnFields,
+        itemId: lost1Id,
+        mode: 'guest',
+        fullName: 'No ID Guest',
+      },
+    });
+    assert.equal(missingGuestSchoolIdRes.status, 400);
+
     // Registered school user walk-in return -> 201 approved + receivedByOsa + isWalkIn
     const accountReturnRes = await api<{
       returnRequest: {
@@ -1886,6 +1899,7 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
         itemId: lost1Id,
         mode: 'guest',
         fullName: 'Second Finder',
+        schoolId: '2024-10002',
       },
     });
     assert.equal(duplicateReturnRes.status, 409);
@@ -1941,7 +1955,7 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
         mode: 'guest',
         fullName: 'Maria Santos',
         schoolId: '2024-88991',
-        contact: '09171234567',
+        email: 'maria.santos@wmsu.edu.ph',
         approvalInstructions: 'Claim at OSA desk between 8 AM and 5 PM.',
       },
     });
