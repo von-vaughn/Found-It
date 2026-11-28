@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { Check, Copy, Download, X } from "lucide-react";
+import { Check, Copy, Download, QrCode, X } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   buildPickupQrUrl,
@@ -136,21 +136,10 @@ export function PickupQrCard({
         type="button"
         onClick={() => setEnlargedOpen(true)}
         aria-label={`View pickup QR code for ${itemName}`}
-        title="Click to view or download QR code"
-        className="group flex shrink-0 flex-col items-center rounded-xl border border-emerald-200/80 bg-white p-2 shadow-xs transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 dark:border-emerald-800/50 cursor-pointer"
+        className="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl border border-emerald-200/80 bg-white px-3.5 text-xs font-bold text-emerald-800 shadow-xs transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:border-emerald-800/60 dark:bg-neutral-900 dark:text-emerald-300 dark:hover:bg-emerald-950/60 cursor-pointer"
       >
-        <QRCodeSVG
-          ref={qrSvgRef}
-          value={qrValue}
-          size={76}
-          level="M"
-          marginSize={1}
-          bgColor="#FFFFFF"
-          fgColor="#171717"
-        />
-        <span className="mt-1 font-mono text-[10px] font-bold tracking-wider text-neutral-700 group-hover:text-neutral-950">
-          #{referenceCode}
-        </span>
+        <QrCode className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span>View QR</span>
       </button>
 
       {enlargedOpen &&
@@ -190,6 +179,7 @@ export function PickupQrCard({
 
               <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
                 <QRCodeSVG
+                  ref={qrSvgRef}
                   value={qrValue}
                   size={224}
                   level="M"

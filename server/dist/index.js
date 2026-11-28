@@ -113,6 +113,10 @@ async function boot() {
             if (deletedCount > 0) {
                 console.log(`[Expiry Cleanup] Auto-deleted ${deletedCount} un-surrendered found item post(s) older than ${item_repository_1.FOUND_ITEM_SURRENDER_EXPIRY_DAYS} days.`);
             }
+            const { warnedCount } = await (0, item_repository_1.warnExpiringUnsurrenderedFoundItems)(item_repository_1.FOUND_ITEM_SURRENDER_WARNING_DAYS, item_repository_1.FOUND_ITEM_SURRENDER_EXPIRY_DAYS);
+            if (warnedCount > 0) {
+                console.log(`[Expiry Cleanup] Sent pre-deletion warning for ${warnedCount} un-surrendered found item post(s).`);
+            }
         }
         catch (err) {
             console.error('[Expiry Cleanup] Failed to clean up expired found items:', err);

@@ -9,6 +9,7 @@ import { ItemDetailsDialog } from "@/components/admin/ItemDetailsDialog";
 import { Panel } from "@/components/admin/Panel";
 import { OsaReceiptConfirmModal } from "@/components/admin/OsaReceiptConfirmModal";
 import { OsaReceiptStatus } from "@/components/admin/OsaReceiptStatus";
+import { ReviewPager } from "@/components/admin/ReviewLayout";
 import { WalkInClaimModal } from "@/components/admin/WalkInClaimModal";
 import { WalkInReturnModal } from "@/components/admin/WalkInReturnModal";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
@@ -20,6 +21,7 @@ import { paths } from "@/routes/paths";
 import { AdminLayout } from "./AdminLayout";
 
 type WalkInTab = "claims" | "returns";
+const WALKIN_PAGE_SIZE = 8;
 
 export function WalkInPage() {
   const navigate = useNavigate();
@@ -34,6 +36,7 @@ export function WalkInPage() {
       return raw === "received" || raw === "pending" ? raw : "all";
     },
   );
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
@@ -86,6 +89,7 @@ export function WalkInPage() {
       reports.filter(
         (report) =>
           report.type === "Found" &&
+          !report.isHiddenByAccountStatus &&
           report.status !== "Claimed" &&
           report.status !== "Returned",
       ),
@@ -97,6 +101,7 @@ export function WalkInPage() {
       reports.filter(
         (report) =>
           report.type === "Lost" &&
+          !report.isHiddenByAccountStatus &&
           report.status !== "Claimed" &&
           report.status !== "Returned",
       ),
@@ -118,6 +123,7 @@ export function WalkInPage() {
   }, [activeTab, activeFoundReports, activeLostReports, osaOnlyFilter, query]);
 
   const handleTabChange = (nextTab: WalkInTab) => {
+    setPage(1);
     const next = new URLSearchParams(searchParams);
     if (nextTab === "returns") {
       next.set("tab", "returns");
@@ -127,6 +133,29 @@ export function WalkInPage() {
     }
     setSearchParams(next, { replace: true });
   };
+
+  const handleQueryChange = (next: string) => {
+    setQuery(next);
+    setPage(1);
+  };
+
+  const handleOsaFilterChange = (next: "all" | "received" | "pending") => {
+    setOsaOnlyFilter(next);
+    setPage(1);
+  };
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredList.length / WALKIN_PAGE_SIZE),
+  );
+  const safePage = Math.min(page, totalPages);
+  const pagedList = filteredList.slice(
+    (safePage - 1) * WALKIN_PAGE_SIZE,
+    safePage * WALKIN_PAGE_SIZE,
+  );
+  const rangeStart =
+    filteredList.length === 0 ? 0 : (safePage - 1) * WALKIN_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * WALKIN_PAGE_SIZE, filteredList.length);
 
   const handleOsaReceiptChange = (id: string, receivedByOsa: boolean) => {
     updateOsaReceipt.mutate(
@@ -188,7 +217,7 @@ export function WalkInPage() {
       activeSection="walkin"
       showSearch
       query={query}
-      onQueryChange={setQuery}
+      onQueryChange={handleQueryChange}
       searchPlaceholder={
         activeTab === "claims" ? "Search found items" : "Search lost items"
       }
@@ -259,7 +288,7 @@ export function WalkInPage() {
                 <button
                   key={chip.id}
                   type="button"
-                  onClick={() => setOsaOnlyFilter(chip.id)}
+                  onClick={() => handleOsaFilterChange(chip.id)}
                   className={`inline-flex h-9 items-center rounded-lg px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                     osaOnlyFilter === chip.id
                       ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
@@ -317,7 +346,7 @@ export function WalkInPage() {
               </div>
             ) : (
               <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {filteredList.map((report) => {
+                {pagedList.map((report) => {
                   const pendingClaimInfo =
                     activeTab === "claims"
                       ? pendingClaimsByItemId.get(report.id)
@@ -435,15 +464,34 @@ export function WalkInPage() {
               </div>
             )}
 
-            {hasNextPage && (
-              <div className="border-t border-neutral-100 px-5 py-4 dark:border-neutral-800">
-                <LoadMoreButton
-                  hasMore={Boolean(hasNextPage)}
-                  isLoading={isFetchingNextPage}
-                  onLoadMore={() => {
-                    void fetchNextPage();
-                  }}
-                />
+            {(filteredList.length > 0 || hasNextPage) && (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 px-5 py-3 dark:border-neutral-800">
+                <div className="min-w-0 flex-1">
+                  <ReviewPager
+                    page={safePage}
+                    totalPages={totalPages}
+                    rangeStart={rangeStart}
+                    rangeEnd={rangeEnd}
+                    totalItems={filteredList.length}
+                    itemUnitLabel={
+                      filteredList.length === 1 ? "item" : "items"
+                    }
+                    showRange
+                    onPageChange={setPage}
+                  />
+                </div>
+                {hasNextPage && (
+                  <LoadMoreButton
+                    hasMore={Boolean(hasNextPage)}
+                    isLoading={isFetchingNextPage}
+                    onLoadMore={() => {
+                      void fetchNextPage();
+                    }}
+                    label="Load more items"
+                    compact
+                    className="py-0"
+                  />
+                )}
               </div>
             )}
           </Panel>

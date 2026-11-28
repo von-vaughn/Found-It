@@ -51,6 +51,7 @@ export const serverItemToAdminReport = (item: ServerItem): AdminReport => ({
   confidentialInfo: item.importantDetails,
   flagCount: item.flagCount ?? 0,
   flags: item.flags ?? [],
+  isHiddenByAccountStatus: Boolean(item.isHiddenByAccountStatus),
 });
 
 export const navigation: AdminSidebarItem<AdminSection>[] = [

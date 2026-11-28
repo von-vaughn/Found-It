@@ -8,16 +8,11 @@ import type { ItemFlag } from "@/services/itemService";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
 import { Panel } from "./Panel";
 import { formatAdminEventDate, formatAdminEventTime } from "./requestComparison";
-import type { ReviewFactRow } from "./ReviewLayout";
+import { ReviewPager, type ReviewFactRow } from "./ReviewLayout";
 import type { AdminReport } from "./types";
 
+const REPORTED_PAGE_SIZE = 8;
 const DELETE_REASON_MAX_LENGTH = 500;
-const DELETE_REASON_PRESETS = [
-  "Spam",
-  "Duplicate report",
-  "Inappropriate content",
-  "False information",
-];
 
 function formatFlagTimestamp(iso: string): string {
   const date = new Date(iso);
@@ -369,27 +364,6 @@ function ReportedItemDossier({
             notifications.
           </p>
 
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {DELETE_REASON_PRESETS.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                disabled={isDeletingReport}
-                onClick={() => {
-                  setDeleteReason(preset);
-                  setDeleteError("");
-                }}
-                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
-                  deleteReason === preset
-                    ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
-                    : "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-                }`}
-              >
-                {preset}
-              </button>
-            ))}
-          </div>
-
           <div className="mt-4 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <label
@@ -476,8 +450,43 @@ export function ReportedItemsView({
   onDeleteReport: (id: string, reason: string, onSuccess: () => void) => void;
   isDeletingReport: boolean;
 }) {
+  const [page, setPage] = useState(1);
+  const [prevFilterKey, setPrevFilterKey] = useState({
+    typeFilter,
+    total: reports.length,
+  });
+  if (
+    typeFilter !== prevFilterKey.typeFilter ||
+    reports.length !== prevFilterKey.total
+  ) {
+    setPrevFilterKey({ typeFilter, total: reports.length });
+    setPage(1);
+  }
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(reports.length / REPORTED_PAGE_SIZE),
+  );
+  const safePage = Math.min(page, totalPages);
+  const pagedReports = reports.slice(
+    (safePage - 1) * REPORTED_PAGE_SIZE,
+    safePage * REPORTED_PAGE_SIZE,
+  );
+  const rangeStart =
+    reports.length === 0 ? 0 : (safePage - 1) * REPORTED_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * REPORTED_PAGE_SIZE, reports.length);
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    const nextStart = (nextPage - 1) * REPORTED_PAGE_SIZE;
+    const firstOnPage = reports[nextStart];
+    if (firstOnPage) {
+      onSelectId(firstOnPage.id);
+    }
+  };
+
   const activeReport =
-    reports.find((entry) => entry.id === selectedId) ?? reports[0] ?? null;
+    reports.find((entry) => entry.id === selectedId) ?? pagedReports[0] ?? reports[0] ?? null;
 
   const filterTabs = [
     { key: "All" as const, label: "All reported", count: typeCounts.All },
@@ -567,7 +576,7 @@ export function ReportedItemsView({
               }
             >
               <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {reports.map((report) => {
+                {pagedReports.map((report) => {
                   const isSelected = activeReport?.id === report.id;
                   const flagCount =
                     report.flags?.length ?? report.flagCount ?? 0;
@@ -620,6 +629,18 @@ export function ReportedItemsView({
                     </button>
                   );
                 })}
+              </div>
+              <div className="border-t border-neutral-100 px-4 py-3 dark:border-neutral-800">
+                <ReviewPager
+                  page={safePage}
+                  totalPages={totalPages}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  totalItems={reports.length}
+                  itemUnitLabel={reports.length === 1 ? "item" : "items"}
+                  showRange
+                  onPageChange={handlePageChange}
+                />
               </div>
             </Panel>
           </FadeIn>

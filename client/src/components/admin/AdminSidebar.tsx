@@ -432,7 +432,13 @@ export function AdminSidebar<TSection extends string>({
           ))}
         </nav>
 
-        <div className="absolute bottom-5 left-2.5 flex flex-col items-start gap-1 border-t border-neutral-100 pt-3 dark:border-neutral-800 md:left-4.5">
+        <div
+          className={`absolute bottom-5 left-2.5 flex flex-col items-start gap-1 border-t pt-3 transition-colors duration-200 md:left-4.5 ${
+            labelsVisible
+              ? "border-transparent"
+              : "border-neutral-100 dark:border-neutral-800"
+          }`}
+        >
           <button
             ref={notificationsButtonRef}
             type="button"

@@ -55,4 +55,5 @@ export interface AdminReport {
   confidentialInfo?: string;
   flagCount?: number;
   flags?: ItemFlag[];
+  isHiddenByAccountStatus?: boolean;
 }

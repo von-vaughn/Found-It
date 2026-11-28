@@ -49,6 +49,11 @@ export interface Item {
   /** Open flag count and details (present for staff/admin only). */
   flagCount?: number;
   flags?: ItemFlag[];
+  /**
+   * True when the reporter's account is deactivated or currently suspended and
+   * the item is not a found item already handed over to OSA (staff/admin only).
+   */
+  isHiddenByAccountStatus?: boolean;
   /** Whether the authenticated viewer has already flagged this post. */
   hasReported?: boolean;
   /** Number of active return responses on a lost item (owner and staff/admin only). */

@@ -14,7 +14,20 @@ import {
   createRequestStatusNotification,
   createReturnFinderSurrenderReminderNotification,
 } from "./notification.repository";
+import { normalizeSchoolId } from "./user.repository";
 import type { Claim, ClaimStatus } from "../types/claims";
+
+function resolveReporterNormalizedSchoolId(
+  schoolId?: string | null,
+  email?: string | null,
+): string | null {
+  const direct = normalizeSchoolId(schoolId);
+  if (direct) return direct;
+  if (!email) return null;
+  const localPart = email.trim().split("@")[0] || "";
+  const digits = localPart.replace(/\D/g, "");
+  return normalizeSchoolId(digits);
+}
 
 const RETURN_FINDER_REMINDER_COOLDOWN_MS = 3 * 60 * 60 * 1000;
 
@@ -166,7 +179,12 @@ export async function findClaimableItem(itemId: string): Promise<{
     `SELECT r.user_id AS reporter_id, r.report_type, r.date AS item_date, r.time AS item_time
      FROM item i
      JOIN report r ON r.id = i.report_id
+     JOIN "user" u ON u.id = r.user_id
      WHERE i.id = $1
+       AND (
+         (u.is_active = TRUE AND (u.suspended_until IS NULL OR u.suspended_until <= NOW()))
+         OR (r.report_type = 'found' AND i.received_by_osa = TRUE)
+       )
        AND NOT EXISTS (
          SELECT 1 FROM request resolved_request
          WHERE resolved_request.item_id = i.id
@@ -447,6 +465,7 @@ export async function listReturnsByItem(
     if (isAdmin) return claim;
     return {
       ...claim,
+      importantDetails: null,
       receivedByOsa: row.received_by_osa,
       evidence: claim.evidence.map(
         (_, index) => `/api/returns/${claim.id}/evidence/blurred?index=${index}`,
@@ -1352,10 +1371,14 @@ export async function createWalkInClaim(
       report_type: "lost" | "found";
       received_by_osa: boolean;
       reporter_id: string;
+      reporter_school_id: string | null;
+      reporter_email: string | null;
     }>(
-      `SELECT i.id, i.name, r.report_type, i.received_by_osa, r.user_id AS reporter_id
+      `SELECT i.id, i.name, r.report_type, i.received_by_osa, r.user_id AS reporter_id,
+              ru.school_id AS reporter_school_id, ru.email AS reporter_email
        FROM item i
        JOIN report r ON r.id = i.report_id
+       LEFT JOIN "user" ru ON ru.id = r.user_id
        WHERE i.id = $1
        FOR UPDATE OF i`,
       [input.itemId],
@@ -1428,7 +1451,25 @@ export async function createWalkInClaim(
           "Selected user must be an active school user account.",
         );
       }
+      if (userRows[0].id === item.reporter_id) {
+        throw new WalkInClaimError(
+          400,
+          "The finder who reported this item cannot claim it.",
+        );
+      }
       linkedUserId = userRows[0].id;
+    } else {
+      const reporterSchoolId = resolveReporterNormalizedSchoolId(
+        item.reporter_school_id,
+        item.reporter_email,
+      );
+      const guestSchoolId = normalizeSchoolId(input.schoolId);
+      if (reporterSchoolId && guestSchoolId && reporterSchoolId === guestSchoolId) {
+        throw new WalkInClaimError(
+          400,
+          "The finder who reported this item cannot claim it.",
+        );
+      }
     }
 
     const { rows: insertedRows } = await client.query<{ id: string }>(
@@ -1528,10 +1569,17 @@ export async function createWalkInReturn(
       name: string;
       report_type: "lost" | "found";
       reporter_id: string;
+      reporter_school_id: string | null;
+      reporter_email: string | null;
+      reporter_active: boolean | null;
+      reporter_suspended_until: Date | string | null;
     }>(
-      `SELECT i.id, i.name, r.report_type, r.user_id AS reporter_id
+      `SELECT i.id, i.name, r.report_type, r.user_id AS reporter_id,
+              ru.school_id AS reporter_school_id, ru.email AS reporter_email,
+              ru.is_active AS reporter_active, ru.suspended_until AS reporter_suspended_until
        FROM item i
        JOIN report r ON r.id = i.report_id
+       LEFT JOIN "user" ru ON ru.id = r.user_id
        WHERE i.id = $1
        FOR UPDATE OF i`,
       [input.itemId],
@@ -1544,6 +1592,15 @@ export async function createWalkInReturn(
       throw new WalkInReturnError(
         409,
         "Walk-in returns are only available for lost items.",
+      );
+    }
+    const reporterSuspended =
+      Boolean(item.reporter_suspended_until) &&
+      new Date(item.reporter_suspended_until!).getTime() > Date.now();
+    if (item.reporter_active === false || reporterSuspended) {
+      throw new WalkInReturnError(
+        409,
+        "Walk-in returns are unavailable while the reporter's account is deactivated or suspended.",
       );
     }
 
@@ -1610,6 +1667,18 @@ export async function createWalkInReturn(
            AND status = 'pending'`,
         [input.itemId, linkedUserId],
       );
+    } else {
+      const reporterSchoolId = resolveReporterNormalizedSchoolId(
+        item.reporter_school_id,
+        item.reporter_email,
+      );
+      const guestSchoolId = normalizeSchoolId(input.schoolId);
+      if (reporterSchoolId && guestSchoolId && reporterSchoolId === guestSchoolId) {
+        throw new WalkInReturnError(
+          400,
+          "The finder cannot be the same user who reported the lost item.",
+        );
+      }
     }
 
     const trimmedInstructions = input.approvalInstructions.trim();

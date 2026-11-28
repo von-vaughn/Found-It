@@ -282,3 +282,83 @@ export async function runWithActiveAdminGuard<T>(
     client.release();
   }
 }
+
+export function normalizeSchoolId(value?: string | null): string | null {
+  if (!value) return null;
+  const cleaned = value.trim().toLowerCase().replace(/[\s-]+/g, '');
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function extractIdNumberFromEmail(email?: string | null): string | null {
+  if (!email) return null;
+  const localPart = email.trim().split('@')[0] || '';
+  const digits = localPart.replace(/\D/g, '');
+  return digits.length > 0 ? digits : null;
+}
+
+export interface SyncSchoolIdsResult {
+  deactivatedCount: number;
+  keptActiveCount: number;
+  totalActiveChecked: number;
+}
+
+/**
+ * Deactivates active school_user accounts whose School ID is not included in
+ * the provided normalized allow-list. Admin and staff accounts are untouched,
+ * and already-deactivated accounts remain deactivated.
+ */
+export async function deactivateUnlistedSchoolUsers(
+  allowedNormalizedSchoolIds: Set<string>,
+): Promise<SyncSchoolIdsResult> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query<{
+      id: string;
+      email: string;
+      school_id: string | null;
+    }>(
+      `SELECT id, email, school_id
+       FROM "user"
+       WHERE role = 'school_user' AND is_active = TRUE
+       FOR UPDATE`,
+    );
+
+    const idsToDeactivate: string[] = [];
+    for (const row of rows) {
+      const resolved =
+        normalizeSchoolId(row.school_id) ??
+        normalizeSchoolId(extractIdNumberFromEmail(row.email));
+      if (!resolved || !allowedNormalizedSchoolIds.has(resolved)) {
+        idsToDeactivate.push(row.id);
+      }
+    }
+
+    if (idsToDeactivate.length > 0) {
+      await client.query(
+        `UPDATE "user"
+         SET is_active = FALSE, updated_at = NOW()
+         WHERE id = ANY($1::uuid[]) AND role = 'school_user' AND is_active = TRUE`,
+        [idsToDeactivate],
+      );
+      await client.query(
+        `UPDATE refresh_token
+         SET revoked = TRUE, revoked_at = NOW(), revoked_reason = 'revoked_all'
+         WHERE user_id = ANY($1::uuid[]) AND revoked = FALSE`,
+        [idsToDeactivate],
+      );
+    }
+
+    await client.query('COMMIT');
+    return {
+      deactivatedCount: idsToDeactivate.length,
+      keptActiveCount: rows.length - idsToDeactivate.length,
+      totalActiveChecked: rows.length,
+    };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}

@@ -71,7 +71,13 @@ export const BrowseItemsPage: React.FC = () => {
     isFetchingNextPage,
     fetchNextPage,
   } = useInfiniteItems(undefined, 24);
-  const items = serverItems.length > 0 ? toClientItems(serverItems) : EMPTY_ITEMS;
+  const visibleServerItems = serverItems.filter(
+    (item) => !item.isHiddenByAccountStatus,
+  );
+  const items =
+    visibleServerItems.length > 0
+      ? toClientItems(visibleServerItems)
+      : EMPTY_ITEMS;
 
   const updateParams = (patch: { type?: BrowseTab; q?: string }) => {
     const nextParams = new URLSearchParams(searchParams);

@@ -731,17 +731,6 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                               />
                             </dl>
 
-                            {claim.importantDetails?.trim() && (
-                              <div className="mt-4">
-                                <h4 className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
-                                  Important Details
-                                </h4>
-                                <p className="mt-1 text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
-                                  {claim.importantDetails}
-                                </p>
-                              </div>
-                            )}
-
                             {claimStatusLabel === "Approved" && (
                               <div className="mt-3 flex items-center justify-between gap-4 rounded-xl bg-emerald-50/80 px-4 py-3 dark:bg-emerald-950/30">
                                 <div className="min-w-0 flex-1 self-start">

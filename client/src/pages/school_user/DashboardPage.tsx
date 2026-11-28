@@ -49,7 +49,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     isFetchingNextPage,
     fetchNextPage,
   } = useInfiniteItems(undefined, 24);
-  const items = serverItems.length > 0 ? toClientItems(serverItems) : EMPTY_ITEMS;
+  const visibleServerItems = useMemo(
+    () => serverItems.filter((item) => !item.isHiddenByAccountStatus),
+    [serverItems],
+  );
+  const items =
+    visibleServerItems.length > 0
+      ? toClientItems(visibleServerItems)
+      : EMPTY_ITEMS;
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeNavTab, setActiveNavTab] = useState<string>("home");

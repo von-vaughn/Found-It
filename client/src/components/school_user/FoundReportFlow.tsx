@@ -72,7 +72,6 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   step,
   onStepChange,
   lostItemId,
-  lostItemTitle,
 }) => {
   const isMobileView = useIsMobileView();
   const { data: buildings } = useBuildings();
@@ -87,7 +86,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [capturedFile, setCapturedFile] = useState<Blob | null>(null);
   const [captureError, setCaptureError] = useState<string | null>(null);
-  const [itemTitle, setItemTitle] = useState(lostItemTitle);
+  const [itemTitle, setItemTitle] = useState("");
   const [color, setColor] = useState("");
   const [dateFound, setDateFound] = useState("");
   const [timeFound, setTimeFound] = useState("");

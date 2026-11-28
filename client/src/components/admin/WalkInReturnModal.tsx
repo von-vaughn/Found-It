@@ -63,7 +63,6 @@ function getCameraErrorMessage(error: unknown): string {
 export function WalkInReturnModal({
   open,
   itemId,
-  itemTitle,
   onClose,
   onSuccess,
 }: WalkInReturnModalProps) {
@@ -90,7 +89,7 @@ export function WalkInReturnModal({
   const [email, setEmail] = useState("");
 
   // Exact return request fields from FoundReportFlow + required pickup instructions
-  const [claimantTitle, setClaimantTitle] = useState(itemTitle);
+  const [claimantTitle, setClaimantTitle] = useState("");
   const [color, setColor] = useState("");
   const [dateFound, setDateFound] = useState("");
   const [timeFound, setTimeFound] = useState("");

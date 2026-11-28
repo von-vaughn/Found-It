@@ -17,7 +17,6 @@ import {
   type ReviewFactRow,
 } from "./ReviewLayout";
 import { AdminPasswordModal, LockedValue } from "./SensitiveDetails";
-import { StatusBadge } from "./StatusBadge";
 import type { AdminReport } from "./types";
 import {
   formatAdminEventDate,
@@ -26,7 +25,7 @@ import {
 } from "./requestComparison";
 import { useSensitiveUnlock } from "./useSensitiveUnlock";
 
-const LIST_PAGE_SIZE = 10;
+const LIST_PAGE_SIZE = 8;
 
 const DEFAULT_CLAIM_FILTERS = [
   "Pending",
@@ -223,11 +222,8 @@ export function ClaimsListPanel({
                         </span>
                       </span>
                       <span className="flex shrink-0 items-center gap-3">
-                        <span className="flex flex-col items-end gap-1">
-                          <StatusBadge status={claim.status} />
-                          <span className="hidden font-mono text-xs tabular-nums text-neutral-500 sm:block dark:text-neutral-400">
-                            {claim.submitted}
-                          </span>
+                        <span className="hidden font-mono text-xs tabular-nums text-neutral-500 sm:block dark:text-neutral-400">
+                          {claim.submitted}
                         </span>
                         <ChevronRight
                           className="h-4 w-4 text-neutral-400 dark:text-neutral-500"
@@ -240,7 +236,7 @@ export function ClaimsListPanel({
               })}
             </div>
 
-            {totalPages > 1 && (
+            {claimGroups.length > 0 && (
               <div className="border-t border-neutral-100 px-5 py-3 dark:border-neutral-800">
                 <ReviewPager
                   page={safePage}
@@ -248,8 +244,8 @@ export function ClaimsListPanel({
                   rangeStart={rangeStart}
                   rangeEnd={rangeEnd}
                   totalItems={claimGroups.length}
-                  itemUnitLabel="posts"
-                  showRange={false}
+                  itemUnitLabel={claimGroups.length === 1 ? "item" : "items"}
+                  showRange
                   onPageChange={setPage}
                 />
               </div>

@@ -2,10 +2,12 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
   createUser,
+  deactivateUnlistedSchoolUsers,
   deleteUser,
   findUserByEmail,
   findUserById,
   listUsersPage,
+  normalizeSchoolId,
   runWithActiveAdminGuard,
   setUserActive,
   setUserSuspension,
@@ -388,4 +390,129 @@ export async function removeUser(req: Request, res: Response): Promise<void> {
     summary: `Deleted user ${target.email}`,
   });
   res.json({ message: 'User deleted.' });
+}
+
+const KNOWN_SCHOOL_ID_HEADERS = new Set([
+  'school_id',
+  'schoolid',
+  'id_number',
+  'idnumber',
+  'student_id',
+  'studentid',
+  'id',
+]);
+
+function parseCsvRow(line: string): string[] {
+  const cells: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ',' && !inQuotes) {
+      cells.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+function parseSchoolIdsFromCsv(csvText: string): Set<string> {
+  const cleaned = csvText.replace(/^\uFEFF/, '');
+  const lines = cleaned
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length === 0) return new Set();
+
+  const firstRow = parseCsvRow(lines[0]);
+  const normalizedHeaders = firstRow.map((cell) =>
+    cell.toLowerCase().replace(/[\s-]+/g, '_'),
+  );
+
+  let columnIndex = normalizedHeaders.findIndex((header) =>
+    KNOWN_SCHOOL_ID_HEADERS.has(header),
+  );
+  let startRow = 0;
+
+  if (columnIndex !== -1) {
+    startRow = 1;
+  } else {
+    columnIndex = 0;
+    const firstCell = firstRow[0] ?? '';
+    // If the first row contains no digits and there are subsequent rows, treat it as a header row.
+    if (lines.length > 1 && firstCell.length > 0 && !/\d/.test(firstCell)) {
+      startRow = 1;
+    }
+  }
+
+  const ids = new Set<string>();
+  for (let i = startRow; i < lines.length; i += 1) {
+    const cells = parseCsvRow(lines[i]);
+    const raw = cells[columnIndex] ?? '';
+    const normalized = normalizeSchoolId(raw);
+    if (normalized) {
+      ids.add(normalized);
+    }
+  }
+
+  return ids;
+}
+
+/**
+ * POST /api/users/sync-school-ids — admin only.
+ * Uploads a CSV of active School IDs and deactivates any currently active
+ * school_user account whose School ID is not included in the file.
+ */
+export async function syncSchoolIdsCsv(req: Request, res: Response): Promise<void> {
+  const file = req.file;
+  if (!file || !file.buffer) {
+    res.status(400).json({ message: 'Please upload a CSV file containing School IDs.' });
+    return;
+  }
+
+  const csvText = file.buffer.toString('utf8');
+  const allowedIds = parseSchoolIdsFromCsv(csvText);
+
+  if (allowedIds.size === 0) {
+    res.status(400).json({
+      message: 'The uploaded CSV file does not contain any valid School IDs.',
+    });
+    return;
+  }
+
+  const result = await deactivateUnlistedSchoolUsers(allowedIds);
+
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: 'updated',
+    entityType: 'user',
+    entityId: req.user!.sub,
+    summary: `Uploaded School IDs CSV (${allowedIds.size} IDs): deactivated ${result.deactivatedCount} school user ${result.deactivatedCount === 1 ? 'account' : 'accounts'}`,
+  });
+
+  const message =
+    result.deactivatedCount === 0
+      ? `Synced ${allowedIds.size} School IDs. All active school user accounts were included.`
+      : `Synced ${allowedIds.size} School IDs. Deactivated ${result.deactivatedCount} school user ${result.deactivatedCount === 1 ? 'account' : 'accounts'} not in the CSV.`;
+
+  res.json({
+    message,
+    csvSchoolIdCount: allowedIds.size,
+    deactivatedCount: result.deactivatedCount,
+    keptActiveCount: result.keptActiveCount,
+  });
 }

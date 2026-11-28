@@ -114,3 +114,25 @@ export async function updateAdminUserSuspension(
 export async function deleteAdminUser(id: string): Promise<void> {
   await api.delete<{ message: string }>(`/users/${id}`);
 }
+
+export interface SyncSchoolIdsCsvResult {
+  message: string;
+  csvSchoolIdCount: number;
+  deactivatedCount: number;
+  keptActiveCount: number;
+}
+
+export async function syncSchoolIdsCsv(
+  file: File,
+): Promise<SyncSchoolIdsCsvResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post<SyncSchoolIdsCsvResult>(
+    "/users/sync-school-ids",
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
+  return data;
+}

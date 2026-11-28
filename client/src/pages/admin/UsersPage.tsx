@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
+  Upload,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -22,6 +23,7 @@ import { useAuth } from "@/context/useAuth";
 import {
   deleteAdminUser,
   listAdminUsersPage,
+  syncSchoolIdsCsv,
   updateAdminUserRole,
   updateAdminUserStatus,
   updateAdminUserSuspension,
@@ -198,7 +200,7 @@ export function UsersPage() {
         queryClient.setQueryData(ADMIN_USERS_QUERY_KEY, context.previous);
       }
     },
-    onSettled: invalidateUserDependents,
+    onSettled: invalidateDeletedOrDeactivatedDependents,
   });
   const deleteUserMutation = useMutation({
     mutationFn: deleteAdminUser,
@@ -454,6 +456,30 @@ export function UsersPage() {
     }
   };
 
+  const csvInputRef = useRef<HTMLInputElement>(null);
+
+  const syncCsvMutation = useMutation({
+    mutationFn: (file: File) => syncSchoolIdsCsv(file),
+    onSuccess: (result) => {
+      invalidateDeletedOrDeactivatedDependents();
+      toast.success(result.message);
+    },
+    onError: (error) => {
+      toast.error(
+        errorMessage(error, "We couldn't process the uploaded CSV file."),
+      );
+    },
+  });
+
+  const handleCsvFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    syncCsvMutation.mutate(file);
+  };
+
   const countLabel =
     activeRole === "school_user"
       ? `${filteredUsers.length} users`
@@ -508,9 +534,38 @@ export function UsersPage() {
         <Panel
             title="User Management"
             action={
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                {countLabel}
-              </span>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-mono text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
+                  {countLabel}
+                </span>
+                {isAdmin && (
+                  <>
+                    <input
+                      ref={csvInputRef}
+                      type="file"
+                      accept=".csv,text/csv"
+                      onChange={handleCsvFileChange}
+                      className="sr-only"
+                      aria-label="Upload School IDs CSV"
+                    />
+                    <button
+                      type="button"
+                      disabled={syncCsvMutation.isPending}
+                      onClick={() => csvInputRef.current?.click()}
+                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-wait disabled:opacity-60 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                    >
+                      <Upload
+                        className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400"
+                        strokeWidth={1.75}
+                        aria-hidden="true"
+                      />
+                      {syncCsvMutation.isPending
+                        ? "Syncing CSV…"
+                        : "Upload School IDs CSV"}
+                    </button>
+                  </>
+                )}
+              </div>
             }
           >
             <div className="flex flex-col gap-3 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">

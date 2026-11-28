@@ -44,9 +44,20 @@ interface ItemRow {
   images: Array<{ url: string; blurred_url: string | null }> | null;
   flags: ItemFlag[] | null;
   flag_reporter_ids: string[] | null;
+  is_hidden_by_account_status: boolean;
   created_at: Date;
   updated_at: Date;
 }
+
+/**
+ * Visibility predicate for public/school-user views and walk-in queues:
+ * items posted by deactivated or currently suspended accounts are hidden,
+ * EXCEPT found items that have already been handed over to OSA.
+ */
+const ACCOUNT_VISIBLE_ITEM_CONDITION = `(
+  (u.is_active = TRUE AND (u.suspended_until IS NULL OR u.suspended_until <= NOW()))
+  OR (r.report_type = 'found' AND i.received_by_osa = TRUE)
+)`;
 
 /** Format a DATE column as YYYY-MM-DD without UTC shifting (pg returns local-midnight Dates). */
 function toDateOnly(value: Date | string): string {
@@ -168,6 +179,7 @@ const ITEM_COLUMNS = `
      WHERE f_all.item_id = i.id),
     ARRAY[]::text[]
   ) AS flag_reporter_ids,
+  (NOT ${ACCOUNT_VISIBLE_ITEM_CONDITION}) AS is_hidden_by_account_status,
   i.created_at, i.updated_at
 `;
 const ITEM_JOIN = `
@@ -276,6 +288,7 @@ function toItem(row: ItemRow, isAdmin: boolean, viewerId: string): Item {
           releasedAt: row.released_by?.releasedAt ?? null,
           flagCount: Array.isArray(row.flags) ? row.flags.length : 0,
           flags: Array.isArray(row.flags) ? row.flags : [],
+          isHiddenByAccountStatus: Boolean(row.is_hidden_by_account_status),
         }
       : {}),
     ...(viewerId
@@ -430,8 +443,9 @@ export async function findItemById(
   isAdmin: boolean,
   viewerId: string,
 ): Promise<Item | null> {
+  const visibilityClause = isAdmin ? '' : ` AND ${ACCOUNT_VISIBLE_ITEM_CONDITION}`;
   const { rows } = await pool.query<ItemRow>(
-    `SELECT ${ITEM_COLUMNS} ${ITEM_JOIN} WHERE i.id = $1 LIMIT 1`,
+    `SELECT ${ITEM_COLUMNS} ${ITEM_JOIN} WHERE i.id = $1${visibilityClause} LIMIT 1`,
     [id],
   );
   return rows[0] ? toItem(rows[0], isAdmin, viewerId) : null;
@@ -450,6 +464,9 @@ export async function listItemsPage(
 ): Promise<{ items: Item[]; hasMore: boolean }> {
   const conditions: string[] = [];
   const params: unknown[] = [];
+  if (!isAdmin) {
+    conditions.push(ACCOUNT_VISIBLE_ITEM_CONDITION);
+  }
   if (filter?.reportType) {
     params.push(filter.reportType);
     conditions.push(`r.report_type = $${params.length}`);

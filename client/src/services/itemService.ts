@@ -37,6 +37,7 @@ export interface ServerItem {
   releasedAt?: string | null;
   flagCount?: number;
   flags?: ItemFlag[];
+  isHiddenByAccountStatus?: boolean;
   hasReported?: boolean;
   returnResponseCount?: number;
   hasApprovedReturn?: boolean;

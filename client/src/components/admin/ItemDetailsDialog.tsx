@@ -37,13 +37,6 @@ function formatEventTime(report: AdminReport): string {
   }).format(eventDate);
 }
 
-const DELETE_REASON_PRESETS = [
-  "Spam",
-  "Duplicate report",
-  "Inappropriate content",
-  "False information",
-];
-
 const DELETE_REASON_MAX_LENGTH = 500;
 
 export function ItemDetailsDialog({
@@ -377,28 +370,9 @@ export function ItemDetailsDialog({
               &ldquo;{report.title}&rdquo; will be permanently removed. This
               cannot be undone.
             </p>
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {DELETE_REASON_PRESETS.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => {
-                    setDeleteReason(preset);
-                    setDeleteError("");
-                  }}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 ${
-                    deleteReason === preset
-                      ? "border-[#E5192D] bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"
-                      : "border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
-                  }`}
-                >
-                  {preset}
-                </button>
-              ))}
-            </div>
             <label
               htmlFor="delete-report-reason"
-              className="mt-3 block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
+              className="mt-4 block text-xs font-semibold text-neutral-800 dark:text-neutral-200"
             >
               Reason For Deletion{" "}
               <span className="font-normal text-neutral-400 dark:text-neutral-500">(required)</span>
