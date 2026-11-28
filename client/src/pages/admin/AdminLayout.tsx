@@ -130,18 +130,23 @@ export function AdminLayout({
         }
         onClearAllRead={() =>
           deleteReadNotifications.mutate(undefined, {
+            onSuccess: () => toast.success("Read notifications cleared."),
             onError: () =>
               toast.error("Could not clear read notifications. Please try again."),
           })
         }
         onMarkAllRead={() =>
           markAllNotificationsRead.mutate(undefined, {
+            onSuccess: () =>
+              toast.success("All notifications marked as read."),
             onError: () =>
               toast.error(
                 "Could not update notifications. Please try again.",
               ),
           })
         }
+        isMarkingAllRead={markAllNotificationsRead.isPending}
+        isClearingAllRead={deleteReadNotifications.isPending}
       />
 
       <div

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ScanLine } from "lucide-react";
 import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { AdminQrScannerModal } from "@/components/admin/AdminQrScannerModal";
@@ -16,13 +16,22 @@ type RequestsTab = "claims" | "returns";
 
 export function ClaimsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [scannerOpen, setScannerOpen] = useState(false);
   const isMobileView = useIsMobileView();
 
   const activeTab: RequestsTab =
     searchParams.get("tab") === "returns" ? "returns" : "claims";
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (query) next.set("q", query);
+    else next.delete("q");
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [query, searchParams, setSearchParams]);
 
   const claimsWorkflow = useFoundClaimsWorkflow();
   const returnsWorkflow = useAdminReturnsWorkflow();
@@ -55,11 +64,15 @@ export function ClaimsPage() {
   };
 
   const handleSelectClaim = (id: string) => {
-    navigate(`${paths.adminClaims}/${encodeURIComponent(id)}`);
+    navigate(`${paths.adminClaims}/${encodeURIComponent(id)}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
   };
 
   const handleSelectReturn = (id: string) => {
-    navigate(`${paths.adminReturns}/${encodeURIComponent(id)}`);
+    navigate(`${paths.adminReturns}/${encodeURIComponent(id)}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
   };
 
   const isLoading =

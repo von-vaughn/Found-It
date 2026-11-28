@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -31,10 +32,32 @@ function initials(name: string): string {
 }
 
 export function AuditLogsPage() {
-  const [query, setQuery] = useState("");
-  const [actionFilter, setActionFilter] = useState("All actions");
-  const [entityFilter, setEntityFilter] = useState("All types");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [actionFilter, setActionFilter] = useState(
+    () => searchParams.get("action") ?? "All actions",
+  );
+  const [entityFilter, setEntityFilter] = useState(
+    () => searchParams.get("entity") ?? "All types",
+  );
+  const [currentPage, setCurrentPage] = useState(() => {
+    const parsed = Number.parseInt(searchParams.get("page") ?? "1", 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  });
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (query) next.set("q", query);
+    else next.delete("q");
+    if (actionFilter !== "All actions") next.set("action", actionFilter);
+    else next.delete("action");
+    if (entityFilter !== "All types") next.set("entity", entityFilter);
+    else next.delete("entity");
+    if (currentPage > 1) next.set("page", String(currentPage));
+    else next.delete("page");
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [actionFilter, currentPage, entityFilter, query, searchParams, setSearchParams]);
   const { data: logs = [], isLoading, isError, refetch } = useAuditLogs();
 
   const filtered = useMemo(

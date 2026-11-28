@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
@@ -27,8 +27,26 @@ export function WalkInPage() {
   const activeTab: WalkInTab =
     searchParams.get("tab") === "returns" ? "returns" : "claims";
 
-  const [query, setQuery] = useState("");
-  const [osaOnlyFilter, setOsaOnlyFilter] = useState<"all" | "received" | "pending">("all");
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [osaOnlyFilter, setOsaOnlyFilter] = useState<"all" | "received" | "pending">(
+    () => {
+      const raw = searchParams.get("osa");
+      return raw === "received" || raw === "pending" ? raw : "all";
+    },
+  );
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (query) next.set("q", query);
+    else next.delete("q");
+    if (activeTab === "claims" && osaOnlyFilter !== "all") {
+      next.set("osa", osaOnlyFilter);
+    } else {
+      next.delete("osa");
+    }
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [activeTab, osaOnlyFilter, query, searchParams, setSearchParams]);
   const [claimTarget, setClaimTarget] = useState<AdminReport | null>(null);
   const [returnTarget, setReturnTarget] = useState<AdminReport | null>(null);
   const [receiveTarget, setReceiveTarget] = useState<AdminReport | null>(null);
@@ -99,12 +117,15 @@ export function WalkInPage() {
     });
   }, [activeTab, activeFoundReports, activeLostReports, osaOnlyFilter, query]);
 
-  const handleTabChange = (next: WalkInTab) => {
-    if (next === "returns") {
-      setSearchParams({ tab: "returns" }, { replace: true });
+  const handleTabChange = (nextTab: WalkInTab) => {
+    const next = new URLSearchParams(searchParams);
+    if (nextTab === "returns") {
+      next.set("tab", "returns");
+      next.delete("osa");
     } else {
-      setSearchParams({}, { replace: true });
+      next.delete("tab");
     }
+    setSearchParams(next, { replace: true });
   };
 
   const handleOsaReceiptChange = (id: string, receivedByOsa: boolean) => {

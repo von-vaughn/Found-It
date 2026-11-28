@@ -12,6 +12,8 @@ interface CategoriesResponse {
   categories: Category[];
 }
 
+export const categoryQueryKey = ["categories"] as const;
+
 /** Fetches all categories from the server. */
 export async function fetchCategories(): Promise<Category[]> {
   const { data } = await api.get<CategoriesResponse>("/categories");
@@ -40,7 +42,7 @@ export async function getCategoryUuid(slug: string): Promise<string | undefined>
  */
 export function useCategories() {
   return useQuery({
-    queryKey: ["categories"],
+    queryKey: categoryQueryKey,
     queryFn: fetchCategories,
     staleTime: Infinity,
     retry: 1,
@@ -52,8 +54,13 @@ export function useCreateCategory() {
 
   return useMutation({
     mutationFn: createCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    onSuccess: (created) => {
+      queryClient.setQueryData<Category[]>(categoryQueryKey, (current) =>
+        current
+          ? [...current.filter((entry) => entry.id !== created.id), created]
+          : [created],
+      );
+      queryClient.invalidateQueries({ queryKey: categoryQueryKey });
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });
@@ -64,8 +71,21 @@ export function useDeleteCategory() {
 
   return useMutation({
     mutationFn: deleteCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: categoryQueryKey });
+      const previous = queryClient.getQueryData<Category[]>(categoryQueryKey);
+      queryClient.setQueryData<Category[]>(categoryQueryKey, (current) =>
+        current?.filter((entry) => entry.id !== id),
+      );
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(categoryQueryKey, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: categoryQueryKey });
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
   });

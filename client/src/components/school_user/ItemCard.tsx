@@ -49,6 +49,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   };
 
   const confirmDelete = () => {
+    if (deleteMutation.isPending) return;
     setDeleteConfirmOpen(false);
     deleteMutation.mutate(item.id, {
       onSuccess: () => toast.success("Your report was deleted."),

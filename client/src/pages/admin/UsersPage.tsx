@@ -10,7 +10,9 @@ import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
+  type InfiniteData,
 } from "@tanstack/react-query";
+import { filterInfinitePages, mapInfinitePages } from "@/lib/queryCache";
 import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -77,7 +79,7 @@ export function UsersPage() {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const usersQuery = useInfiniteQuery({
     queryKey: ADMIN_USERS_QUERY_KEY,
@@ -91,6 +93,8 @@ export function UsersPage() {
     staleTime: 30_000,
     retry: 1,
   });
+
+  type AdminUsersPage = { users: AdminUser[]; hasMore: boolean };
 
   const invalidateUserDependents = () => {
     void queryClient.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
@@ -106,12 +110,50 @@ export function UsersPage() {
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       updateAdminUserStatus(id, isActive),
-    onSuccess: invalidateDeletedOrDeactivatedDependents,
+    onMutate: async ({ id, isActive }) => {
+      await queryClient.cancelQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
+      const previous = queryClient.getQueryData<InfiniteData<AdminUsersPage>>(
+        ADMIN_USERS_QUERY_KEY,
+      );
+      queryClient.setQueryData<InfiniteData<AdminUsersPage>>(
+        ADMIN_USERS_QUERY_KEY,
+        (current) =>
+          mapInfinitePages(current, "users", (user) =>
+            user.id === id ? { ...user, isActive } : user,
+          ),
+      );
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ADMIN_USERS_QUERY_KEY, context.previous);
+      }
+    },
+    onSettled: invalidateDeletedOrDeactivatedDependents,
   });
   const updateRoleMutation = useMutation({
     mutationFn: ({ id, role }: { id: string; role: AdminUserRole }) =>
       updateAdminUserRole(id, role),
-    onSuccess: invalidateUserDependents,
+    onMutate: async ({ id, role }) => {
+      await queryClient.cancelQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
+      const previous = queryClient.getQueryData<InfiniteData<AdminUsersPage>>(
+        ADMIN_USERS_QUERY_KEY,
+      );
+      queryClient.setQueryData<InfiniteData<AdminUsersPage>>(
+        ADMIN_USERS_QUERY_KEY,
+        (current) =>
+          mapInfinitePages(current, "users", (user) =>
+            user.id === id ? { ...user, role } : user,
+          ),
+      );
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ADMIN_USERS_QUERY_KEY, context.previous);
+      }
+    },
+    onSettled: invalidateUserDependents,
   });
   const suspendUserMutation = useMutation({
     mutationFn: ({
@@ -121,19 +163,97 @@ export function UsersPage() {
       id: string;
       payload: SuspendAdminUserPayload;
     }) => updateAdminUserSuspension(id, payload),
-    onSuccess: invalidateUserDependents,
+    onMutate: async ({ id, payload }) => {
+      await queryClient.cancelQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
+      const previous = queryClient.getQueryData<InfiniteData<AdminUsersPage>>(
+        ADMIN_USERS_QUERY_KEY,
+      );
+      const optimisticUntil = payload.suspended
+        ? payload.suspendedUntil ??
+          (payload.durationDays
+            ? new Date(
+                Date.now() + payload.durationDays * 24 * 60 * 60 * 1000,
+              ).toISOString()
+            : null)
+        : null;
+      queryClient.setQueryData<InfiniteData<AdminUsersPage>>(
+        ADMIN_USERS_QUERY_KEY,
+        (current) =>
+          mapInfinitePages(current, "users", (user) =>
+            user.id === id
+              ? {
+                  ...user,
+                  suspendedUntil: optimisticUntil,
+                  suspensionReason: payload.suspended
+                    ? payload.reason ?? user.suspensionReason
+                    : null,
+                }
+              : user,
+          ),
+      );
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ADMIN_USERS_QUERY_KEY, context.previous);
+      }
+    },
+    onSettled: invalidateUserDependents,
   });
   const deleteUserMutation = useMutation({
     mutationFn: deleteAdminUser,
-    onSuccess: invalidateDeletedOrDeactivatedDependents,
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ADMIN_USERS_QUERY_KEY });
+      const previous = queryClient.getQueryData<InfiniteData<AdminUsersPage>>(
+        ADMIN_USERS_QUERY_KEY,
+      );
+      queryClient.setQueryData<InfiniteData<AdminUsersPage>>(
+        ADMIN_USERS_QUERY_KEY,
+        (current) => filterInfinitePages(current, "users", (user) => user.id !== id),
+      );
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ADMIN_USERS_QUERY_KEY, context.previous);
+      }
+    },
+    onSettled: invalidateDeletedOrDeactivatedDependents,
   });
 
   const [roleFilter, setRoleFilter] = useState<RoleFilter>(() =>
     initialRoleFromParam(searchParams.get("tab"), isAdmin),
   );
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All statuses");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [statusFilter, setStatusFilter] = useState(
+    () => searchParams.get("status") ?? "All statuses",
+  );
+  const [currentPage, setCurrentPage] = useState(() => {
+    const parsed = Number.parseInt(searchParams.get("page") ?? "1", 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  });
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (isAdmin && roleFilter !== "school_user") next.set("tab", roleFilter);
+    else next.delete("tab");
+    if (query) next.set("q", query);
+    else next.delete("q");
+    if (statusFilter !== "All statuses") next.set("status", statusFilter);
+    else next.delete("status");
+    if (currentPage > 1) next.set("page", String(currentPage));
+    else next.delete("page");
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [
+    currentPage,
+    isAdmin,
+    query,
+    roleFilter,
+    searchParams,
+    setSearchParams,
+    statusFilter,
+  ]);
   const [pendingUser, setPendingUser] = useState<AdminUser | null>(null);
   const [suspendTarget, setSuspendTarget] = useState<AdminUser | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);

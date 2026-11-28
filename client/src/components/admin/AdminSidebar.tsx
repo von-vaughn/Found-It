@@ -46,6 +46,8 @@ interface AdminSidebarProps<TSection extends string> {
   onClearNotification: (notificationId: string) => void;
   onClearAllRead: () => void;
   onMarkAllRead: () => void;
+  isMarkingAllRead?: boolean;
+  isClearingAllRead?: boolean;
 }
 
 interface AdminAccountMenuProps {
@@ -208,6 +210,8 @@ export function AdminSidebar<TSection extends string>({
   onClearNotification,
   onClearAllRead,
   onMarkAllRead,
+  isMarkingAllRead = false,
+  isClearingAllRead = false,
 }: AdminSidebarProps<TSection>) {
   const asideRef = useRef<HTMLElement>(null);
   const notificationsPanelRef = useRef<HTMLElement>(null);
@@ -511,8 +515,9 @@ export function AdminSidebar<TSection extends string>({
               {unreadCount > 0 && (
                 <button
                   type="button"
+                  disabled={isMarkingAllRead}
                   onClick={onMarkAllRead}
-                  className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Mark all as read
                 </button>
@@ -520,8 +525,9 @@ export function AdminSidebar<TSection extends string>({
               {unreadCount === 0 && notifications.length > 0 && (
                 <button
                   type="button"
+                  disabled={isClearingAllRead}
                   onClick={onClearAllRead}
-                  className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Clear all
                 </button>

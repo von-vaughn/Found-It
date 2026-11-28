@@ -83,6 +83,7 @@ function AddOptionForm({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
     const trimmedValue = value.trim();
     if (!trimmedValue) {
       setIsError(true);
@@ -130,7 +131,7 @@ function AddOptionForm({
           className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-50"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-          Add {label}
+          {isSubmitting ? "Adding…" : `Add ${label}`}
         </button>
       </div>
       <div className="min-h-4">

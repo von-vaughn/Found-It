@@ -122,15 +122,18 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
               {unreadCount > 0 && (
                 <button
                   type="button"
+                  disabled={markAllNotificationsRead.isPending}
                   onClick={() =>
                     markAllNotificationsRead.mutate(undefined, {
+                      onSuccess: () =>
+                        toast.success("All notifications marked as read."),
                       onError: () =>
                         toast.error(
                           "Could not update notifications. Please try again.",
                         ),
                     })
                   }
-                  className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
+                  className="text-xs font-semibold text-[#C81424] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Mark all as read
                 </button>
@@ -138,15 +141,18 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
               {readCount > 0 && (
                 <button
                   type="button"
+                  disabled={deleteReadNotifications.isPending}
                   onClick={() =>
                     deleteReadNotifications.mutate(undefined, {
+                      onSuccess: () =>
+                        toast.success("Read notifications cleared."),
                       onError: () =>
                         toast.error(
                           "Could not clear read notifications. Please try again.",
                         ),
                     })
                   }
-                  className="text-xs font-semibold text-neutral-600 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:text-neutral-400"
+                  className="text-xs font-semibold text-neutral-600 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-400"
                 >
                   Clear read
                 </button>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Flag, Trash2 } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
@@ -12,6 +12,12 @@ import type { ReviewFactRow } from "./ReviewLayout";
 import type { AdminReport } from "./types";
 
 const DELETE_REASON_MAX_LENGTH = 500;
+const DELETE_REASON_PRESETS = [
+  "Spam",
+  "Duplicate report",
+  "Inappropriate content",
+  "False information",
+];
 
 function formatFlagTimestamp(iso: string): string {
   const date = new Date(iso);
@@ -182,8 +188,22 @@ function ReportedItemDossier({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const deleteDialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = deleteDialogRef.current;
+    if (!dialog) return;
+    if (confirmingDelete && !dialog.open) dialog.showModal();
+    if (!confirmingDelete && dialog.open) dialog.close();
+  }, [confirmingDelete]);
 
   const flagCount = activeReport.flags?.length ?? activeReport.flagCount ?? 0;
+
+  const handleCloseDeleteModal = () => {
+    if (isDeletingReport) return;
+    setConfirmingDelete(false);
+    setDeleteError("");
+  };
 
   const handleConfirmDelete = () => {
     const trimmed = deleteReason.trim();
@@ -228,7 +248,7 @@ function ReportedItemDossier({
               disabled={isDeletingReport || isDismissingFlags}
               onClick={() => {
                 setDeleteError("");
-                setConfirmingDelete((prev) => !prev);
+                setConfirmingDelete(true);
               }}
               className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -239,71 +259,6 @@ function ReportedItemDossier({
         }
       >
         <div className="p-5 sm:p-6">
-          {confirmingDelete && (
-            <div className="mb-6 rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-800/50">
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                Remove &ldquo;{activeReport.title}&rdquo;?
-              </h3>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-                The original reporter will receive this reason in their
-                notifications, and the listing will be permanently deleted.
-              </p>
-
-              <div className="mt-4 space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <label
-                    htmlFor="reported-delete-reason"
-                    className="text-xs font-medium text-neutral-700 dark:text-neutral-300"
-                  >
-                    Deletion reason <span className="text-[#E5192D]">*</span>
-                  </label>
-                  <span className="font-mono text-[11px] text-neutral-400 tabular-nums dark:text-neutral-500">
-                    {deleteReason.length}/{DELETE_REASON_MAX_LENGTH}
-                  </span>
-                </div>
-                <textarea
-                  id="reported-delete-reason"
-                  rows={2}
-                  maxLength={DELETE_REASON_MAX_LENGTH}
-                  value={deleteReason}
-                  onChange={(event) => {
-                    setDeleteReason(event.target.value);
-                    if (deleteError) setDeleteError("");
-                  }}
-                  placeholder="Explain why this listing is being removed"
-                  className="w-full resize-none rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                />
-                {deleteError && (
-                  <p className="text-xs font-medium text-[#E5192D]" role="alert">
-                    {deleteError}
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-4 flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  disabled={isDeletingReport}
-                  onClick={() => {
-                    setConfirmingDelete(false);
-                    setDeleteError("");
-                  }}
-                  className="inline-flex h-8 items-center rounded-lg border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={isDeletingReport}
-                  onClick={handleConfirmDelete}
-                  className="inline-flex h-8 items-center rounded-lg bg-[#E5192D] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] disabled:cursor-wait disabled:opacity-60"
-                >
-                  {isDeletingReport ? "Deleting…" : "Confirm delete"}
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Item Dossier */}
           <div className="grid gap-6 md:grid-cols-[240px_minmax(0,1fr)] md:items-start">
             <div className="min-w-0">
@@ -385,6 +340,109 @@ function ReportedItemDossier({
           </div>
         </div>
       </Panel>
+
+      {confirmingDelete && (
+        <dialog
+          ref={deleteDialogRef}
+          role="alertdialog"
+          aria-labelledby="reported-delete-title"
+          aria-describedby="reported-delete-description"
+          onCancel={(event) => {
+            event.preventDefault();
+            handleCloseDeleteModal();
+          }}
+          onClose={handleCloseDeleteModal}
+          className="m-auto max-h-[calc(100dvh-2rem)] w-[min(26rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-neutral-200 bg-white p-5 text-neutral-900 shadow-xl backdrop:bg-neutral-950/50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+        >
+          <h3
+            id="reported-delete-title"
+            className="text-base font-semibold text-neutral-900 dark:text-neutral-100"
+          >
+            Delete this post?
+          </h3>
+          <p
+            id="reported-delete-description"
+            className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400"
+          >
+            &ldquo;{activeReport.title}&rdquo; will be permanently deleted, and
+            the original reporter will receive this reason in their
+            notifications.
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {DELETE_REASON_PRESETS.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                disabled={isDeletingReport}
+                onClick={() => {
+                  setDeleteReason(preset);
+                  setDeleteError("");
+                }}
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                  deleteReason === preset
+                    ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
+                    : "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                }`}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <label
+                htmlFor="reported-delete-reason"
+                className="text-xs font-medium text-neutral-700 dark:text-neutral-300"
+              >
+                Deletion reason <span className="text-[#E5192D]">*</span>
+              </label>
+              <span className="font-mono text-[11px] text-neutral-400 tabular-nums dark:text-neutral-500">
+                {deleteReason.length}/{DELETE_REASON_MAX_LENGTH}
+              </span>
+            </div>
+            <textarea
+              id="reported-delete-reason"
+              rows={3}
+              maxLength={DELETE_REASON_MAX_LENGTH}
+              value={deleteReason}
+              disabled={isDeletingReport}
+              onChange={(event) => {
+                setDeleteReason(event.target.value);
+                if (deleteError) setDeleteError("");
+              }}
+              placeholder="Explain why this listing is being removed"
+              className="w-full resize-none rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            />
+            {deleteError && (
+              <p className="text-xs font-medium text-[#E5192D]" role="alert">
+                {deleteError}
+              </p>
+            )}
+          </div>
+
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              disabled={isDeletingReport}
+              onClick={handleCloseDeleteModal}
+              className="inline-flex h-9 items-center rounded-lg border border-neutral-200 bg-white px-3.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={isDeletingReport}
+              onClick={handleConfirmDelete}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#E5192D] px-3.5 text-xs font-medium text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 dark:focus-visible:ring-offset-neutral-900"
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
+              {isDeletingReport ? "Deleting…" : "Delete post"}
+            </button>
+          </div>
+        </dialog>
+      )}
     </motion.div>
   );
 }

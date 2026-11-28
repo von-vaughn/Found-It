@@ -66,6 +66,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
     >
   >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const evidenceUrlsRef = useRef<string[]>([]);
 
@@ -144,6 +145,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting || isSubmittingRef.current) return;
     if (step === "evidence") {
       handleNextStep();
       return;
@@ -175,6 +177,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
 
     setFieldErrors({});
     setFormError("");
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     try {
       const evidence =
@@ -206,6 +209,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
         message ?? "We couldn't submit your claim. Please try again.",
       );
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };

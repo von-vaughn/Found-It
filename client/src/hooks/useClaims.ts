@@ -3,11 +3,19 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+  type QueryKey,
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import { useAuth } from "@/context/useAuth";
 import { itemKeys } from "@/hooks/useItems";
 import { notificationKeys } from "@/hooks/useNotifications";
+import {
+  filterInfinitePages,
+  mapInfinitePages,
+  prependToInfinitePages,
+} from "@/lib/queryCache";
 import {
   createClaim,
   createWalkInClaim,
@@ -17,6 +25,7 @@ import {
   listMyClaims,
   updateClaimStatus,
   type CreateWalkInClaimPayload,
+  type ListClaimsPageResult,
   type ServerClaim,
   type ServerClaimStatus,
   type UpdateClaimPayload,
@@ -26,9 +35,97 @@ import {
 export const claimKeys = {
   all: ["claims"] as const,
   admin: () => [...claimKeys.all, "admin"] as const,
+  adminInfinite: () => [...claimKeys.all, "admin-infinite"] as const,
+  mineAll: () => [...claimKeys.all, "mine"] as const,
   mine: (userId?: string) =>
-    [...claimKeys.all, "mine", userId ?? "anonymous"] as const,
+    [...claimKeys.mineAll(), userId ?? "anonymous"] as const,
 };
+
+type ClaimCacheSnapshot = Array<[QueryKey, unknown]>;
+
+function snapshotClaimCaches(queryClient: QueryClient): ClaimCacheSnapshot {
+  return queryClient.getQueriesData({ queryKey: claimKeys.all });
+}
+
+function restoreClaimCaches(
+  queryClient: QueryClient,
+  snapshot: ClaimCacheSnapshot | undefined,
+) {
+  if (!snapshot) return;
+  for (const [key, data] of snapshot) {
+    queryClient.setQueryData(key, data);
+  }
+}
+
+function prependClaimAcrossCaches(
+  queryClient: QueryClient,
+  created: ServerClaim,
+) {
+  const prependArray = (current: ServerClaim[] | undefined) =>
+    Array.isArray(current)
+      ? [created, ...current.filter((claim) => claim.id !== created.id)]
+      : current;
+
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: claimKeys.mineAll() },
+    prependArray,
+  );
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: claimKeys.admin() },
+    prependArray,
+  );
+  queryClient.setQueriesData<InfiniteData<ListClaimsPageResult>>(
+    { queryKey: claimKeys.adminInfinite() },
+    (current) => prependToInfinitePages(current, "claims", created),
+  );
+}
+
+function updateClaimAcrossCaches(
+  queryClient: QueryClient,
+  id: string,
+  updater: (claim: ServerClaim) => ServerClaim,
+) {
+  const patchArray = (current: ServerClaim[] | undefined) =>
+    Array.isArray(current)
+      ? current.map((claim) => (claim.id === id ? updater(claim) : claim))
+      : current;
+
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: claimKeys.mineAll() },
+    patchArray,
+  );
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: claimKeys.admin() },
+    patchArray,
+  );
+  queryClient.setQueriesData<InfiniteData<ListClaimsPageResult>>(
+    { queryKey: claimKeys.adminInfinite() },
+    (current) =>
+      mapInfinitePages(current, "claims", (claim) =>
+        claim.id === id ? updater(claim) : claim,
+      ),
+  );
+}
+
+function removeClaimAcrossCaches(queryClient: QueryClient, id: string) {
+  const filterArray = (current: ServerClaim[] | undefined) =>
+    Array.isArray(current)
+      ? current.filter((claim) => claim.id !== id)
+      : current;
+
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: claimKeys.mineAll() },
+    filterArray,
+  );
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: claimKeys.admin() },
+    filterArray,
+  );
+  queryClient.setQueriesData<InfiniteData<ListClaimsPageResult>>(
+    { queryKey: claimKeys.adminInfinite() },
+    (current) => filterInfinitePages(current, "claims", (claim) => claim.id !== id),
+  );
+}
 
 /** The signed-in user's saved claim requests. */
 export function useMyClaims(
@@ -59,7 +156,7 @@ export function useAdminClaims() {
 /** Paginated admin claims with Load More support. */
 export function useInfiniteAdminClaims(pageSize = 50) {
   const query = useInfiniteQuery({
-    queryKey: [...claimKeys.all, "admin-infinite", pageSize],
+    queryKey: [...claimKeys.adminInfinite(), pageSize],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       listAllClaimsPage({ limit: pageSize, offset: pageParam }),
@@ -103,12 +200,24 @@ export function useUpdateAdminClaimStatus() {
       reason?: string;
       instructions?: string;
     }) => updateClaimStatus(id, status, reason, instructions),
+    onMutate: async ({ id, status, reason, instructions }) => {
+      await queryClient.cancelQueries({ queryKey: claimKeys.all });
+      const snapshot = snapshotClaimCaches(queryClient);
+      updateClaimAcrossCaches(queryClient, id, (claim) => ({
+        ...claim,
+        status,
+        ...(reason !== undefined ? { rejectionReason: reason } : {}),
+        ...(instructions !== undefined
+          ? { approvalInstructions: instructions }
+          : {}),
+      }));
+      return { snapshot };
+    },
+    onError: (_error, _variables, context) => {
+      restoreClaimCaches(queryClient, context?.snapshot);
+    },
     onSuccess: (updated) => {
-      queryClient.setQueryData<ServerClaim[]>(claimKeys.admin(), (current) =>
-        current?.map((claim) =>
-          claim.id === updated.id ? updated : claim,
-        ),
-      );
+      updateClaimAcrossCaches(queryClient, updated.id, () => updated);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: claimKeys.all });
@@ -126,6 +235,9 @@ export function useCreateWalkInClaim() {
   return useMutation({
     mutationFn: (payload: CreateWalkInClaimPayload) =>
       createWalkInClaim(payload),
+    onSuccess: (created) => {
+      prependClaimAcrossCaches(queryClient, created);
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: claimKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
@@ -142,14 +254,10 @@ export function useCreateClaim() {
   return useMutation({
     mutationFn: createClaim,
     onSuccess: (created) => {
-      queryClient.setQueriesData<ServerClaim[]>(
-        { queryKey: claimKeys.all },
-        (current) =>
-          current
-            ? [created, ...current.filter((claim) => claim.id !== created.id)]
-            : current,
-      );
+      prependClaimAcrossCaches(queryClient, created);
       queryClient.invalidateQueries({ queryKey: claimKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
     onError: (error) => {
       // A 409 means another tab/session already saved this claim; refresh the list.
@@ -168,11 +276,7 @@ export function useUpdateClaim() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateClaimPayload }) =>
       updateClaim(id, payload),
     onSuccess: (updated) => {
-      queryClient.setQueriesData<ServerClaim[]>(
-        { queryKey: claimKeys.all },
-        (current) =>
-          current?.map((claim) => (claim.id === updated.id ? updated : claim)),
-      );
+      updateClaimAcrossCaches(queryClient, updated.id, () => updated);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: claimKeys.all }),
   });
@@ -184,12 +288,19 @@ export function useDeleteClaim() {
 
   return useMutation({
     mutationFn: deleteClaim,
-    onSuccess: (_result, id) => {
-      queryClient.setQueriesData<ServerClaim[]>(
-        { queryKey: claimKeys.all },
-        (current) => current?.filter((claim) => claim.id !== id),
-      );
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: claimKeys.all });
+      const snapshot = snapshotClaimCaches(queryClient);
+      removeClaimAcrossCaches(queryClient, id);
+      return { snapshot };
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: claimKeys.all }),
+    onError: (_error, _id, context) => {
+      restoreClaimCaches(queryClient, context?.snapshot);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: claimKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    },
   });
 }

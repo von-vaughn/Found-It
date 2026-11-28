@@ -8,7 +8,7 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import axios from "axios";
 import { Eye, EyeOff, KeyRound, RotateCcw, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
 import { isSchoolEmail, SCHOOL_EMAIL_DOMAINS } from "@/context/auth-context";
 import { authService } from "@/services/authService";
@@ -62,6 +62,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
   const resetCodeInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const reduceMotion = useReducedMotion();
   const { login, signup, verifyOtp, resendOtp, checkEmailAvailability } =
     useAuth();
@@ -240,7 +241,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const getSafeRedirect = (defaultRolePath: string): string => {
     try {
-      const searchParams = new URLSearchParams(window.location.search);
+      const searchParams = new URLSearchParams(location.search);
       const redirectParam = searchParams.get("redirect");
       if (
         redirectParam &&
@@ -258,6 +259,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const handleSignIn = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isLoading) return;
     setError("");
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -305,6 +307,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const handleContinue = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isLoading) return;
     const normalizedEmail = email.trim().toLowerCase();
     if (!emailPattern.test(normalizedEmail)) {
       setError("Enter a valid school email to continue.");
@@ -342,6 +345,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const handleCreateAccount = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isLoading) return;
     setError("");
 
     if (!firstName.trim()) {
@@ -408,6 +412,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const handleVerifyEmail = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isVerifying) return;
     setError("");
     if (!/^\d{6}$/.test(verificationCode)) {
       setError("Enter the complete 6-digit verification code.");
@@ -452,6 +457,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const handleForgotEmailSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isLoading) return;
     setError("");
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !emailPattern.test(normalizedEmail)) {
@@ -483,6 +489,7 @@ export function AuthModal({ initialMode, onClose }: AuthModalProps) {
 
   const handleResetPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isLoading) return;
     setError("");
 
     if (!/^\d{6}$/.test(resetCode)) {

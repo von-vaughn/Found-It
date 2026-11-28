@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ListFilter, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { FilterOptionsModal } from "@/components/admin/FilterOptionsModal";
@@ -16,7 +16,6 @@ import { AdminLayout } from "./AdminLayout";
 import { useSelectedReport } from "@/components/admin/useSelectedReport";
 import {
   useDeleteItem,
-  useDismissItemFlags,
   useInfiniteItems,
   useUpdateOsaReceipt,
 } from "@/hooks/useItems";
@@ -24,12 +23,51 @@ import { LoadMoreButton } from "@/components/LoadMoreButton";
 
 export function ReportsPage() {
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All statuses");
-  const [osaReceiptFilter, setOsaReceiptFilter] = useState("All found items");
-  const [categoryFilter, setCategoryFilter] = useState("All categories");
-  const [buildingFilter, setBuildingFilter] = useState("All buildings");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [statusFilter, setStatusFilter] = useState(
+    () => searchParams.get("status") ?? "All statuses",
+  );
+  const [osaReceiptFilter, setOsaReceiptFilter] = useState(
+    () => searchParams.get("osa") ?? "All found items",
+  );
+  const [categoryFilter, setCategoryFilter] = useState(
+    () => searchParams.get("category") ?? "All categories",
+  );
+  const [buildingFilter, setBuildingFilter] = useState(
+    () => searchParams.get("building") ?? "All buildings",
+  );
+  const [currentPage, setCurrentPage] = useState(() => {
+    const parsed = Number.parseInt(searchParams.get("page") ?? "1", 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  });
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (query) next.set("q", query);
+    else next.delete("q");
+    if (statusFilter !== "All statuses") next.set("status", statusFilter);
+    else next.delete("status");
+    if (osaReceiptFilter !== "All found items") next.set("osa", osaReceiptFilter);
+    else next.delete("osa");
+    if (categoryFilter !== "All categories") next.set("category", categoryFilter);
+    else next.delete("category");
+    if (buildingFilter !== "All buildings") next.set("building", buildingFilter);
+    else next.delete("building");
+    if (currentPage > 1) next.set("page", String(currentPage));
+    else next.delete("page");
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [
+    buildingFilter,
+    categoryFilter,
+    currentPage,
+    osaReceiptFilter,
+    query,
+    searchParams,
+    setSearchParams,
+    statusFilter,
+  ]);
   const [pageSize, setPageSize] = useState(5);
   const [filterOptionsOpen, setFilterOptionsOpen] = useState(false);
   const { selectedReport, setSelectedReport, dialogRef } =
@@ -58,22 +96,7 @@ export function ReportsPage() {
   );
   const reports = useMemo(() => items.map(serverItemToAdminReport), [items]);
   const deleteItem = useDeleteItem();
-  const dismissItemFlags = useDismissItemFlags();
   const updateOsaReceipt = useUpdateOsaReceipt();
-
-  const handleDismissFlags = (id: string) => {
-    dismissItemFlags.mutate(id, {
-      onSuccess: () => {
-        setSelectedReport((current) =>
-          current?.id === id ? { ...current, flagCount: 0, flags: [] } : current,
-        );
-        toast.success("Flags dismissed.");
-      },
-      onError: () => {
-        toast.error("Could not dismiss flags. Please try again.");
-      },
-    });
-  };
 
   const handleOsaReceiptChange = (id: string, receivedByOsa: boolean) => {
     updateOsaReceipt.mutate(
@@ -403,8 +426,7 @@ export function ReportsPage() {
           dialogRef={dialogRef}
           onClose={() => setSelectedReport(null)}
           onDelete={handleDelete}
-          onDismissFlags={handleDismissFlags}
-          isDismissingFlags={dismissItemFlags.isPending}
+          isDeleting={deleteItem.isPending}
           onOsaReceiptChange={handleOsaReceiptChange}
           isUpdatingOsaReceipt={updateOsaReceipt.isPending}
         />

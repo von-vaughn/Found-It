@@ -51,13 +51,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   } = useInfiniteItems(undefined, 24);
   const items = serverItems.length > 0 ? toClientItems(serverItems) : EMPTY_ITEMS;
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeNavTab, setActiveNavTab] = useState<string>("home");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    () => searchParams.get("category") ?? "all",
+  );
   const [visibleCategoryCount, setVisibleCategoryCount] = useState(0);
   const categoryRowRef = useRef<HTMLDivElement>(null);
   const categoryMeasureRef = useRef<HTMLDivElement>(null);
   const moreCategoryMeasureRef = useRef<HTMLButtonElement>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("q") ?? "",
   );
@@ -138,13 +140,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Keep the URL query in sync so feed search is deep-linkable
-  // (e.g. searching from the item detail page lands here filtered).
+  // Keep the URL query in sync so feed search and category selection survive
+  // client-side navigation (e.g. viewing an item detail and going back).
   useEffect(() => {
-    const current = searchParams.get("q") ?? "";
-    if (current === searchQuery) return;
-    setSearchParams(searchQuery ? { q: searchQuery } : {}, { replace: true });
-  }, [searchQuery, searchParams, setSearchParams]);
+    const next = new URLSearchParams(searchParams);
+    if (searchQuery) next.set("q", searchQuery);
+    else next.delete("q");
+    if (selectedCategory && selectedCategory !== "all") {
+      next.set("category", selectedCategory);
+    } else {
+      next.delete("category");
+    }
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [searchQuery, selectedCategory, searchParams, setSearchParams]);
 
   const { data: serverCategories } = useCategories();
   const categories = useMemo(

@@ -81,6 +81,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isSubmittingRef = useRef(false);
   const [cameraState, setCameraState] = useState<CameraState>("starting");
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
@@ -217,6 +218,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
     event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
+    if (isSubmitting || isSubmittingRef.current) return;
     if (
       !itemTitle.trim() ||
       !importantDetails.trim() ||
@@ -230,6 +232,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
       return;
     }
     setFormError(null);
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     try {
       const evidence = capturedFile
@@ -264,6 +267,7 @@ export const FoundReportFlow: React.FC<FoundReportFlowProps> = ({
           "We couldn't submit your found report. Please try again.",
       );
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };

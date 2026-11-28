@@ -40,7 +40,12 @@ export function useCreateBuilding() {
 
   return useMutation({
     mutationFn: createBuilding,
-    onSuccess: () => {
+    onSuccess: (created) => {
+      queryClient.setQueryData<Building[]>(buildingQueryKey, (current) =>
+        current
+          ? [...current.filter((entry) => entry.id !== created.id), created]
+          : [created],
+      );
       queryClient.invalidateQueries({ queryKey: buildingQueryKey });
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },
@@ -52,7 +57,20 @@ export function useDeleteBuilding() {
 
   return useMutation({
     mutationFn: deleteBuilding,
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: buildingQueryKey });
+      const previous = queryClient.getQueryData<Building[]>(buildingQueryKey);
+      queryClient.setQueryData<Building[]>(buildingQueryKey, (current) =>
+        current?.filter((entry) => entry.id !== id),
+      );
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(buildingQueryKey, context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: buildingQueryKey });
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     },

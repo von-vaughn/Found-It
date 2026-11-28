@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   ClipboardList,
@@ -67,6 +67,7 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
   onFiltersChange,
 }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: serverItems } = useItems(undefined, {
     staleTime: 30_000,
     retry: 1,
@@ -87,8 +88,25 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
         : EMPTY_ITEMS,
     [serverItems, serverMyItems],
   );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending");
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("q") ?? "",
+  );
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const raw = searchParams.get("status");
+    return CLAIM_STATUS_TABS.some((tab) => tab.id === raw)
+      ? (raw as StatusFilter)
+      : "Pending";
+  });
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (searchQuery) next.set("q", searchQuery);
+    else next.delete("q");
+    if (statusFilter !== "Pending") next.set("status", statusFilter);
+    else next.delete("status");
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [searchQuery, statusFilter, searchParams, setSearchParams]);
   const [editingRequest, setEditingRequest] = useState<ClaimRequest | null>(
     null,
   );

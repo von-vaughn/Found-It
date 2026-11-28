@@ -3,11 +3,19 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+  type QueryKey,
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import { useAuth } from "@/context/useAuth";
 import { itemKeys } from "@/hooks/useItems";
 import { notificationKeys } from "@/hooks/useNotifications";
+import {
+  filterInfinitePages,
+  mapInfinitePages,
+  prependToInfinitePages,
+} from "@/lib/queryCache";
 import type { ServerClaim, ServerClaimStatus } from "@/services/claimService";
 import {
   createReturnRequest,
@@ -28,14 +36,118 @@ import {
   updateReturnStatus,
 } from "@/services/returnService";
 
+type ReturnsPage = { returns: ServerClaim[]; hasMore: boolean };
+
 export const returnKeys = {
   all: ["returns"] as const,
   admin: () => [...returnKeys.all, "admin"] as const,
+  adminInfinite: () => [...returnKeys.all, "admin-infinite"] as const,
+  mineAll: () => [...returnKeys.all, "mine"] as const,
   mine: (userId?: string) =>
-    [...returnKeys.all, "mine", userId ?? "anonymous"] as const,
+    [...returnKeys.mineAll(), userId ?? "anonymous"] as const,
+  itemsAll: () => [...returnKeys.all, "item"] as const,
   item: (itemId?: string) =>
-    [...returnKeys.all, "item", itemId ?? "unknown"] as const,
+    [...returnKeys.itemsAll(), itemId ?? "unknown"] as const,
 };
+
+type ReturnCacheSnapshot = Array<[QueryKey, unknown]>;
+
+function snapshotReturnCaches(queryClient: QueryClient): ReturnCacheSnapshot {
+  return queryClient.getQueriesData({ queryKey: returnKeys.all });
+}
+
+function restoreReturnCaches(
+  queryClient: QueryClient,
+  snapshot: ReturnCacheSnapshot | undefined,
+) {
+  if (!snapshot) return;
+  for (const [key, data] of snapshot) {
+    queryClient.setQueryData(key, data);
+  }
+}
+
+function prependReturnAcrossCaches(
+  queryClient: QueryClient,
+  created: ServerClaim,
+) {
+  const prependArray = (current: ServerClaim[] | undefined) =>
+    Array.isArray(current)
+      ? [created, ...current.filter((entry) => entry.id !== created.id)]
+      : current;
+
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: returnKeys.mineAll() },
+    prependArray,
+  );
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: returnKeys.admin() },
+    prependArray,
+  );
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: returnKeys.item(created.itemId) },
+    prependArray,
+  );
+  queryClient.setQueriesData<InfiniteData<ReturnsPage>>(
+    { queryKey: returnKeys.adminInfinite() },
+    (current) => prependToInfinitePages(current, "returns", created),
+  );
+}
+
+function updateReturnAcrossCaches(
+  queryClient: QueryClient,
+  id: string,
+  updater: (entry: ServerClaim) => ServerClaim,
+) {
+  const patchArray = (current: ServerClaim[] | undefined) =>
+    Array.isArray(current)
+      ? current.map((entry) => (entry.id === id ? updater(entry) : entry))
+      : current;
+
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: returnKeys.mineAll() },
+    patchArray,
+  );
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: returnKeys.admin() },
+    patchArray,
+  );
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: returnKeys.itemsAll() },
+    patchArray,
+  );
+  queryClient.setQueriesData<InfiniteData<ReturnsPage>>(
+    { queryKey: returnKeys.adminInfinite() },
+    (current) =>
+      mapInfinitePages(current, "returns", (entry) =>
+        entry.id === id ? updater(entry) : entry,
+      ),
+  );
+}
+
+function removeReturnAcrossCaches(queryClient: QueryClient, id: string) {
+  const filterArray = (current: ServerClaim[] | undefined) =>
+    Array.isArray(current)
+      ? current.filter((entry) => entry.id !== id)
+      : current;
+
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: returnKeys.mineAll() },
+    filterArray,
+  );
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: returnKeys.admin() },
+    filterArray,
+  );
+  queryClient.setQueriesData<ServerClaim[]>(
+    { queryKey: returnKeys.itemsAll() },
+    filterArray,
+  );
+  queryClient.setQueriesData<InfiniteData<ReturnsPage>>(
+    { queryKey: returnKeys.adminInfinite() },
+    (current) =>
+      filterInfinitePages(current, "returns", (entry) => entry.id !== id),
+  );
+}
 
 /** The signed-in user's saved found reports. */
 export function useMyReturns(
@@ -66,7 +178,7 @@ export function useAdminReturns() {
 /** Paginated admin returns with Load More support. */
 export function useInfiniteAdminReturns(pageSize = 50) {
   const query = useInfiniteQuery({
-    queryKey: [...returnKeys.all, "admin-infinite", pageSize],
+    queryKey: [...returnKeys.adminInfinite(), pageSize],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       listAllReturnsPage({ limit: pageSize, offset: pageParam }),
@@ -119,14 +231,10 @@ export function useCreateReturnRequest() {
   return useMutation({
     mutationFn: (payload: CreateReturnPayload) => createReturnRequest(payload),
     onSuccess: (created) => {
-      queryClient.setQueriesData<ServerClaim[]>(
-        { queryKey: returnKeys.all },
-        (current) =>
-          current
-            ? [created, ...current.filter((entry) => entry.id !== created.id)]
-            : current,
-      );
+      prependReturnAcrossCaches(queryClient, created);
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
     onError: (error) => {
       // A 409 means another tab/session already saved this report.
@@ -144,6 +252,9 @@ export function useCreateWalkInReturn() {
   return useMutation({
     mutationFn: (payload: CreateWalkInReturnPayload) =>
       createWalkInReturn(payload),
+    onSuccess: (created) => {
+      prependReturnAcrossCaches(queryClient, created);
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
@@ -167,12 +278,23 @@ export function useUpdateAdminReturnStatus() {
       status: Exclude<ServerClaimStatus, "pending" | "claimed">;
       instructions?: string;
     }) => updateReturnStatus(id, status, instructions),
+    onMutate: async ({ id, status, instructions }) => {
+      await queryClient.cancelQueries({ queryKey: returnKeys.all });
+      const snapshot = snapshotReturnCaches(queryClient);
+      updateReturnAcrossCaches(queryClient, id, (request) => ({
+        ...request,
+        status,
+        ...(instructions !== undefined
+          ? { approvalInstructions: instructions }
+          : {}),
+      }));
+      return { snapshot };
+    },
+    onError: (_error, _variables, context) => {
+      restoreReturnCaches(queryClient, context?.snapshot);
+    },
     onSuccess: (updated) => {
-      queryClient.setQueryData<ServerClaim[]>(returnKeys.admin(), (current) =>
-        current?.map((request) =>
-          request.id === updated.id ? updated : request,
-        ),
-      );
+      updateReturnAcrossCaches(queryClient, updated.id, () => updated);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
@@ -190,13 +312,10 @@ export function useRemindReturnFinder() {
   return useMutation({
     mutationFn: remindReturnFinder,
     onSuccess: (result, id) => {
-      queryClient.setQueryData<ServerClaim[]>(returnKeys.admin(), (current) =>
-        current?.map((request) =>
-          request.id === id
-            ? { ...request, lastFinderReminderAt: result.lastFinderReminderAt }
-            : request,
-        ),
-      );
+      updateReturnAcrossCaches(queryClient, id, (request) => ({
+        ...request,
+        lastFinderReminderAt: result.lastFinderReminderAt,
+      }));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
@@ -212,6 +331,12 @@ export function usePublishRejectedReturn() {
 
   return useMutation<PublishReturnResponse, Error, string>({
     mutationFn: publishRejectedReturn,
+    onSuccess: (result, id) => {
+      updateReturnAcrossCaches(queryClient, id, (request) => ({
+        ...request,
+        publishedItemId: result.itemId,
+      }));
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
@@ -231,12 +356,20 @@ export function useUpdateAdminReturnOsaReceipt() {
       id: string;
       receivedByOsa: boolean;
     }) => updateReturnOsaReceipt(id, receivedByOsa),
+    onMutate: async ({ id, receivedByOsa }) => {
+      await queryClient.cancelQueries({ queryKey: returnKeys.all });
+      const snapshot = snapshotReturnCaches(queryClient);
+      updateReturnAcrossCaches(queryClient, id, (request) => ({
+        ...request,
+        receivedByOsa,
+      }));
+      return { snapshot };
+    },
+    onError: (_error, _variables, context) => {
+      restoreReturnCaches(queryClient, context?.snapshot);
+    },
     onSuccess: (updated) => {
-      queryClient.setQueryData<ServerClaim[]>(returnKeys.admin(), (current) =>
-        current?.map((request) =>
-          request.id === updated.id ? updated : request,
-        ),
-      );
+      updateReturnAcrossCaches(queryClient, updated.id, () => updated);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: returnKeys.all });
@@ -254,13 +387,7 @@ export function useUpdateReturnRequest() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateReturnPayload }) =>
       updateReturnRequest(id, payload),
     onSuccess: (updated) => {
-      queryClient.setQueriesData<ServerClaim[]>(
-        { queryKey: returnKeys.all },
-        (current) =>
-          current?.map((request) =>
-            request.id === updated.id ? updated : request,
-          ),
-      );
+      updateReturnAcrossCaches(queryClient, updated.id, () => updated);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: returnKeys.all }),
   });
@@ -272,12 +399,19 @@ export function useDeleteReturnRequest() {
 
   return useMutation({
     mutationFn: deleteReturnRequest,
-    onSuccess: (_result, id) => {
-      queryClient.setQueriesData<ServerClaim[]>(
-        { queryKey: returnKeys.all },
-        (current) => current?.filter((request) => request.id !== id),
-      );
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: returnKeys.all });
+      const snapshot = snapshotReturnCaches(queryClient);
+      removeReturnAcrossCaches(queryClient, id);
+      return { snapshot };
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: returnKeys.all }),
+    onError: (_error, _id, context) => {
+      restoreReturnCaches(queryClient, context?.snapshot);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: returnKeys.all });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    },
   });
 }

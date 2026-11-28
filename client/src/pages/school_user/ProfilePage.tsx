@@ -2,7 +2,7 @@ import { useMyItems } from "@/hooks/useItems";
 import { toClientItems } from "@/lib/itemAdapter";
 import { resolveIdNumber } from "@/lib/idNumber";
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeftRight, ChevronDown, Compass, LogOut, Plus } from "lucide-react";
 import { animate, motion, useReducedMotion } from "motion/react";
 import { FadeIn } from "@/components/FadeIn";
@@ -97,11 +97,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const items = EMPTY_ITEMS;
   const [searchQuery, setSearchQuery] = useState("");
   const [reportFilter, setReportFilter] = useState<"all" | "lost" | "found">(
-    "all",
+    () => {
+      const raw = searchParams.get("type");
+      return raw === "lost" || raw === "found" ? raw : "all";
+    },
   );
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (reportFilter !== "all") next.set("type", reportFilter);
+    else next.delete("type");
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [reportFilter, searchParams, setSearchParams]);
   const [avatarFailed, setAvatarFailed] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);

@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ClaimDetailPanel } from "@/components/admin/ClaimsView";
 import { paths } from "@/routes/paths";
 import { AdminLayout } from "./AdminLayout";
@@ -8,6 +8,9 @@ import { useFoundClaimsWorkflow } from "./useFoundClaimsWorkflow";
 export function ClaimDetailPage() {
   const { claimId = "" } = useParams<{ claimId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo =
+    (location.state as { from?: string } | null)?.from || paths.adminClaims;
   const {
     allClaims,
     foundItemClaims,
@@ -38,7 +41,7 @@ export function ClaimDetailPage() {
   const backButton = (
     <button
       type="button"
-      onClick={() => navigate(paths.adminClaims)}
+      onClick={() => navigate(returnTo)}
       className="-ml-3 mb-4 inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
     >
       <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -101,7 +104,7 @@ export function ClaimDetailPage() {
         onClaimStatusChange={async (id, status, reason, instructions) => {
           await handleClaimStatusChange(id, status, reason, instructions);
           if (status === "Claimed" || status === "Returned") {
-            navigate(paths.adminClaims, { replace: true });
+            navigate(returnTo, { replace: true });
           }
         }}
         onOsaReceiptChange={handleOsaReceiptChange}

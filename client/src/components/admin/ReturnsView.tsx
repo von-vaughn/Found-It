@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { Bell, Check, ChevronRight, Send, X } from "lucide-react";
+import { Bell, Check, ChevronRight, Loader2, Send, X } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 import { NoItemImage } from "@/components/NoItemImage";
 import { resolveIdNumber } from "@/lib/idNumber";
@@ -335,6 +335,7 @@ export function ReturnDetailPanel({
   } | null>(null);
   const [approvalMessage, setApprovalMessage] = useState("");
   const [approvalMessageError, setApprovalMessageError] = useState("");
+  const [savingStatusChange, setSavingStatusChange] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [detailStatusFilter, setDetailStatusFilter] = useState<string>(() =>
     DEFAULT_RETURN_FILTERS.includes(selectedRequest.status)
@@ -463,7 +464,7 @@ export function ReturnDetailPanel({
   };
 
   const confirmStatusChange = async () => {
-    if (!confirmAction || !confirmTargetRequest) return;
+    if (!confirmAction || !confirmTargetRequest || savingStatusChange) return;
     const serverStatus = ADMIN_RETURN_STATUS[confirmAction.status];
     if (!serverStatus) return;
 
@@ -479,6 +480,7 @@ export function ReturnDetailPanel({
       confirmAction.status === "Rejected" &&
       confirmTargetRequest.status === "Approved";
 
+    setSavingStatusChange(true);
     try {
       await onUpdateStatus(
         confirmAction.requestId,
@@ -488,6 +490,8 @@ export function ReturnDetailPanel({
     } catch {
       toast.error("Could not update this return request. Please try again.");
       return;
+    } finally {
+      setSavingStatusChange(false);
     }
 
     if (confirmAction.status === "Approved") {
@@ -519,13 +523,13 @@ export function ReturnDetailPanel({
     if (!confirmAction && !confirmPublishRequest) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setConfirmAction(null);
-        setConfirmPublishRequest(null);
+        if (!savingStatusChange) setConfirmAction(null);
+        if (!isPublishing) setConfirmPublishRequest(null);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [confirmAction, confirmPublishRequest]);
+  }, [confirmAction, confirmPublishRequest, isPublishing, savingStatusChange]);
 
   const postFacts = buildLostPostFacts(
     selectedLostReport,
@@ -912,15 +916,18 @@ export function ReturnDetailPanel({
         >
           <div
             aria-hidden="true"
-            onClick={() => setConfirmAction(null)}
+            onClick={() => {
+              if (!savingStatusChange) setConfirmAction(null);
+            }}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
           <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-neutral-900">
             <button
               type="button"
+              disabled={savingStatusChange}
               onClick={() => setConfirmAction(null)}
               aria-label="Close confirmation"
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -994,30 +1001,39 @@ export function ReturnDetailPanel({
               <button
                 type="button"
                 autoFocus={confirmAction.status !== "Approved"}
+                disabled={savingStatusChange}
                 onClick={() => setConfirmAction(null)}
-                className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:opacity-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 disabled={
-                  confirmAction.status === "Approved" && !approvalMessage.trim()
+                  savingStatusChange ||
+                  (confirmAction.status === "Approved" && !approvalMessage.trim())
                 }
-                onClick={confirmStatusChange}
-                className={`h-10 rounded-xl px-5 text-sm font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 ${
+                onClick={() => void confirmStatusChange()}
+                className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 ${
                   confirmAction.status === "Returned"
                     ? "bg-emerald-700 hover:bg-emerald-800 focus-visible:ring-emerald-700"
                     : "bg-[#E5192D] hover:bg-[#c91424] focus-visible:ring-[#E5192D]"
                 }`}
               >
-                {confirmAction.status === "Approved"
-                  ? "Approve return"
-                  : confirmAction.status === "Returned"
-                    ? "Mark as returned"
-                    : confirmTargetRequest.status === "Approved"
-                      ? "Reject & post item"
-                      : "Reject"}
+                {savingStatusChange ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Saving…
+                  </>
+                ) : confirmAction.status === "Approved" ? (
+                  "Approve return"
+                ) : confirmAction.status === "Returned" ? (
+                  "Mark as returned"
+                ) : confirmTargetRequest.status === "Approved" ? (
+                  "Reject & post item"
+                ) : (
+                  "Reject"
+                )}
               </button>
             </div>
           </div>

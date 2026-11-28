@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
 import {
@@ -16,10 +16,25 @@ import { AdminLayout } from "./AdminLayout";
 
 export function ReportedItemsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { itemId } = useParams<{ itemId?: string }>();
-  const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"All" | "Lost" | "Found">("All");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [typeFilter, setTypeFilter] = useState<"All" | "Lost" | "Found">(() => {
+    const raw = searchParams.get("type");
+    return raw === "Lost" || raw === "Found" ? raw : "All";
+  });
   const [selectedId, setSelectedId] = useState(itemId ?? "");
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (query) next.set("q", query);
+    else next.delete("q");
+    if (typeFilter !== "All") next.set("type", typeFilter);
+    else next.delete("type");
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [query, searchParams, setSearchParams, typeFilter]);
 
   const { data: items = [], isLoading, isError, refetch } = useItems();
   const dismissItemFlags = useDismissItemFlags();
@@ -148,9 +163,10 @@ export function ReportedItemsPage() {
           selectedId={selectedId}
           onSelectId={(id) => {
             setSelectedId(id);
-            navigate(`${paths.adminReported}/${encodeURIComponent(id)}`, {
-              replace: true,
-            });
+            navigate(
+              `${paths.adminReported}/${encodeURIComponent(id)}${location.search}`,
+              { replace: true },
+            );
           }}
           onResetFilters={resetFilters}
           onBrowseAllItems={() => navigate(paths.adminItems)}
