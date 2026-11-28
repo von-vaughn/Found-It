@@ -165,17 +165,17 @@ export function ClaimsListPanel({
   return (
     <FadeIn delay={0.05}>
       <Panel
-        title="Submitted Claims Request"
+        title="Claim requests"
         action={
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+          <span className="font-mono text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
             {claimGroups.length} {claimGroups.length === 1 ? "item" : "items"}
           </span>
         }
       >
         {claimGroups.length === 0 ? (
-          <div className="flex min-h-[320px] flex-col items-center justify-center px-5 py-10 text-center">
-            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-              No claim requests yet.
+          <div className="flex min-h-[280px] flex-col items-center justify-center px-6 py-12 text-center">
+            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              No claim requests yet
             </p>
           </div>
         ) : (
@@ -195,9 +195,9 @@ export function ClaimsListPanel({
                     <button
                       type="button"
                       onClick={() => onSelectClaim(claim.id)}
-                      className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-neutral-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] dark:hover:bg-neutral-800/40"
+                      className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] dark:hover:bg-neutral-800/40"
                     >
-                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
                         {itemImage ? (
                           <img
                             src={itemImage}
@@ -210,14 +210,14 @@ export function ClaimsListPanel({
                         )}
                       </div>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                        <span className="block truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                           {claim.item}
                         </span>
                         <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                           <span className="truncate">{claimantNames.join(", ")}</span>
                           {group.claims.length > 1 && (
-                            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
-                              {group.claims.length} requests
+                            <span className="font-mono text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
+                              · {group.claims.length} requests
                             </span>
                           )}
                         </span>
@@ -225,8 +225,8 @@ export function ClaimsListPanel({
                       <span className="flex shrink-0 items-center gap-3">
                         <span className="flex flex-col items-end gap-1">
                           <StatusBadge status={claim.status} />
-                          <span className="hidden text-[10px] uppercase tracking-[0.06em] text-neutral-500 sm:block dark:text-neutral-400">
-                            Submitted {claim.submitted}
+                          <span className="hidden font-mono text-xs tabular-nums text-neutral-500 sm:block dark:text-neutral-400">
+                            {claim.submitted}
                           </span>
                         </span>
                         <ChevronRight

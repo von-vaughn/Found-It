@@ -45,7 +45,7 @@ function OriginalPostFacts({
   return (
     <div>
       {image ? (
-        <div className="aspect-[4/3] w-full overflow-hidden rounded-[14px] border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
+        <div className="aspect-[4/3] w-full overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
           <img
             src={image}
             alt={imageAlt}
@@ -56,7 +56,7 @@ function OriginalPostFacts({
         <NoItemImage
           title={emptyImageTitle}
           subtitle={emptyImageSubtitle}
-          className="aspect-[4/3] w-full rounded-[14px]"
+          className="aspect-[4/3] w-full rounded-lg"
         />
       )}
 
@@ -146,7 +146,7 @@ export function OriginalPostCard({
     return (
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             Original post
           </h2>
         </div>
@@ -160,10 +160,10 @@ export function OriginalPostCard({
           badgeStyle={typeBadge?.style}
           timestampLabel={postedDateLabel}
           photos={image ? [{ src: image, alt: imageAlt }] : []}
-          emptyPhotoTitle="No image attached to this report."
-          emptyPhotoSubtitle="The reporter did not attach any photos to this post."
+          emptyPhotoTitle="No image attached"
+          emptyPhotoSubtitle="No photos were included with this report"
           description={notes}
-          emptyDescription="No additional description provided."
+          emptyDescription="No additional description provided"
           facts={heroFacts}
           actions={footer}
         />
@@ -172,12 +172,12 @@ export function OriginalPostCard({
   }
 
   return (
-    <aside className="rounded-[18px] bg-white p-4 lg:sticky lg:top-6 lg:self-start dark:bg-neutral-900">
-      <div className="mb-3.5 flex items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">
+    <aside className="rounded-xl border border-neutral-200 bg-white p-4 lg:sticky lg:top-6 lg:self-start dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           Original post
         </h2>
-        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
+        <span className="font-mono text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
           {postedDateLabel}
         </span>
       </div>
@@ -221,10 +221,10 @@ export function FilterChips<T extends string>({
             type="button"
             aria-pressed={pressed}
             onClick={() => onChange(option.key)}
-            className={`grow shrink-0 basis-auto whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${
+            className={`inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${
               pressed
                 ? "bg-[#E5192D] text-white hover:bg-[#c81424]"
-                : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
+                : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
             }`}
           >
             <span>{option.label}</span>
@@ -265,10 +265,10 @@ export function RequestSelectorCard({
       type="button"
       aria-current={selected ? "true" : undefined}
       onClick={onClick}
-      className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] bg-white px-3.5 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 ${
+      className={`relative grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
         selected
-          ? "ring-1 ring-[#E5192D]"
-          : "hover:bg-neutral-50 dark:hover:bg-neutral-800"
+          ? "border-neutral-300 bg-neutral-50 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-[#E5192D] dark:border-neutral-700 dark:bg-neutral-800/70"
+          : "border-neutral-200 bg-white hover:bg-neutral-50/70 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800/40"
       }`}
     >
       <div className="min-w-0">
@@ -284,7 +284,7 @@ export function RequestSelectorCard({
         <StatusBadge status={status} />
         {matchTones && matchTones.length > 0 && (
           <span
-            className="flex h-[5px] w-[72px] gap-[3px]"
+            className="flex h-1.5 w-16 gap-1"
             title="Attribute comparison with original post"
             aria-hidden="true"
           >
@@ -328,7 +328,7 @@ export function ReviewPager({
       className="flex flex-wrap items-center justify-between gap-3"
     >
       {showRange && (
-        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 tabular-nums dark:text-neutral-400">
+        <span className="font-mono text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
           Showing {rangeStart}–{rangeEnd} of {totalItems} {itemUnitLabel}
         </span>
       )}
@@ -425,10 +425,10 @@ function ReviewDetailCard({
   return (
     <section
       aria-label={ariaLabel}
-      className="overflow-hidden rounded-2xl bg-white dark:bg-neutral-900"
+      className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
     >
-      <div className="p-4 sm:p-5">
-        <div className="grid gap-5 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="p-5 sm:p-6">
+        <div className="grid gap-6 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]">
           <PhotoCarousel
             key={photoKey}
             photos={photos}
@@ -438,25 +438,25 @@ function ReviewDetailCard({
           <article className="flex min-w-0 flex-col">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-lg font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+                <h2 className="truncate text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                   {title}
                 </h2>
-                <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                <p className="mt-0.5 text-xs font-medium text-neutral-500 dark:text-neutral-400">
                   {eyebrow}
                 </p>
-                <p className="mt-0.5 truncate text-xs text-neutral-400 dark:text-neutral-500">
+                <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
                   {subtitle}
                 </p>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">
                 {badgeLabel && badgeStyle && (
                   <span
-                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold ${badgeStyle}`}
+                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-semibold ${badgeStyle}`}
                   >
                     {badgeLabel}
                   </span>
                 )}
-                <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+                <span className="font-mono text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
                   {timestampLabel}
                 </span>
               </div>

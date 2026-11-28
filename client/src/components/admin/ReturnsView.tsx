@@ -185,18 +185,18 @@ export function ReturnsListPanel({
   return (
     <FadeIn delay={0.05}>
       <Panel
-        title="Return Requests"
+        title="Return requests"
         action={
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+          <span className="font-mono text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
             {requestGroups.length}{" "}
             {requestGroups.length === 1 ? "item" : "items"}
           </span>
         }
       >
         {requestGroups.length === 0 ? (
-          <div className="flex min-h-[320px] flex-col items-center justify-center px-5 py-10 text-center">
-            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-              No return requests yet.
+          <div className="flex min-h-[280px] flex-col items-center justify-center px-6 py-12 text-center">
+            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              No return requests yet
             </p>
           </div>
         ) : (
@@ -216,9 +216,9 @@ export function ReturnsListPanel({
                     <button
                       type="button"
                       onClick={() => onSelectReturn(request.id)}
-                      className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-neutral-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] dark:hover:bg-neutral-800/40"
+                      className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] dark:hover:bg-neutral-800/40"
                     >
-                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
                         {preview ? (
                           <img
                             src={preview}
@@ -231,14 +231,14 @@ export function ReturnsListPanel({
                         )}
                       </div>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                        <span className="block truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                           {request.item}
                         </span>
                         <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                           <span className="truncate">{finderNames.join(", ")}</span>
                           {group.requests.length > 1 && (
-                            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
-                              {group.requests.length} requests
+                            <span className="font-mono text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
+                              · {group.requests.length} requests
                             </span>
                           )}
                         </span>
@@ -246,8 +246,8 @@ export function ReturnsListPanel({
                       <span className="flex shrink-0 items-center gap-3">
                         <span className="flex flex-col items-end gap-1">
                           <StatusBadge status={request.status} />
-                          <span className="hidden text-[10px] uppercase tracking-[0.06em] text-neutral-500 sm:block dark:text-neutral-400">
-                            Submitted {request.submitted}
+                          <span className="hidden font-mono text-xs tabular-nums text-neutral-500 sm:block dark:text-neutral-400">
+                            {request.submitted}
                           </span>
                         </span>
                         <ChevronRight
