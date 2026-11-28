@@ -7,6 +7,8 @@ import {
   findUserByEmail,
   findUserById,
   findUserWithHashByEmail,
+  formatSuspensionMessage,
+  isUserSuspended,
   markUserTutorialSeen,
   setUserVerified,
   updateUserPassword,
@@ -330,7 +332,7 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
   }
 
   const user = await findUserByEmail(parsed.data.email);
-  if (user && user.isActive && user.isVerified) {
+  if (user && user.isActive && user.isVerified && !isUserSuspended(user)) {
     const eligibility = await checkResendEligibility(user.id);
     if (eligibility.allowed) {
       const otp = generateOtp();
@@ -351,7 +353,7 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
   }
 
   const user = await findUserByEmail(parsed.data.email);
-  if (!user || !user.isActive || !user.isVerified) {
+  if (!user || !user.isActive || !user.isVerified || isUserSuspended(user)) {
     res.status(400).json({ message: GENERIC_OTP_ERROR });
     return;
   }
@@ -398,6 +400,10 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   if (!user.isActive) {
     res.status(403).json({ message: 'Account is deactivated. Contact an administrator.' });
+    return;
+  }
+  if (isUserSuspended(user)) {
+    res.status(403).json({ message: formatSuspensionMessage(user) });
     return;
   }
 
@@ -473,6 +479,11 @@ export async function refresh(req: Request, res: Response): Promise<void> {
           res.status(403).json({ message: 'Account is deactivated. Contact an administrator.' });
           return;
         }
+        if (isUserSuspended(user)) {
+          clearRefreshTokenCookie(res);
+          res.status(403).json({ message: formatSuspensionMessage(user) });
+          return;
+        }
         const accessToken = signAccessToken(user);
         res.json({ user, accessToken });
         return;
@@ -501,6 +512,11 @@ export async function refresh(req: Request, res: Response): Promise<void> {
     if (!user.isActive) {
       clearRefreshTokenCookie(res);
       res.status(403).json({ message: 'Account is deactivated. Contact an administrator.' });
+      return;
+    }
+    if (isUserSuspended(user)) {
+      clearRefreshTokenCookie(res);
+      res.status(403).json({ message: formatSuspensionMessage(user) });
       return;
     }
 

@@ -9,6 +9,7 @@ import type { ServerClaimStatus } from "@/services/claimService";
 import type { ClaimRequest } from "@/types/claim";
 import { OsaReceiptConfirmModal } from "./OsaReceiptConfirmModal";
 import { OsaReceiptStatus } from "./OsaReceiptStatus";
+import { Panel } from "./Panel";
 import {
   FilterChips,
   OriginalPostCard,
@@ -183,105 +184,105 @@ export function ReturnsListPanel({
   const rangeEnd = Math.min(safePage * LIST_PAGE_SIZE, requestGroups.length);
 
   return (
-    <section aria-labelledby="returns-list-heading" className="space-y-5">
-      <FadeIn>
-      <div>
-        <h1
-          id="returns-list-heading"
-          className="flex items-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100"
-        >
-          <span>Return Item</span>
-          <span className="font-mono text-base font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
-            {requestGroups.length}
+    <FadeIn delay={0.05}>
+      <Panel
+        title="Return Requests"
+        action={
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            {requestGroups.length}{" "}
+            {requestGroups.length === 1 ? "item" : "items"}
           </span>
-        </h1>
-      </div>
-      </FadeIn>
-
-      {requestGroups.length === 0 ? (
-        <FadeIn delay={0.05}>
-        <div className="rounded-[14px] border border-dashed border-neutral-300 bg-white px-5 py-12 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
-          No return requests yet.
-        </div>
-        </FadeIn>
-      ) : (
-        <>
-          <StaggerGrid
-            key={`${safePage}-${requestGroups.length}-${pageGroups[0]?.representative.itemId ?? ""}`}
-            className="grid gap-2.5"
-          >
-            {pageGroups.map((group) => {
-              const request = group.representative;
-              const lostReport = reports.find(
-                (report) => report.id === request.itemId,
-              );
-              const preview = lostReport?.image || request.evidence?.[0] || "";
-              const finderNames = group.requests
-                .map((entry) => entry.claimant)
-                .filter((name, index, names) => names.indexOf(name) === index);
-              return (
-                <StaggerItem key={request.itemId}>
-                <button
-                  type="button"
-                  onClick={() => onSelectReturn(request.id)}
-                  className="flex w-full items-center gap-3.5 rounded-[14px] bg-white px-4 py-3.5 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] dark:bg-neutral-900 dark:hover:bg-neutral-800/70"
-                >
-                  {preview ? (
-                    <img
-                      src={preview}
-                      alt={`${request.item} evidence`}
-                      loading="lazy"
-                      className="h-12 w-12 shrink-0 rounded-[10px] object-cover"
-                    />
-                  ) : (
-                    <NoItemImage compact className="h-12 w-12 rounded-[10px]" />
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                      {request.item}
-                    </span>
-                    <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                      <span className="truncate">{finderNames.join(", ")}</span>
-                      {group.requests.length > 1 && (
-                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
-                          {group.requests.length} requests
+        }
+      >
+        {requestGroups.length === 0 ? (
+          <div className="flex min-h-[320px] flex-col items-center justify-center px-5 py-10 text-center">
+            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+              No return requests yet.
+            </p>
+          </div>
+        ) : (
+          <>
+            <StaggerGrid
+              key={`${safePage}-${requestGroups.length}-${pageGroups[0]?.representative.itemId ?? ""}`}
+              className="divide-y divide-neutral-100 dark:divide-neutral-800"
+            >
+              {pageGroups.map((group) => {
+                const request = group.representative;
+                const lostReport = reports.find(
+                  (report) => report.id === request.itemId,
+                );
+                const preview = lostReport?.image || request.evidence?.[0] || "";
+                const finderNames = group.requests
+                  .map((entry) => entry.claimant)
+                  .filter((name, index, names) => names.indexOf(name) === index);
+                return (
+                  <StaggerItem key={request.itemId}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectReturn(request.id)}
+                      className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-neutral-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E5192D] dark:hover:bg-neutral-800/40"
+                    >
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800">
+                        {preview ? (
+                          <img
+                            src={preview}
+                            alt={`${request.item} evidence`}
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <NoItemImage compact className="h-full w-full" />
+                        )}
+                      </div>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                          {request.item}
                         </span>
-                      )}
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-3">
-                    <span className="flex flex-col items-end gap-1">
-                      <StatusBadge status={request.status} />
-                      <span className="hidden text-[10px] uppercase tracking-[0.06em] text-neutral-500 sm:block dark:text-neutral-400">
-                        Submitted {request.submitted}
+                        <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                          <span className="truncate">{finderNames.join(", ")}</span>
+                          {group.requests.length > 1 && (
+                            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
+                              {group.requests.length} requests
+                            </span>
+                          )}
+                        </span>
                       </span>
-                    </span>
-                    <ChevronRight
-                      className="h-4 w-4 text-neutral-400 dark:text-neutral-500"
-                      aria-hidden="true"
-                    />
-                  </span>
-                </button>
-                </StaggerItem>
-              );
-            })}
-          </StaggerGrid>
+                      <span className="flex shrink-0 items-center gap-3">
+                        <span className="flex flex-col items-end gap-1">
+                          <StatusBadge status={request.status} />
+                          <span className="hidden text-[10px] uppercase tracking-[0.06em] text-neutral-500 sm:block dark:text-neutral-400">
+                            Submitted {request.submitted}
+                          </span>
+                        </span>
+                        <ChevronRight
+                          className="h-4 w-4 text-neutral-400 dark:text-neutral-500"
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </button>
+                  </StaggerItem>
+                );
+              })}
+            </StaggerGrid>
 
-          <FadeIn delay={0.08}>
-          <ReviewPager
-            page={safePage}
-            totalPages={totalPages}
-            rangeStart={rangeStart}
-            rangeEnd={rangeEnd}
-            totalItems={requestGroups.length}
-            itemUnitLabel="posts"
-            showRange={false}
-            onPageChange={setPage}
-          />
-          </FadeIn>
-        </>
-      )}
-    </section>
+            {totalPages > 1 && (
+              <div className="border-t border-neutral-100 px-5 py-3 dark:border-neutral-800">
+                <ReviewPager
+                  page={safePage}
+                  totalPages={totalPages}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  totalItems={requestGroups.length}
+                  itemUnitLabel="posts"
+                  showRange={false}
+                  onPageChange={setPage}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </Panel>
+    </FadeIn>
   );
 }
 

@@ -10,6 +10,8 @@ interface SafeUserRow {
   role: Role;
   is_active: boolean;
   is_verified: boolean;
+  suspended_until: Date | null;
+  suspension_reason: string | null;
   has_seen_tutorial: boolean;
   created_at: Date;
   updated_at: Date;
@@ -29,10 +31,15 @@ export interface UserWithHash extends SafeUser {
 
 const SAFE_USER_COLUMNS = `
   id, first_name, last_name, email, school_id, role, is_active, is_verified,
-  has_seen_tutorial, created_at, updated_at
+  suspended_until, suspension_reason, has_seen_tutorial, created_at, updated_at
 `;
 
 function toSafeUser(row: SafeUserRow): SafeUser {
+  const suspendedUntilIso = row.suspended_until
+    ? new Date(row.suspended_until).toISOString()
+    : null;
+  const isCurrentlySuspended =
+    suspendedUntilIso !== null && new Date(suspendedUntilIso).getTime() > Date.now();
   return {
     id: row.id,
     name: `${row.first_name} ${row.last_name}`.trim(),
@@ -41,10 +48,36 @@ function toSafeUser(row: SafeUserRow): SafeUser {
     role: row.role,
     isActive: row.is_active,
     isVerified: row.is_verified,
+    suspendedUntil: isCurrentlySuspended ? suspendedUntilIso : null,
+    suspensionReason: isCurrentlySuspended ? row.suspension_reason : null,
     hasSeenTutorial: row.has_seen_tutorial,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
   };
+}
+
+export function isUserSuspended(
+  user: Pick<SafeUser, 'suspendedUntil'>,
+): boolean {
+  return (
+    Boolean(user.suspendedUntil) &&
+    new Date(user.suspendedUntil!).getTime() > Date.now()
+  );
+}
+
+export function formatSuspensionMessage(
+  user: Pick<SafeUser, 'suspendedUntil' | 'suspensionReason'>,
+): string {
+  const untilLabel = user.suspendedUntil
+    ? new Intl.DateTimeFormat('en-PH', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(user.suspendedUntil))
+    : 'further notice';
+  const reasonSuffix = user.suspensionReason?.trim()
+    ? ` Reason: ${user.suspensionReason.trim()}`
+    : '';
+  return `Your account is suspended until ${untilLabel}.${reasonSuffix}`;
 }
 
 export async function findUserByEmail(email: string): Promise<SafeUser | null> {
@@ -171,6 +204,23 @@ export async function setUserActive(id: string, isActive: boolean): Promise<Safe
   const { rows } = await pool.query<SafeUserRow>(
     `UPDATE "user" SET is_active = $2, updated_at = NOW() WHERE id = $1 RETURNING ${SAFE_USER_COLUMNS}`,
     [id, isActive],
+  );
+  return rows[0] ? toSafeUser(rows[0]) : null;
+}
+
+export async function setUserSuspension(
+  id: string,
+  suspendedUntil: Date | null,
+  reason: string | null,
+): Promise<SafeUser | null> {
+  const { rows } = await pool.query<SafeUserRow>(
+    `UPDATE "user"
+     SET suspended_until = $2,
+         suspension_reason = $3,
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING ${SAFE_USER_COLUMNS}`,
+    [id, suspendedUntil, reason],
   );
   return rows[0] ? toSafeUser(rows[0]) : null;
 }

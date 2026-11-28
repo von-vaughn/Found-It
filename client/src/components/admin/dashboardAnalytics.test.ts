@@ -212,7 +212,7 @@ test("computeAccountSummary and buildDashboardSummaryCsv produce structured outp
       id: "u2",
       name: "Staff",
       email: "st@wmsu.edu.ph",
-      role: "admin",
+      role: "staff",
       isActive: false,
       joined: "Nov 1",
       reportCount: 0,

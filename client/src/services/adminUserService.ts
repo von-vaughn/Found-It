@@ -7,6 +7,8 @@ interface ServerAdminUser {
   email: string;
   role: AdminUserRole;
   isActive: boolean;
+  suspendedUntil?: string | null;
+  suspensionReason?: string | null;
   createdAt: string;
   reportCount: number;
 }
@@ -41,6 +43,8 @@ function toAdminUser(user: ServerAdminUser): AdminUser {
     email: user.email,
     role: user.role,
     isActive: user.isActive,
+    suspendedUntil: user.suspendedUntil ?? null,
+    suspensionReason: user.suspensionReason ?? null,
     joined: new Intl.DateTimeFormat("en", {
       month: "short",
       day: "numeric",
@@ -87,6 +91,24 @@ export async function updateAdminUserRole(
   role: AdminUserRole,
 ): Promise<void> {
   await api.patch<UserResponse>(`/users/${id}/role`, { role });
+}
+
+export type SuspendAdminUserPayload =
+  | {
+      suspended: true;
+      durationDays?: number;
+      suspendedUntil?: string;
+      reason: string;
+    }
+  | {
+      suspended: false;
+    };
+
+export async function updateAdminUserSuspension(
+  id: string,
+  payload: SuspendAdminUserPayload,
+): Promise<void> {
+  await api.patch<UserResponse>(`/users/${id}/suspend`, payload);
 }
 
 export async function deleteAdminUser(id: string): Promise<void> {

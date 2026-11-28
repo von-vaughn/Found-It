@@ -28,6 +28,7 @@ export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  wasExplicitLogout: boolean;
   pendingEmail: string | null;
   setPendingEmail: (email: string) => void;
   login: (

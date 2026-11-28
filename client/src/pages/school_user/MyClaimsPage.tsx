@@ -134,18 +134,9 @@ export const MyClaimsPage: React.FC<MyClaimsPageProps> = ({
       }
       if (!query) return true;
       const item = items.find((entry) => entry.id === claim.itemId);
-      return [
-        claim.item,
-        claim.claimantTitle ?? "",
-        claim.color ?? "",
-        claim.building ?? "",
-        claim.location,
-        claim.details,
-        item?.title ?? "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
+      return [claim.item, claim.claimantTitle ?? "", item?.title ?? ""].some(
+        (name) => name.toLowerCase().includes(query),
+      );
     });
   }, [myClaims, statusFilter, searchQuery, items]);
 

@@ -84,12 +84,17 @@ export const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
     }
   };
 
-  const { data: serverItem, isLoading: isItemLoading } = useItemDetail(id ?? "");
+  const deleteItemMutation = useDeleteItem();
+  const { data: serverItem, isLoading: isItemLoading } = useItemDetail(
+    id ?? "",
+    {
+      enabled: !deleteItemMutation.isPending && !deleteItemMutation.isSuccess,
+    },
+  );
   const { data: serverItems } = useItems(undefined, {
     staleTime: 30_000,
     retry: 1,
   });
-  const deleteItemMutation = useDeleteItem();
 
   const item = useMemo(() => {
     if (serverItem) return toClientItem(serverItem);

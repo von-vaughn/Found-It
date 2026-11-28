@@ -156,16 +156,7 @@ export function ReportsPage() {
       }
       if (!normalizedQuery) return true;
 
-      return [
-        report.title,
-        report.description,
-        report.category,
-        report.building,
-        report.color,
-        report.reportedBy,
-        report.resolvedBy ?? "",
-        report.id,
-      ].some((value) => value.toLowerCase().includes(normalizedQuery));
+      return report.title.toLowerCase().includes(normalizedQuery);
     });
   }, [
     buildingFilter,
@@ -218,7 +209,7 @@ export function ReportsPage() {
       showSearch
       query={query}
       onQueryChange={updateQuery}
-      searchPlaceholder="Search lost and found reports…"
+      searchPlaceholder="Search items by name…"
     >
       <FadeIn>
       <Panel

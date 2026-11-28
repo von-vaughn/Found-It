@@ -8,6 +8,7 @@ import {
   listUsersPage,
   runWithActiveAdminGuard,
   setUserActive,
+  setUserSuspension,
   updateUserRole,
 } from '../repositories/user.repository';
 import { recordAuditLog } from '../repositories/audit-log.repository';
@@ -18,6 +19,21 @@ import { parsePagination } from '../validation/pagination';
 
 const roleSchema = z.object({ role: z.enum(ROLES) });
 const activeSchema = z.object({ isActive: z.boolean() });
+const suspendSchema = z.discriminatedUnion('suspended', [
+  z.object({
+    suspended: z.literal(true),
+    durationDays: z.number().int().min(1).max(365).optional(),
+    suspendedUntil: z.string().datetime({ offset: true }).optional(),
+    reason: z
+      .string()
+      .trim()
+      .min(3, 'Suspension reason must be at least 3 characters.')
+      .max(500, 'Suspension reason must be at most 500 characters.'),
+  }),
+  z.object({
+    suspended: z.literal(false),
+  }),
+]);
 
 function roleDisplay(role: Role): string {
   if (role === 'admin') return 'Admin';
@@ -254,6 +270,85 @@ export async function changeUserStatus(req: Request, res: Response): Promise<voi
     summary: `${parsed.data.isActive ? 'Activated' : 'Deactivated'} user ${target.email}`,
   });
   res.json({ message: parsed.data.isActive ? 'User activated.' : 'User deactivated.', user: updated });
+}
+
+/**
+ * PATCH /api/users/:id/suspend — admin only.
+ * Temporarily suspends a staff or school_user account (or lifts an active suspension).
+ */
+export async function changeUserSuspension(req: Request, res: Response): Promise<void> {
+  const id = getId(req);
+  if (invalidId(res, id)) return;
+
+  const parsed = suspendSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? 'Invalid suspension request.',
+    });
+    return;
+  }
+
+  const target = await findUserById(id);
+  if (!target) {
+    res.status(404).json({ message: 'User not found.' });
+    return;
+  }
+  if (target.id === req.user!.sub) {
+    res.status(403).json({ message: 'You cannot suspend your own account.' });
+    return;
+  }
+  if (target.role === 'admin') {
+    res.status(403).json({ message: 'Admin accounts cannot be suspended.' });
+    return;
+  }
+
+  if (!parsed.data.suspended) {
+    const updated = await setUserSuspension(target.id, null, null);
+    await recordAuditLog({
+      actorId: req.user!.sub,
+      actorEmail: req.user!.email,
+      actorRole: req.user!.role,
+      action: 'updated',
+      entityType: 'user',
+      entityId: target.id,
+      summary: `Lifted suspension for ${roleDisplay(target.role).toLowerCase()} ${target.email}`,
+    });
+    res.json({ message: 'Suspension lifted.', user: updated });
+    return;
+  }
+
+  let until: Date;
+  if (parsed.data.suspendedUntil) {
+    until = new Date(parsed.data.suspendedUntil);
+  } else if (parsed.data.durationDays) {
+    until = new Date(Date.now() + parsed.data.durationDays * 24 * 60 * 60 * 1000);
+  } else {
+    res.status(400).json({
+      message: 'Provide either durationDays or suspendedUntil.',
+    });
+    return;
+  }
+
+  if (Number.isNaN(until.getTime()) || until.getTime() <= Date.now()) {
+    res.status(400).json({ message: 'Suspension expiry must be in the future.' });
+    return;
+  }
+
+  const reason = parsed.data.reason.trim();
+  const updated = await setUserSuspension(target.id, until, reason);
+  await revokeAllUserTokens(target.id);
+
+  await recordAuditLog({
+    actorId: req.user!.sub,
+    actorEmail: req.user!.email,
+    actorRole: req.user!.role,
+    action: 'updated',
+    entityType: 'user',
+    entityId: target.id,
+    summary: `Suspended ${roleDisplay(target.role).toLowerCase()} ${target.email} until ${until.toISOString()} (${reason})`,
+  });
+
+  res.json({ message: 'User suspended.', user: updated });
 }
 
 /**

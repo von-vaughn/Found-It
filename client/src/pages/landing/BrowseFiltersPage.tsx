@@ -59,11 +59,7 @@ export const BrowseFiltersPage: React.FC = () => {
             return false;
           }
           const query = searchQuery.toLowerCase().trim();
-          return (
-            item.title.toLowerCase().includes(query) ||
-            item.location.toLowerCase().includes(query) ||
-            item.description.toLowerCase().includes(query)
-          );
+          return !query || item.title.toLowerCase().includes(query);
         }),
         filters,
       ).length,

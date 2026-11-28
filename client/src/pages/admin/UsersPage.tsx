@@ -15,6 +15,7 @@ import { FadeIn } from "@/components/FadeIn";
 import { LoadMoreButton } from "@/components/LoadMoreButton";
 import { Panel } from "@/components/admin/Panel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { SuspendUserModal } from "@/components/admin/SuspendUserModal";
 import type { AdminUser, AdminUserRole } from "@/components/admin/types";
 import { useAuth } from "@/context/useAuth";
 import {
@@ -22,6 +23,8 @@ import {
   listAdminUsersPage,
   updateAdminUserRole,
   updateAdminUserStatus,
+  updateAdminUserSuspension,
+  type SuspendAdminUserPayload,
 } from "@/services/adminUserService";
 import { itemKeys } from "@/hooks/useItems";
 import { claimKeys } from "@/hooks/useClaims";
@@ -33,6 +36,29 @@ const PAGE_SIZE = 10;
 const ADMIN_USERS_QUERY_KEY = ["admin-users"] as const;
 
 type RoleFilter = "school_user" | "staff" | "admin";
+
+function isUserSuspended(user: AdminUser): boolean {
+  return (
+    Boolean(user.suspendedUntil) &&
+    new Date(user.suspendedUntil!).getTime() > Date.now()
+  );
+}
+
+function getUserStatusLabel(user: AdminUser): "Active" | "Suspended" | "Deactivated" {
+  if (!user.isActive) return "Deactivated";
+  if (isUserSuspended(user)) return "Suspended";
+  return "Active";
+}
+
+function formatShortDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
 
 function initialRoleFromParam(rawTab: string | null, isAdmin: boolean): RoleFilter {
   if (!isAdmin) return "school_user";
@@ -88,6 +114,16 @@ export function UsersPage() {
       updateAdminUserRole(id, role),
     onSuccess: invalidateUserDependents,
   });
+  const suspendUserMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: SuspendAdminUserPayload;
+    }) => updateAdminUserSuspension(id, payload),
+    onSuccess: invalidateUserDependents,
+  });
   const deleteUserMutation = useMutation({
     mutationFn: deleteAdminUser,
     onSuccess: invalidateDeletedOrDeactivatedDependents,
@@ -100,6 +136,7 @@ export function UsersPage() {
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingUser, setPendingUser] = useState<AdminUser | null>(null);
+  const [suspendTarget, setSuspendTarget] = useState<AdminUser | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [openMenuUserId, setOpenMenuUserId] = useState<string | null>(null);
   const openMenuRef = useRef<HTMLDivElement>(null);
@@ -165,7 +202,7 @@ export function UsersPage() {
     return roleUsers.filter((user) => {
       if (
         statusFilter !== "All statuses" &&
-        (user.isActive ? "Active" : "Inactive") !== statusFilter
+        getUserStatusLabel(user) !== statusFilter
       ) {
         return false;
       }
@@ -188,7 +225,38 @@ export function UsersPage() {
     setRoleFilter(nextRole);
     setCurrentPage(1);
     setPendingUser(null);
+    setSuspendTarget(null);
     setDeleteTarget(null);
+  };
+
+  const handleConfirmSuspend = async (payload: {
+    durationDays?: number;
+    suspendedUntil?: string;
+    reason: string;
+  }) => {
+    if (!suspendTarget) return;
+    try {
+      await suspendUserMutation.mutateAsync({
+        id: suspendTarget.id,
+        payload: { suspended: true, ...payload },
+      });
+      toast.success(`${suspendTarget.name} has been suspended.`);
+      setSuspendTarget(null);
+    } catch (error) {
+      toast.error(errorMessage(error, "We couldn't suspend this account."));
+    }
+  };
+
+  const handleLiftSuspension = async (target: AdminUser) => {
+    try {
+      await suspendUserMutation.mutateAsync({
+        id: target.id,
+        payload: { suspended: false },
+      });
+      toast.success(`Suspension lifted for ${target.name}.`);
+    } catch (error) {
+      toast.error(errorMessage(error, "We couldn't lift this suspension."));
+    }
   };
 
   const updateQuery = (value: string) => {
@@ -372,7 +440,8 @@ export function UsersPage() {
                 >
                   <option>All statuses</option>
                   <option>Active</option>
-                  <option>Inactive</option>
+                  <option>Suspended</option>
+                  <option>Deactivated</option>
                 </select>
               </div>
             </div>
@@ -435,9 +504,19 @@ export function UsersPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3.5">
-                          <StatusBadge
-                            status={user.isActive ? "Active" : "Inactive"}
-                          />
+                          <div className="flex flex-col items-start gap-0.5">
+                            <StatusBadge status={getUserStatusLabel(user)} />
+                            {user.isActive &&
+                              isUserSuspended(user) &&
+                              user.suspendedUntil && (
+                                <span
+                                  title={user.suspensionReason || undefined}
+                                  className="text-[10px] text-amber-700 dark:text-amber-400"
+                                >
+                                  Until {formatShortDate(user.suspendedUntil)}
+                                </span>
+                              )}
+                          </div>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3.5">
                           {user.joined}
@@ -539,6 +618,37 @@ export function UsersPage() {
                                     >
                                       Demote to Staff
                                     </button>
+                                  )}
+                                {user.id !== currentUser?.id &&
+                                  user.role !== "admin" &&
+                                  user.isActive && (
+                                    isUserSuspended(user) ? (
+                                      <button
+                                        type="button"
+                                        role="menuitem"
+                                        disabled={suspendUserMutation.isPending}
+                                        onClick={() => {
+                                          setOpenMenuUserId(null);
+                                          void handleLiftSuspension(user);
+                                        }}
+                                        className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-amber-400 dark:hover:bg-amber-500/10"
+                                      >
+                                        Lift suspension
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        role="menuitem"
+                                        disabled={suspendUserMutation.isPending}
+                                        onClick={() => {
+                                          setOpenMenuUserId(null);
+                                          setSuspendTarget(user);
+                                        }}
+                                        className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50 dark:text-amber-400 dark:hover:bg-amber-500/10"
+                                      >
+                                        Suspend account
+                                      </button>
+                                    )
                                   )}
                                 <button
                                   type="button"
@@ -765,6 +875,13 @@ export function UsersPage() {
           </div>
         </div>
       )}
+      <SuspendUserModal
+        key={suspendTarget?.id ?? "closed"}
+        user={suspendTarget}
+        isSubmitting={suspendUserMutation.isPending}
+        onCancel={() => setSuspendTarget(null)}
+        onConfirm={handleConfirmSuspend}
+      />
     </AdminLayout>
   );
 }

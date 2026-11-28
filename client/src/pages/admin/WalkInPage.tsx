@@ -78,18 +78,7 @@ export function WalkInPage() {
         if (osaOnlyFilter === "pending" && report.receivedByOsa) return false;
       }
       if (!trimmed) return true;
-      const haystack = [
-        report.title,
-        report.category,
-        report.building,
-        report.specificLocation,
-        report.reportedBy,
-        report.reporterEmail,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(trimmed);
+      return report.title.toLowerCase().includes(trimmed);
     });
   }, [activeTab, activeFoundReports, activeLostReports, osaOnlyFilter, query]);
 
@@ -134,8 +123,8 @@ export function WalkInPage() {
       onQueryChange={setQuery}
       searchPlaceholder={
         activeTab === "claims"
-          ? "Search found items by title, category, location, or finder…"
-          : "Search lost items by title, category, location, or owner…"
+          ? "Search found items by name…"
+          : "Search lost items by name…"
       }
     >
       <FadeIn delay={0.05}>
@@ -145,26 +134,26 @@ export function WalkInPage() {
             <div
               role="tablist"
               aria-label="Walk-in transaction type"
-              className="inline-flex rounded-xl border border-neutral-200 bg-white p-1 dark:border-neutral-800 dark:bg-neutral-900"
+              className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-neutral-200 bg-white p-1 dark:border-neutral-800 dark:bg-neutral-900"
             >
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeTab === "claims"}
                 onClick={() => handleTabChange("claims")}
-                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
+                className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                   activeTab === "claims"
-                    ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                    ? "bg-[#E5192D] text-white"
+                    : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                 }`}
               >
                 <HandHelping className="h-3.5 w-3.5" aria-hidden="true" />
                 Walk-In Claims
                 <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                  className={`rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums ${
                     activeTab === "claims"
-                      ? "bg-white/20 text-white dark:bg-neutral-900/15 dark:text-neutral-900"
-                      : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+                      ? "bg-white/20 text-white"
+                      : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
                   }`}
                 >
                   {activeFoundReports.length}
@@ -175,19 +164,19 @@ export function WalkInPage() {
                 role="tab"
                 aria-selected={activeTab === "returns"}
                 onClick={() => handleTabChange("returns")}
-                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
+                className={`inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                   activeTab === "returns"
-                    ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                    ? "bg-[#E5192D] text-white"
+                    : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                 }`}
               >
                 <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                 Walk-In Returns
                 <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                  className={`rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums ${
                     activeTab === "returns"
-                      ? "bg-white/20 text-white dark:bg-neutral-900/15 dark:text-neutral-900"
-                      : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+                      ? "bg-white/20 text-white"
+                      : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
                   }`}
                 >
                   {activeLostReports.length}
@@ -208,9 +197,9 @@ export function WalkInPage() {
                     key={chip.id}
                     type="button"
                     onClick={() => setOsaOnlyFilter(chip.id)}
-                    className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
                       osaOnlyFilter === chip.id
-                        ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                        ? "bg-[#E5192D] text-white"
                         : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
                     }`}
                   >
@@ -248,7 +237,7 @@ export function WalkInPage() {
                 <button
                   type="button"
                   onClick={() => refetch()}
-                  className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900"
+                  className="rounded-lg bg-[#E5192D] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D]"
                 >
                   Retry
                 </button>
@@ -348,7 +337,7 @@ export function WalkInPage() {
                                 : "Record a walk-in claim at the OSA desk"
                             }
                             onClick={() => setClaimTarget(report)}
-                            className="inline-flex h-9 items-center rounded-lg bg-emerald-700 px-3.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-45"
+                            className="inline-flex h-9 items-center rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45"
                           >
                             Walk-in claim
                           </button>

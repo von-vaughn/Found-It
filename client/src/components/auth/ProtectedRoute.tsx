@@ -14,7 +14,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   children,
 }) => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, wasExplicitLogout } = useAuth();
   const location = useLocation();
   const unauthorizedToastShownRef = useRef(false);
 
@@ -36,7 +36,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }, [isUnauthorizedRole]);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !wasExplicitLogout) {
       // The auth modal itself explains why; a toast on top of it is noise.
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -44,13 +44,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         );
       }
     }
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, wasExplicitLogout]);
 
   if (isLoading) {
     return <LoadingScreen message="Checking credentials…" />;
   }
 
   if (!isAuthenticated || !user) {
+    if (wasExplicitLogout) {
+      return <Navigate to="/" replace />;
+    }
     // Preserve attempted destination for safe redirect
     const redirectParam = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/?redirect=${redirectParam}`} replace />;

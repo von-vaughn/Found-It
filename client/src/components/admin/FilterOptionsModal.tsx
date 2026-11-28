@@ -177,6 +177,12 @@ export function FilterOptionsModal({ open, onClose }: FilterOptionsModalProps) {
     };
   }, [open, onClose]);
 
+  const [pendingRemoval, setPendingRemoval] = useState<{
+    kind: "category" | "building";
+    id: string;
+    label: string;
+  } | null>(null);
+
   if (!open) return null;
 
   const categoryRecords = categoriesQuery.data ?? [];
@@ -203,7 +209,7 @@ export function FilterOptionsModal({ open, onClose }: FilterOptionsModalProps) {
     }
   };
 
-  const removeCategory = async (value: string) => {
+  const removeCategory = (value: string) => {
     const category = categoryRecords.find(
       (entry) => formatCategoryLabel(entry.name) === value,
     );
@@ -211,26 +217,7 @@ export function FilterOptionsModal({ open, onClose }: FilterOptionsModalProps) {
       toast.error("That category could not be found. Refresh and try again.");
       return;
     }
-
-    if (
-      !window.confirm(
-        `Remove "${value}" from category options? Existing reports will keep this category.`,
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await deleteCategoryMutation.mutateAsync(category.id);
-      toast.success(`${value} category removed.`);
-    } catch (error) {
-      toast.error(
-        extractErrorMessage(
-          error,
-          "We couldn't remove this category. Please try again.",
-        ),
-      );
-    }
+    setPendingRemoval({ kind: "category", id: category.id, label: value });
   };
 
   const addBuilding = async (value: string): Promise<string | null> => {
@@ -246,29 +233,32 @@ export function FilterOptionsModal({ open, onClose }: FilterOptionsModalProps) {
     }
   };
 
-  const removeBuilding = async (value: string) => {
+  const removeBuilding = (value: string) => {
     const building = buildingRecords.find((entry) => entry.name === value);
     if (!building) {
       toast.error("That building could not be found. Refresh and try again.");
       return;
     }
+    setPendingRemoval({ kind: "building", id: building.id, label: value });
+  };
 
-    if (
-      !window.confirm(
-        `Remove "${value}" from building options? Existing reports will keep this building.`,
-      )
-    ) {
-      return;
-    }
-
+  const handleConfirmRemoval = async () => {
+    if (!pendingRemoval) return;
+    const { kind, id, label } = pendingRemoval;
     try {
-      await deleteBuildingMutation.mutateAsync(building.id);
-      toast.success(`${value} building removed.`);
+      if (kind === "category") {
+        await deleteCategoryMutation.mutateAsync(id);
+        toast.success(`${label} category removed.`);
+      } else {
+        await deleteBuildingMutation.mutateAsync(id);
+        toast.success(`${label} building removed.`);
+      }
+      setPendingRemoval(null);
     } catch (error) {
       toast.error(
         extractErrorMessage(
           error,
-          "We couldn't remove this building. Please try again.",
+          `We couldn't remove this ${kind}. Please try again.`,
         ),
       );
     }
@@ -411,6 +401,71 @@ export function FilterOptionsModal({ open, onClose }: FilterOptionsModalProps) {
           </div>
         </div>
       </div>
+
+      {pendingRemoval && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget &&
+              !deleteCategoryMutation.isPending &&
+              !deleteBuildingMutation.isPending
+            ) {
+              setPendingRemoval(null);
+            }
+          }}
+        >
+          <section
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="filter-option-remove-title"
+            aria-describedby="filter-option-remove-description"
+            className="w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
+          >
+            <h3
+              id="filter-option-remove-title"
+              className="text-base font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100"
+            >
+              Remove {pendingRemoval.kind}?
+            </h3>
+            <p
+              id="filter-option-remove-description"
+              className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400 break-words"
+            >
+              Remove &ldquo;{pendingRemoval.label}&rdquo; from{" "}
+              {pendingRemoval.kind} options? Existing reports will keep this{" "}
+              {pendingRemoval.kind}.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={
+                  deleteCategoryMutation.isPending ||
+                  deleteBuildingMutation.isPending
+                }
+                onClick={() => setPendingRemoval(null)}
+                className="h-10 rounded-xl border border-neutral-200 px-4 text-xs font-bold text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:opacity-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  deleteCategoryMutation.isPending ||
+                  deleteBuildingMutation.isPending
+                }
+                onClick={() => void handleConfirmRemoval()}
+                className="h-10 rounded-xl bg-[#E5192D] px-4 text-xs font-bold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:opacity-50"
+              >
+                {deleteCategoryMutation.isPending ||
+                deleteBuildingMutation.isPending
+                  ? "Removing…"
+                  : "Remove"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

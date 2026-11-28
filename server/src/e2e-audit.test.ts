@@ -1981,4 +1981,115 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
       ),
     );
   });
+
+  it('11. allows Admin to suspend and lift suspension on School User and Staff accounts with auth blocking, auto-expiry, and audit logging', async () => {
+    const adminAuth = await loginAs(SUPER_EMAIL);
+    const staffAuth = await loginAs(ADMIN_EMAIL);
+    const schoolAuth = await loginAs(OWNER_EMAIL);
+
+    // 1) Staff cannot suspend anyone (403)
+    const staffAttempt = await api('PATCH', `/api/users/${schoolAuth.user.id}/suspend`, {
+      token: staffAuth.token,
+      body: { suspended: true, durationDays: 3, reason: 'Unauthorized attempt' },
+    });
+    assert.equal(staffAttempt.status, 403);
+
+    // 2) Admin cannot suspend self (403)
+    const selfAttempt = await api('PATCH', `/api/users/${adminAuth.user.id}/suspend`, {
+      token: adminAuth.token,
+      body: { suspended: true, durationDays: 3, reason: 'Self suspension test' },
+    });
+    assert.equal(selfAttempt.status, 403);
+
+    // 3) Admin suspends School User for 7 days
+    const suspendSchoolRes = await api<{
+      user: { suspendedUntil: string | null; suspensionReason: string | null };
+    }>('PATCH', `/api/users/${schoolAuth.user.id}/suspend`, {
+      token: adminAuth.token,
+      body: { suspended: true, durationDays: 7, reason: 'Repeated fake reports' },
+    });
+    assert.equal(suspendSchoolRes.status, 200);
+    assert.ok(suspendSchoolRes.data.user.suspendedUntil);
+    assert.equal(suspendSchoolRes.data.user.suspensionReason, 'Repeated fake reports');
+
+    // Existing access token is blocked immediately (403)
+    const blockedMeRes = await api<{ message: string }>('GET', '/api/auth/me', {
+      token: schoolAuth.token,
+    });
+    assert.equal(blockedMeRes.status, 403);
+    assert.ok(blockedMeRes.data.message.includes('Repeated fake reports'));
+
+    // Login is blocked with 403 and reason
+    const blockedLoginRes = await api<{ message: string }>('POST', '/api/auth/login', {
+      body: { email: OWNER_EMAIL, password: TEST_PASSWORD },
+    });
+    assert.equal(blockedLoginRes.status, 403);
+    assert.ok(blockedLoginRes.data.message.includes('Repeated fake reports'));
+
+    // 4) Admin lifts suspension -> School User can log in again
+    const liftRes = await api<{
+      user: { suspendedUntil: string | null; suspensionReason: string | null };
+    }>('PATCH', `/api/users/${schoolAuth.user.id}/suspend`, {
+      token: adminAuth.token,
+      body: { suspended: false },
+    });
+    assert.equal(liftRes.status, 200);
+    assert.equal(liftRes.data.user.suspendedUntil, null);
+    assert.equal(liftRes.data.user.suspensionReason, null);
+
+    const restoredLogin = await api('POST', '/api/auth/login', {
+      body: { email: OWNER_EMAIL, password: TEST_PASSWORD },
+    });
+    assert.equal(restoredLogin.status, 200);
+
+    // 5) Admin suspends Staff user, then verify auto-expiry when suspended_until is in the past
+    const suspendStaffRes = await api('PATCH', `/api/users/${staffAuth.user.id}/suspend`, {
+      token: adminAuth.token,
+      body: { suspended: true, durationDays: 3, reason: 'Policy review' },
+    });
+    assert.equal(suspendStaffRes.status, 200);
+
+    const blockedStaffLogin = await api('POST', '/api/auth/login', {
+      body: { email: ADMIN_EMAIL, password: TEST_PASSWORD },
+    });
+    assert.equal(blockedStaffLogin.status, 403);
+
+    // Backdate suspended_until to the past -> auto-expires without manual lift
+    await pool.query(
+      `UPDATE "user" SET suspended_until = NOW() - INTERVAL '1 hour' WHERE id = $1`,
+      [staffAuth.user.id],
+    );
+    const expiredStaffLogin = await api('POST', '/api/auth/login', {
+      body: { email: ADMIN_EMAIL, password: TEST_PASSWORD },
+    });
+    assert.equal(expiredStaffLogin.status, 200);
+
+    // Clean up expired fields
+    await pool.query(
+      `UPDATE "user" SET suspended_until = NULL, suspension_reason = NULL WHERE id = $1`,
+      [staffAuth.user.id],
+    );
+
+    // 6) Verify audit log recorded suspend & lift events
+    const auditRes = await api<{
+      logs: Array<{ entityType: string; entityId: string; summary: string }>;
+    }>('GET', '/api/audit-logs?limit=50', { token: adminAuth.token });
+    assert.equal(auditRes.status, 200);
+    assert.ok(
+      auditRes.data.logs.some(
+        (log) =>
+          log.entityType === 'user' &&
+          log.entityId === schoolAuth.user.id &&
+          log.summary.includes('Suspended school user'),
+      ),
+    );
+    assert.ok(
+      auditRes.data.logs.some(
+        (log) =>
+          log.entityType === 'user' &&
+          log.entityId === schoolAuth.user.id &&
+          log.summary.includes('Lifted suspension'),
+      ),
+    );
+  });
 });

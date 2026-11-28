@@ -43,23 +43,9 @@ export function ReportedItemsPage() {
   const queryMatched = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return flaggedReports;
-    return flaggedReports.filter((report) => {
-      const reasons = (report.flags ?? [])
-        .map((flag) => `${flag.reason} ${flag.reporterName} ${flag.reporterEmail}`)
-        .join(" ");
-      return [
-        report.title,
-        report.description,
-        report.category,
-        report.reportedBy,
-        report.specificLocation,
-        report.building,
-        reasons,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalized);
-    });
+    return flaggedReports.filter((report) =>
+      report.title.toLowerCase().includes(normalized),
+    );
   }, [flaggedReports, query]);
 
   const typeCounts = useMemo(

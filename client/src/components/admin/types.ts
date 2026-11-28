@@ -20,6 +20,8 @@ export interface AdminUser {
   email: string;
   role: AdminUserRole;
   isActive: boolean;
+  suspendedUntil?: string | null;
+  suspensionReason?: string | null;
   joined: string;
   reportCount: number;
 }

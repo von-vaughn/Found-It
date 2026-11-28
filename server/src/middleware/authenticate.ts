@@ -1,6 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
 import { verifyAccessToken } from '../utils/jwt';
-import { findUserById } from '../repositories/user.repository';
+import {
+  findUserById,
+  formatSuspensionMessage,
+  isUserSuspended,
+} from '../repositories/user.repository';
 
 /**
  * Verifies the Bearer access token and attaches the payload to req.user.
@@ -22,6 +26,10 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     }
     if (!user.isActive) {
       res.status(403).json({ message: 'Account is deactivated. Contact an administrator.' });
+      return;
+    }
+    if (isUserSuspended(user)) {
+      res.status(403).json({ message: formatSuspensionMessage(user) });
       return;
     }
     if (!user.isVerified) {
@@ -50,7 +58,7 @@ export async function optionalAuthenticate(req: Request, _res: Response, next: N
   try {
     const payload = verifyAccessToken(token);
     const user = await findUserById(payload.sub);
-    if (user && user.isActive && user.isVerified) {
+    if (user && user.isActive && user.isVerified && !isUserSuspended(user)) {
       req.user = { ...payload, role: user.role };
     }
   } catch {

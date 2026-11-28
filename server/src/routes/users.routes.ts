@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   changeUserRole,
   changeUserStatus,
+  changeUserSuspension,
   createAdminUser,
   getAllUsers,
   getUserById,
@@ -19,6 +20,7 @@ router.use(authenticate);
 router.get('/', requireAdmin, getAllUsers);
 router.get('/:id', getUserById); // self or admin (checked in controller)
 router.patch('/:id/status', requireAdmin, changeUserStatus);
+router.patch('/:id/suspend', requireAdmin, changeUserSuspension);
 router.delete('/:id', requireAdmin, removeUser);
 router.post('/', requireAdmin, createAdminUser);
 router.patch('/:id/role', requireAdmin, changeUserRole);

@@ -53,9 +53,37 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
   >([]);
   const [step, setStep] = useState<"evidence" | "details">("evidence");
   const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<
+      Record<
+        | "claim-title"
+        | "claim-date-lost"
+        | "claim-time-lost"
+        | "claim-location-lost"
+        | "claim-important-details",
+        string
+      >
+    >
+  >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const evidenceUrlsRef = useRef<string[]>([]);
+
+  const clearFieldError = (
+    fieldId:
+      | "claim-title"
+      | "claim-date-lost"
+      | "claim-time-lost"
+      | "claim-location-lost"
+      | "claim-important-details",
+  ) => {
+    setFieldErrors((current) => {
+      if (!current[fieldId]) return current;
+      const next = { ...current };
+      delete next[fieldId];
+      return next;
+    });
+  };
 
   useEffect(
     () => () => {
@@ -120,17 +148,32 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
       handleNextStep();
       return;
     }
-    if (
-      !claimTitle.trim() ||
-      !importantDetails.trim() ||
-      !dateLost ||
-      !timeLost ||
-      !locationLost.trim()
-    ) {
-      setFormError("Complete each required field before submitting.");
+    const nextErrors: typeof fieldErrors = {};
+    if (!claimTitle.trim()) {
+      nextErrors["claim-title"] = "Enter what the item is.";
+    }
+    if (!dateLost) {
+      nextErrors["claim-date-lost"] = "Choose the date you lost it.";
+    }
+    if (!timeLost) {
+      nextErrors["claim-time-lost"] = "Choose the approximate time.";
+    }
+    if (!locationLost.trim()) {
+      nextErrors["claim-location-lost"] = "Enter where you lost the item.";
+    }
+    if (!importantDetails.trim()) {
+      nextErrors["claim-important-details"] =
+        "Add a detail only the owner would know.";
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      setFormError("");
+      const firstId = Object.keys(nextErrors)[0];
+      document.getElementById(firstId)?.focus();
       return;
     }
 
+    setFieldErrors({});
     setFormError("");
     setIsSubmitting(true);
     try {
@@ -171,7 +214,7 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
     <>
       <hr className="mt-4 border-t border-neutral-200 dark:border-neutral-800" />
 
-      <form onSubmit={handleSubmit} className="mt-5">
+      <form onSubmit={handleSubmit} noValidate className="mt-5">
         {step === "evidence" ? (
           <div className="min-w-0">
             <div className="mb-1.5 flex items-center justify-between gap-3">
@@ -245,12 +288,28 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             type="text"
             required
             value={claimTitle}
-            onChange={(event) => setClaimTitle(event.target.value)}
+            onChange={(event) => {
+              setClaimTitle(event.target.value);
+              clearFieldError("claim-title");
+            }}
             placeholder="Black backpack, iPhone 13…"
             autoComplete="off"
             spellCheck={false}
+            aria-invalid={Boolean(fieldErrors["claim-title"])}
+            aria-describedby={
+              fieldErrors["claim-title"] ? "claim-title-error" : undefined
+            }
             className={inputClass}
           />
+          {fieldErrors["claim-title"] && (
+            <p
+              id="claim-title-error"
+              role="alert"
+              className="mt-1.5 text-xs font-medium text-[#E5192D] dark:text-red-400"
+            >
+              {fieldErrors["claim-title"]}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -281,9 +340,27 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
               required
               max={localDate()}
               value={dateLost}
-              onChange={(event) => setDateLost(event.target.value)}
+              onChange={(event) => {
+                setDateLost(event.target.value);
+                clearFieldError("claim-date-lost");
+              }}
+              aria-invalid={Boolean(fieldErrors["claim-date-lost"])}
+              aria-describedby={
+                fieldErrors["claim-date-lost"]
+                  ? "claim-date-lost-error"
+                  : undefined
+              }
               className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
             />
+            {fieldErrors["claim-date-lost"] && (
+              <p
+                id="claim-date-lost-error"
+                role="alert"
+                className="mt-1.5 text-xs font-medium text-[#E5192D] dark:text-red-400"
+              >
+                {fieldErrors["claim-date-lost"]}
+              </p>
+            )}
           </div>
         </div>
 
@@ -298,9 +375,27 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
               type="time"
               required
               value={timeLost}
-              onChange={(event) => setTimeLost(event.target.value)}
+              onChange={(event) => {
+                setTimeLost(event.target.value);
+                clearFieldError("claim-time-lost");
+              }}
+              aria-invalid={Boolean(fieldErrors["claim-time-lost"])}
+              aria-describedby={
+                fieldErrors["claim-time-lost"]
+                  ? "claim-time-lost-error"
+                  : undefined
+              }
               className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`}
             />
+            {fieldErrors["claim-time-lost"] && (
+              <p
+                id="claim-time-lost-error"
+                role="alert"
+                className="mt-1.5 text-xs font-medium text-[#E5192D] dark:text-red-400"
+              >
+                {fieldErrors["claim-time-lost"]}
+              </p>
+            )}
           </div>
           <div className="min-w-0">
             <label htmlFor="claim-location-lost" className={labelClass}>
@@ -312,11 +407,29 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
               type="text"
               required
               value={locationLost}
-              onChange={(event) => setLocationLost(event.target.value)}
+              onChange={(event) => {
+                setLocationLost(event.target.value);
+                clearFieldError("claim-location-lost");
+              }}
               placeholder="Where do you think you lost it?"
               autoComplete="off"
+              aria-invalid={Boolean(fieldErrors["claim-location-lost"])}
+              aria-describedby={
+                fieldErrors["claim-location-lost"]
+                  ? "claim-location-lost-error"
+                  : undefined
+              }
               className={inputClass}
             />
+            {fieldErrors["claim-location-lost"] && (
+              <p
+                id="claim-location-lost-error"
+                role="alert"
+                className="mt-1.5 text-xs font-medium text-[#E5192D] dark:text-red-400"
+              >
+                {fieldErrors["claim-location-lost"]}
+              </p>
+            )}
           </div>
         </div>
 
@@ -363,10 +476,28 @@ export const OwnershipClaimForm: React.FC<OwnershipClaimFormProps> = ({
             required
             rows={3}
             value={importantDetails}
-            onChange={(event) => setImportantDetails(event.target.value)}
+            onChange={(event) => {
+              setImportantDetails(event.target.value);
+              clearFieldError("claim-important-details");
+            }}
             placeholder="Enter the unique mark only the owner would know…"
+            aria-invalid={Boolean(fieldErrors["claim-important-details"])}
+            aria-describedby={
+              fieldErrors["claim-important-details"]
+                ? "claim-important-details-error"
+                : undefined
+            }
             className="w-full resize-y rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-100 p-3.5 text-sm transition-colors focus:border-neutral-400 focus:bg-white dark:focus:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-200 dark:focus-visible:ring-neutral-700"
           />
+          {fieldErrors["claim-important-details"] && (
+            <p
+              id="claim-important-details-error"
+              role="alert"
+              className="mt-1.5 text-xs font-medium text-[#E5192D] dark:text-red-400"
+            >
+              {fieldErrors["claim-important-details"]}
+            </p>
+          )}
           <p className="mt-1.5 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
             Used only to verify ownership.
           </p>

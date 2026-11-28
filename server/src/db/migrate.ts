@@ -366,6 +366,8 @@ export async function migrate(): Promise<void> {
     ALTER TABLE item ADD COLUMN IF NOT EXISTS last_finder_reminder_at TIMESTAMPTZ;
     ALTER TABLE item ADD COLUMN IF NOT EXISTS expiry_warning_sent_at TIMESTAMPTZ;
     ALTER TABLE item ADD COLUMN IF NOT EXISTS custom_category VARCHAR(80);
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS suspended_until TIMESTAMPTZ;
+    ALTER TABLE "user" ADD COLUMN IF NOT EXISTS suspension_reason TEXT;
     ALTER TABLE category ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
     ALTER TABLE building ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 

@@ -111,11 +111,12 @@ export function useItemDetail(
 ) {
   const viewerKey = useViewerKey();
   const isUuid = Boolean(id && UUID_RE.test(id));
+  const { enabled = true, ...restOptions } = options ?? {};
   return useQuery({
     queryKey: [...itemKeys.detail(id), viewerKey],
     queryFn: () => getItemById(id),
-    enabled: isUuid,
-    ...options,
+    enabled: isUuid && enabled,
+    ...restOptions,
   });
 }
 
@@ -262,6 +263,10 @@ export function useDeleteItem() {
   return useMutation({
     mutationFn: (input: string | { id: string; reason?: string }) =>
       deleteItem(input),
+    onMutate: async (variables) => {
+      const id = typeof variables === "string" ? variables : variables.id;
+      await queryClient.cancelQueries({ queryKey: itemKeys.detail(id) });
+    },
     onSuccess: (_, variables) => {
       const id = typeof variables === "string" ? variables : variables.id;
       queryClient.invalidateQueries({ queryKey: itemKeys.lists() });

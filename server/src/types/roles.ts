@@ -16,6 +16,8 @@ export interface SafeUser {
   role: Role;
   isActive: boolean;
   isVerified: boolean;
+  suspendedUntil: string | null;
+  suspensionReason: string | null;
   hasSeenTutorial: boolean;
   createdAt: string;
   updatedAt: string;

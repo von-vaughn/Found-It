@@ -379,7 +379,7 @@ export function computeAccountSummary(users: AdminUser[]): AccountSummary {
 
   for (const user of users) {
     if (user.role === "school_user") schoolUsers++;
-    else if (user.role === "admin") staff++;
+    else if (user.role === "staff") staff++;
     else admins++;
 
     if (user.isActive) active++;

@@ -12,6 +12,8 @@ export function StatusBadge({ status }: { status: string }) {
     Flagged: "bg-amber-500 text-white",
     Active: "bg-lime-600 text-white",
     Inactive: "bg-stone-500 text-white",
+    Deactivated: "bg-stone-500 text-white",
+    Suspended: "bg-amber-600 text-white",
     school_user: "bg-neutral-600 text-white",
     staff: "bg-blue-600 text-white",
     admin: "bg-neutral-900 text-white dark:bg-neutral-800",

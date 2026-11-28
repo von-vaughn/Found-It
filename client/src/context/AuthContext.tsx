@@ -17,6 +17,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const queryClient = useQueryClient();
   const [pendingEmail, setPendingEmailState] = useState<string | null>(null);
+  const [wasExplicitLogout, setWasExplicitLogout] = useState(false);
+
+  useEffect(() => {
+    if (!wasExplicitLogout) return;
+    const timer = window.setTimeout(() => setWasExplicitLogout(false), 500);
+    return () => window.clearTimeout(timer);
+  }, [wasExplicitLogout]);
 
   const setAuthUser = useCallback(
     (user: SafeAuthUser | null) =>
@@ -105,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         email: normalizedEmail,
         password,
       });
+      setWasExplicitLogout(false);
       setAuthUser(data.user);
       queryClient.removeQueries({
         predicate: (q) => q.queryKey[0] !== "auth",
@@ -246,6 +254,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [queryClient, setAuthUser]);
 
   const logout = async () => {
+    setWasExplicitLogout(true);
     try {
       await logoutMutation.mutateAsync();
     } finally {
@@ -264,6 +273,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user: userQuery.data ?? null,
         isAuthenticated: !!userQuery.data,
         isLoading: userQuery.isPending,
+        wasExplicitLogout,
         pendingEmail,
         setPendingEmail,
         login,
