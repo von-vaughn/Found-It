@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
+  AlertTriangle,
   HandHelping,
   MapPin,
   RotateCcw,
@@ -16,12 +17,15 @@ import { WalkInClaimModal } from "@/components/admin/WalkInClaimModal";
 import { WalkInReturnModal } from "@/components/admin/WalkInReturnModal";
 import { serverItemToAdminReport } from "@/components/admin/adminData";
 import type { AdminReport } from "@/components/admin/types";
+import { useAdminClaims } from "@/hooks/useClaims";
 import { useInfiniteItems, useUpdateOsaReceipt } from "@/hooks/useItems";
+import { paths } from "@/routes/paths";
 import { AdminLayout } from "./AdminLayout";
 
 type WalkInTab = "claims" | "returns";
 
 export function WalkInPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab: WalkInTab =
     searchParams.get("tab") === "returns" ? "returns" : "claims";
@@ -43,6 +47,21 @@ export function WalkInPage() {
   } = useInfiniteItems(undefined, 50);
 
   const updateOsaReceipt = useUpdateOsaReceipt();
+  const { data: adminClaims = [] } = useAdminClaims();
+
+  const pendingClaimsByItemId = useMemo(() => {
+    const map = new Map<string, { count: number; firstClaimId: string }>();
+    for (const claim of adminClaims) {
+      if (claim.status !== "pending") continue;
+      const existing = map.get(claim.itemId);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(claim.itemId, { count: 1, firstClaimId: claim.id });
+      }
+    }
+    return map;
+  }, [adminClaims]);
 
   const reports = useMemo(() => items.map(serverItemToAdminReport), [items]);
 
@@ -257,7 +276,13 @@ export function WalkInPage() {
               </div>
             ) : (
               <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {filteredList.map((report) => (
+                {filteredList.map((report) => {
+                  const pendingClaimInfo =
+                    activeTab === "claims"
+                      ? pendingClaimsByItemId.get(report.id)
+                      : undefined;
+                  const hasPendingClaims = Boolean(pendingClaimInfo);
+                  return (
                   <div
                     key={report.id}
                     className="flex flex-col gap-4 px-5 py-4 transition-colors hover:bg-neutral-50/70 sm:flex-row sm:items-center sm:justify-between dark:hover:bg-neutral-800/40"
@@ -308,12 +333,36 @@ export function WalkInPage() {
                           </span>
                           <span>{report.date}</span>
                         </div>
+
+                        {pendingClaimInfo && (
+                          <p className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                            <AlertTriangle
+                              className="h-3.5 w-3.5 shrink-0"
+                              aria-hidden="true"
+                            />
+                            {pendingClaimInfo.count} pending claim{" "}
+                            {pendingClaimInfo.count === 1 ? "request" : "requests"} — review and reject before recording a walk-in claim.
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                       {activeTab === "claims" ? (
                         <>
+                          {pendingClaimInfo && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigate(
+                                  `${paths.adminClaims}/${encodeURIComponent(pendingClaimInfo.firstClaimId)}`,
+                                )
+                              }
+                              className="inline-flex h-9 items-center rounded-lg border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                            >
+                              Review pending
+                            </button>
+                          )}
                           <button
                             type="button"
                             disabled={updateOsaReceipt.isPending}
@@ -330,11 +379,13 @@ export function WalkInPage() {
                           </button>
                           <button
                             type="button"
-                            disabled={!report.receivedByOsa}
+                            disabled={!report.receivedByOsa || hasPendingClaims}
                             title={
-                              !report.receivedByOsa
-                                ? "Mark the item as received by OSA before recording a walk-in claim."
-                                : "Record a walk-in claim at the OSA desk"
+                              hasPendingClaims
+                                ? "Review and reject all pending claim requests on this item before recording a walk-in claim."
+                                : !report.receivedByOsa
+                                  ? "Mark the item as received by OSA before recording a walk-in claim."
+                                  : "Record a walk-in claim at the OSA desk"
                             }
                             onClick={() => setClaimTarget(report)}
                             className="inline-flex h-9 items-center rounded-lg bg-[#E5192D] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#c81424] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] disabled:cursor-not-allowed disabled:opacity-45"
@@ -353,7 +404,8 @@ export function WalkInPage() {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

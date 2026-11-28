@@ -1389,6 +1389,22 @@ export async function createWalkInClaim(
       );
     }
 
+    const { rows: pendingRows } = await client.query<{ count: number }>(
+      `SELECT COUNT(*)::int AS count
+       FROM request
+       WHERE item_id = $1
+         AND kind = 'claim'
+         AND status = 'pending'`,
+      [input.itemId],
+    );
+    const pendingCount = pendingRows[0]?.count ?? 0;
+    if (pendingCount > 0) {
+      throw new WalkInClaimError(
+        409,
+        `This item has ${pendingCount} pending claim ${pendingCount === 1 ? "request" : "requests"}. Please review and reject all pending claims first before recording a walk-in claim.`,
+      );
+    }
+
     let linkedUserId: string | null = null;
     if (input.mode === "account") {
       const { rows: userRows } = await client.query<{
@@ -1408,28 +1424,6 @@ export async function createWalkInClaim(
       linkedUserId = userRows[0].id;
     }
 
-    // Reject any pending online claims on this item BEFORE inserting the walk-in
-    // claim so a student who already filed a pending claim and then walked into
-    // OSA does not collide with idx_request_claim_unique.
-    const { rows: rejectedPending } = await client.query<{
-      id: string;
-      user_id: string | null;
-    }>(
-      `UPDATE request
-       SET status = 'rejected',
-           rejection_reason = CASE
-             WHEN $2::uuid IS NOT NULL AND user_id = $2::uuid
-               THEN 'Completed via walk-in claim at OSA.'
-             ELSE 'This item has already been claimed by another user.'
-           END,
-           approval_instructions = NULL
-       WHERE item_id = $1
-         AND kind = 'claim'
-         AND status = 'pending'
-       RETURNING id, user_id`,
-      [input.itemId, linkedUserId],
-    );
-
     const { rows: insertedRows } = await client.query<{ id: string }>(
       `INSERT INTO request (
          item_id, user_id, kind, status, details,
@@ -1448,20 +1442,6 @@ export async function createWalkInClaim(
       ],
     );
     const createdId = insertedRows[0].id;
-
-    for (const competing of rejectedPending) {
-      if (!competing.user_id || competing.user_id === linkedUserId) continue;
-      await createRequestStatusNotification(client, {
-        requestId: competing.id,
-        itemId: input.itemId,
-        itemName: item.name,
-        kind: "claim",
-        status: "rejected",
-        requesterId: competing.user_id,
-        itemOwnerId: item.reporter_id,
-        reason: "This item has already been claimed by another user.",
-      });
-    }
 
     await createClaimedNotifications(client, {
       requestId: createdId,

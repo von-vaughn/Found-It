@@ -30,6 +30,7 @@ export interface AdminSidebarItem<TSection extends string = string> {
   label: string;
   compactLabel: string;
   icon: LucideIcon;
+  group?: string;
 }
 
 interface AdminSidebarProps<TSection extends string> {
@@ -276,6 +277,18 @@ export function AdminSidebar<TSection extends string>({
   }, []);
 
   const labelsVisible = expanded && !notificationsOpen;
+  const navGroups: Array<{
+    label?: string;
+    items: AdminSidebarItem<TSection>[];
+  }> = [];
+  for (const item of navigation) {
+    const last = navGroups[navGroups.length - 1];
+    if (last && last.label === item.group) {
+      last.items.push(item);
+    } else {
+      navGroups.push({ label: item.group, items: [item] });
+    }
+  }
 
   return (
     <>
@@ -345,51 +358,77 @@ export function AdminSidebar<TSection extends string>({
 
         <nav
           aria-label="OSA workspace"
-          className="absolute left-2.5 top-[5.5rem] flex flex-col items-center space-y-3 md:left-4.5"
+          className="absolute left-2.5 top-[5rem] flex flex-col items-start md:left-4.5"
         >
-          {navigation.map(({ id, label, compactLabel, icon: Icon }) => {
-            const active = activeSection === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                title={label}
-                aria-label={label}
-                aria-current={active ? "page" : undefined}
-                onClick={() => {
-                  // Keep the sidebar open across navigation only while the
-                  // pointer is over it; otherwise let the next layout mount
-                  // collapsed. Moving the mouse out still closes it via
-                  // onMouseLeave.
-                  rememberAdminSidebarExpanded(
-                    asideRef.current?.matches(":hover") ?? false,
-                  );
-                  onSectionChange(id);
-                }}
-                className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl ${
-                  active
-                    ? "text-[#E5192D]"
-                    : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
-                }`}
-              >
-                <Icon
-                  className={`h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${
-                    active ? "stroke-[2.3]" : "stroke-[1.8]"
-                  }`}
-                  aria-hidden="true"
-                />
-                <span className="sr-only">{compactLabel}</span>
-                <span
-                  aria-hidden="true"
-                  className={`absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold transition-opacity duration-200 ${
-                    labelsVisible ? "opacity-100" : "opacity-0"
-                  }`}
-                >
-                  {label}
-                </span>
-              </button>
-            );
-          })}
+          {navGroups.map((section, groupIndex) => (
+            <div
+              key={section.label ?? `group-${groupIndex}`}
+              className={groupIndex > 0 ? "mt-5 flex flex-col gap-1" : "flex flex-col gap-1"}
+            >
+              {section.label && (
+                <div className="relative mb-1 flex h-5 w-11 items-center justify-center">
+                  <span
+                    aria-hidden="true"
+                    className={`h-px w-5 bg-neutral-200 transition-opacity duration-200 dark:bg-neutral-800 ${
+                      labelsVisible ? "opacity-0" : "opacity-100"
+                    }`}
+                  />
+                  <span
+                    className={`pointer-events-none absolute left-3 whitespace-nowrap text-xs font-normal text-neutral-500 transition-opacity duration-200 dark:text-neutral-400 ${
+                      labelsVisible ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    {section.label}
+                  </span>
+                </div>
+              )}
+              {section.items.map(({ id, label, compactLabel, icon: Icon }) => {
+                const active = activeSection === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    title={label}
+                    aria-label={label}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => {
+                      // Keep the sidebar open across navigation only while the
+                      // pointer is over it; otherwise let the next layout mount
+                      // collapsed. Moving the mouse out still closes it via
+                      // onMouseLeave.
+                      rememberAdminSidebarExpanded(
+                        asideRef.current?.matches(":hover") ?? false,
+                      );
+                      onSectionChange(id);
+                    }}
+                    className={`group relative flex h-9 w-11 cursor-pointer items-center justify-center rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
+                      active
+                        ? "bg-neutral-100 text-[#E5192D] dark:bg-neutral-800"
+                        : "text-neutral-600 hover:bg-neutral-100/80 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                    }`}
+                  >
+                    <Icon
+                      className="h-[18px] w-[18px] shrink-0"
+                      strokeWidth={active ? 2 : 1.5}
+                      aria-hidden="true"
+                    />
+                    <span className="sr-only">{compactLabel}</span>
+                    <span
+                      aria-hidden="true"
+                      className={`absolute left-full ml-3 whitespace-nowrap text-left text-sm font-medium transition-opacity duration-200 ${
+                        labelsVisible ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        <div className="absolute bottom-5 left-2.5 flex flex-col items-start gap-1 border-t border-neutral-100 pt-3 dark:border-neutral-800 md:left-4.5">
           <button
             ref={notificationsButtonRef}
             type="button"
@@ -398,38 +437,41 @@ export function AdminSidebar<TSection extends string>({
             aria-expanded={notificationsOpen}
             aria-controls="admin-notification-panel"
             onClick={() => setPanelOpen(!notificationsOpen)}
-            className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl ${
+            className={`group relative flex h-9 w-11 cursor-pointer items-center justify-center rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E5192D] ${
               notificationsOpen
-                ? "text-[#E5192D]"
-                : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+                ? "bg-neutral-100 text-[#E5192D] dark:bg-neutral-800"
+                : "text-neutral-600 hover:bg-neutral-100/80 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
             }`}
           >
             <Bell
-              className="h-5 w-5 stroke-[1.8] transition-transform duration-200 group-hover:scale-110"
+              className="h-[18px] w-[18px] shrink-0"
+              strokeWidth={notificationsOpen ? 2 : 1.5}
               aria-hidden="true"
             />
             <span className="sr-only">Notifications</span>
-            {unreadCount > 0 && (
+            {unreadCount > 0 && !labelsVisible && (
               <Badge
                 variant="notification"
                 aria-hidden="true"
-                className="absolute top-1 right-1 min-w-4 h-4 rounded-md px-0.5 text-[9px] leading-none"
+                className="absolute top-0.5 right-1 h-4 min-w-4 rounded-md px-0.5 text-[9px] leading-none"
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>
             )}
             <span
               aria-hidden="true"
-              className={`absolute left-full ml-3 whitespace-nowrap text-left text-sm font-semibold transition-opacity duration-200 ${
+              className={`absolute left-full ml-3 inline-flex items-center gap-2 whitespace-nowrap text-left text-sm font-medium transition-opacity duration-200 ${
                 labelsVisible ? "opacity-100" : "opacity-0"
               }`}
             >
-              Notifications
+              <span>Notifications</span>
+              {unreadCount > 0 && (
+                <span className="font-mono text-xs font-normal text-neutral-500 tabular-nums dark:text-neutral-400">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </span>
           </button>
-        </nav>
-
-        <div className="absolute bottom-5 left-2.5 md:left-4.5">
           <AdminAccountMenu labelsVisible={labelsVisible} />
         </div>
       </motion.aside>

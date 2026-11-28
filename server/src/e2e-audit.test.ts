@@ -1377,7 +1377,26 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     });
     assert.equal(onlineClaim.status, 201);
 
-    // Staff completes walk-in claim for registered School User (claimantUserId)
+    // Walk-in claim MUST be blocked while a pending claim exists (even for the same user)
+    const blockedByPending = await api<{ message: string }>('POST', '/api/claims/admin/walk-in', {
+      token: staffAuth.token,
+      body: {
+        itemId: foundItem1,
+        mode: 'account',
+        userId: claimantUserId,
+      },
+    });
+    assert.equal(blockedByPending.status, 409);
+    assert.ok(blockedByPending.data.message.toLowerCase().includes('pending'));
+
+    // Staff reviews and rejects the pending claim first
+    const rejectPending = await api('PATCH', `/api/claims/admin/${onlineClaim.data.claim.id}/status`, {
+      token: staffAuth.token,
+      body: { status: 'rejected', reason: 'Claimant came in person; rejecting online pending claim first.' },
+    });
+    assert.equal(rejectPending.status, 200);
+
+    // Now that no pending claims remain, staff completes walk-in claim for registered School User
     const walkInAccount = await api<{
       claim: {
         id: string;
@@ -1401,13 +1420,6 @@ describe('Complete System Workflow & Consistency E2E Audit', () => {
     assert.equal(walkInAccount.data.claim.releasedBy?.id, adminUserId);
     assert.equal(walkInAccount.data.claim.releasedBy?.role, 'staff');
     assert.ok(walkInAccount.data.claim.releasedAt);
-
-    // Competing pending online claim was auto-rejected
-    const { rows: rejectedOnline } = await pool.query<{ status: string }>(
-      'SELECT status FROM request WHERE id = $1',
-      [onlineClaim.data.claim.id],
-    );
-    assert.equal(rejectedOnline[0]?.status, 'rejected');
 
     // Create Found Item #2 (for unregistered guest walk-in)
     const foundRes2 = await api<{ item: { id: string } }>('POST', '/api/items', {
